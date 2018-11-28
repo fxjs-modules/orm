@@ -2,7 +2,7 @@
     "name": "@fxjs/orm",
     "version": "1.6.3",
     "description": "Object Relational Mapping for fibjs",
-    "main": "lib/index.js",
+    "main": "lib",
     "types": "@types/index.d.ts",
     "repository": "git://github.com/fxjs-modules/orm.git",
     "author": "Liu Hu <lion@9465.net>",
