@@ -1,5 +1,21 @@
+var test = require("test");
+test.setup();
+
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
+
+function assertModelInstance (instance) {
+    assert.property(instance, '__opts')
+    assert.isObject(instance.__opts, 'one_associations')
+
+    assert.isObject(instance.__opts, 'many_associations')
+    assert.isObject(instance.__opts, 'extend_associations')
+
+    assert.property(instance.__opts, 'association_properties')
+    assert.property(instance.__opts, 'fieldToPropertyMap')
+
+    assert.property(instance.__opts, 'associations')
+}
 
 describe("Model instance", function () {
     var db = null;
@@ -161,11 +177,11 @@ describe("Model instance", function () {
                 },
                 e: 5
             };
-            var p = Person.createSync({
+            person = Person.createSync({
                 name: 'Dilbert',
                 data: data
             });
-            person = p;
+            assertModelInstance(person)
         });
 
         it("should do nothing with flat paths when setting to same value", function () {
@@ -183,7 +199,7 @@ describe("Model instance", function () {
             assert.equal(person.__opts.changes.join(','), 'name');
         });
 
-        it("should do nothin with deep paths when setting to same value", function () {
+        it("should do nothing with deep paths when setting to same value", function () {
             assert.equal(person.saved(), true);
             person.set('data.e', 5);
 
@@ -257,14 +273,13 @@ describe("Model instance", function () {
         var person = null;
 
         beforeEach(function () {
-            var p = Person.createSync({
+            person = Person.createSync({
                 name: 'John',
                 age: 44,
                 data: {
                     a: 1
                 }
             });
-            person = p;
         });
 
         it("should mark individual properties as dirty", function () {
@@ -281,14 +296,13 @@ describe("Model instance", function () {
         var person = null;
 
         beforeEach(function () {
-            var p = Person.createSync({
+            person = Person.createSync({
                 name: 'John',
                 age: 44,
                 data: {
                     a: 1
                 }
             });
-            person = p;
         });
 
         it("should mark individual properties as dirty", function () {
@@ -377,3 +391,8 @@ describe("Model instance", function () {
         });
     });
 });
+
+if (require.main === module) {
+    test.run(console.DEBUG)
+    process.exit()
+}

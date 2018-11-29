@@ -501,7 +501,8 @@ describe("Model.find() chaining", function () {
 
                 John[0].setParentsSync([Justin]);
 
-                var people = Person.find().hasParents(Justin).allSync();
+                var instance = Person.find()
+                var people = instance.hasParents(Justin).allSync();
 
                 assert.ok(Array.isArray(people));
 

@@ -1,6 +1,20 @@
-var _ = require('lodash');
+var test = require("test");
+test.setup();
+
 var helper = require('../support/spec_helper');
-var ORM = require('../../');
+
+function assertModelInstanceWithHasMany (instance) {
+    assert.property(instance, '__opts')
+    assert.isObject(instance.__opts, 'one_associations')
+
+    assert.isObject(instance.__opts, 'many_associations')
+    assert.isObject(instance.__opts, 'extend_associations')
+
+    assert.property(instance.__opts, 'association_properties')
+    assert.property(instance.__opts, 'fieldToPropertyMap')
+
+    assert.property(instance.__opts, 'associations')
+}
 
 describe("hasMany", function () {
     var db = null;
@@ -546,6 +560,7 @@ describe("hasMany", function () {
             var account = Account.createSync({
                 name: "Stuff"
             });
+            assertModelInstanceWithHasMany(account)
 
             account.addEmailsSync(emails[1]);
 
@@ -608,4 +623,67 @@ describe("hasMany", function () {
             }
         });
     });
+
+    describe("accessors", function () {
+        var Email;
+        var Account;
+
+        var setup = function (opts) {
+            Email = db.define('email', {
+                text: {
+                    type: 'text',
+                    key: true,
+                    required: true
+                },
+                bounced: Boolean
+            });
+
+            Account = db.define('account', {
+                name: String
+            });
+
+            Account.hasMany('emails', Email, {}, {
+                mergeTable: 'custom_account_emails',
+                mergeId: 'custom_accountid',
+                mergeAssocId: 'custom_emailid',
+                key: opts.key
+            });
+
+            helper.dropSync([Email, Account]);
+        };
+
+        it('should query association model data with getAccessor', function () {
+            setup({})
+            var emails = Email.createSync([{
+                bounced: true,
+                text: 'a@test.com'
+            }, {
+                bounced: false,
+                text: 'z@test.com'
+            }]);
+
+            var account = Account.createSync({
+                name: "Stuff"
+            });
+            account.addEmailsSync(emails);
+
+            var assoc = account.__opts.many_associations.find(x => x.name === 'emails')
+
+            ;['bounced', 'text'].forEach((field) => {
+                emails.forEach((email) => {
+                    assert.equal(
+                        email[field],
+                        account[assoc['getAccessor']]()
+                            .find({[field]: email[field]})
+                            .firstSync()[field]
+                    )
+                })
+            });
+        })
+    })
 });
+
+if (require.main === module) {
+    test.run(console.DEBUG)
+    process.exit()
+}
