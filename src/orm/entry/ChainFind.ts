@@ -2,7 +2,6 @@ var _             = require("lodash");
 var async         = require("async");
 var Utilities     = require("./Utilities");
 var ChainInstance = require("./ChainInstance");
-var SimplePromise       = require("./SimplePromise").SimplePromise;
 
 interface ChainFindType {
 	new (Model: FibOrmNS.FibOrmFixedModel, opts: FibOrmNS.ChainFindOptions): FibOrmNS.IChainFindInstance
@@ -229,20 +228,6 @@ export = function ChainFind (Model: FibOrmNS.FibOrmFixedModel, opts: FibOrmNS.Ch
 		run: function (cb) {
 			chainRun(cb);
 			return this;
-		},
-		success: function (cb) {
-			if (!promise) {
-				promise = new SimplePromise();
-				promise.handle(this.all);
-			}
-			return promise.success(cb);
-		},
-		fail: function (cb) {
-			if (!promise) {
-				promise = new SimplePromise();
-				promise.handle(this.all);
-			}
-			return promise.fail(cb);
 		},
 		eager: function () {
 			// This will allow params such as ("abc", "def") or (["abc", "def"])

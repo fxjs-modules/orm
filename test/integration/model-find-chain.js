@@ -412,9 +412,9 @@ describe("Model.find() chaining", function () {
             assert.isFunction(chain.get);
             assert.isFunction(chain.save);
         });
-        //=========================================
-        xdescribe(".count()", function () {
-            it("should return the total filtered items", function () {
+        
+        describe(".count()", function () {
+            it("should return the total filtered items", function (done) {
                 Person.find().each().filter(function (person) {
                     return (person.age > 18);
                 }).count(function (count) {
@@ -425,8 +425,8 @@ describe("Model.find() chaining", function () {
             });
         });
 
-        xdescribe(".sort()", function () {
-            it("should return the items sorted using the sorted function", function () {
+        describe(".sort()", function () {
+            it("should return the items sorted using the sorted function", function (done) {
                 Person.find().each().sort(function (first, second) {
                     return (first.age < second.age);
                 }).get(function (people) {
@@ -441,12 +441,12 @@ describe("Model.find() chaining", function () {
             });
         });
 
-        xdescribe(".save()", function () {
-            it("should save items after changes", function () {
+        describe(".save()", function () {
+            it("should save items after changes", function (done) {
                 Person.find({
                     surname: "Dean"
                 }).each(function (person) {
-                    person.age.should.not.equal(45);
+                    assert.notEqual(person.age, 45);
                     person.age = 45;
                 }).save(function () {
                     Person.find({
@@ -463,8 +463,8 @@ describe("Model.find() chaining", function () {
             });
         });
 
-        xdescribe("if passing a callback", function () {
-            it("should use it to .forEach()", function () {
+        describe("if passing a callback", function () {
+            it("should use it to .forEach()", function (done) {
                 Person.find({
                     surname: "Dean"
                 }).each(function (person) {
@@ -488,7 +488,7 @@ describe("Model.find() chaining", function () {
             });
         });
 
-        xdescribe(".hasAccessor() for hasOne associations", function () {
+        describe(".hasAccessor() for hasOne associations", function () {
             it("should be chainable", function () {
                 var John = Person.findSync({
                     name: "John"
@@ -552,34 +552,6 @@ describe("Model.find() chaining", function () {
             assert.equal(dogs[0].family.length, 1);
             assert.equal(dogs[1].friends.length, 1);
             assert.equal(dogs[1].family.length, 2);
-        });
-    });
-
-    xdescribe(".success()", function () {
-        before(setup());
-
-        it("should return a Promise with .fail() method", function () {
-            Person.find().success(function (people) {
-                assert.ok(Array.isArray(people));
-
-                return done();
-            }).fail(function (err) {
-                // never called..
-            });
-        });
-    });
-
-    xdescribe(".fail()", function () {
-        before(setup());
-
-        it("should return a Promise with .success() method", function () {
-            Person.find().fail(function (err) {
-                // never called..
-            }).success(function (people) {
-                assert.ok(Array.isArray(people));
-
-                return done();
-            });
         });
     });
 });

@@ -17,7 +17,7 @@ export = function ChainInstance(chain, cb) {
 				load();
 			}
 
-			queue.push({ hwd: hwd, args: arguments });
+			queue.push({ hwd: hwd, args });
 
 			return calls;
 		};
