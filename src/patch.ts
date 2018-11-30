@@ -9,7 +9,7 @@ type HashOfModelFuncNameToPath = string[];
 
 // patch async function to sync function
 function patchSync(
-    o: FxOrmNS.FibOrmFixedModel | FxOrmNS.FibOrmFixedModelInstance | FxOrmNS.FibOrmDB,
+    o: FxOrmNS.Model | FxOrmNS.FibOrmFixedModelInstance | FxOrmNS.FibOrmDB,
     funcs: HashOfModelFuncNameToPath
 ) {
     funcs.forEach(function (func) {
@@ -24,9 +24,9 @@ function patchSync(
 }
 
 // hook find, patch result
-function patchResult(o: FxOrmNS.FibOrmFixedModelInstance | FxOrmNS.FibOrmFixedModel): void {
+function patchResult(o: FxOrmNS.FibOrmFixedModelInstance | FxOrmNS.Model): void {
     var old_func: ModelFuncToPatch = o.find;
-    var m: FxOrmNS.FibOrmFixedModel = o.model || o;
+    var m: FxOrmNS.Model = o.model || o;
     var comps = ['val', 'from', 'to'];
 
     if (old_func.is_new)
@@ -142,7 +142,7 @@ function patchObject(m: FxOrmNS.FibOrmFixedModelInstance) {
     patchSync(m, methods);
 }
 
-function patchHas(m: FxOrmNS.FibOrmFixedModel, funcs: HashOfModelFuncNameToPath) {
+function patchHas(m: FxOrmNS.Model, funcs: HashOfModelFuncNameToPath) {
     funcs.forEach(function (func) {
         var old_func: ModelFuncToPatch = m[func];
         if (old_func)
@@ -158,7 +158,7 @@ function patchHas(m: FxOrmNS.FibOrmFixedModel, funcs: HashOfModelFuncNameToPath)
     })
 }
 
-function patchAggregate(m: FxOrmNS.FibOrmFixedModel) {
+function patchAggregate(m: FxOrmNS.Model) {
     var aggregate: FxOrmNS.OrigAggreteGenerator = m.aggregate;
     m.aggregate = function () {
         var r = aggregate.apply(this, Array.prototype.slice.apply(arguments));
@@ -167,7 +167,7 @@ function patchAggregate(m: FxOrmNS.FibOrmFixedModel) {
     };
 }
 
-function patchModel(m: FxOrmNS.FibOrmFixedModel, opts: FxOrmNS.ModelOptions) {
+function patchModel(m: FxOrmNS.Model, opts: FxOrmNS.ModelOptions) {
     var _afterAutoFetch;
     if (opts !== undefined && opts.hooks)
         _afterAutoFetch = opts.hooks.afterAutoFetch;
@@ -297,7 +297,7 @@ export = function (orm: FxOrmNS.FibORM) {
                     opts.hooks = util.clone(opts.hooks);
             }
 
-            var m: FxOrmNS.FibOrmFixedModel = def.call(this, name, properties, opts);
+            var m: FxOrmNS.Model = def.call(this, name, properties, opts);
             patchModel(m, opts);
             return m;
         }

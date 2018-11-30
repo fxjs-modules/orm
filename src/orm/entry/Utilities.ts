@@ -208,7 +208,7 @@ export function wrapFieldObject (params) {
  * @param required is field required for relationship
  * @param reversed is model is reversed in relationship
  */
-export function formatField (model: FibOrmNS.FibOrmFixedModel, name: string, required: boolean, reversed: boolean): FibOrmNS.OrigDetailedModelProperty {
+export function formatField (model: FibOrmNS.Model, name: string, required: boolean, reversed: boolean): FibOrmNS.OrigDetailedModelProperty {
 	let fields = {} as FibOrmNS.OrigDetailedModelProperty, field_opts, field_name;
 	var keys = model.id;
 	var assoc_key: FibOrmNS.AssociationKeyComputation = model.settings.get("properties.association_key");

@@ -5,7 +5,7 @@ import Property = require("../Property");
 import ORMError = require("../Error");
 import util = require("../Utilities");
 
-export function prepare(db: FibOrmNS.FibORM, Model: FibOrmNS.FibOrmFixedModel, associations: FibOrmNS.InstanceAssociationItem_HasMany[]) {
+export function prepare(db: FibOrmNS.FibORM, Model: FibOrmNS.Model, associations: FibOrmNS.InstanceAssociationItem_HasMany[]) {
 	Model.hasMany = function () {
 		let name, makeKey, mergeId, mergeAssocId;
 		let OtherModel = Model;
@@ -96,7 +96,7 @@ export function prepare(db: FibOrmNS.FibORM, Model: FibOrmNS.FibOrmFixedModel, a
 	};
 };
 
-export function extend(Model: FibOrmNS.FibOrmFixedModel, Instance: FibOrmNS.FibOrmFixedModelInstance, Driver: FibOrmNS.ConnInstanceInOrmConnDriverDB, associations: FibOrmNS.InstanceAssociationItem_HasMany[], opts: FibOrmNS.AssociationDefinitionOptions_HasMany, createInstance: Function) {
+export function extend(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedModelInstance, Driver: FibOrmNS.ConnInstanceInOrmConnDriverDB, associations: FibOrmNS.InstanceAssociationItem_HasMany[], opts: FibOrmNS.AssociationDefinitionOptions_HasMany, createInstance: Function) {
 	for (var i = 0; i < associations.length; i++) {
 		extendInstance(Model, Instance, Driver, associations[i], opts, createInstance);
 	}
@@ -121,7 +121,7 @@ export function autoFetch(Instance, associations, opts, cb) {
 	}
 };
 
-function extendInstance(Model: FibOrmNS.FibOrmFixedModel, Instance: FibOrmNS.FibOrmFixedModelInstance, Driver: FibOrmNS.ConnInstanceInOrmConnDriverDB, association: FibOrmNS.InstanceAssociationItem_HasMany, opts: FibOrmNS.AssociationDefinitionOptions_HasMany, createInstance: Function) {
+function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedModelInstance, Driver: FibOrmNS.ConnInstanceInOrmConnDriverDB, association: FibOrmNS.InstanceAssociationItem_HasMany, opts: FibOrmNS.AssociationDefinitionOptions_HasMany, createInstance: Function) {
 	if (Model.settings.get("instance.cascadeRemove")) {
 		Instance.on("beforeRemove", function () {
 			Instance[association.delAccessor]();

@@ -8,11 +8,11 @@ const Accessors  = {
 	"del": "remove"
 };
 
-export function prepare (Model: FibOrmNS.FibOrmFixedModel, associations: FibOrmNS.InstanceAssociationItem_HasOne[]) {
+export function prepare (Model: FibOrmNS.Model, associations: FibOrmNS.InstanceAssociationItem_HasOne[]) {
 	Model.hasOne = function (assoc_name: string, ext_model?: any, assoc_options?: any) {
 		if (arguments[1] && !arguments[1].table) {
 			assoc_options = arguments[1] as FibOrmNS.AssociationDefinitionOptions_HasOne
-			ext_model = arguments[1] = null as FibOrmNS.FibOrmFixedModel
+			ext_model = arguments[1] = null as FibOrmNS.Model
 		}
 		
 		var assocName;

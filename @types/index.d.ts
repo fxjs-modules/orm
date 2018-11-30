@@ -1,6 +1,10 @@
 /// <reference types="fibjs" />
+/// <reference types="@fibjs/enforce" />
 
 /// <reference path="3rd.d.ts" />
+
+// fix fibjs types' missing
+declare var console: any
 
 declare namespace FxOrmNS {
     /* Connection About Patch :start */
@@ -56,30 +60,18 @@ declare namespace FxOrmNS {
         (err: Error): void
     }
 
-    export interface FibOrmFixedModelOptions /* extends ModelOptions */ {
-        id?: string[];
-        autoFetch?: boolean;
-        autoFetchLimit?: number;
-        cacheFetch?: boolean;
-        hooks?: Hooks;
-        methods?: { [name: string]: Function };
-
-        [extensibleProperty: string]: any;
-    }
-
-    interface TransformFibOrmModel2InstanceOptions extends FibOrmFixedModelOptions {
-    }
+    interface TransformFibOrmModel2InstanceOptions extends ModelOptions {}
 
     export interface FibORM extends ORM {
         connectSync(opts: FibORMIConnectionOptions | string): FibORM;
         connect(opts: FibORMIConnectionOptions | string): (err, orm: FibORM) => any;
         /* all fixed: start */
-        models: { [key: string]: FibOrmFixedModel };
+        models: { [key: string]: Model };
 
         use(plugin: string, options?: any): FibORM;
         use(plugin: Plugin, options?: any): FibORM;
 
-        define(name: string, properties: { [key: string]: OrigModelPropertyDefinition }, opts?: FibOrmFixedModelOptions): FibOrmFixedModel;
+        define(name: string, properties: { [key: string]: OrigModelPropertyDefinition }, opts?: ModelOptions): Model;
         ping(callback: ORMMethod__CommonCallback): FibORM;
         close(callback: ORMMethod__CommonCallback): FibORM;
         load(file: string, callback: ORMMethod__CommonCallback): any;
@@ -109,7 +101,7 @@ declare namespace FxOrmNS {
     type AssociationKeyComputation = Function | string
     interface AssociationDefinitionOptions {
         name?: string;
-        model?: FibOrmFixedModel;
+        model?: Model;
         field?: OrigDetailedModelProperty
 
         // is the association is extendsTo
@@ -133,7 +125,7 @@ declare namespace FxOrmNS {
         delAccessor: string;
         addAccessor?: string;
 
-        model: FibOrmFixedModel;
+        model: Model;
         reversed?: boolean;
         autoFetch: boolean;
         autoFetchLimit: number
@@ -296,35 +288,6 @@ declare namespace FxOrmNS {
         afterAutoFetch?: (next?) => void
     }
 
-    export interface FibOrmFixedModel extends Model, OrigHooks, PatchedSyncfiedModelOrInstance {
-        (): FibOrmFixedModel;// FibOrmFixedModelInstance;
-        (...ids: any[]): FibOrmFixedModel;// FibOrmFixedModelInstance;
-
-        new(): FibOrmFixedModelInstance;
-        new(...ids: any[]): FibOrmFixedModelInstance;
-
-        properties: { [property: string]: OrigDetailedModelProperty }
-        allProperties: { [key: string]: OrigDetailedModelProperty }
-
-        /**
-         * methods used to add associations
-         */
-        // hasOne: (...args: any[]) => any;
-        hasOne: {
-            (assoc_name: string, ext_model: FibOrmFixedModel, assoc_options?: AssociationDefinitionOptions_HasOne): FibOrmFixedExtendModel
-            (assoc_name: string, assoc_options?: AssociationDefinitionOptions_HasOne): FibOrmFixedExtendModel
-        }
-        hasMany: {
-            (assoc_name: string, ext_model: FibOrmFixedModel, assoc_options?: AssociationDefinitionOptions_HasMany): FibOrmFixedExtendModel
-            (assoc_name: string, ext_model: FibOrmFixedModel, assoc_props?: ModelPropertyDefinitionHash, assoc_options?: AssociationDefinitionOptions_HasMany): FibOrmFixedExtendModel
-        }
-        extendsTo: (...args: any[]) => Model;
-
-        extends: { [extendModel: string]: ExtendModelWrapper };
-
-        [extraProperty: string]: any;
-    }
-
     export interface ExtendModelWrapper {
         // 'hasOne', 'hasMany'
         type: string;
@@ -332,7 +295,7 @@ declare namespace FxOrmNS {
         model: FibOrmFixedExtendModel;
     }
 
-    export interface FibOrmFixedExtendModel extends FibOrmFixedModel {
+    export interface FibOrmFixedExtendModel extends Model {
         model_name: string;
     }
 
@@ -340,62 +303,9 @@ declare namespace FxOrmNS {
         [key: string]: any;
     }
 
-    // patch the missing field defined in orm/lib/Instance.js (such as defined by Object.defineProperty)
-    export interface FibOrmFixedModelInstance extends Instance {
-        /* all fixed: start */
-        on(event: string, callback): FibOrmFixedModelInstance;
-        save(callback?: ORMMethod__CommonCallback): Instance;
-        save(data: { [property: string]: any; }, callback?: ORMMethod__CommonCallback): FibOrmFixedModelInstance;
-        save(data: { [property: string]: any; }, options: any, callback?: ORMMethod__CommonCallback): FibOrmFixedModelInstance;
-        saved(): boolean;
-        remove(callback?: ORMMethod__CommonCallback): FibOrmFixedModelInstance;
-
-        /**
-         * @noenum
-         */
-        isInstance(): boolean;
-        /**
-         * @noenum
-         */
-        isPersisted(): boolean;
-        /**
-         * @noenum
-         */
-        isShell(): boolean;
-        validate(callback: (errors: Error[]) => void);
-        /* all fixed: end */
-
-        /* missing fix: start */
-        /**
-         * @noenum
-         */
-        set: Function;
-        markAsDirty: Function;
-        dirtyProperties: object;
-
-        /**
-         * @noenum
-         */
-        readonly __singleton_uid: string | number;
-
-        /**
-         * @noenum
-         */
-        readonly __opts?: InstanceOptions;
-
-        /**
-         * @noenum
-         */
-        readonly model: FibOrmFixedModel;
-
-        /* missing fix: end */
-
-        [extraProperty: string]: any;
-    }
-
     export interface FibOrmFixedModelInstanceFn {
-        (model: FibOrmFixedModel, opts: object): FibOrmFixedModelInstance
-        new(model: FibOrmFixedModel, opts: object): FibOrmFixedModelInstance
+        (model: Model, opts: object): FibOrmFixedModelInstance
+        new(model: Model, opts: object): FibOrmFixedModelInstance
     }
 
     export interface FibOrmPatchedSyncfiedInstantce extends PatchedSyncfiedInstanceWithDbWriteOperation, PatchedSyncfiedInstanceWithAssociations {
@@ -519,12 +429,12 @@ declare namespace FxOrmNS {
         (err: Error, count?: number): void
     }
 
-    export interface Model {
+    export interface Model extends OrigHooks, PatchedSyncfiedModelOrInstance {
         (): Instance;
         (...ids: any[]): Instance;
 
-        properties: { [property: string]: Property };
-        settings: Settings;
+        properties: { [property: string]: OrigDetailedModelProperty };
+        settings: SettingInstance;
 
         drop(callback?: (err: Error) => void): Model;
         sync(callback?: (err: Error) => void): Model;
@@ -563,8 +473,36 @@ declare namespace FxOrmNS {
         // id: string[];
         id: string;
 
+        /* fix or patch :start */
+        (): Model;
+        (...ids: any[]): Model;
+
+        new(): FibOrmFixedModelInstance;
+        new(...ids: any[]): FibOrmFixedModelInstance;
+
+        allProperties: { [key: string]: OrigDetailedModelProperty }
+
+        /**
+         * methods used to add associations
+         */
+        // hasOne: (...args: any[]) => any;
+        hasOne: {
+            (assoc_name: string, ext_model: Model, assoc_options?: AssociationDefinitionOptions_HasOne): FibOrmFixedExtendModel
+            (assoc_name: string, assoc_options?: AssociationDefinitionOptions_HasOne): FibOrmFixedExtendModel
+        }
+        hasMany: {
+            (assoc_name: string, ext_model: Model, assoc_options?: AssociationDefinitionOptions_HasMany): FibOrmFixedExtendModel
+            (assoc_name: string, ext_model: Model, assoc_props?: ModelPropertyDefinitionHash, assoc_options?: AssociationDefinitionOptions_HasMany): FibOrmFixedExtendModel
+        }
+        extendsTo: (...args: any[]) => Model;
+
+        extends: { [extendModel: string]: ExtendModelWrapper };
+        /* fix or patch :end */
+
         [property: string]: any;
     }
+    // just for compatible
+    type FibOrmFixedModel = Model
 
     export interface Instance {
         on(event: string, callback): Instance;
@@ -577,30 +515,82 @@ declare namespace FxOrmNS {
         isPersisted(): boolean;
         isShell(): boolean;
         validate(callback: (errors: Error[]) => void);
+        /* all fixed: start */
+        on(event: string, callback): FibOrmFixedModelInstance;
+        save(callback?: ORMMethod__CommonCallback): Instance;
+        save(data: { [property: string]: any; }, callback?: ORMMethod__CommonCallback): FibOrmFixedModelInstance;
+        save(data: { [property: string]: any; }, options: any, callback?: ORMMethod__CommonCallback): FibOrmFixedModelInstance;
+        saved(): boolean;
+        remove(callback?: ORMMethod__CommonCallback): FibOrmFixedModelInstance;
+
+        /**
+         * @noenum
+         */
+        isInstance(): boolean;
+        /**
+         * @noenum
+         */
+        isPersisted(): boolean;
+        /**
+         * @noenum
+         */
+        isShell(): boolean;
+        validate(callback: (errors: Error[]) => void);
+        /* all fixed: end */
+
+        /* missing fix: start */
+        /**
+         * @noenum
+         */
+        set: Function;
+        markAsDirty: Function;
+        dirtyProperties: object;
+
+        /**
+         * @noenum
+         */
+        __singleton_uid(): string | number;
+
+        /**
+         * @noenum
+         */
+        __opts?: InstanceOptions;
+
+        /**
+         * @noenum
+         */
         model: Model;
 
-        [property: string]: any;
+        /* missing fix: end */
+
+        [extraProperty: string]: any;
     }
+    // patch the missing field defined in orm/lib/Instance.js (such as defined by Object.defineProperty)
+    type FibOrmFixedModelInstance = Instance 
 
     export interface ModelOptions {
         id?: string[];
         autoFetch?: boolean;
         autoFetchLimit?: number;
         cacheFetch?: boolean;
-        hooks?: { [property: string]: Hooks };
+        hooks?: Hooks;
         methods?: { [name: string]: Function };
+
+        [extensibleProperty: string]: any;
     }
+    // just for compatible
+    type FibOrmFixedModelOptions = ModelOptions
 
     export interface Hooks {
         beforeValidation?: (next?) => void;
         beforeCreate?: (next?) => void;
         afterCreate?: (next?) => void;
         beforeSave?: (next?) => void;
-        afterSave?: (next?) => void;
-        afterLoad?: (next?) => void;
+        afterSave?: (success?: boolean) => void;
+        afterLoad?: (success?: boolean) => void;
         afterAutoFetch?: (next?) => void;
         beforeRemove?: (next?) => void;
-        afterRemove?: (next?) => void;
+        afterRemove?: (success?: boolean) => void;
     }
 
     export interface IConnectionOptions {
@@ -662,8 +652,9 @@ declare namespace FxOrmNS {
         remove(callback: (err: Error) => void): void;
         run(callback?: ModelMethod__CommonCallback): void;
 
-        success(callback?: ModelMethod__CommonCallback): void;
-        fail(callback?: ModelMethod__CommonCallback): void;
+        // removed in commit 717ee65a7a23ed6762856cf3c187700e36c9ba70
+        // success(callback?: ModelMethod__CommonCallback): void;
+        // fail(callback?: ModelMethod__CommonCallback): void;
 
         first(callback?: ModelMethod__CommonCallback): void;
         last(callback?: ModelMethod__CommonCallback): void;
@@ -673,7 +664,7 @@ declare namespace FxOrmNS {
 
         eager(): IChainFindInstance;
 
-        model: FibOrmFixedModel;
+        model: Model;
         options: ChainFindInstanceOptions
 
         [extraProperty: string]: any;
@@ -713,7 +704,7 @@ declare namespace FxOrmNS {
     export class ORM extends Class_EventEmitter {
         validators: enforce;
         enforce: enforce;
-        settings: Settings;
+        settings: SettingInstance;
         driver_name: string;
         driver: any;
         tools: any;
@@ -780,7 +771,19 @@ declare namespace FxOrmNS {
         static get(key, opts: SingletonOptions, createCb: Function, returnCb: Function);
     }
 
+    interface SettingsContainerGenerator {
+        (options: object): SettingInstance
+    }
+
+    interface SettingInstance {
+        set(key, value): SettingInstance
+        get(key: string, def?: Function): any
+        unset(): SettingInstance
+    }
+
     export class Settings {
+        constructor(settings: any);
+        
         static Container: any;
 
         static defaults(): {
@@ -806,18 +809,12 @@ declare namespace FxOrmNS {
                 debug: boolean;
             };
         };
-
-        constructor(settings: any);
-
-        get: {
-            (key: string, def?: Function): any
-        }
     }
 
-    export var settings: Settings;
+    export var settings: SettingInstance;
 
     export class Property {
-        static normalize(property: string, settings: Settings): any;
+        static normalize(property: string, settings: SettingInstance): any;
         static validate(value: any, property: string): any;
     }
 

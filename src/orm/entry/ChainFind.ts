@@ -4,10 +4,10 @@ var Utilities     = require("./Utilities");
 var ChainInstance = require("./ChainInstance");
 
 interface ChainFindType {
-	new (Model: FibOrmNS.FibOrmFixedModel, opts: FibOrmNS.ChainFindOptions): FibOrmNS.IChainFindInstance
-	(Model: FibOrmNS.FibOrmFixedModel, opts: FibOrmNS.ChainFindOptions): FibOrmNS.IChainFindInstance
+	new (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOptions): FibOrmNS.IChainFindInstance
+	(Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOptions): FibOrmNS.IChainFindInstance
 }
-export = function ChainFind (Model: FibOrmNS.FibOrmFixedModel, opts: FibOrmNS.ChainFindOptions) {
+export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOptions) {
 	var prepareConditions = function () {
 		return Utilities.transformPropertyNames(
 			opts.conditions, opts.properties

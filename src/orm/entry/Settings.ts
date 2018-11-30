@@ -30,12 +30,7 @@ export const defaults = function () {
 	return default_settings;
 };
 
-export interface ContainerType {
-	(options: object): void
-}
-export const Container: ContainerType = function (settings) {
-	this.settings = settings;
-
+export const Container: FxOrmNS.SettingsContainerGenerator = function (settings) {
 	return {
 		set: function (key, value) {
 			set(key, value, settings);

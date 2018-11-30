@@ -147,7 +147,7 @@ export const Model: ModelType = function (opts) {
 		return instance;
 	};
 
-	const model: FibOrmNS.FibOrmFixedModel = function () {
+	const model: FibOrmNS.Model = function () {
 	    var instance, i;
 
 	    var data = arguments.length > 1 ? arguments : arguments[0];

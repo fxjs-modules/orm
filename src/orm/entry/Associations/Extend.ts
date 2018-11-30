@@ -11,7 +11,7 @@ import util       = require("../Utilities");
  * @param Model model
  * @param associations association definitions
  */
-export function prepare (db: FibOrmNS.FibORM, Model: FibOrmNS.FibOrmFixedModel, associations: FibOrmNS.InstanceAssociationItem_ExtendTos[]) {
+export function prepare (db: FibOrmNS.FibORM, Model: FibOrmNS.Model, associations: FibOrmNS.InstanceAssociationItem_ExtendTos[]) {
 	Model.extendsTo = function (name, properties, opts) {
 		opts = opts || {};
 
@@ -90,7 +90,7 @@ export function prepare (db: FibOrmNS.FibORM, Model: FibOrmNS.FibOrmFixedModel, 
 	};
 };
 
-export function extend (Model: FibOrmNS.FibOrmFixedModel, Instance: FibOrmNS.FibOrmFixedModelInstance, Driver: FibOrmNS.ConnInstanceInOrmConnDriverDB, associations: FibOrmNS.InstanceAssociationItem_ExtendTos[], opts: FibOrmNS.ModelExtendOptions) {
+export function extend (Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedModelInstance, Driver: FibOrmNS.ConnInstanceInOrmConnDriverDB, associations: FibOrmNS.InstanceAssociationItem_ExtendTos[], opts: FibOrmNS.ModelExtendOptions) {
 	for (var i = 0; i < associations.length; i++) {
 		extendInstance(Model, Instance, Driver, associations[i], opts);
 	}
@@ -115,7 +115,7 @@ export function autoFetch (Instance: FibOrmNS.FibOrmFixedModelInstance, associat
 	}
 };
 
-function extendInstance(Model: FibOrmNS.FibOrmFixedModel, Instance: FibOrmNS.FibOrmFixedModelInstance, Driver: FibOrmNS.ConnInstanceInOrmConnDriverDB, association: FibOrmNS.InstanceAssociationItem_ExtendTos, opts: FibOrmNS.InstanceExtendOptions) {
+function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedModelInstance, Driver: FibOrmNS.ConnInstanceInOrmConnDriverDB, association: FibOrmNS.InstanceAssociationItem_ExtendTos, opts: FibOrmNS.InstanceExtendOptions) {
 	Object.defineProperty(Instance, association.hasAccessor, {
 		value : function (cb) {
 			if (!Instance[Model.id]) {
@@ -194,7 +194,7 @@ function extendInstance(Model: FibOrmNS.FibOrmFixedModel, Instance: FibOrmNS.Fib
 					var pending = extensions.length;
 
 					for (var i = 0; i < extensions.length; i++) {
-						Singleton.clear(extensions[i].__singleton_uid());
+						Singleton.clear(extensions[i].__singleton_uid() + '');
 						extensions[i].remove(function () {
 							if (--pending === 0) {
 								return cb();

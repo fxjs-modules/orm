@@ -20,7 +20,8 @@ export import Settings       = require("./Settings");
 export import singleton      = require("./Singleton");
 
 
-const SettingsInstance = new Settings.Container(Settings.defaults());
+const SettingsInstance = Settings.Container(Settings.defaults());
+// orm global default settings
 export const settings = SettingsInstance
 
 export import Property   = require("./Property");
@@ -46,7 +47,7 @@ export function use (connection, proto, opts, cb) {
 
 	try {
 		var Driver   = adapters.get(proto);
-		var settings = new Settings.Container(SettingsInstance.get('*'));
+		var settings = Settings.Container(SettingsInstance.get('*'));
 		var driver   = new Driver(null, connection, {
 			debug    : (opts.query && opts.query.debug === 'true'),
 			settings : settings
@@ -112,7 +113,7 @@ export function connect (opts, cb) {
 
 	try {
 		var Driver   = adapters.get(proto);
-		var settings = new Settings.Container(SettingsInstance.get('*'));
+		var settings = Settings.Container(SettingsInstance.get('*'));
 		var driver   = new Driver(opts, null, {
 			debug    : 'debug' in opts.query ? opts.query.debug : settings.get("connection.debug"),
 			pool     : 'pool'  in opts.query ? opts.query.pool  : settings.get("connection.pool"),

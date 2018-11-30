@@ -7,7 +7,7 @@ interface EmitEventFunctionInInstance {
 	(state: string, _instance?: any): void
 }
 
-export function Instance (Model: FibOrmNS.FibOrmFixedModel, opts: FibOrmNS.TransformFibOrmModel2InstanceOptions) {
+export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmModel2InstanceOptions) {
 	opts = opts || {};
 	opts.data = opts.data || {};
 	opts.extra = opts.extra || {};

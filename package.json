@@ -38,7 +38,7 @@
         ]
     },
     "dependencies": {
-        "@fibjs/enforce": "0.0.6",
+        "@fibjs/enforce": "0.0.7",
         "async": "^2.6.1",
         "bluebird": "^3.5.2",
         "hat": "0.0.3",
