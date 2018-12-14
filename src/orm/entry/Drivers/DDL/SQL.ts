@@ -1,5 +1,5 @@
 const _    = require("lodash");
-const Sync = require("sql-ddl-sync").Sync;
+const Sync = require("@fxjs/sql-ddl-sync").Sync;
 
 export function sync (opts, cb) {
 	var sync = new Sync({

@@ -39,11 +39,11 @@
     },
     "dependencies": {
         "@fibjs/enforce": "0.0.7",
+        "@fxjs/sql-ddl-sync": "0.0.1",
         "async": "^2.6.1",
         "bluebird": "^3.5.2",
         "fib-typify": "^0.4.1",
         "hat": "0.0.3",
-        "sql-ddl-sync": "^0.3.14",
         "sql-query": "^0.1.27"
     },
     "devDependencies": {
