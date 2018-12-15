@@ -5,7 +5,7 @@ export const get = getAdapter;
 
 const adapters = {};
 
-function addAdapter(name, constructor) {
+function addAdapter(name: string, constructor: Function) {
   adapters[name] = constructor;
 }
 

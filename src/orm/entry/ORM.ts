@@ -2,7 +2,7 @@ import util           = require("util");
 import events         = require("events");
 import url            = require("url");
 import hat            = require("hat");
-import Query          = require("sql-query");
+import Query          = require("@fxjs/sql-query");
 import _              = require("lodash");
 
 import { Model }      from "./Model";
@@ -12,31 +12,18 @@ import ORMError       = require("./Error");
 import Utilities      = require("./Utilities");
 
 import Enforces   = require("@fibjs/enforce");
-export const enforce = Enforces;
 // Deprecated, use enforce
-export import validators = require("./Validators");
+import validators = require("./Validators");
 
-export import Settings       = require("./Settings");
-export import singleton      = require("./Singleton");
+import Settings       = require("./Settings");
+import singleton      = require("./Singleton");
 
 
 const SettingsInstance = Settings.Container(Settings.defaults());
-// orm global default settings
-export const settings = SettingsInstance
 
-export import Property   = require("./Property");
-export const ErrorCodes = ORMError.codes;
+import Property   = require("./Property");
 
-export const Text = Query.Text;
-for (var k in Query.Comparators) {
-	exports[Query.Comparators[k]] = Query[Query.Comparators[k]];
-}
-
-// exports.express = function () {
-// 	return require("./Express").apply(this, arguments);
-// };
-
-export function use (connection, proto, opts, cb) {
+function use (connection, proto, opts, cb) {
 	if (DriverAliases[proto]) {
 		proto = DriverAliases[proto];
 	}
@@ -59,7 +46,9 @@ export function use (connection, proto, opts, cb) {
 	}
 };
 
-export function connect (opts, cb) {
+function connect () {
+	let opts = arguments[0],
+		cb = arguments[1]
 	if (arguments.length === 0 || !opts) {
 		return ORM_Error(new ORMError("CONNECTION_URL_EMPTY", 'PARAM_MISMATCH'), cb);
 	}
@@ -143,7 +132,7 @@ export function connect (opts, cb) {
 	return db;
 };
 
-export const addAdapter = adapters.add;
+const addAdapter = adapters.add;
 
 function ORM(driver_name, driver, settings) {
 	this.validators  = validators;
@@ -152,14 +141,10 @@ function ORM(driver_name, driver, settings) {
 	this.driver_name = driver_name;
 	this.driver      = driver;
 	this.driver.uid  = hat();
-	this.tools       = {};
+	this.tools       = {...Query.comparators};
 	this.models      = {};
 	this.plugins     = [];
 	this.customTypes = {};
-
-	for (var k in Query.Comparators) {
-		this.tools[Query.Comparators[k]] = Query[Query.Comparators[k]];
-	}
 
 	events.EventEmitter.call(this);
 
@@ -405,3 +390,22 @@ function queryParamCast (val) {
 	}
 	return val;
 }
+
+const mod: FxOrmNS.ExportModule = {
+	validators,
+	Settings,
+	singleton,
+	Property,
+
+	Text: Query.Text,
+	...Query.comparators,
+
+	enforce: Enforces,
+	settings: SettingsInstance,
+	ErrorCodes: ORMError.codes,
+	addAdapter: adapters.add,
+	use,
+	connect
+}
+
+export = mod

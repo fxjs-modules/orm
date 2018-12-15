@@ -1,6 +1,6 @@
-var _       = require("lodash");
+var util       = require("util");
 var mysql   = require("mysql");
-var Query   = require("sql-query").Query;
+var Query   = require("@fxjs/sql-query").Query;
 var shared  = require("./_shared");
 var DDL     = require("../DDL/SQL");
 
@@ -14,7 +14,7 @@ export function Driver(config, connection, opts) {
 		this.config.timezone = "local";
 	}
 
-	this.query  = new Query({ dialect: this.dialect, timezone: this.config.timezone });
+	this.query  = new Query({dialect: this.dialect, timezone: this.config.timezone });
 
 	this.reconnect(null, connection);
 
@@ -27,7 +27,7 @@ export function Driver(config, connection, opts) {
 	                             "DISTINCT"];
 }
 
-_.extend(Driver.prototype, shared, DDL);
+util.extend(Driver.prototype, shared, DDL);
 
 Driver.prototype.ping = function (cb) {
 	this.db.ping(cb);
@@ -63,7 +63,7 @@ Driver.prototype.reconnect = function (cb, connection) {
 
 	// Prevent noisy mysql driver output
 	if (typeof connOpts == 'object') {
-		connOpts = _.omit(connOpts, 'debug');
+		connOpts = util.omit(connOpts, 'debug');
 	}
 	if (typeof connOpts == 'string') {
 		connOpts = connOpts.replace("debug=true", "debug=false");

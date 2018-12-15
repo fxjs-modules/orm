@@ -1,6 +1,6 @@
 var _       = require("lodash");
 var sqlite3 = require("sqlite3");
-var Query   = require("sql-query").Query;
+var Query   = require("@fxjs/sql-query").Query;
 var shared  = require("./_shared");
 var DDL     = require("../DDL/SQL");
 

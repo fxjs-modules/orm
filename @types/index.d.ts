@@ -2,6 +2,8 @@
 /// <reference types="@fibjs/enforce" />
 
 /// <reference path="3rd.d.ts" />
+/// <reference path="ErrorCode.d.ts" />
+/// <reference path="Validators.d.ts" />
 
 // fix fibjs types' missing
 declare var console: any
@@ -709,8 +711,8 @@ declare namespace FxOrmNS {
     */
 
     export class ORM extends Class_EventEmitter {
-        validators: enforce;
-        enforce: enforce;
+        validators: FxOrmValidators.ValidatorModules;
+        enforce: FxOrmValidators.FibjsEnforce;
         settings: SettingInstance;
         driver_name: string;
         driver: any;
@@ -727,47 +729,8 @@ declare namespace FxOrmNS {
         load(file: string, callback: (err: Error) => void): any;
         sync(callback: (err: Error) => void): ORM;
         drop(callback: (err: Error) => void): ORM;
-
-        static equalToProperty(name: string, message?: string);
-        static unique(message?: string);
-        static unique(opts: { ignoreCase: boolean }, message?: string);
-
-        static Text(type: string): FxOrmNSSqlQueryNS.TextQuery;
-        static eq(value: any): FxOrmNSSqlQueryNS.Comparator;
-        static ne(value: any): FxOrmNSSqlQueryNS.Comparator;
-        static gt(value: any): FxOrmNSSqlQueryNS.Comparator;
-        static gte(value: any): FxOrmNSSqlQueryNS.Comparator;
-        static lt(value: any): FxOrmNSSqlQueryNS.Comparator;
-        static lte(value: any): FxOrmNSSqlQueryNS.Comparator;
-        static like(value: string): FxOrmNSSqlQueryNS.Comparator;
-        static not_like(value: string): FxOrmNSSqlQueryNS.Comparator;
-        static not_in(value: string): FxOrmNSSqlQueryNS.Comparator;
-        static between(a: number, b: number): FxOrmNSSqlQueryNS.Comparator;
-        static not_between(a: number, b: number): FxOrmNSSqlQueryNS.Comparator;
-        
-        static use(connection, protocol: string, options, callback: (err: Error, db?: ORM) => void);
-        static connect(uri: string): ORM;
-        static connect(uri: string, callback: (err: Error, db: ORM) => void);
-        static connect(options: IConnectionOptions): ORM;
-        static connect(options: IConnectionOptions, callback: (err: Error, db: ORM) => void);
     }
 
-    export class enforce {
-        static required(message?: string);
-        static notEmptyString(message?: string);
-        static rangeNumber(min: number, max: number, message?: string);
-        static rangeLength(min: number, max: number, message?: string);
-        static insideList(inside: string[], message?: string);
-        static insideList(inside: number[], message?: string);
-        static outsideList(outside: string[], message?: string);
-        static outsideList(outside: number[], message?: string);
-        static password(conditions?: string, message?: string);
-        static patterns(expr: RegExp, message?: string);
-        static patterns(expr: string, flags: string, message?: string);
-        static equalToProperty(name: string, message?: string);
-        static unique(message?: string);
-        static unique(opts: { ignoreCase: boolean }, message?: string);
-    }
     export interface SingletonOptions {
         identityCache?: any;
         saveCheck?: boolean;
@@ -825,21 +788,35 @@ declare namespace FxOrmNS {
         static validate(value: any, property: string): any;
     }
 
-    export interface ErrorCodes {
-        QUERY_ERROR: number;
-        NOT_FOUND: number;
-        NOT_DEFINED: number;
-        NO_SUPPORT: number;
-        MISSING_CALLBACK: number;
-        PARAM_MISMATCH: number;
-        CONNECTION_LOST: number;
+    interface ExportModule extends 
+        /* deprecated :start */
+        // just use require('@fxjs/sql-query').comparators.xxx plz
+        FxSqlQuery.ComparatorHash
+        /* deprecated :end */
+    {
+        validators: FxOrmValidators.ValidatorModules
+        Settings: Settings
+        settings: SettingInstance
+        singleton: any
+        Property: Property
+        enforce: FxOrmValidators.FibjsEnforce
+        ErrorCodes: FxOrmNS.PredefineErrorCodes
+        addAdapter: FxOrmNS.AddAdapatorFunction
 
-        generateError(code: number, message: string, extra: any): Error;
+        /* deprecated :start */
+        Text: FxSqlQuery.TypedQueryObjectWrapper<'text'>;
+        /* deprecated :end */
+
+        use(connection: Class_DbConnection, protocol: string, options: IConnectionOptions, callback: (err: Error, db?: FxOrmNS.ORM) => void): any;
+        connect(uri: string): FxOrmNS.ORM;
+        connect(uri: string, callback: (err: Error, db: FxOrmNS.ORM) => void): FxOrmNS.ORM;
+        connect(options: FxOrmNS.IConnectionOptions): FxOrmNS.ORM;
+        connect(options: FxOrmNS.IConnectionOptions, callback: (err: Error, db: FxOrmNS.ORM) => void): FxOrmNS.ORM;
     }
-
 }
 import FibOrmNS = FxOrmNS
 
 declare module "@fxjs/orm" {
-    export = FxOrmNS.ORM
+    const mod: FxOrmNS.ExportModule
+    export = mod
 }

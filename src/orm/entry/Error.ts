@@ -1,4 +1,4 @@
-const codes = {
+const codes: FxOrmNS.PredefineErrorCodes = {
   QUERY_ERROR      : 1,
   NOT_FOUND        : 2,
   NOT_DEFINED      : 3,

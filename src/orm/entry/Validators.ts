@@ -1,25 +1,25 @@
 import enforce = require("@fibjs/enforce");
 import util    = require("util");
 
-export const required       = enforce.required
-export const notEmptyString = enforce.notEmptyString
+export const required       : enforce.ValidationCallback = enforce.required
+export const notEmptyString : enforce.ValidationCallback = enforce.notEmptyString
 
-export const rangeNumber    = enforce.ranges.number
-export const rangeLength    = enforce.ranges.length
+export const rangeNumber    : enforce.ValidationCallback = enforce.ranges.number
+export const rangeLength    : enforce.ValidationCallback = enforce.ranges.length
 
-export const insideList     = enforce.lists.inside
-export const outsideList    = enforce.lists.outside
+export const insideList     : enforce.ValidationCallback = enforce.lists.inside
+export const outsideList    : enforce.ValidationCallback = enforce.lists.outside
 
-export const password       = enforce.security.password
+export const password       : enforce.ValidationCallback = enforce.security.password
 
-export const patterns       = enforce.patterns
+export const patterns       : enforce.enforcementsContainer = enforce.patterns
 
 /**
  * Check if a value is the same as a value
  * of another property (useful for password
  * checking).
  **/
-export function equalToProperty (name, msg) {
+export function equalToProperty (name, msg): enforce.ValidationCallback {
 	return function (v, next) {
 		if (v === this[name]) {
 			return next();
@@ -42,9 +42,8 @@ export function equalToProperty (name, msg) {
  *   ignoreCase: for postgres; mysql ignores case by default.
  *   scope: (Array) scope uniqueness to listed properties
  **/
-export function unique (opts: {ignoreCase?: boolean, scope?: string[] } = {}) {
+export function unique (opts: {ignoreCase?: boolean, scope?: string[] } = {}, msg: string = null): enforce.ValidationCallback {
 	var arg, k;
-	var msg = null;
 
 	for (k in arguments) {
 		arg = arguments[k];
