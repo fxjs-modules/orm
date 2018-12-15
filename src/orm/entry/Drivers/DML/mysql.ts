@@ -1,5 +1,5 @@
 var util       = require("util");
-var mysql   = require("mysql");
+var mysql   = require("../DB/mysql");
 var Query   = require("@fxjs/sql-query").Query;
 var shared  = require("./_shared");
 var DDL     = require("../DDL/SQL");

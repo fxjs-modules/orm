@@ -2,7 +2,7 @@ import db = require('db');
 
 declare var setImmediate;
 
-class Database implements DatabaseBase {
+class Database implements FxOrmDb.DatabaseBase {
     conn: FxOrmNS.ConnInstanceInOrmConnDriverDB;
     opts: FxOrmNS.OrmConnectionOpts;
     

@@ -1,8 +1,6 @@
-/// <reference path="index.d.ts" />
-
 import db = require('db');
 
-export class Database implements DatabaseBase {
+export class Database implements FxOrmDb.DatabaseBase {
     conn: FxOrmNS.ConnInstanceInOrmConnDriverDB;
     
     constructor(fname) {
