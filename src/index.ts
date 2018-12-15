@@ -1,5 +1,3 @@
-import patch = require('./patch');
-
 import fibTypify = require('fib-typify');
 const sbox = fibTypify.generateLoaderbox();
 sbox.add({
@@ -13,6 +11,6 @@ sbox.add({
     enforce: require('@fibjs/enforce')
 });
 
-const orm = sbox.require('./orm/entry/ORM', __dirname);
+const ORM = sbox.require('./orm/entry/ORM', __dirname);
 
-export = patch(orm);
+export = ORM;

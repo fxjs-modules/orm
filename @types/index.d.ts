@@ -65,8 +65,6 @@ declare namespace FxOrmNS {
     interface TransformFibOrmModel2InstanceOptions extends ModelOptions {}
 
     export interface FibORM extends ORM {
-        connectSync(opts: FibORMIConnectionOptions | string): FibORM;
-        connect(opts: FibORMIConnectionOptions | string): (err, orm: FibORM) => any;
         /* all fixed: start */
         models: { [key: string]: Model };
 
@@ -788,6 +786,13 @@ declare namespace FxOrmNS {
         static validate(value: any, property: string): any;
     }
 
+    interface ConnectFunction {
+        (uri: string): FxOrmNS.ORM;
+        (uri: string, callback: (err: Error, db: FxOrmNS.ORM) => void): FxOrmNS.ORM;
+        (options: FxOrmNS.IConnectionOptions): FxOrmNS.ORM;
+        (options: FxOrmNS.IConnectionOptions, callback: (err: Error, db: FxOrmNS.ORM) => void): FxOrmNS.ORM;
+    }
+
     interface ExportModule extends 
         /* deprecated :start */
         // just use require('@fxjs/sql-query').comparators.xxx plz
@@ -808,10 +813,10 @@ declare namespace FxOrmNS {
         /* deprecated :end */
 
         use(connection: Class_DbConnection, protocol: string, options: IConnectionOptions, callback: (err: Error, db?: FxOrmNS.ORM) => void): any;
-        connect(uri: string): FxOrmNS.ORM;
-        connect(uri: string, callback: (err: Error, db: FxOrmNS.ORM) => void): FxOrmNS.ORM;
-        connect(options: FxOrmNS.IConnectionOptions): FxOrmNS.ORM;
-        connect(options: FxOrmNS.IConnectionOptions, callback: (err: Error, db: FxOrmNS.ORM) => void): FxOrmNS.ORM;
+        connect: ConnectFunction;
+        connectSync(opts: FibORMIConnectionOptions | string): FibORM;
+
+        [extra: string]: any
     }
 }
 import FibOrmNS = FxOrmNS

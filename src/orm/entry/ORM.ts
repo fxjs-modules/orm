@@ -391,7 +391,9 @@ function queryParamCast (val) {
 	return val;
 }
 
-const mod: FxOrmNS.ExportModule = {
+import Patch       = require("./Patch");
+
+const ORM_Module: FxOrmNS.ExportModule = {
 	validators,
 	Settings,
 	singleton,
@@ -405,7 +407,8 @@ const mod: FxOrmNS.ExportModule = {
 	ErrorCodes: ORMError.codes,
 	addAdapter: adapters.add,
 	use,
-	connect
-}
+	connect,
+	connectSync: Patch(connect)
+} as FxOrmNS.ExportModule
 
-export = mod
+export = ORM_Module

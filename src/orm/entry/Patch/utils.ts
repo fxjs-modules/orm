@@ -1,5 +1,4 @@
 import * as util from 'util'
-import * as url from 'url'
 
 interface ModelFuncToPatch extends Function {
     is_new?: boolean;
@@ -8,7 +7,7 @@ interface ModelFuncToPatch extends Function {
 type HashOfModelFuncNameToPath = string[];
 
 // patch async function to sync function
-function patchSync(
+export function patchSync(
     o: FxOrmNS.Model | FxOrmNS.FibOrmFixedModelInstance | FxOrmNS.FibOrmDB,
     funcs: HashOfModelFuncNameToPath
 ) {
@@ -24,7 +23,7 @@ function patchSync(
 }
 
 // hook find, patch result
-function patchResult(o: FxOrmNS.FibOrmFixedModelInstance | FxOrmNS.Model): void {
+export function patchResult(o: FxOrmNS.FibOrmFixedModelInstance | FxOrmNS.Model): void {
     var old_func: ModelFuncToPatch = o.find;
     var m: FxOrmNS.Model = o.model || o;
     var comps = ['val', 'from', 'to'];
@@ -97,7 +96,7 @@ function patchResult(o: FxOrmNS.FibOrmFixedModelInstance | FxOrmNS.Model): void 
     o.where = o.all = o.find = new_func;
 }
 
-function patchObject(m: FxOrmNS.FibOrmFixedModelInstance) {
+export function patchObject(m: FxOrmNS.FibOrmFixedModelInstance) {
     var methods = [
         "save",
         "remove",
@@ -142,7 +141,7 @@ function patchObject(m: FxOrmNS.FibOrmFixedModelInstance) {
     patchSync(m, methods);
 }
 
-function patchHas(m: FxOrmNS.Model, funcs: HashOfModelFuncNameToPath) {
+export function patchHas(m: FxOrmNS.Model, funcs: HashOfModelFuncNameToPath) {
     funcs.forEach(function (func) {
         var old_func: ModelFuncToPatch = m[func];
         if (old_func)
@@ -158,7 +157,7 @@ function patchHas(m: FxOrmNS.Model, funcs: HashOfModelFuncNameToPath) {
     })
 }
 
-function patchAggregate(m: FxOrmNS.Model) {
+export function patchAggregate(m: FxOrmNS.Model) {
     var aggregate: FxOrmNS.OrigAggreteGenerator = m.aggregate;
     m.aggregate = function () {
         var r = aggregate.apply(this, Array.prototype.slice.apply(arguments));
@@ -167,7 +166,7 @@ function patchAggregate(m: FxOrmNS.Model) {
     };
 }
 
-function patchModel(m: FxOrmNS.Model, opts: FxOrmNS.ModelOptions) {
+export function patchModel(m: FxOrmNS.Model, opts: FxOrmNS.ModelOptions) {
     var _afterAutoFetch;
     if (opts !== undefined && opts.hooks)
         _afterAutoFetch = opts.hooks.afterAutoFetch;
@@ -212,7 +211,7 @@ interface keyPropertiesTypeItem {
     type: string;
     name: string;
 }
-function patchInsert(table: string, data: any, keyProperties: keyPropertiesTypeItem[], cb: Function) {
+export function patchInsert(table: string, data: any, keyProperties: keyPropertiesTypeItem[], cb: Function) {
     var q = this.query.insert()
         .into(table)
         .set(data)
@@ -239,7 +238,7 @@ function patchInsert(table: string, data: any, keyProperties: keyPropertiesTypeI
     }.bind(this));
 };
 
-function patchDriver(driver: FxOrmNS.OrigOrmConnDriver) {
+export function patchDriver(driver: FxOrmNS.OrigOrmConnDriver) {
     if (driver.dialect === 'sqlite')
         driver.insert = patchInsert;
 
@@ -260,68 +259,9 @@ function patchDriver(driver: FxOrmNS.OrigOrmConnDriver) {
     }
 }
 
-function execQuerySync(query: FxOrmNSSqlQueryNS.Query, opt) {
+export function execQuerySync(query: FxOrmNSSqlQueryNS.Query, opt) {
     if (arguments.length == 2)
         query = this.query.escape(query, opt);
 
     return this.db.execute(query);
-}
-
-export = function (orm: FxOrmNS.FibORM) {
-    var conn = util.sync(orm.connect);
-    orm.connectSync = function (opts: FxOrmNS.FibORMIConnectionOptions) {
-        if (typeof opts == 'string')
-            opts = url.parse(opts, true).toJSON();
-        else if (typeof opts == 'object')
-            opts = util.clone(opts);
-
-        if (opts.protocol === 'sqlite:' && opts.timezone === undefined)
-            opts.timezone = 'UTC';
-
-        var db: FxOrmNS.FibOrmDB = conn.call(this, opts);
-
-        patchSync(db, [
-            'sync',
-            'close',
-            'drop',
-            'ping'
-        ]);
-
-        patchDriver(db.driver);
-
-        var def = db.define;
-        db.define = function (name: string, properties: FxOrmNS.Property, opts: FxOrmNS.ModelOptions) {
-            if (opts !== undefined) {
-                opts = util.clone(opts);
-                if (opts.hooks !== undefined)
-                    opts.hooks = util.clone(opts.hooks);
-            }
-
-            var m: FxOrmNS.Model = def.call(this, name, properties, opts);
-            patchModel(m, opts);
-            return m;
-        }
-
-        db.begin = function () {
-            return this.driver.db.conn.begin();
-        };
-
-        db.commit = function () {
-            return this.driver.db.conn.commit();
-        };
-
-        db.rollback = function () {
-            return this.driver.db.conn.rollback();
-        };
-
-        db.trans = function (func) {
-            return this.driver.db.conn.trans(func);
-        };
-
-        db.driver.execQuerySync = execQuerySync;
-
-        return db;
-    }
-
-    return orm;
 }
