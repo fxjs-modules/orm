@@ -1,10 +1,13 @@
+var test = require("test");
+test.setup();
+
 var helper = require('../support/spec_helper');
-var ORM = require('../../');
-var util = require('util');
 
 describe("Date Type", function () {
     var db = null;
     var Person = null;
+    var tz_offset = 0;
+    var is_mysql = false;
 
     var setup = function (hooks) {
         return function () {
@@ -22,6 +25,9 @@ describe("Date Type", function () {
 
     before(function () {
         db = helper.connect();
+
+        if (is_mysql = db.driver_name === 'mysql')
+            tz_offset = (new Date(0)).getTimezoneOffset() * 6e4
     });
 
     after(function () {
@@ -41,8 +47,10 @@ describe("Date Type", function () {
                 name: "John Doe"
             });
 
-            assert.equal(who.birthday.getTime(),
-                new Date('1971-08-28T00:00:00Z').getTime());
+            assert.equal(
+                who.birthday.getTime() - tz_offset,
+                new Date('1971-08-28T00:00:00Z').getTime()
+            );
         });
 
         it("update", function () {
@@ -57,16 +65,26 @@ describe("Date Type", function () {
                 name: "John Doe"
             });
 
-            assert.equal(who.birthday.getTime(),
-                new Date('1971-08-29T00:00:00Z').getTime());
+            assert.equal(
+                who.birthday.getTime() - tz_offset,
+                new Date('1971-08-29T00:00:00Z').getTime()
+            );
         });
 
         it("find", function () {
             var who = Person.oneSync({
-                birthday: '1971-08-29T00:00:00Z'
+                birthday: is_mysql ? 
+                    '1971-08-29 00:00:00'
+                    :
+                    '1971-08-29T00:00:00Z'
             });
 
             assert.equal(who.name, 'John Doe');
         });
     });
 });
+
+if (require.main === module) {
+    test.run(console.DEBUG)
+    process.exit()
+}

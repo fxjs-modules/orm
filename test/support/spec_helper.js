@@ -1,7 +1,14 @@
+var url = require('url')
+
 var ORM = require('../../');
 
-module.exports.connect = function () {
-    return ORM.connectSync(require('./conn'));
+module.exports.connect = function (opts = {}) {
+    return ORM.connectSync({
+        ...url.parse(
+            require('./conn'), true
+        ).toJSON(),
+        ...opts
+    });
 };
 
 module.exports.dropSync = function (models, done) {
