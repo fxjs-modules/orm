@@ -2,7 +2,7 @@
 /// <reference types="@fibjs/enforce" />
 
 /// <reference path="3rd.d.ts" />
-/// <reference path="ErrorCode.d.ts" />
+/// <reference path="Error.d.ts" />
 /// <reference path="Validators.d.ts" />
 
 // fix fibjs types' missing

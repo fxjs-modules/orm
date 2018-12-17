@@ -10,3 +10,10 @@ declare namespace FxOrmNS {
         BAD_MODEL: number
     }
 }
+
+declare namespace FxOrmError {
+    interface BatchOperationInstanceErrorItem extends Error {
+        index: number
+        instance: FxOrmNS.Instance
+    }
+}

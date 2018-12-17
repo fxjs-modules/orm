@@ -1,5 +1,7 @@
 const  _                 = require("lodash");
-import async             = require("async");
+import coroutine = require('coroutine')
+import util = require('util')
+
 import ChainFind         = require("./ChainFind");
 import { Instance }      from "./Instance";
 import LazyLoad          = require("./LazyLoad");
@@ -564,6 +566,7 @@ export const Model: ModelType = function (opts) {
 		var items       = [];
 		var options     = {};
 		var done        = null;
+		var create_err	= null;
 		var single      = false;
 
 		for (var i = 0; i < arguments.length; i++) {
@@ -584,42 +587,47 @@ export const Model: ModelType = function (opts) {
 			}
 		}
 
-		var iterator = function (params, index, cb) {
-			createInstance(params, {
-				is_new    : true,
-				autoSave  : opts.autoSave,
-				autoFetch : false
-			}, function (err, item) {
-				if (err) {
-					err.index    = index;
-					err.instance = item;
+		coroutine.parallel(itemsParams.map(
+			(data: FxOrmNS.InstanceDataPayload, index: number) => {
+				return () => {
+					if (create_err)
+						return ;
 
-					return cb(err);
+					createInstance(data, {
+						is_new    : true,
+						autoSave  : opts.autoSave,
+						autoFetch : false
+					}, function (err: FxOrmError.BatchOperationInstanceErrorItem, item: FxOrmNS.Instance) {
+						if (create_err = err) {
+							err.index    = index;
+							err.instance = item;
+							
+							return done(err);
+						}
+
+						item.save(function (err: FxOrmError.BatchOperationInstanceErrorItem) {
+							if (create_err = err) {
+								err.index    = index;
+								err.instance = item;
+
+								return done(err);
+							}
+
+							items[index] = item;
+
+							if (index === itemsParams.length - 1)
+								done(null, single ? items[0] : items);
+						});
+					});
 				}
-				item.save(function (err) {
-					if (err) {
-						err.index    = index;
-						err.instance = item;
-
-						return cb(err);
-					}
-
-					items[index] = item;
-					cb();
-				});
-			});
-		};
-
-		async.eachOfSeries(itemsParams, iterator, function (err) {
-			if (err) return done(err);
-			done(null, single ? items[0] : items);
-		});
+			}
+		));
 
 		return this;
 	};
 
 	model.clear = function (cb) {
-		opts.driver.clear(opts.table, function (err) {
+		opts.driver.clear(opts.table, function (err: Error) {
 			if (typeof cb === "function") cb(err);
 		});
 
