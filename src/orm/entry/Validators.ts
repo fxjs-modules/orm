@@ -1,16 +1,16 @@
 import enforce = require("@fibjs/enforce");
 import util    = require("util");
 
-export const required       : enforce.ValidationCallback = enforce.required
-export const notEmptyString : enforce.ValidationCallback = enforce.notEmptyString
+export const required       : enforce.enforcementValidation = enforce.required
+export const notEmptyString : enforce.enforcementValidation = enforce.notEmptyString
 
-export const rangeNumber    : enforce.ValidationCallback = enforce.ranges.number
-export const rangeLength    : enforce.ValidationCallback = enforce.ranges.length
+export const rangeNumber    : enforce.enforcementValidation = enforce.ranges.number
+export const rangeLength    : enforce.enforcementValidation = enforce.ranges.length
 
-export const insideList     : enforce.ValidationCallback = enforce.lists.inside
-export const outsideList    : enforce.ValidationCallback = enforce.lists.outside
+export const insideList     : enforce.enforcementValidation = enforce.lists.inside
+export const outsideList    : enforce.enforcementValidation = enforce.lists.outside
 
-export const password       : enforce.ValidationCallback = enforce.security.password
+export const password       : enforce.enforcementValidation = enforce.security.password
 
 export const patterns       : enforce.enforcementsContainer = enforce.patterns
 
@@ -19,7 +19,7 @@ export const patterns       : enforce.enforcementsContainer = enforce.patterns
  * of another property (useful for password
  * checking).
  **/
-export function equalToProperty (name, msg): enforce.ValidationCallback {
+export function equalToProperty (name: string, msg?: string): enforce.ValidationCallback {
 	return function (v, next) {
 		if (v === this[name]) {
 			return next();
