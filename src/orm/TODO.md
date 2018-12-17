@@ -8,6 +8,12 @@
     - [ ] extra: getAccessor
     - [ ] extra: delAccessor
 
+### benchmark
+
+* [ ] chainFind 100 data items
+* [ ] chainFind 1000 data items
+* [ ] chainFind 10000 data items
+
 ### docs
 
 - [ ] usage about `exports.Settings`

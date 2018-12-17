@@ -208,8 +208,8 @@ export function wrapFieldObject (params) {
  * @param required is field required for relationship
  * @param reversed is model is reversed in relationship
  */
-export function formatField (model: FibOrmNS.Model, name: string, required: boolean, reversed: boolean): FibOrmNS.OrigDetailedModelProperty {
-	let fields = {} as FibOrmNS.OrigDetailedModelProperty, field_opts, field_name;
+export function formatField (model: FibOrmNS.Model, name: string, required: boolean, reversed: boolean): FibOrmNS.ModelPropertyDefinitionHash {
+	let fields: FibOrmNS.ModelPropertyDefinitionHash = {}, field_opts, field_name;
 	var keys = model.id;
 	var assoc_key: FibOrmNS.AssociationKeyComputation = model.settings.get("properties.association_key");
 
@@ -302,7 +302,7 @@ export function getRealPath (path_str, stack_index?) {
 };
 
 export function transformPropertyNames (dataIn, properties) {
-	var k, prop;
+	var k: string, prop: FxOrmNS.ModelPropertyDefinition;
 	var dataOut = {};
 
 	for (k in dataIn) {

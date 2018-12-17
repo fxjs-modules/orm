@@ -1,7 +1,8 @@
-var _             = require("lodash");
-var async         = require("async");
-var Utilities     = require("./Utilities");
-var ChainInstance = require("./ChainInstance");
+import util = require('util');
+import coroutine = require('coroutine');
+
+import Utilities     = require("./Utilities");
+import ChainInstance     = require("./ChainInstance");
 
 interface ChainFindType {
 	new (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOptions): FibOrmNS.IChainFindInstance
@@ -20,8 +21,8 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 		);
 	};
 
-	var chainRun = function (done) {
-		var order, conditions;
+	var chainRun = function (done: Function) {
+		var order: string, conditions;
 
 		conditions = Utilities.transformPropertyNames(
 			opts.conditions, opts.properties
@@ -36,23 +37,21 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 			merge  : opts.merge,
 			offset : opts.offset,
 			exists : opts.exists
-		}, function (err, dataItems) {
+		}, function (err: Error, dataItems: FxOrmNS.InstanceDataPayload[]) {
 			if (err) {
 				return done(err);
 			}
 			if (dataItems.length === 0) {
 				return done(null, []);
 			}
-			var pending = dataItems.length;
 
-			var eagerLoad = function (err, items) {
-				var pending = opts.__eager.length;
+			var eagerLoad = function (err: Error, items: FxOrmNS.InstanceDataPayload[]) {
 				var idMap = {};
 
-				var keys = _.map(items, function (item, index) {
+				var keys = util.map(items, function (item: FxOrmNS.InstanceDataPayload, index: number) {
 					var key = item[opts.keys[0]];
 					// Create the association arrays
-					for (var i = 0, association; association = opts.__eager[i]; i++) {
+					for (var i = 0, association: FxOrmNS.InstanceAssociationItem; association = opts.__eager[i]; i++) {
 						item[association.name] = [];
 					}
 					idMap[key] = index;
@@ -60,37 +59,44 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 					return key;
 				});
 
-				async.eachSeries(opts.__eager,
-					function (association, cb) {
-						opts.driver.eagerQuery(association, opts, keys, function (err, instances) {
-							if (err) return cb(err)
+				coroutine.parallel(opts.__eager, (association: FxOrmNS.InstanceAssociationItem) => {
+					// if err exists, chainRun would finished before this fiber released
+					if (err) return 
 
-							for (var i = 0, instance; instance = instances[i]; i++) {
-								// Perform a parent lookup with $p, and initialize it as an instance.
-								items[idMap[instance.$p]][association.name].push(association.model(instance));
-							}
-							cb();
-						});
-					},
-					function (err) {
-						if (err) done(err);
-						else done(null, items);
-					}
-				);
+					opts.driver.eagerQuery(association, opts, keys, function (eager_err, instances) {
+						err = eager_err
+						if (eager_err) return done(eager_err)
+
+						for (var i = 0, instance; instance = instances[i]; i++) {
+							// Perform a parent lookup with $p, and initialize it as an instance.
+							items[idMap[instance.$p]][association.name].push(association.model(instance));
+						}
+
+						done(null, items)
+					});
+				})
 			};
 
-			async.map(dataItems, opts.newInstance, function (err, items) {
-				if (err) return done(err);
+			const items = coroutine.parallel(dataItems, (dataItem: FxOrmNS.InstanceDataPayload) => {
+				const newInstanceSync = util.sync(function(obj: FxOrmNS.InstanceDataPayload, cb: Function) {
+					opts.newInstance(obj, function (err: Error, data: FxOrmNS.Instance) {
+						if (err) {
+							done(err)
+							cb(err)
+						}
 
-				var shouldEagerLoad = opts.__eager && opts.__eager.length;
-				var completeFn = shouldEagerLoad ? eagerLoad : done;
+						cb(null, data)
+					})
+				})
 
-				return completeFn(null, items);
-			});
+				return newInstanceSync(dataItem)
+			})
+			var shouldEagerLoad = opts.__eager && opts.__eager.length;
+			var completeFn = shouldEagerLoad ? eagerLoad : done;
+			completeFn(null, items)
 		});
 	}
 
-	var promise = null;
 	var chain: FibOrmNS.IChainFindInstance = {
 		model: null,
 		options: null,
@@ -103,12 +109,12 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 			var args = Array.prototype.slice.call(arguments);
 			opts.conditions = opts.conditions || {};
 
-			if (typeof _.last(args) === "function") {
+			if (typeof util.last(args) === "function") {
 			    cb = args.pop();
 			}
 
 			if (typeof args[0] === "object") {
-				_.extend(opts.conditions, args[0]);
+				util.extend(opts.conditions, args[0]);
 			} else if (typeof args[0] === "string") {
 				opts.conditions.__sql = opts.conditions.__sql || [];
 				opts.conditions.__sql.push(args);
@@ -135,7 +141,7 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 			} else {
 				omit = Array.prototype.slice.apply(arguments);
 			}
-			this.only(_.difference(Object.keys(opts.properties), omit));
+			this.only(util.difference(Object.keys(opts.properties), omit));
 			return this;
 		},
 		limit: function (limit) {
@@ -179,7 +185,7 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 			return this;
 		},
 		remove: function (cb) {
-			var keys = _.map(opts.keyProperties, 'mapsTo');
+			var keys = opts.keyProperties.map(x => x.mapsTo); // util.map(opts.keyProperties, 'mapsTo');
 
 			opts.driver.find(keys, opts.table, prepareConditions(), {
 				limit  : opts.limit,
@@ -223,7 +229,7 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 			});
 		},
 		each: function (cb?) {
-			return new ChainInstance(this, cb);
+			return ChainInstance(this, cb);
 		},
 		run: function (cb) {
 			chainRun(cb);
@@ -231,14 +237,14 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 		},
 		eager: function () {
 			// This will allow params such as ("abc", "def") or (["abc", "def"])
-			var associations = _.flatten(arguments);
+			var associations = util.flatten(arguments);
 
 			// TODO: Implement eager loading for Mongo and delete this.
 			if (opts.driver.config.protocol == "mongodb:") {
 				throw new Error("MongoDB does not currently support eager loading");
 			}
 
-			opts.__eager = _.filter(opts.associations, function (association) {
+			opts.__eager = opts.associations.filter(function (association) {
 				return ~associations.indexOf(association.name);
 			});
 

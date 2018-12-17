@@ -10,6 +10,9 @@ declare var console: any
 
 declare namespace FxOrmNS {
     /* Connection About Patch :start */
+    interface InstanceDataPayload {
+        [key: string]: any
+    }
 
     interface ExtensibleError extends Error {
         [extensibleProperty: string]: any
@@ -242,7 +245,7 @@ declare namespace FxOrmNS {
         [associationFunc: string]: Function;
     }
 
-    interface ModelPropertyDefinition extends Property {
+    interface ModelPropertyDefinition {
         // ?
         name?: string
         /**
@@ -271,9 +274,14 @@ declare namespace FxOrmNS {
         alwaysValidate?: boolean
         enumerable?: boolean
     }
-    // for compatibility
+
+    // @deprecated, for compatibility
     type OrigDetailedModelProperty = ModelPropertyDefinition
 
+
+    // TODO: finish that 
+    interface InstanceProperty extends ModelPropertyDefinition {
+    }
     type ComplexModelPropertyDefinition = ModelPropertyDefinition |
         String | Boolean | Number | Date | Class_Buffer | any[]
     // for compatibility
@@ -688,7 +696,9 @@ declare namespace FxOrmNS {
         merge
         offset
         keys
-        newInstance
+        newInstance: {
+            (data: InstanceDataPayload, cb: Function): void
+        }
         keyProperties
         associations
 
@@ -721,7 +731,7 @@ declare namespace FxOrmNS {
         use(plugin: string, options?: any): ORM;
         use(plugin: Plugin, options?: any): ORM;
 
-        define(name: string, properties: { [key: string]: Property }, opts?: ModelOptions): Model;
+        define(name: string, properties: ModelPropertyDefinitionHash, opts?: ModelOptions): Model;
         ping(callback: (err: Error) => void): ORM;
         close(callback: (err: Error) => void): ORM;
         load(file: string, callback: (err: Error) => void): any;
@@ -781,7 +791,7 @@ declare namespace FxOrmNS {
 
     export var settings: SettingInstance;
 
-    export class Property {
+    export class PropertyModule {
         static normalize(property: string, settings: SettingInstance): any;
         static validate(value: any, property: string): any;
     }
@@ -803,7 +813,7 @@ declare namespace FxOrmNS {
         Settings: Settings
         settings: SettingInstance
         singleton: any
-        Property: Property
+        Property: PropertyModule
         enforce: FxOrmValidators.FibjsEnforce
         ErrorCodes: FxOrmNS.PredefineErrorCodes
         addAdapter: FxOrmNS.AddAdapatorFunction
