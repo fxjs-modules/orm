@@ -26,6 +26,7 @@ export function patchSync(
 export function patchResult(o: FxOrmNS.FibOrmFixedModelInstance | FxOrmModel.Model): void {
     var old_func: ModelFuncToPatch = o.find;
     var m: FxOrmModel.Model = o.model || o;
+    // keyof FxSqlQuerySql.DetailedQueryWhereCondition
     var comps = ['val', 'from', 'to'];
 
     if (old_func.is_new)
@@ -104,8 +105,8 @@ export function patchObject(m: FxOrmNS.FibOrmFixedModelInstance) {
         "model"
     ];
 
-    function enum_associations(assoc: FxOrmAssociation.InstanceAssociationItem[]) {
-        assoc.forEach(function (item) {
+    function enum_associations(assocs: (FxOrmAssociation.InstanceAssociationItem)[]) {
+        assocs.forEach(function (item: FxOrmAssociation.InstanceAssociationItem) {
             if (item.getAccessor)
                 methods.push(item.getAccessor);
             if (item.setAccessor)
@@ -125,9 +126,13 @@ export function patchObject(m: FxOrmNS.FibOrmFixedModelInstance) {
         enum_associations(opts.one_associations);
         enum_associations(opts.many_associations);
         enum_associations(opts.extend_associations);
-        enum_associations(opts.association_properties);
+        /**
+         * leave it here just due to historical reason,
+         * maybe useless here, its's all string in it
+         */
+        // enum_associations(opts.association_properties);
 
-
+        // patch lazyload's accessor
         for (var f in opts.fieldToPropertyMap) {
             if (opts.fieldToPropertyMap[f].lazyload) {
                 var name = f.charAt(0).toUpperCase() + f.slice(1);
@@ -171,6 +176,11 @@ export function patchModel(m: FxOrmModel.Model, opts: FxOrmModel.ModelOptions) {
     if (opts !== undefined && opts.hooks)
         _afterAutoFetch = opts.hooks.afterAutoFetch;
 
+    /**
+     * use `afterAutoFetch` rather than `afterLoad`,
+     * because patch in `afterLoad` only process instance's basic(exclude lazyload) fields' accessors，
+     * as patch in `afterAutoFetch` would process instance's basic/lazyload/associated fields' accessors
+     */
     m.afterAutoFetch(function (next) {
         patchObject(this as FxOrmNS.FibOrmFixedModelInstance);
 
@@ -221,14 +231,14 @@ export function patchInsert(table: string, data: any, keyProperties: keyProperti
         if (err) return cb(err);
         if (!keyProperties) return cb(null);
 
-        var i, ids = {},
+        var ids = {},
             prop;
 
         if (keyProperties.length == 1 && keyProperties[0].type == 'serial') {
             ids[keyProperties[0].name] = info.insertId;
             return cb(null, ids);
         } else {
-            for (i = 0; i < keyProperties.length; i++) {
+            for (let i = 0; i < keyProperties.length; i++) {
                 prop = keyProperties[i];
                 // Zero is a valid value for an ID column
                 ids[prop.name] = data[prop.mapsTo] !== undefined ? data[prop.mapsTo] : null;
@@ -238,6 +248,9 @@ export function patchInsert(table: string, data: any, keyProperties: keyProperti
     }.bind(this));
 };
 
+/**
+ * @description patch `date` type property's transform
+ */
 export function patchDriver(driver: FxOrmDMLDriver.DMLDriver) {
     if (driver.dialect === 'sqlite')
         driver.insert = patchInsert;

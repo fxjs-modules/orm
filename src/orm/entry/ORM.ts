@@ -177,7 +177,7 @@ util.inherits(ORM, events.EventEmitter);
 
 ORM.prototype.use = function (
 	this: FxOrmNS.ORM,
-	plugin_const, opts
+	plugin_const: FxOrmNS.PluginConstructor, opts
 ) {
 	if (typeof plugin_const === "string") {
 		try {
@@ -277,7 +277,7 @@ ORM.prototype.load = function (
 
 	var loadNext = function () {
 		if (files.length === 0) {
-			return cb();
+			return cb(null);
 		}
 
 		var file = files.shift();
@@ -302,12 +302,12 @@ ORM.prototype.sync = function (
 	var modelIds = Object.keys(this.models);
 	var syncNext = function () {
 		if (modelIds.length === 0) {
-			return cb();
+			return cb(null);
 		}
 
 		var modelId = modelIds.shift();
 
-		this.models[modelId].sync(function (err) {
+		this.models[modelId].sync(function (err: FxOrmError.ExtendedError) {
 			if (err) {
 				err.model = modelId;
 
@@ -333,7 +333,7 @@ ORM.prototype.drop = function (
 	var modelIds = Object.keys(this.models);
 	var dropNext = function () {
 		if (modelIds.length === 0) {
-			return cb();
+			return cb(null);
 		}
 
 		var modelId = modelIds.shift();

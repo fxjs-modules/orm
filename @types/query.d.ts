@@ -137,22 +137,23 @@ declare namespace FxOrmQuery {
         [extraProperty: string]: any;
     }
 
+
     interface ChainFindOptions {
         keys: FxOrmModel.ModelConstructorOptions['keys']
         table: FxOrmModel.ModelConstructorOptions['table']
         driver: FxOrmModel.ModelConstructorOptions['driver']
         
         conditions: QueryConditions
-        properties
-        order
-        only
-        limit
-        merge
-        offset
+        properties: FxOrmProperty.NormalizedPropertyHash
+        keyProperties: FxOrmProperty.NormalizedFieldOptions[]
+        order: [FxSqlQuerySql.SqlFragmentStr?, [...FxSqlQuerySql.SqlAssignmentValues]?]
+        only: string[]
+        limit: number
+        offset: number
+        merge: FxOrmQuery.ChainFindMergeInfo
         newInstance: {
             (data: FxOrmInstance.InstanceDataPayload, cb: FxOrmNS.GenericCallback<FxOrmInstance.Instance>): void
         }
-        keyProperties
         associations
 
         /* in instance */

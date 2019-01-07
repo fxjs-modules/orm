@@ -6,12 +6,7 @@ var KNOWN_TYPES = [
 	"binary", "point",  "serial"
 ];
 
-export function normalize (opts: {
-	prop: FxOrmModel.ComplexModelPropertyDefinition
-	name: string
-	customTypes: FxOrmNS.ORM['customTypes']
-	settings: FxOrmNS.ORM['settings']
-}): FxOrmProperty.NormalizedProperty {
+export const normalize: FxOrmNS.PropertyModule['normalize'] = function (opts): FxOrmProperty.NormalizedProperty {
 	let result_prop: FxOrmProperty.NormalizedProperty = opts.prop as FxOrmModel.ModelPropertyDefinition
 
 	if (typeof opts.prop === "function") {

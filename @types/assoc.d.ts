@@ -124,19 +124,6 @@ declare namespace FxOrmAssociation {
     }
 
     interface ModelAssociationMethod__Options {
-        // autoFetch?: boolean
-        // cascadeRemove?: boolean
-        // autoSave?: boolean
-        // identityCache?: boolean
-        // autoFetchLimit?: number
-        // __merge?: ModelAssociationMethod__ComputationPayload__Merge
-        // extra?: FxOrmModel.ModelPropertyDefinitionHash | any[]
-        // extra_info?: {
-        //     table: string
-        //     id: any
-        //     id_prop
-        //     assoc_prop
-        // }
     }
 
     interface ModelAssociationMethod__FindOptions extends FxOrmModel.ModelOptions__Find, ModelAssociationMethod__Options {
@@ -148,7 +135,7 @@ declare namespace FxOrmAssociation {
     interface HasManyHooks {
         beforeSave?: {
             (next?: Function): void;
-            (extra, next: Function): void;
+            (extra: any, next?: Function): void;
         }
     }
 

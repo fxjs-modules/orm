@@ -64,7 +64,7 @@ declare namespace FxOrmInstance {
         (model: FxOrmModel.Model, opts: InstanceConstructorOptions): void
     }
 
-    interface Instance {
+    interface Instance extends FxOrmSynchronous.SynchronizedInstance {
         on(event: string, callback): Instance;
         save(): Instance;
         save(data: { [property: string]: any; }, callback: FxOrmNS.VoidCallback): Instance;
@@ -94,7 +94,6 @@ declare namespace FxOrmInstance {
          */
         isShell(): boolean;
 
-        /* missing fix: start */
         /**
          * @noenum
          */
@@ -117,8 +116,6 @@ declare namespace FxOrmInstance {
          */
         // model: Model;
         model(): FxOrmModel.Model;
-
-        /* missing fix: end */
 
         [extraProperty: string]: any;
     }

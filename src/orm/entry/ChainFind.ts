@@ -165,11 +165,11 @@ const ChainFind: FxOrmQuery.ChainFindGenerator = function (
 			}
 			return this;
 		},
-		orderRaw: function (str, args) {
+		orderRaw: function (str: string, args: FxSqlQuerySql.SqlAssignmentValues) {
 			if (!Array.isArray(opts.order)) {
 				opts.order = [];
 			}
-			opts.order.push([ str, args || [] ]);
+			opts.order.push([ str, args || [] as any ]);
 			return this;
 		},
 		count: function (cb) {
@@ -184,7 +184,7 @@ const ChainFind: FxOrmQuery.ChainFindGenerator = function (
 			return this;
 		},
 		remove: function (cb) {
-			var keys = opts.keyProperties.map(x => x.mapsTo); // util.map(opts.keyProperties, 'mapsTo');
+			var keys = opts.keyProperties.map((x: FxOrmProperty.NormalizedFieldOptions) => x.mapsTo); // util.map(opts.keyProperties, 'mapsTo');
 
 			opts.driver.find(keys, opts.table, prepareConditions(opts), {
 				limit  : opts.limit,

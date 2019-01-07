@@ -1,3 +1,5 @@
+/// <reference types="fibjs" />
+
 import util 	 = require('util')
 
 import Utilities = require("./Utilities");
@@ -50,7 +52,7 @@ export const Instance: FxOrmInstance.InstanceConstructor = function (
 		}
 	};
 	var handleValidations = function (cb) {
-		var pending = [], errors = [];
+		// var pending = [], errors = [];
 		var required: boolean,
 			alwaysValidate: boolean;
 
@@ -495,7 +497,8 @@ export const Instance: FxOrmInstance.InstanceConstructor = function (
 		// This code was first added, and then commented out in a later commit.
 		// Its presence doesn't affect tests, so I'm just gonna log if it ever gets called.
 		// If someone complains about noise, we know it does something, and figure it out then.
-		if (instance.hasOwnProperty(key)) console.log("Overwriting instance property");
+		if (instance.hasOwnProperty(key))
+			(global as any).console.log("Overwriting instance property");
 
 		if (key in opts.data) {
 			defaultValue = opts.data[key];

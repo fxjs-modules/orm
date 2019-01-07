@@ -89,18 +89,18 @@ export function checkConditions (
 					if (conditions[cond_k] === undefined) {
 						conditions[cond_k] = instance[model.id[0]];
 					} else if(Array.isArray(conditions[cond_k])) {
-						(conditions[cond_k] as FxSqlQueryComparator.SubQuerySimpleEqInput[]).push(instance[model.id[0]]);
+						(conditions[cond_k] as FxSqlQueryComparator.SubQueryInput[]).push(instance[model.id[0]]);
 					} else {
 						conditions[cond_k] = [conditions[cond_k], instance[model.id[0]]];
 					}
 				} else {
-					var _conds = <FxSqlQueryComparator.SubQuerySimpleEqInput>{};
+					var _conds = <FxSqlQueryComparator.SubQueryInput>{};
 					for (let j = 0; j < association_fields.length; i++) {
 						_conds[association_fields[j]] = instance[model.id[j]];
 					}
 
 					conditions.or = conditions.or || [];
-					(conditions.or as FxSqlQueryComparator.SubQuerySimpleEqInput[]).push(_conds);
+					(conditions.or as FxSqlQueryComparator.SubQueryInput[]).push(_conds);
 				}
 			}
 		}
@@ -155,9 +155,9 @@ export function populateConditions (
 		if (typeof target[fields[i]] === 'undefined' || overwrite !== false) {
 			target[fields[i]] = source[model.id[i]];
 		} else if (Array.isArray(target[fields[i]])) {
-			(target[fields[i]] as FxSqlQueryComparator.SubQuerySimpleEqInput[])
+			(target[fields[i]] as FxSqlQueryComparator.SubQueryInput[])
 				.push(
-					source[model.id[i]] as FxSqlQueryComparator.SubQuerySimpleEqInput
+					source[model.id[i]] as FxSqlQueryComparator.SubQueryInput
 				);
 		} else {
 			target[fields[i]] = [target[fields[i]], source[model.id[i]]];
@@ -358,7 +358,7 @@ export function transformPropertyNames (
 };
 
 export function transformOrderPropertyNames (
-	order: string, properties: FxOrmProperty.NormalizedPropertyHash
+	order: FxOrmQuery.ChainFindOptions['order'], properties: FxOrmProperty.NormalizedPropertyHash
 ) {
 	if (!order) return order;
 

@@ -16,7 +16,7 @@ declare namespace FxOrmModel {
         new(...data: ModelInstanceConstructorOptions): FxOrmInstance.Instance;
     }
 
-    interface Model extends ModelInstanceConstructor, ModelHooks, FxOrmPatch.PatchedSyncfiedModelOrInstance {
+    interface Model extends ModelInstanceConstructor, ModelHooks, FxOrmSynchronous.SynchronizedModel {
         properties: FxOrmProperty.NormalizedPropertyHash;
         settings: FxOrmSettings.SettingInstance;
 
@@ -41,7 +41,6 @@ declare namespace FxOrmModel {
 
         drop(callback?: FxOrmNS.VoidCallback): Model;
         sync(callback?: FxOrmNS.VoidCallback): Model;
-        get(...args: any[]): Model;
 
         /**
          * methods used to add associations
@@ -61,20 +60,23 @@ declare namespace FxOrmModel {
             (data: FxOrmInstance.InstanceDataPayload): Model;
             (data: FxOrmInstance.InstanceDataPayload, callback: ModelMethodCallback__CreateItem): Model;
         }
-
         clear: {
             (...args: any[]): Model;
         }
+        get: {
+            (...ids: any[]): Model; // this model is from its return
+        }
 
         find: {
-            (conditions: ModelQueryConditions__Find): FxOrmQuery.IChainFind
-            (conditions: ModelQueryConditions__Find, callback: ModelMethodCallback__Find): Model;
-            (conditions: ModelQueryConditions__Find, id: FxOrmNS.IdType): FxOrmQuery.IChainFind
-            (conditions: ModelQueryConditions__Find, id: FxOrmNS.IdType, callback: ModelMethodCallback__Get): Model
-            (conditions: ModelQueryConditions__Find, options: ModelOptions__Find): FxOrmQuery.IChainFind
-            (conditions: ModelQueryConditions__Find, options: ModelOptions__Find, callback: ModelMethodCallback__Find): Model;
-            (conditions: ModelQueryConditions__Find, limit: number, order: string[]): FxOrmQuery.IChainFind
-            (conditions: ModelQueryConditions__Find, limit: number, order: string[], callback: ModelMethodCallback__Find): Model;
+            (conditions?: ModelQueryConditions__Find): FxOrmQuery.IChainFind
+            (conditions: ModelQueryConditions__Find, callback: ModelMethodCallback__Find): Model
+            // (conditions: ModelQueryConditions__Find, id: FxOrmNS.IdType): FxOrmQuery.IChainFind
+            // (conditions: ModelQueryConditions__Find, id: FxOrmNS.IdType, callback: ModelMethodCallback__Get): Model
+            (conditions: ModelQueryConditions__Find, options?: ModelOptions__Find): FxOrmQuery.IChainFind
+            (conditions: ModelQueryConditions__Find, options: ModelOptions__Find, callback: ModelMethodCallback__Find): Model
+            (conditions: ModelQueryConditions__Find, limit: number, order?: string[]): FxOrmQuery.IChainFind
+            (conditions: ModelQueryConditions__Find, limit: number, callback: ModelMethodCallback__Find): Model
+            (conditions: ModelQueryConditions__Find, limit: number, order: string[], callback: ModelMethodCallback__Find): Model
         }
 
         all: Model['find']
@@ -91,7 +93,8 @@ declare namespace FxOrmModel {
         one: {
             (conditions: ModelQueryConditions__Find, callback: ModelMethodCallback__Get): Model;
             (conditions: ModelQueryConditions__Find, options: ModelOptions__Find, callback: ModelMethodCallback__Get): Model;
-            (conditions: ModelQueryConditions__Find, limit: number, order: string[], callback: ModelMethodCallback__Get): Model;
+            (conditions: ModelQueryConditions__Find, order: string[], callback: ModelMethodCallback__Get): Model;
+            // (conditions: ModelQueryConditions__Find, limit: number, callback: ModelMethodCallback__Get): Model;
         }
 
         count: {
@@ -172,7 +175,7 @@ declare namespace FxOrmModel {
         afterCreate?: FxOrmHook.HookActionCallback;
         beforeSave?: FxOrmHook.HookActionCallback;
         afterSave?: FxOrmHook.HookResultCallback;
-        afterLoad?: FxOrmHook.HookResultCallback;
+        afterLoad?: FxOrmHook.HookActionCallback;
         afterAutoFetch?: FxOrmHook.HookActionCallback;
         beforeRemove?: FxOrmHook.HookActionCallback;
         afterRemove?: FxOrmHook.HookResultCallback;

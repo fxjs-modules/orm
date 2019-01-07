@@ -1,6 +1,6 @@
 let map = {};
 
-export function clear (key?: string) {
+export const clear: FxOrmNS.SingletonModule['clear'] = function (key?: string) {
 	if (typeof key === "string") {
 		delete map[key];
 	} else {
@@ -9,12 +9,7 @@ export function clear (key?: string) {
 	return this;
 };
 
-export function get (
-	key: string,
-	opts: FibOrmNS.SingletonOptions,
-	createCb: FxOrmNS.SuccessCallback<FxOrmNS.GenericCallback<FxOrmInstance.Instance>>,
-	returnCb: FxOrmNS.GenericCallback<FxOrmInstance.Instance>
-) {
+export const get: FxOrmNS.SingletonModule['get'] = function (key, opts, createCb, returnCb) {
 	/**
 	 * @description when dont identity cache
 	 */

@@ -40,7 +40,7 @@
     "dependencies": {
         "@fibjs/enforce": "0.0.7",
         "@fxjs/sql-ddl-sync": "^0.1.0",
-        "@fxjs/sql-query": "^0.1.0",
+        "@fxjs/sql-query": "^0.1.1",
         "fib-typify": "^0.4.1",
         "lodash.clonedeep": "^4.5.0",
         "lodash.flatten": "^4.4.0",
@@ -51,5 +51,9 @@
         "@types/fibjs": "^0.26.5",
         "lodash": "^4.17.11",
         "semver": "^5.6.0"
+    },
+    "peerDependencies": {
+        "@fxjs/sql-query": "0.1.x",
+        "@fxjs/sql-ddl-syn": "0.1.x"
     }
 }
