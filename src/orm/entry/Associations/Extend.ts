@@ -13,18 +13,31 @@ import Utilities       = require("../Utilities");
  * @param Model model
  * @param associations association definitions
  */
-export function prepare (db: FibOrmNS.FibORM, Model: FibOrmNS.Model, associations: FibOrmNS.InstanceAssociationItem_ExtendTos[]) {
-	Model.extendsTo = function (name, properties, opts) {
+export function prepare (db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[]) {
+	Model.extendsTo = function (
+		name: string,
+		properties: FxOrmModel.DetailedPropertyDefinitionHash,
+		opts: FxOrmAssociation.AssociationDefinitionOptions_ExtendsTo
+	) {
 		opts = opts || {};
 
 		const assocName = opts.name || ucfirst(name);
-		const association: FibOrmNS.InstanceAssociationItem_ExtendTos = {
+		const association: FxOrmAssociation.InstanceAssociationItem_ExtendTos = {
 			name           : name,
 			table          : opts.table || defineDefaultExtendsToTableName(Model.table, name),
 			reversed       : opts.reversed,
 			autoFetch      : opts.autoFetch || false,
 			autoFetchLimit : opts.autoFetchLimit || 2,
-			field          : Utilities.wrapFieldObject({ field: opts.field, model: Model, altName: Model.table }) || Utilities.formatField(Model, Model.table, false, false),
+			field          : Utilities.wrapFieldObject({
+				field: opts.field,
+				model: Model,
+				altName: Model.table
+			}) || Utilities.formatField(
+				Model,
+				Model.table,
+				false,
+				false
+			),
 
 			getAccessor    : opts.getAccessor || defineAssociationAccessorMethodName('get', assocName),
 			setAccessor    : opts.setAccessor || defineAssociationAccessorMethodName('set', assocName),
@@ -34,12 +47,12 @@ export function prepare (db: FibOrmNS.FibORM, Model: FibOrmNS.Model, association
 			model: null
 		};
 
-		const newProperties = _cloneDeep(properties);
-		for (var k in association.field) {
+		const newProperties: FxOrmModel.DetailedPropertyDefinitionHash = _cloneDeep(properties);
+		for (var k in association.field as FxOrmProperty.NormalizedFieldOptionsHash) {
 		    newProperties[k] = association.field[k];
 		}
 
-		const modelOpts = util.extend(
+		const modelOpts: FxOrmModel.ModelOptions = util.extend(
 			util.pick(opts, 'identityCache', 'autoSave', 'cascadeRemove', 'hooks', 'methods', 'validations'),
 			{
 				id        : Object.keys(association.field),
@@ -48,12 +61,14 @@ export function prepare (db: FibOrmNS.FibORM, Model: FibOrmNS.Model, association
 		);
 
 		association.model = db.define(association.table, newProperties, modelOpts);
-		association.model.hasOne(Model.table, Model, { extension: true, field: association.field });
+		association.model.hasOne(Model.table, Model, { extension: true, field: association.field as FxOrmProperty.NormalizedFieldOptionsHash });
 
 		associations.push(association);
 
 		Model["findBy" + assocName] = function () {
-			var cb = null, conditions = null, options: FibOrmNS.ModelAssociationMethod__FindOptions = {} as FibOrmNS.ModelAssociationMethod__FindOptions;
+			var cb: FxOrmModel.ModelMethodCallback__Find = null,
+				conditions: FxOrmModel.ModelQueryConditions__Find = null,
+				options: FxOrmAssociation.ModelAssociationMethod__FindOptions = {};
 
 			for (var i = 0; i < arguments.length; i++) {
 				switch (typeof arguments[i]) {
@@ -92,15 +107,26 @@ export function prepare (db: FibOrmNS.FibORM, Model: FibOrmNS.Model, association
 	};
 };
 
-export function extend (Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedModelInstance, Driver: FibOrmNS.ConnInstanceInOrmConnDriverDB, associations: FibOrmNS.InstanceAssociationItem_ExtendTos[], opts: FibOrmNS.ModelExtendOptions) {
+export function extend (
+	Model: FxOrmModel.Model,
+	Instance: FxOrmInstance.Instance,
+	Driver: FxOrmPatch.PatchedDMLDriver,
+	associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[],
+	opts: FibOrmNS.ModelExtendOptions
+) {
 	for (var i = 0; i < associations.length; i++) {
 		extendInstance(Model, Instance, Driver, associations[i], opts);
 	}
 };
 
-export function autoFetch (Instance: FibOrmNS.FibOrmFixedModelInstance, associations: FibOrmNS.InstanceAssociationItem_ExtendTos[], opts: FibOrmNS.ModelAutoFetchOptions, cb: Function) {
+export function autoFetch (
+	Instance: FxOrmInstance.Instance,
+	associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[],
+	opts: FibOrmNS.ModelAutoFetchOptions,
+	cb: FxOrmNS.GenericCallback<void>
+) {
 	if (associations.length === 0) {
-		return cb();
+		return cb(null);
 	}
 
 	var pending = associations.length;
@@ -108,7 +134,7 @@ export function autoFetch (Instance: FibOrmNS.FibOrmFixedModelInstance, associat
 		pending -= 1;
 
 		if (pending === 0) {
-			return cb();
+			return cb(null);
 		}
 	};
 
@@ -117,13 +143,19 @@ export function autoFetch (Instance: FibOrmNS.FibOrmFixedModelInstance, associat
 	}
 };
 
-function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedModelInstance, Driver: FibOrmNS.ConnInstanceInOrmConnDriverDB, association: FibOrmNS.InstanceAssociationItem_ExtendTos, opts: FibOrmNS.InstanceExtendOptions) {
+function extendInstance(
+	Model: FxOrmModel.Model,
+	Instance: FxOrmInstance.Instance,
+	Driver: FxOrmPatch.PatchedDMLDriver,
+	association: FxOrmAssociation.InstanceAssociationItem_ExtendTos,
+	opts: FibOrmNS.InstanceExtendOptions
+) {
 	Object.defineProperty(Instance, association.hasAccessor, {
-		value : function (cb) {
-			if (!Instance[Model.id]) {
+		value : function (cb: FxOrmNS.GenericCallback<boolean>) {
+			if (!Instance[Model.id + '']) {
 			    cb(new ORMError("Instance not saved, cannot get extension", 'NOT_DEFINED', { model: Model.table }));
 			} else {
-				association.model.get(Utilities.values(Instance, Model.id), function (err, extension) {
+				association.model.get(Utilities.values(Instance, Model.id), function (err: Error, extension) {
 					return cb(err, !err && extension ? true : false);
 				});
 			}
@@ -138,7 +170,7 @@ function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedMod
 				opts = {};
 			}
 
-			if (!Instance[Model.id]) {
+			if (!Instance[Model.id + '']) {
 			    cb(new ORMError("Instance not saved, cannot get extension", 'NOT_DEFINED', { model: Model.table }));
 			} else {
 				association.model.get(Utilities.values(Instance, Model.id), opts, cb);
@@ -178,7 +210,7 @@ function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedMod
 	});
 	Object.defineProperty(Instance, association.delAccessor, {
 		value : function (cb) {
-			if (!Instance[Model.id]) {
+			if (!Instance[Model.id + '']) {
 			    cb(new ORMError("Instance not saved, cannot get extension", 'NOT_DEFINED', { model: Model.table }));
 			} else {
 				var conditions = {};
@@ -199,13 +231,13 @@ function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedMod
 						Singleton.clear(extensions[i].__singleton_uid() + '');
 						extensions[i].remove(function () {
 							if (--pending === 0) {
-								return cb();
+								return cb(null);
 							}
 						});
 					}
 
 					if (pending === 0) {
-						return cb();
+						return cb(null);
 					}
 				});
 			}
@@ -215,9 +247,14 @@ function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedMod
 	});
 }
 
-function autoFetchInstance(Instance: FibOrmNS.FibOrmFixedModelInstance, association: FibOrmNS.InstanceAssociationItem_ExtendTos, opts: FibOrmNS.InstanceAutoFetchOptions, cb: Function) {
+function autoFetchInstance(
+	Instance: FxOrmInstance.Instance,
+	association: FxOrmAssociation.InstanceAssociationItem_ExtendTos,
+	opts: FibOrmNS.InstanceAutoFetchOptions,
+	cb: FxOrmNS.GenericCallback<void>
+) {
 	if (!Instance.saved()) {
-		return cb();
+		return cb(null);
 	}
 
 	if (!opts.hasOwnProperty("autoFetchLimit") || typeof opts.autoFetchLimit == "undefined") {
@@ -225,7 +262,7 @@ function autoFetchInstance(Instance: FibOrmNS.FibOrmFixedModelInstance, associat
 	}
 
 	if (opts.autoFetchLimit === 0 || (!opts.autoFetch && !association.autoFetch)) {
-		return cb();
+		return cb(null);
 	}
 
 	if (Instance.isPersisted()) {
@@ -234,10 +271,10 @@ function autoFetchInstance(Instance: FibOrmNS.FibOrmFixedModelInstance, associat
 				Instance[association.name] = Assoc;
 			}
 
-			return cb();
+			return cb(null);
 		});
 	} else {
-		return cb();
+		return cb(null);
 	}
 }
 

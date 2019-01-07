@@ -1,15 +1,17 @@
+/// <reference path="../../../@types/DMLDriver.d.ts" />
+
 import aliases = require('./Drivers/aliases');
 
 export const add = addAdapter;
 export const get = getAdapter;
 
-const adapters = {};
+const adapters = <{[key: string]: FxOrmDMLDriver.DMLDriverConstructor}>{};
 
-function addAdapter(name: string, constructor: Function) {
+function addAdapter(name: string, constructor: FxOrmDMLDriver.DMLDriverConstructor) {
   adapters[name] = constructor;
 }
 
-function getAdapter(name) {
+function getAdapter(name: string): FxOrmDMLDriver.DMLDriverConstructor {
   if (name in aliases) {
     return getAdapter(aliases[name]);
   } else if (!(name in adapters)) {

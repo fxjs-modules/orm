@@ -1,10 +1,10 @@
-var ORMError   = require("./Error");
-var Utilities  = require("./Utilities");
+import ORMError   = require("./Error");
+import Utilities  = require("./Utilities");
 
-interface AggregateFunctionsType {
-	(opts): void
-}
-export = function AggregateFunctions(opts) {
+const AggregateFunctions: FxOrmQuery.AggregateConstructor = function (
+	this: FxOrmQuery.IAggregated,
+	opts: FxOrmQuery.AggregateConstructorOptions
+) {
 	if (typeof opts.driver.getQuery !== "function") {
 		throw new ORMError('NO_SUPPORT', "This driver does not support aggregate functions");
 	}
@@ -12,13 +12,14 @@ export = function AggregateFunctions(opts) {
 		throw new ORMError('NO_SUPPORT', "This driver does not support aggregate functions");
 	}
 
-	var aggregates    = [ [] ];
-	var group_by      = null;
-	var used_distinct = false;
+	const aggregates: [ FxSqlQuerySql.SqlSelectFieldsDescriptor[] ]    = [ [] ];
+	let group_by: string[]      = null;
+	let used_distinct 			= false;
 
-	var appendFunction = function (fun) {
+	const appendFunction = function (fun: string) {
 		return function () {
-			var args = (arguments.length && Array.isArray(arguments[0]) ? arguments[0] : Array.prototype.slice.apply(arguments));
+			// select 1st array as aargs
+			var args: string | '*' = (arguments.length && Array.isArray(arguments[0]) ? arguments[0] : Array.prototype.slice.apply(arguments));
 
 			if (args.length > 0) {
 				aggregates[aggregates.length - 1].push({ f: fun, a: args, alias: aggregateAlias(fun, args) });
@@ -34,12 +35,12 @@ export = function AggregateFunctions(opts) {
 			return proto;
 		};
 	};
-	var proto = {
-		groupBy: function () {
-			group_by = Array.prototype.slice.apply(arguments);
+	const proto: FxOrmQuery.IAggregated = {
+		groupBy: function (...columns: string[]) {
+			group_by = columns;
 			return this;
 		},
-		limit: function (offset, limit) {
+		limit: function (offset: number, limit?: number) {
 			if (typeof limit === "number") {
 				opts.limit = [ offset, limit ];
 			} else {
@@ -47,29 +48,31 @@ export = function AggregateFunctions(opts) {
 			}
 			return this;
 		},
-		order: function () {
-			opts.order = Utilities.standardizeOrder(Array.prototype.slice.apply(arguments));
+		order: function (...orders: string[]) {
+			opts.order = Utilities.standardizeOrder(orders);
 			return this;
 		},
-		select: function () {
-			if (arguments.length === 0) {
+		select: function (...columns: (string|string[])[]) {
+			if (columns.length === 0) {
 				throw new ORMError('PARAM_MISMATCH', "When using append you must at least define one property");
 			}
-			if (Array.isArray(arguments[0])) {
-				opts.propertyList = opts.propertyList.concat(arguments[0]);
+			if (Array.isArray(columns[0])) {
+				opts.propertyList = opts.propertyList.concat(columns[0] as string[]);
 			} else {
 				opts.propertyList = opts.propertyList.concat(Array.prototype.slice.apply(arguments));
 			}
 			return this;
 		},
 		as: function (alias) {
-			if (aggregates.length === 0 || (aggregates.length === 1 && aggregates[0].length === 0)) {
+			if (!aggregates.length || (aggregates.length === 1 && aggregates[0].length === 0)) {
 				throw new ORMError('PARAM_MISMATCH', "No aggregate functions defined yet");
 			}
 
 			var len = aggregates.length;
 
-			aggregates[len - 1][aggregates[len - 1].length - 1].alias = alias;
+			aggregates[len - 1][
+				aggregates[len - 1].length - 1
+			].alias = alias;
 
 			return this;
 		},
@@ -87,22 +90,24 @@ export = function AggregateFunctions(opts) {
 
 			return this;
 		},
-		get: function (cb) {
+		get: function <T>(cb: FxOrmNS.GenericCallback<T[]>) {
 			if (typeof cb !== "function") {
 				throw new ORMError('MISSING_CALLBACK', "You must pass a callback to Model.aggregate().get()");
 			}
 			if (aggregates[aggregates.length - 1].length === 0) {
 				aggregates.length -= 1;
 			}
-			if (aggregates.length === 0) {
+			if (!aggregates.length) {
 				throw new ORMError('PARAM_MISMATCH', "Missing aggregate functions");
 			}
 
-			var query = opts.driver.getQuery().select().from(opts.table).select(opts.propertyList);
-			var i, j;
+			const query = opts.driver.getQuery()
+				.select()
+				.from(opts.table)
+				.select(opts.propertyList);
 
-			for (i = 0; i < aggregates.length; i++) {
-				for (j = 0; j < aggregates[i].length; j++) {
+			for (let i = 0; i < aggregates.length; i++) {
+				for (let j = 0; j < aggregates[i].length; j++) {
 					query.fun(aggregates[i][j].f, aggregates[i][j].a, aggregates[i][j].alias);
 				}
 			}
@@ -114,7 +119,7 @@ export = function AggregateFunctions(opts) {
 			}
 
 			if (opts.order) {
-				for (i = 0; i < opts.order.length; i++) {
+				for (let i = 0; i < opts.order.length; i++) {
 					query.order(opts.order[i][0], opts.order[i][1]);
 				}
 			}
@@ -122,9 +127,9 @@ export = function AggregateFunctions(opts) {
 				query.offset(opts.limit[0]).limit(opts.limit[1]);
 			}
 
-			query = query.build();
+			const q_str = query.build();
 
-			opts.driver.execQuery(query, function (err, data) {
+			opts.driver.execQuery<any>(q_str, function (err: Error, data: any) {
 				if (err) {
 					return cb(err);
 				}
@@ -133,19 +138,27 @@ export = function AggregateFunctions(opts) {
 					return cb(null, data);
 				}
 
-				var items = [], i;
+				var items = [];
 
 				if (used_distinct && aggregates.length === 1) {
-					for (i = 0; i < data.length; i++) {
-						items.push(data[i][Object.keys(data[i]).pop()]);
+					for (let i = 0; i < data.length; i++) {
+						items.push(
+							data[i][
+								Object.keys(data[i]).pop()
+							]
+						);
 					}
 
 					return cb(null, items);
 				}
 
-				for (i = 0; i < aggregates.length; i++) {
-					for (var j = 0; j < aggregates[i].length; j++) {
-						items.push(data[0][aggregates[i][j].alias] || null);
+				for (let i = 0; i < aggregates.length; i++) {
+					for (let j = 0; j < aggregates[i].length; j++) {
+						items.push(
+							data[0][
+								aggregates[i][j].alias
+							] || null
+						);
 					}
 				}
 
@@ -156,14 +169,18 @@ export = function AggregateFunctions(opts) {
 		}
 	};
 
-	for (var i = 0; i < opts.driver.aggregate_functions.length; i++) {
+	for (let i = 0; i < opts.driver.aggregate_functions.length; i++) {
 		addAggregate(proto, opts.driver.aggregate_functions[i], appendFunction);
 	}
 
 	return proto;
-} as AggregateFunctionsType
+}
 
-function addAggregate(proto, fun, builder) {
+export = AggregateFunctions
+
+function addAggregate(
+	proto: FxOrmQuery.IAggregated, fun: string|string[], builder: Function
+) {
 	if (Array.isArray(fun)) {
 		proto[fun[0].toLowerCase()] = builder((fun[1] || fun[0]).toLowerCase());
 	} else {

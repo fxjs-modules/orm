@@ -1,4 +1,4 @@
-export = function ChainInstance(chain: FibOrmNS.IChainFindInstance, cb: Function): FibOrmNS.IChainFindInstance|any {
+export = function ChainInstance(chain: FxOrmQuery.IChainFind, cb: Function): FxOrmQuery.IChainFind|any {
 	let instances = null;
 	let loading   = false;
 	const queue: {hwd: Function, args?: any}[] = [];

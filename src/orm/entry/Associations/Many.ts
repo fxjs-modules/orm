@@ -8,14 +8,18 @@ import Property = require("../Property");
 import ORMError = require("../Error");
 import Utilities = require("../Utilities");
 
-export function prepare(db: FibOrmNS.FibORM, Model: FibOrmNS.Model, associations: FibOrmNS.InstanceAssociationItem_HasMany[]) {
+export function prepare(db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associations: FxOrmAssociation.InstanceAssociationItem_HasMany[]) {
 	Model.hasMany = function () {
-		let name, makeKey, mergeId, mergeAssocId;
-		let OtherModel = Model;
-		let props = null;
-		let opts: FibOrmNS.AssociationDefinitionOptions_HasMany = {};
+		let name: string,
+			makeKey: boolean,
+			mergeId: FxOrmProperty.NormalizedFieldOptionsHash,
+			mergeAssocId: FxOrmProperty.NormalizedFieldOptionsHash;
 
-		for (var i = 0; i < arguments.length; i++) {
+		let OtherModel: FxOrmModel.Model = Model;
+		let props: FxOrmModel.DetailedPropertyDefinitionHash = null;
+		let opts: FxOrmAssociation.AssociationDefinitionOptions_HasMany = {};
+
+		for (let i = 0; i < arguments.length; i++) {
 			switch (typeof arguments[i]) {
 				case 'string':
 					name = arguments[i];
@@ -63,7 +67,8 @@ export function prepare(db: FibOrmNS.FibORM, Model: FibOrmNS.Model, associations
 
 		var assocName = opts.name || ucfirst(name);
 		var assocTemplateName = opts.accessor || assocName;
-		var association: FibOrmNS.InstanceAssociationItem_HasMany = {
+		const fieldhash = Utilities.wrapFieldObject({ field: opts.field, model: OtherModel, altName: Model.table }) || Utilities.formatField(Model, name, true, opts.reversed)
+		var association: FxOrmAssociation.InstanceAssociationItem_HasMany = {
 			name: name,
 			model: OtherModel || Model,
 			props: props,
@@ -71,7 +76,7 @@ export function prepare(db: FibOrmNS.FibORM, Model: FibOrmNS.Model, associations
 			autoFetch: opts.autoFetch || false,
 			autoFetchLimit: opts.autoFetchLimit || 2,
 			// I'm not sure the next key is used..
-			field: Utilities.wrapFieldObject({ field: opts.field, model: OtherModel, altName: Model.table }) || Utilities.formatField(Model, name, true, opts.reversed),
+			field: fieldhash,
 			mergeTable: opts.mergeTable || (Model.table + "_" + name),
 			mergeId: mergeId,
 			mergeAssocId: mergeAssocId,
@@ -90,7 +95,7 @@ export function prepare(db: FibOrmNS.FibORM, Model: FibOrmNS.Model, associations
 				mergeTable: association.mergeTable,
 				mergeId: association.mergeAssocId,
 				mergeAssocId: association.mergeId,
-				field: association.field,
+				field: fieldhash,
 				autoFetch: association.autoFetch,
 				autoFetchLimit: association.autoFetchLimit
 			});
@@ -99,15 +104,27 @@ export function prepare(db: FibOrmNS.FibORM, Model: FibOrmNS.Model, associations
 	};
 };
 
-export function extend(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedModelInstance, Driver: FibOrmNS.ConnInstanceInOrmConnDriverDB, associations: FibOrmNS.InstanceAssociationItem_HasMany[], opts: FibOrmNS.AssociationDefinitionOptions_HasMany, createInstance: Function) {
+export function extend(
+	Model: FxOrmModel.Model,
+	Instance: FxOrmInstance.Instance,
+	Driver: FxOrmPatch.PatchedDMLDriver,
+	associations: FxOrmAssociation.InstanceAssociationItem_HasMany[],
+	opts: FxOrmAssociation.AssociationDefinitionOptions_HasMany,
+	createInstance: Function
+) {
 	for (var i = 0; i < associations.length; i++) {
 		extendInstance(Model, Instance, Driver, associations[i], opts, createInstance);
 	}
 };
 
-export function autoFetch(Instance, associations, opts, cb) {
+export function autoFetch(
+	Instance: FxOrmInstance.Instance,
+	associations: FxOrmAssociation.InstanceAssociationItem_HasMany[],
+	opts: FxOrmAssociation.AssociationDefinitionOptions_HasMany,
+	cb: FxOrmNS.GenericCallback<void>
+) {
 	if (associations.length === 0) {
-		return cb();
+		return cb(null);
 	}
 
 	var pending = associations.length;
@@ -115,7 +132,7 @@ export function autoFetch(Instance, associations, opts, cb) {
 		pending -= 1;
 
 		if (pending === 0) {
-			return cb();
+			return cb(null);
 		}
 	};
 
@@ -124,7 +141,14 @@ export function autoFetch(Instance, associations, opts, cb) {
 	}
 };
 
-function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedModelInstance, Driver: FibOrmNS.ConnInstanceInOrmConnDriverDB, association: FibOrmNS.InstanceAssociationItem_HasMany, opts: FibOrmNS.AssociationDefinitionOptions_HasMany, createInstance: Function) {
+function extendInstance(
+	Model: FxOrmModel.Model,
+	Instance: FxOrmInstance.Instance,
+	Driver: FxOrmPatch.PatchedDMLDriver,
+	association: FxOrmAssociation.InstanceAssociationItem_HasMany,
+	opts: FxOrmAssociation.AssociationDefinitionOptions_HasMany,
+	createInstance: Function
+) {
 	if (Model.settings.get("instance.cascadeRemove")) {
 		Instance.on("beforeRemove", function () {
 			Instance[association.delAccessor]();
@@ -143,18 +167,19 @@ function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedMod
 	}
 
 	Object.defineProperty(Instance, association.hasAccessor, {
-		value: function () {
-			var Instances = Array.prototype.slice.apply(arguments);
-			var cb = Instances.pop();
-			var conditions = {}, options: FibOrmNS.ModelAssociationMethod__FindOptions = {} as FibOrmNS.ModelAssociationMethod__FindOptions;
+		value: function (...Instances: FxOrmInstance.Instance[]) {
+			// var Instances = Array.prototype.slice.apply(arguments);
+			var cb: FxOrmNS.GenericCallback<boolean> = Instances.pop() as any;
+			var conditions = {}, options: FxOrmAssociation.ModelAssociationMethod__FindOptions = {} as FxOrmAssociation.ModelAssociationMethod__FindOptions;
 
 			if (Instances.length) {
 				if (Array.isArray(Instances[0])) {
-					Instances = Instances[0];
+					Instances = Instances[0] as any;
 				}
 			}
 			if (Driver.hasMany) {
-				return Driver.hasMany(Model, association).has(Instance, Instances, conditions, cb);
+				return Driver.hasMany(Model, association)
+					.has(Instance, Instances, conditions, cb);
 			}
 
 			options.autoFetchLimit = 0;
@@ -206,7 +231,7 @@ function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedMod
 	});
 	Object.defineProperty(Instance, association.getAccessor, {
 		value: function () {
-			var options: FibOrmNS.ModelAssociationMethod__GetOptions = {} as FibOrmNS.ModelAssociationMethod__GetOptions;
+			var options: FxOrmAssociation.ModelAssociationMethod__GetOptions = {} as FxOrmAssociation.ModelAssociationMethod__GetOptions;
 			var conditions = null;
 			var order = null;
 			var cb = null;
@@ -305,7 +330,7 @@ function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedMod
 	});
 	Object.defineProperty(Instance, association.delAccessor, {
 		value: function (...args: any[]) {
-			var Associations = [];
+			var Associations: FxOrmAssociation.AssociationDefinitionOptions_HasMany[] = [];
 			var cb = noOperation;
 
 			for (var i = 0; i < args.length; i++) {
@@ -322,7 +347,7 @@ function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedMod
 						break;
 				}
 			}
-			var conditions = {};
+			var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
 			var run = function () {
 				if (Driver.hasMany) {
 					return Driver.hasMany(Model, association).del(Instance, Associations, cb);
@@ -359,24 +384,45 @@ function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedMod
 	});
 	Object.defineProperty(Instance, association.addAccessor, {
 		value: function () {
-			var Associations = [];
+			var Associations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
 			var opts = {};
 			var cb = noOperation;
 
+			for (var i = 0; i < arguments.length; i++) {
+				switch (typeof arguments[i]) {
+					case "function":
+						cb = arguments[i];
+						break;
+					case "object":
+						if (Array.isArray(arguments[i])) {
+							Associations = Associations.concat(arguments[i]);
+						} else if (arguments[i].isInstance) {
+							Associations.push(arguments[i]);
+						} else {
+							opts = arguments[i];
+						}
+						break;
+				}
+			}
+
+			if (Associations.length === 0) {
+				throw new ORMError("No associations defined", 'PARAM_MISMATCH', { model: Model.name });
+			}
+
 			var run = function () {
-				var savedAssociations = [];
+				const savedAssociations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
 				var saveNextAssociation = function () {
 					if (Associations.length === 0) {
 						return cb(null, savedAssociations);
 					}
 
 					var Association = Associations.pop();
-					var saveAssociation = function (err) {
+					var saveAssociation = function (err: Error) {
 						if (err) {
 							return cb(err);
 						}
 
-						Association.save(function (err) {
+						Association.save(function (err: Error) {
 							if (err) {
 								return cb(err);
 							}
@@ -392,7 +438,7 @@ function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedMod
 							}
 
 							if (Driver.hasMany) {
-								return Driver.hasMany(Model, association).add(Instance, Association, data, function (err) {
+								return Driver.hasMany(Model, association).add(Instance, Association, data, function (err: Error) {
 									if (err) {
 										return cb(err);
 									}
@@ -428,31 +474,10 @@ function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedMod
 				return saveNextAssociation();
 			};
 
-			for (var i = 0; i < arguments.length; i++) {
-				switch (typeof arguments[i]) {
-					case "function":
-						cb = arguments[i];
-						break;
-					case "object":
-						if (Array.isArray(arguments[i])) {
-							Associations = Associations.concat(arguments[i]);
-						} else if (arguments[i].isInstance) {
-							Associations.push(arguments[i]);
-						} else {
-							opts = arguments[i];
-						}
-						break;
-				}
-			}
-
-			if (Associations.length === 0) {
-				throw new ORMError("No associations defined", 'PARAM_MISMATCH', { model: Model.name });
-			}
-
 			if (this.saved()) {
 				run();
 			} else {
-				this.save(function (err) {
+				this.save(function (err: Error) {
 					if (err) {
 						return cb(err);
 					}
@@ -479,9 +504,14 @@ function extendInstance(Model: FibOrmNS.Model, Instance: FibOrmNS.FibOrmFixedMod
 	});
 }
 
-function autoFetchInstance(Instance: FibOrmNS.FibOrmFixedModelInstance, association: FibOrmNS.FibOrmFixedModelInstance, opts: FibOrmNS.AssociationDefinitionOptions_HasMany, cb: Function) {
+function autoFetchInstance(
+	Instance: FxOrmInstance.Instance,
+	association: FxOrmAssociation.InstanceAssociationItem_HasMany,
+	opts: FxOrmAssociation.AssociationDefinitionOptions_HasMany,
+	cb: FxOrmNS.GenericCallback<void>
+) {
 	if (!Instance.saved()) {
-		return cb();
+		return cb(null);
 	}
 
 	if (!opts.hasOwnProperty("autoFetchLimit") || typeof opts.autoFetchLimit == "undefined") {
@@ -489,17 +519,21 @@ function autoFetchInstance(Instance: FibOrmNS.FibOrmFixedModelInstance, associat
 	}
 
 	if (opts.autoFetchLimit === 0 || (!opts.autoFetch && !association.autoFetch)) {
-		return cb();
+		return cb(null);
 	}
 
-	Instance[association.getAccessor]({}, { autoFetchLimit: opts.autoFetchLimit - 1 }, function (err, Assoc) {
-		if (!err) {
-			// Set this way to prevent setting 'changed' status
-			Instance.__opts.associations[association.name].value = Assoc;
-		}
+	Instance[association.getAccessor](
+		{},
+		{ autoFetchLimit: opts.autoFetchLimit - 1 },
+		function (err: Error, Assoc: FxOrmAssociation.InstanceAssociatedInstance) {
+			if (!err) {
+				// Set this way to prevent setting 'changed' status
+				Instance.__opts.associations[association.name].value = Assoc;
+			}
 
-		return cb();
-	});
+			return cb(null);
+		}
+	);
 }
 
 function ucfirst(text: string) {

@@ -12,8 +12,14 @@ declare namespace FxOrmNS {
 }
 
 declare namespace FxOrmError {
-    interface BatchOperationInstanceErrorItem extends Error {
+    interface ExtendedError extends Error {
+        code?: number | string
+
+        [ext: string]: any
+    }
+
+    interface BatchOperationInstanceErrorItem extends ExtendedError {
         index: number
-        instance: FxOrmNS.Instance
+        instance: FxOrmInstance.Instance
     }
 }

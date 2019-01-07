@@ -9,10 +9,18 @@ export function clear (key?: string) {
 	return this;
 };
 
-export function get (key: string, opts: FibOrmNS.SingletonOptions, createCb: Function, returnCb: Function) {
-	if (opts && opts.identityCache === false) {
+export function get (
+	key: string,
+	opts: FibOrmNS.SingletonOptions,
+	createCb: FxOrmNS.SuccessCallback<FxOrmNS.GenericCallback<FxOrmInstance.Instance>>,
+	returnCb: FxOrmNS.GenericCallback<FxOrmInstance.Instance>
+) {
+	/**
+	 * @description when dont identity cache
+	 */
+	if (opts && opts.identityCache === false)
 		return createCb(returnCb);
-	}
+
 	if (map.hasOwnProperty(key)) {
 		if (opts && opts.saveCheck && typeof map[key].o.saved === "function" && !map[key].o.saved()) {
 			// if not saved, don't return it, fetch original from db
@@ -27,7 +35,8 @@ export function get (key: string, opts: FibOrmNS.SingletonOptions, createCb: Fun
 	createCb(function (err: Error, value: any) {
 		if (err) return returnCb(err);
 
-		map[key] = { // object , timeout
+		map[key] = {
+			// object , timeout
 			o : value,
 			t : (opts && typeof opts.identityCache === "number" ? Date.now() + (opts.identityCache * 1000) : null)
 		};

@@ -9,16 +9,18 @@ const Accessors = {
 	"del": "remove"
 };
 
-export function prepare (Model: FibOrmNS.Model, associations: FibOrmNS.InstanceAssociationItem_HasOne[]) {
+export function prepare (
+	Model: FxOrmModel.Model, associations: FxOrmAssociation.InstanceAssociationItem_HasOne[]
+) {
 	Model.hasOne = function (assoc_name: string, ext_model?: any, assoc_options?: any) {
 		if (arguments[1] && !arguments[1].table) {
-			assoc_options = arguments[1] as FibOrmNS.AssociationDefinitionOptions_HasOne
-			ext_model = arguments[1] = null as FibOrmNS.Model
+			assoc_options = arguments[1] as FxOrmAssociation.AssociationDefinitionOptions_HasOne
+			ext_model = arguments[1] = null as FxOrmModel.Model
 		}
 		
-		var assocName;
-		var assocTemplateName;
-		var association: FibOrmNS.InstanceAssociationItem_HasOne = {
+		var assocName: string;
+		var assocTemplateName: string;
+		var association: FxOrmAssociation.InstanceAssociationItem_HasOne = {
 			name           : assoc_name || Model.table,
 			model          : ext_model || Model,
 
@@ -49,9 +51,11 @@ export function prepare (Model: FibOrmNS.Model, associations: FibOrmNS.InstanceA
 			});
 		}
 
-		Utilities.convertPropToJoinKeyProp(association.field, {
-			makeKey: false, required: association.required
-		});
+		Utilities.convertPropToJoinKeyProp(
+			association.field as FxOrmProperty.NormalizedFieldOptionsHash,
+			{
+				makeKey: false, required: association.required
+			});
 
 		for (var k in Accessors) {
 			// if (!association.hasOwnProperty(k + "Accessor")) {
@@ -61,7 +65,7 @@ export function prepare (Model: FibOrmNS.Model, associations: FibOrmNS.InstanceA
 		}
 
 		associations.push(association);
-		for (k in association.field) {
+		for (k in association.field as FxOrmProperty.NormalizedFieldOptionsHash) {
 			if (!association.field.hasOwnProperty(k)) {
 				continue;
 			}
@@ -78,14 +82,16 @@ export function prepare (Model: FibOrmNS.Model, associations: FibOrmNS.InstanceA
 				reversed       : true,
 				accessor       : association.reverseAccessor,
 				reverseAccessor: undefined,
-				field          : association.field,
+				field          : association.field as FxOrmProperty.NormalizedFieldOptionsHash,
 				autoFetch      : association.autoFetch,
 				autoFetchLimit : association.autoFetchLimit
 			});
 		}
 
 		Model["findBy" + assocTemplateName] = function () {
-			var cb = null, conditions = null, options: FibOrmNS.ModelAssociationMethod__FindOptions = {} as FibOrmNS.ModelAssociationMethod__FindOptions;
+			var cb: FxOrmModel.ModelMethodCallback__Find = null,
+				conditions: FxOrmModel.ModelQueryConditions__Find = null,
+				options: FxOrmAssociation.ModelAssociationMethod__FindOptions = {};
 
 			for (var i = 0; i < arguments.length; i++) {
 				switch (typeof arguments[i]) {
@@ -124,15 +130,26 @@ export function prepare (Model: FibOrmNS.Model, associations: FibOrmNS.InstanceA
 	};
 };
 
-export function extend (Model, Instance, Driver, associations) {
+export function extend (
+	Model: FxOrmModel.Model,
+	Instance: FxOrmInstance.Instance,
+	Driver: FxOrmDMLDriver.DMLDriver,
+	// extend target
+	associations: FxOrmAssociation.InstanceAssociationItem[]
+) {
 	for (var i = 0; i < associations.length; i++) {
 		extendInstance(Model, Instance, Driver, associations[i]);
 	}
 };
 
-export function autoFetch (Instance, associations, opts, cb) {
+export function autoFetch (
+	Instance: FxOrmInstance.Instance,
+	associations: FxOrmAssociation.InstanceAssociationItem[],
+	opts: FxOrmAssociation.AutoFetchInstanceOptions,
+	cb: FxOrmNS.GenericCallback<void>
+) {
 	if (associations.length === 0) {
-		return cb();
+		return cb(null);
 	}
 
 	var pending = associations.length;
@@ -140,7 +157,7 @@ export function autoFetch (Instance, associations, opts, cb) {
 		pending -= 1;
 
 		if (pending === 0) {
-			return cb();
+			return cb(null);
 		}
 	};
 
@@ -149,11 +166,17 @@ export function autoFetch (Instance, associations, opts, cb) {
 	}
 };
 
-function extendInstance(Model, Instance, Driver, association) {
+function extendInstance(
+	Model: FxOrmModel.Model,
+	Instance: FxOrmInstance.Instance,
+	Driver: FxOrmDMLDriver.DMLDriver,
+	// extend target
+	association: FxOrmAssociation.InstanceAssociationItem
+) {
 	Object.defineProperty(Instance, association.hasAccessor, {
-		value: function (opts, cb) {
+		value: function (opts?: FxOrmAssociation.AccessorOptions_has, cb?: FxOrmNS.GenericCallback<boolean>) {
 			if (typeof opts === "function") {
-				cb = opts;
+				cb = opts as any;
 				opts = {};
 			}
 
@@ -171,13 +194,18 @@ function extendInstance(Model, Instance, Driver, association) {
 		writable: true
 	});
 	Object.defineProperty(Instance, association.getAccessor, {
-		value: function (opts, cb) {
+		value: function (
+			opts?: FxOrmAssociation.AccessorOptions_get,
+			cb?: FxOrmNS.GenericCallback<FxOrmAssociation.InstanceAssociatedInstance>
+		): FxOrmModel.Model | FxOrmQuery.IChainFind {
 			if (typeof opts === "function") {
-				cb = opts;
+				cb = opts as any;
 				opts = {};
 			}
 
-			var saveAndReturn = function (err, Assoc) {
+			var saveAndReturn: FxOrmModel.ModelMethodCallback__Get = function (
+				err: Error, Assoc: FxOrmAssociation.InstanceAssociatedInstance
+			) {
 				if (!err) {
 					Instance[association.name] = Assoc;
 				}
@@ -185,25 +213,47 @@ function extendInstance(Model, Instance, Driver, association) {
 				return cb(err, Assoc);
 			};
 
+			// process get reversed instance's original instance
 			if (association.reversed) {
 				if (Utilities.hasValues(Instance, Model.id)) {
+					const query_conds: FxOrmModel.ModelQueryConditions__Find = Utilities.getConditions(
+						Model,
+						Object.keys(association.field),
+						Instance
+					);
+
 					if (typeof cb !== "function") {
-						return association.model.find(Utilities.getConditions(Model, Object.keys(association.field), Instance), opts);
+						return association.model.find(
+							query_conds,
+							opts as FxOrmNS.IdType
+						);
 					}
-					association.model.find(Utilities.getConditions(Model, Object.keys(association.field), Instance), opts, saveAndReturn);
+
+					association.model.find(
+						query_conds,
+						opts as FxOrmNS.IdType,
+						saveAndReturn
+					);
 				} else {
 					cb(null);
 				}
 			} else {
 				if (Instance.isShell()) {
-					Model.get(Utilities.values(Instance, Model.id), function (err, instance) {
-						if (err || !Utilities.hasValues(instance, Object.keys(association.field))) {
-							return cb(null);
+					Model.get(
+						Utilities.values( Instance, Model.id ),
+						function (err: Error, instance: FxOrmAssociation.InstanceAssociationItem) {
+							if (err || !Utilities.hasValues(instance, Object.keys(association.field))) {
+								return cb(null);
+							}
+							association.model.get(Utilities.values(instance, Object.keys(association.field)), opts, saveAndReturn);
 						}
-						association.model.get(Utilities.values(instance, Object.keys(association.field)), opts, saveAndReturn);
-					});
+					);
 				} else if (Utilities.hasValues(Instance, Object.keys(association.field))) {
-					association.model.get(Utilities.values(Instance, Object.keys(association.field)), opts, saveAndReturn);
+					association.model.get(
+						Utilities.values( Instance, Object.keys(association.field) ),
+						opts,
+						saveAndReturn
+					);
 				} else {
 					cb(null);
 				}
@@ -215,7 +265,10 @@ function extendInstance(Model, Instance, Driver, association) {
 		writable: true
 	});
 	Object.defineProperty(Instance, association.setAccessor, {
-		value: function (OtherInstance, cb) {
+		value: function (
+			OtherInstance: FxOrmInstance.Instance,
+			cb: FxOrmNS.GenericCallback<FxOrmInstance.Instance>
+		) {
 			if (association.reversed) {
 				Instance.save(function (err) {
 					if (err) {
@@ -223,7 +276,9 @@ function extendInstance(Model, Instance, Driver, association) {
 					}
 
 					if (!Array.isArray(OtherInstance)) {
-						Utilities.populateConditions(Model, Object.keys(association.field), Instance, OtherInstance, true);
+						Utilities.populateConditions(
+							Model, Object.keys(association.field), Instance, OtherInstance, true
+						);
 
 						return OtherInstance.save({}, { saveAssociations: false }, cb);
 					}
@@ -232,14 +287,16 @@ function extendInstance(Model, Instance, Driver, association) {
 
 					var saveNext = function () {
 						if (!associations.length) {
-							return cb();
+							return cb(null);
 						}
 
 						var other = associations.pop();
 
-						Utilities.populateConditions(Model, Object.keys(association.field), Instance, other, true);
+						Utilities.populateConditions(
+							Model, Object.keys(association.field), Instance, other, true
+						);
 
-						other.save({}, { saveAssociations: false }, function (err) {
+						other.save({}, { saveAssociations: false }, function (err: Error) {
 							if (err) {
 								return cb(err);
 							}
@@ -251,7 +308,9 @@ function extendInstance(Model, Instance, Driver, association) {
 					return saveNext();
 				});
 			} else {
-				OtherInstance.save({}, { saveAssociations: false }, function (err) {
+				OtherInstance.save({}, {
+					saveAssociations: false
+				}, function (err: Error) {
 					if (err) {
 						return cb(err);
 					}
@@ -269,10 +328,12 @@ function extendInstance(Model, Instance, Driver, association) {
 		enumerable: false,
 		writable: true
 	});
+	
+	// non-reversed could delete associated instance
 	if (!association.reversed) {
 		Object.defineProperty(Instance, association.delAccessor, {
-			value: function (cb) {
-				for (var k in association.field) {
+			value: function (cb: FxOrmNS.GenericCallback<void>) {
+				for (var k in association.field as FxOrmProperty.NormalizedFieldOptionsHash) {
 					if (association.field.hasOwnProperty(k)) {
 						Instance[k] = null;
 					}
@@ -282,7 +343,7 @@ function extendInstance(Model, Instance, Driver, association) {
 						delete Instance[association.name];
 					}
 
-					return cb();
+					return cb(null);
 				});
 
 				return this;
@@ -293,9 +354,14 @@ function extendInstance(Model, Instance, Driver, association) {
 	}
 }
 
-function autoFetchInstance(Instance, association, opts, cb) {
+function autoFetchInstance(
+	Instance: FxOrmInstance.Instance,
+	association: FxOrmAssociation.InstanceAssociationItem,
+	opts: FxOrmAssociation.AutoFetchInstanceOptions,
+	cb: FxOrmNS.GenericCallback<void>
+) {
 	if (!Instance.saved()) {
-		return cb();
+		return cb(null);
 	}
 
 	if (!opts.hasOwnProperty("autoFetchLimit") || typeof opts.autoFetchLimit === "undefined") {
@@ -303,20 +369,22 @@ function autoFetchInstance(Instance, association, opts, cb) {
 	}
 
 	if (opts.autoFetchLimit === 0 || (!opts.autoFetch && !association.autoFetch)) {
-		return cb();
+		return cb(null);
 	}
 
-	// When we have a new non persisted instance for which the association field (eg owner_id)
-	// is set, we don't want to auto fetch anything, since `new Model(owner_id: 12)` takes no
-	// callback, and hence this lookup would complete at an arbitrary point in the future.
-	// The associated entity should probably be fetched when the instance is persisted.
+	/**
+	 * When we have a new non persisted instance for which the association field (eg owner_id)
+	 * is set, we don't want to auto fetch anything, since `new Model(owner_id: 12)` takes no
+	 * callback, and hence this lookup would complete at an arbitrary point in the future.
+	 * The associated entity should probably be fetched when the instance is persisted.
+	 */
 	if (Instance.isPersisted()) {
 		Instance[association.getAccessor]({ autoFetchLimit: opts.autoFetchLimit - 1 }, cb);
 	} else {
-		return cb();
+		return cb(null);
 	}
 }
 
-function ucfirst(text) {
+function ucfirst(text: string) {
 	return text[0].toUpperCase() + text.substr(1);
 }

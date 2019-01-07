@@ -16,7 +16,7 @@ import Validators        = require("./Validators");
 import ORMError          = require("./Error");
 import Hook              = require("./Hook");
 import AggregateFunctions = require("./AggregateFunctions")
-const AvailableHooks    = [
+const AvailableHooks: (keyof FxOrmModel.Hooks)[] = [
 	"beforeCreate", "afterCreate",
 	"beforeSave", "afterSave",
 	"beforeValidation",
@@ -25,24 +25,26 @@ const AvailableHooks    = [
 	"afterAutoFetch"
 ];
 
-interface ModelType {
-	(opts): void
-}
-export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
+function noOp () {};
+
+export const Model: FxOrmModel.ModelConstructor = function (
+	this: FxOrmModel.Model,
+	opts: FxOrmModel.ModelConstructorOptions
+) {
 	opts = util.extend(opts || {}, { keys: opts.keys || [] });
 	opts.keys = Array.isArray(opts.keys) ? opts.keys : [opts.keys];
 
-	var one_associations       = [];
-	var many_associations      = [];
-	var extend_associations    = [];
-	var association_properties = [];
-	var model_fields           = [];
-	var fieldToPropertyMap     = {};
-	var allProperties          = {};
-	var keyProperties          = [];
+	const one_associations: FxOrmAssociation.InstanceAssociationItem_HasOne[] = [];
+	const many_associations: FxOrmAssociation.InstanceAssociationItem_HasMany[] = [];
+	const extend_associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[] = [];
+	const association_properties: string[] = [];
+	const model_fields: FxOrmModel.ModelFieldItem[] = [];
+	const fieldToPropertyMap: FxOrmProperty.FieldToPropertyMapType = {};
+	const allProperties: FxOrmProperty.NormalizedPropertyHash = {};
+	const keyProperties: FxOrmProperty.NormalizedProperty[] = [];
 
-	var createHookHelper = function (hook) {
-		return function (cb) {
+	var createHookHelper = function (hook: string) {
+		return function (cb: FxOrmHook.HookActionCallback) {
 			if (typeof cb !== "function") {
 				delete opts.hooks[hook];
 			} else {
@@ -51,28 +53,32 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 			return this;
 		};
 	};
-	var createInstance = function (data, inst_opts, cb?: any) {
+	var createInstance = function (
+		data: FxOrmInstance.InstanceDataPayload,
+		inst_opts: FxOrmInstance.CreateOptions,
+		cb?: FxOrmNS.GenericCallback<FxOrmInstance.Instance>
+	): FxOrmInstance.Instance {
 		if (!inst_opts) {
 			inst_opts = {};
 		}
 
-		var found_assoc = false, i, k;
+		var found_assoc = false;
 
-		for (k in data) {
+		for (let k in data) {
 			if (k === "extra_field") continue;
 			if (opts.properties.hasOwnProperty(k)) continue;
 			if (inst_opts.extra && inst_opts.extra.hasOwnProperty(k)) continue;
 			if (opts.keys.indexOf(k) >= 0) continue;
 			if (association_properties.indexOf(k) >= 0) continue;
 
-			for (i = 0; i < one_associations.length; i++) {
+			for (let i = 0; i < one_associations.length; i++) {
 				if (one_associations[i].name === k) {
 					found_assoc = true;
 					break;
 				}
 			}
 			if (!found_assoc) {
-				for (i = 0; i < many_associations.length; i++) {
+				for (let i = 0; i < many_associations.length; i++) {
 					if (many_associations[i].name === k) {
 						found_assoc = true;
 						break;
@@ -90,14 +96,14 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 			cascadeRemove  : inst_opts.cascadeRemove
 		};
 
-		var setupAssociations = function (instance) {
+		var setupAssociations = function (instance: FxOrmInstance.Instance) {
 			OneAssociation.extend(model, instance, opts.driver, one_associations);
 			ManyAssociation.extend(model, instance, opts.driver, many_associations, assoc_opts, createInstance);
 			ExtendAssociation.extend(model, instance, opts.driver, extend_associations, assoc_opts);
 		};
 
 		var pending  = 2, create_err = null;
-		var instance = new (Instance as FibOrmNS.FibOrmFixedModelInstanceFn)(model, {
+		var instance = new Instance(model, {
 			uid                    : inst_opts.uid, // singleton unique id
 			keys                   : opts.keys,
 			is_new                 : inst_opts.is_new || false,
@@ -119,7 +125,7 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 			fieldToPropertyMap     : fieldToPropertyMap,
 			keyProperties          : keyProperties
 		});
-		instance.on("ready", function (err) {
+		instance.on("ready", function (err: Error) {
 			if (--pending > 0) {
 				create_err = err;
 				return;
@@ -135,7 +141,7 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 		OneAssociation.autoFetch(instance, one_associations, assoc_opts, function () {
 			ManyAssociation.autoFetch(instance, many_associations, assoc_opts, function () {
 				ExtendAssociation.autoFetch(instance, extend_associations, assoc_opts, function () {
-					Hook.wait(instance, opts.hooks.afterAutoFetch, function (err) {
+					Hook.wait(instance, opts.hooks.afterAutoFetch, function (err: Error) {
 						if (--pending > 0) {
 							create_err = err;
 							return;
@@ -150,15 +156,15 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 		return instance;
 	};
 
-	const model: FibOrmNS.Model = function () {
-	    var instance, i;
-
-	    var data = arguments.length > 1 ? arguments : arguments[0];
+	const model = function (
+		..._data: FxOrmModel.ModelInstanceConstructorOptions
+	) {
+	    let data = _data.length > 1 ? _data : _data[0];
 
 	    if (Array.isArray(opts.keys) && Array.isArray(data)) {
 	        if (data.length == opts.keys.length) {
 	            var data2 = {};
-	            for (i = 0; i < opts.keys.length; i++) {
+	            for (let i = 0; i < opts.keys.length; i++) {
 	                data2[opts.keys[i]] = data[i++];
 	            }
 
@@ -181,32 +187,35 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 
 	    var isNew = false;
 
-	    for (i = 0; i < opts.keys.length; i++) {
+	    for (let i = 0; i < opts.keys.length; i++) {
 	        if (!data.hasOwnProperty(opts.keys[i])) {
 	            isNew = true;
 	            break;
 	        }
 	    }
 
-      if (keyProperties.length != 1 || (keyProperties.length == 1 && keyProperties[0].type != 'serial')) {
-        isNew = true;
-      }
+		if (keyProperties.length != 1 || (keyProperties.length == 1 && keyProperties[0].type != 'serial')) {
+			isNew = true;
+		}
 
 	    return createInstance(data, {
 	        is_new: isNew,
 	        autoSave: opts.autoSave,
 	        cascadeRemove: opts.cascadeRemove
 	    });
-	} as any;
+	} as FxOrmModel.Model;
 
 	model.allProperties = allProperties;
 	model.properties    = opts.properties;
 	model.settings      = opts.settings;
 	model.keys          = opts.keys;
 
-	model.drop = function (cb) {
+	model.drop = function <T>(
+		this:FxOrmModel.Model,
+		cb?: FxOrmNS.GenericCallback<T>
+	) {
 		if (arguments.length === 0) {
-			cb = function () {};
+			cb = noOp;
 		}
 		if (typeof opts.driver.drop === "function") {
 			opts.driver.drop({
@@ -222,7 +231,10 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 		return cb(new ORMError("Driver does not support Model.drop()", 'NO_SUPPORT', { model: opts.table }));
 	};
 
-	model.sync = function (cb) {
+	model.sync = function <T>(
+		this:FxOrmModel.Model,
+		cb?: FxOrmNS.GenericCallback<T>
+	) {
 		if (arguments.length === 0) {
 			cb = function () {};
 		}
@@ -250,12 +262,16 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 		return cb(new ORMError("Driver does not support Model.sync()", 'NO_SUPPORT', { model: opts.table }));
 	};
 
-	model.get = function () {
-		var conditions = {};
-		var options    = {} as FibOrmNS.ModelAssociationMethod__GetOptions;
-		var ids        = Array.prototype.slice.apply(arguments);
-		var cb         = ids.pop();
-		var prop;
+	model.get = function (
+		this:FxOrmModel.Model,
+		cb?: FxOrmModel.ModelMethodCallback__Get
+	) {
+		const conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
+		let options    = <FxOrmModel.ModelOptions__Get>{};
+		let ids        = Array.prototype.slice.apply(arguments);
+		let prop: FxOrmProperty.NormalizedProperty;
+
+		cb = ids.pop() as any;
 
 		if (typeof cb !== "function") {
 		    throw new ORMError("Missing Model.get() callback", 'MISSING_CALLBACK', { model: opts.table });
@@ -273,7 +289,7 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 		    throw new ORMError("Model.get() IDs number mismatch (" + opts.keys.length + " needed, " + ids.length + " passed)", 'PARAM_MISMATCH', { model: opts.table });
 		}
 
-		for (var i = 0; i < keyProperties.length; i++) {
+		for (let i = 0; i < keyProperties.length; i++) {
 			prop = keyProperties[i];
 			conditions[prop.mapsTo] = ids[i];
 		}
@@ -288,41 +304,54 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 			options.cascadeRemove = opts.cascadeRemove;
 		}
 
-		opts.driver.find(model_fields, opts.table, conditions, { limit: 1 }, function (err, data) {
-			if (err) {
-				return cb(new ORMError(err.message, 'QUERY_ERROR', { originalCode: err.code }));
+		opts.driver.find(
+			model_fields,
+			opts.table,
+			conditions,
+			{ limit: 1 },
+			function (err: FxOrmError.ExtendedError, data: FxOrmDMLDriver.QueryDataPayload[]) {
+				if (err) {
+					return cb(new ORMError(err.message, 'QUERY_ERROR', { originalCode: err.code }));
+				}
+				if (data.length === 0) {
+					return cb(new ORMError("Not found", 'NOT_FOUND', { model: opts.table }));
+				}
+
+				Utilities.renameDatastoreFieldsToPropertyNames(data[0], fieldToPropertyMap);
+
+				var uid = opts.driver.uid + "/" + opts.table + "/" + ids.join("/");
+
+				Singleton.get(
+					uid,
+					{
+						identityCache : (options.hasOwnProperty("identityCache") ? options.identityCache : opts.identityCache),
+						saveCheck     : opts.settings.get("instance.identityCacheSaveCheck")
+					},
+					function (cb: FxOrmNS.GenericCallback<FxOrmInstance.Instance>) {
+						return createInstance(data[0], {
+							uid            : uid,
+							autoSave       : options.autoSave,
+							autoFetch      : (options.autoFetchLimit === 0 ? false : options.autoFetch),
+							autoFetchLimit : options.autoFetchLimit,
+							cascadeRemove  : options.cascadeRemove
+						}, cb);
+					},
+					cb
+				);
 			}
-			if (data.length === 0) {
-				return cb(new ORMError("Not found", 'NOT_FOUND', { model: opts.table }));
-			}
-
-			Utilities.renameDatastoreFieldsToPropertyNames(data[0], fieldToPropertyMap);
-
-			var uid = opts.driver.uid + "/" + opts.table + "/" + ids.join("/");
-
-			Singleton.get(uid, {
-				identityCache : (options.hasOwnProperty("identityCache") ? options.identityCache : opts.identityCache),
-				saveCheck     : opts.settings.get("instance.identityCacheSaveCheck")
-			}, function (cb) {
-				return createInstance(data[0], {
-					uid            : uid,
-					autoSave       : options.autoSave,
-					autoFetch      : (options.autoFetchLimit === 0 ? false : options.autoFetch),
-					autoFetchLimit : options.autoFetchLimit,
-					cascadeRemove  : options.cascadeRemove
-				}, cb);
-			}, cb);
-		});
+		);
 
 		return this;
 	};
 
-	model.find = function () {
-		var options    = {} as FibOrmNS.ModelAssociationMethod__FindOptions;
-		var conditions = null;
-		var cb         = null;
-		var order      = null;
-		var merge      = null;
+	model.find = function (
+		this:FxOrmModel.Model
+	) {
+		var conditions: FxSqlQuerySubQuery.SubQueryConditions = null;
+		var options = <FxOrmModel.ModelOptions__Find>{};
+		var cb: FxOrmModel.ModelMethodCallback__Find = null;
+		var order = null;
+		var merge = null;
 
 		for (var i = 0; i < arguments.length; i++) {
 			switch (typeof arguments[i]) {
@@ -381,6 +410,7 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 		if (order) {
 			order = Utilities.standardizeOrder(order);
 		}
+		
 		if (conditions) {
 			conditions = Utilities.checkConditions(conditions, one_associations);
 		}
@@ -413,7 +443,7 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 				Singleton.get(uid, {
 					identityCache : options.identityCache,
 					saveCheck     : opts.settings.get("instance.identityCacheSaveCheck")
-				}, function (cb) {
+				}, function (cb: FxOrmNS.GenericCallback<FxOrmInstance.Instance>) {
 					return createInstance(data, {
 						uid            : uid,
 						autoSave       : opts.autoSave,
@@ -433,13 +463,12 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 			chain.run(cb);
 			return this;
 		}
-	};
+	} as FxOrmModel.Model['find'];
 
 	model.where = model.all = model.find;
 
-	model.one = function () {
-		var args = Array.prototype.slice.apply(arguments);
-		var cb   = null;
+	model.one = function (...args: any[]) {
+		var cb: FxOrmModel.ModelMethodCallback__Get = null;
 
 		// extract callback
 		for (var i = 0; i < args.length; i++) {
@@ -455,7 +484,7 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 
 		// add limit 1
 		args.push(1);
-		args.push(function (err, results) {
+		args.push(function (err: Error, results: FxOrmInstance.Instance[]) {
 			if (err) {
 				return cb(err);
 			}
@@ -463,11 +492,11 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 		});
 
 		return this.find.apply(this, args);
-	};
+	} as FxOrmModel.Model['one'];
 
 	model.count = function () {
-		var conditions = null;
-		var cb         = null;
+		var conditions: FxSqlQuerySubQuery.SubQueryConditions = null;
+		var cb: FxOrmModel.ModelMethodCallback__Count         = null;
 
 		for (var i = 0; i < arguments.length; i++) {
 			switch (typeof arguments[i]) {
@@ -488,21 +517,25 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 			conditions = Utilities.checkConditions(conditions, one_associations);
 		}
 
-		opts.driver.count(opts.table, conditions, {}, function (err, data) {
-			if (err || data.length === 0) {
-				return cb(err);
-			}
-			return cb(null, data[0].c);
-		});
+		opts.driver.count(
+			opts.table,
+			conditions,
+			{}, 
+			function (err, data) {
+				if (err || data.length === 0) {
+					return cb(err);
+				}
+				return cb(null, data[0].c);
+			});
 		return this;
-	};
+	} as FxOrmModel.Model['count'];
 
 	model.aggregate = function () {
-		var conditions = {};
-		var propertyList = [];
+		var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
+		var propertyList: string[] = [];
 
 		for (var i = 0; i < arguments.length; i++) {
-			if (typeof arguments[i] === "object") {
+			if (typeof arguments[i] === 'object') {
 				if (Array.isArray(arguments[i])) {
 					propertyList = arguments[i];
 				} else {
@@ -523,28 +556,55 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 			propertyList : propertyList,
 			properties   : allProperties
 		});
-	};
+	} as FxOrmModel.Model['aggregate'];
 
-	model.exists = function () {
-		var ids = Array.prototype.slice.apply(arguments);
-		var cb  = ids.pop();
+	model.exists = function (...ids: any[]) {
+		var cb: FxOrmModel.ModelMethodCallback__Boolean  = ids.pop() as any;
 
 		if (typeof cb !== "function") {
 		    throw new ORMError("Missing Model.exists() callback", 'MISSING_CALLBACK', { model: opts.table });
 		}
 
-		var conditions = {}, i;
+		var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
 
+		/**
+		 * assign keys' id columns comparator-eq value
+		 * as its order in `opts.keys`
+		 * 
+		 * @example
+		 * define('test', {
+		 * 	key_1: {
+		 * 		type: 'integer', key: true
+		 * 	},
+		 *  key_2: {
+		 * 		type: 'integer', key: true
+		 *  }
+		 * })
+		 */
 		if (ids.length === 1 && typeof ids[0] === "object") {
 			if (Array.isArray(ids[0])) {
-				for (i = 0; i < opts.keys.length; i++) {
-					conditions[opts.keys[i]] = ids[0][i];
+				/**
+				 * @example
+				 * Person.exists([1, 7])
+				 */
+				const col_values = ids[0]
+				for (let i = 0; i < opts.keys.length; i++) {
+					conditions[opts.keys[i]] = col_values[i];
 				}
 			} else {
+				/**
+				 * @access general usage
+				 * @example
+				 * Person.exists({key_1: 1, key_2: 7})
+				 */
 				conditions = ids[0];
 			}
 		} else {
-			for (i = 0; i < opts.keys.length; i++) {
+			/**
+			 * @example
+			 * Person.exists(1, 7)
+			 */
+			for (let i = 0; i < opts.keys.length; i++) {
 				conditions[opts.keys[i]] = ids[i];
 			}
 		}
@@ -560,12 +620,12 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 			return cb(null, data[0].c > 0);
 		});
 		return this;
-	};
+	} as FxOrmModel.Model['exists'];
 
 	model.create = function () {
 		var itemsParams = []
 		var items       = [];
-		var options     = {};
+		// var options     = {};
 		var done        = null;
 		var create_err	= null;
 		var single      = false;
@@ -579,7 +639,7 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 						single = true;
 						itemsParams.push(arguments[i]);
 					} else {
-						options = arguments[i];
+						// options = arguments[i];
 					}
 					break;
 				case "function":
@@ -589,7 +649,7 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 		}
 
 		coroutine.parallel(itemsParams.map(
-			(data: FxOrmNS.InstanceDataPayload, index: number) => {
+			(data: FxOrmInstance.InstanceDataPayload, index: number) => {
 				return () => {
 					if (create_err)
 						return ;
@@ -597,8 +657,9 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 					createInstance(data, {
 						is_new    : true,
 						autoSave  : opts.autoSave,
+						// not fetch associated instance on its creation.
 						autoFetch : false
-					}, function (err: FxOrmError.BatchOperationInstanceErrorItem, item: FxOrmNS.Instance) {
+					}, function (err: FxOrmError.BatchOperationInstanceErrorItem, item: FxOrmInstance.Instance) {
 						if (create_err = err) {
 							err.index    = index;
 							err.instance = item;
@@ -625,28 +686,29 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 		));
 
 		return this;
-	};
+	} as FxOrmModel.Model['create'];
 
-	model.clear = function (cb) {
+	model.clear = function (cb?) {
 		opts.driver.clear(opts.table, function (err: Error) {
 			if (typeof cb === "function") cb(err);
 		});
 
 		return this;
-	};
+	} as FxOrmModel.Model['clear'];
 
-	model.prependValidation = function (key: string, validation: enforce.ValidationCallback) {
+	model.prependValidation = function (key: string, validation: enforce.IValidator) {
 		if(opts.validations.hasOwnProperty(key)) {
-			(opts.validations[key] as enforce.ValidationCallback[]).splice(0, 0, validation);
+			(opts.validations[key] as enforce.IValidator[]).splice(0, 0, validation);
 		} else {
 			opts.validations[key] = [validation];
 		}
-	};
+	} as FxOrmModel.Model['prependValidation'];
 
-	var currFields = {};
+	// control current owned fields
+	const currFields = {};
 
 	model.addProperty = function (propIn, options) {
-		var cType;
+		var cType: FxOrmProperty.CustomPropertyType;
 		var prop = Property.normalize({
 			prop: propIn, name: (options && options.name || propIn.name),
 			customTypes: opts.db.customTypes, settings: opts.settings
@@ -695,7 +757,7 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 		}
 
 		return prop;
-	};
+	} as FxOrmModel.Model['addProperty'];
 
 	Object.defineProperty(model, "table", {
 		value: opts.table,
@@ -713,12 +775,12 @@ export const Model: ModelType = function (opts: FxOrmNS.ModelOptions) {
 	// Standardize validations
 	for (var k in opts.validations) {
 		if (!Array.isArray(opts.validations[k])) {
-			opts.validations[k] = [ opts.validations[k] ] as enforce.ValidationCallback[];
+			opts.validations[k] = [ opts.validations[k] ] as enforce.IValidator[];
 		}
 	}
 
 	// If no keys are defined add the default one
-	if (opts.keys.length == 0 && !Object.values(opts.properties).some((p: FxOrmNS.ModelPropertyDefinition) => p.key === true)) {
+	if (opts.keys.length == 0 && !Object.values(opts.properties).some((p: FxOrmModel.ModelPropertyDefinition) => p.key === true)) {
 		opts.properties[opts.settings.get("properties.primary_key")] = {
 			type: 'serial', key: true, required: false, klass: 'primary'
 		};

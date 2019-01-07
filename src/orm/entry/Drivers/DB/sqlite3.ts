@@ -1,27 +1,28 @@
 import db = require('db');
 
 export class Database implements FxOrmDb.DatabaseBase {
-    conn: FxOrmNS.ConnInstanceInOrmConnDriverDB;
+    conn: FxOrmNS.IDbConnection;
+    pool: any
     
-    constructor(fname) {
+    constructor(fname: string) {
         this.conn = db.openSQLite(fname);
     }
 
-    on(ev) {}
+    on(ev: string) {}
 
-    all(sql: string, cb: Function) {
+    all<T=any>(sql: string, cb: FxOrmNS.GenericCallback<T>) {
         this.conn.execute(sql, cb);
     }
 
-    get(sql: string, cb: Function) {
-        this.all(sql, function (e, r) {
+    get<T=any>(sql: string, cb: FxOrmNS.GenericCallback<T>) {
+        this.all(sql, function (e: Error, r: T) {
             if (e)
                 cb(e);
             cb(e, r[0]);
         });
     }
 
-    execute(sql: string) {
+    execute<T=any>(sql: string): T {
         return this.conn.execute(sql);
     }
 

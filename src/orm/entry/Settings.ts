@@ -1,3 +1,5 @@
+/// <reference path="../../../@types/index.d.ts" />
+
 const _cloneDeep = require('lodash.clonedeep');
 
 const default_settings = {
@@ -31,9 +33,9 @@ export const defaults = function () {
 	return default_settings;
 };
 
-export const Container: FxOrmNS.SettingsContainerGenerator = function (settings) {
+export const Container: FxOrmSettings.SettingsContainerGenerator = function (settings) {
 	return {
-		set: function (key, value) {
+		set: function (key: string, value: any) {
 			set(key, value, settings);
 
 			return this;
@@ -59,7 +61,7 @@ export const Container: FxOrmNS.SettingsContainerGenerator = function (settings)
 	};
 }
 
-function set(key, value, obj) {
+function set(key: string, value: any, obj) {
 	const p = key.indexOf(".");
 
 	if (p === -1) {
@@ -73,7 +75,7 @@ function set(key, value, obj) {
 	return set(key.substr(p + 1), value, obj[key.substr(0, p)]);
 }
 
-function get(key, def, obj) {
+function get(key: string, def: any, obj) {
 	const p = key.indexOf(".");
 
 	if (p === -1) {
@@ -90,7 +92,7 @@ function get(key, def, obj) {
 	return get(key.substr(p + 1), def, obj[key.substr(0, p)]);
 }
 
-function unset(key, obj) {
+function unset(key: string, obj: any) {
 	const p = key.indexOf(".");
 
 	if (p === -1) {

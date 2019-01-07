@@ -1,5 +1,4 @@
-export function trigger(self: FibOrmNS.FibOrmFixedModelInstance, cb: Function, _: boolean);
-export function trigger () {
+export const trigger: FxOrmHook.HookTrigger = function () {
 	var args = Array.prototype.slice.apply(arguments);
 	var self = args.shift();
 	var cb   = args.shift();
@@ -9,9 +8,8 @@ export function trigger () {
 	}
 };
 
-export function wait(self: FibOrmNS.FibOrmFixedModelInstance, cb: Function, saveAssociation: object, opts: object);
-export function wait(self: FibOrmNS.FibOrmFixedModelInstance, cb: Function, next: Function);
-export function wait () {
+
+export const wait: FxOrmHook.HookWait = function () {
 	var args = Array.prototype.slice.apply(arguments);
 	var self = args.shift();
 	var cb   = args.shift();

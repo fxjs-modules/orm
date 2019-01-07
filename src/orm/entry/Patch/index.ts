@@ -3,7 +3,7 @@ import util = require('util')
 
 import { patchSync, patchDriver, patchModel, execQuerySync } from './utils';
 
-export = function (connection: FxOrmNS.ConnectFunction) {
+export = function (connection: FxOrmNS.IConnectFunction) {
     const conn = util.sync(connection) 
 
     const connectSync = function (opts: FxOrmNS.FibORMIConnectionOptions) {
@@ -27,14 +27,14 @@ export = function (connection: FxOrmNS.ConnectFunction) {
         patchDriver(orm.driver);
 
         var def = orm.define;
-        orm.define = function (name: string, properties: FxOrmNS.Property, opts: FxOrmNS.ModelOptions) {
+        orm.define = function (name: string, properties: FxOrmModel.ModelPropertyDefinitionHash, opts: FxOrmModel.ModelOptions) {
             if (opts !== undefined) {
                 opts = util.clone(opts);
                 if (opts.hooks !== undefined)
                     opts.hooks = util.clone(opts.hooks);
             }
 
-            var m: FxOrmNS.Model = def.call(this, name, properties, opts);
+            var m: FxOrmModel.Model = def.call(this, name, properties, opts);
             patchModel(m, opts);
             return m;
         }

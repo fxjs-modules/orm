@@ -1,5 +1,14 @@
 ## @fxjs/orm
 
+### features
+- [ ] db
+    - [ ] standalone version `@fxjs/db`, which provide variables of `FxOrmDb.DatabaseBase`
+    - [ ] make test for mongodb running
+    - [ ] setup travis test env for mysql/mariadb/mongodb
+- [ ] pool
+    - [ ] privode api for create orm pool
+    - [ ] make `DMLDriverOptions.pool` availble
+
 ### test cases
 * [ ] many_associations(with props)
     - [x] extra: addAccessor

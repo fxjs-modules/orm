@@ -3,7 +3,7 @@ import events         = require("events");
 import url            = require("url");
 import uuid			  = require('uuid')
 
-import Query          = require("@fxjs/sql-query");
+import SqlQuery       = require("@fxjs/sql-query");
 const _cloneDeep 	  = require('lodash.clonedeep');
 
 import { Model }      from "./Model";
@@ -12,9 +12,9 @@ import adapters       = require("./Adapters");
 import ORMError       = require("./Error");
 import Utilities      = require("./Utilities");
 
-import Enforces   = require("@fibjs/enforce");
+import Enforces   	  = require("@fibjs/enforce");
 // Deprecated, use enforce
-import validators = require("./Validators");
+import validators 	  = require("./Validators");
 
 import Settings       = require("./Settings");
 import singleton      = require("./Singleton");
@@ -24,37 +24,38 @@ const SettingsInstance = Settings.Container(Settings.defaults());
 
 import Property   = require("./Property");
 
-function use (connection, proto, opts, cb) {
+const use: FxOrmNS.ExportModule['use'] = function (connection, proto, opts, cb) {
 	if (DriverAliases[proto]) {
 		proto = DriverAliases[proto];
 	}
 	if (typeof opts === "function") {
 		cb = opts;
-		opts = {};
+		opts = <FxOrmNS.IUseOptions>{};
 	}
 
 	try {
-		var Driver   = adapters.get(proto);
-		var settings = Settings.Container(SettingsInstance.get('*'));
-		var driver   = new Driver(null, connection, {
+		const Driver   = adapters.get(proto);
+		const settings = Settings.Container(SettingsInstance.get('*'));
+		const driver   = new Driver(null, connection, {
 			debug    : (opts.query && opts.query.debug === 'true'),
 			settings : settings
 		});
 
 		return cb(null, new ORM(proto, driver, settings));
-	} catch (ex) {
-		return cb(ex);
+	} catch (err) {
+		return cb(err);
 	}
 };
 
-function connect () {
-	let opts = arguments[0],
-		cb = arguments[1]
+const connect: FxOrmNS.ExportModule['connect'] = function () {
+	let opts: FxOrmNS.IConnectionOptions = arguments[0],
+		cb: FxOrmNS.IConnectionCallback = arguments[1]
+
 	if (arguments.length === 0 || !opts) {
 		return ORM_Error(new ORMError("CONNECTION_URL_EMPTY", 'PARAM_MISMATCH'), cb);
 	}
 	if (typeof opts == 'string') {
-		if (opts.trim().length === 0) {
+		if ((opts as string).trim().length === 0) {
 			return ORM_Error(new ORMError("CONNECTION_URL_EMPTY", 'PARAM_MISMATCH'), cb);
 		}
 		opts = url.parse(opts, true);
@@ -96,23 +97,25 @@ function connect () {
 	}
 
 	var proto  = opts.protocol.replace(/:$/, '');
-	var db;
+	var db: FxOrmNS.ORM;
 	if (DriverAliases[proto]) {
 		proto = DriverAliases[proto];
 	}
 
+	const cfg: FxOrmNS.IDBConnectionConfig = opts as FxOrmNS.IDBConnectionConfig
+
 	try {
-		var Driver   = adapters.get(proto);
+		var Driver = adapters.get(proto);
 		var settings = Settings.Container(SettingsInstance.get('*'));
-		var driver   = new Driver(opts, null, {
-			debug    : 'debug' in opts.query ? opts.query.debug : settings.get("connection.debug"),
-			pool     : 'pool'  in opts.query ? opts.query.pool  : settings.get("connection.pool"),
+		var driver   = new Driver(cfg, null, {
+			debug    : 'debug' in cfg.query ? cfg.query.debug : settings.get("connection.debug"),
+			pool     : 'pool'  in cfg.query ? cfg.query.pool  : settings.get("connection.pool"),
 			settings : settings
 		});
 
 		db = new ORM(proto, driver, settings);
 
-		driver.connect(function (err) {
+		driver.connect(function (err: Error) {
 			if (typeof cb === "function") {
 				if (err) {
 					return cb(err);
@@ -133,21 +136,23 @@ function connect () {
 	return db;
 };
 
-function ORM(driver_name, driver, settings) {
+const ORM: FxOrmNS.ORMConstructor = function (
+	this: FxOrmNS.ORM, driver_name, driver, settings
+) {
 	this.validators  = validators;
 	this.enforce     = Enforces;
 	this.settings    = settings;
 	this.driver_name = driver_name;
-	this.driver      = driver;
+	this.driver      = driver as FxOrmPatch.PatchedDMLDriver;
 	this.driver.uid  = uuid.node().hex();
-	this.tools       = {...Query.comparators};
+	this.tools       = {...SqlQuery.comparators};
 	this.models      = {};
 	this.plugins     = [];
 	this.customTypes = {};
 
 	events.EventEmitter.call(this);
 
-	var onError = function (err) {
+	var onError = function (err: Error) {
 		if (this.settings.get("connection.reconnect")) {
 			if (typeof this.driver.reconnect === "undefined") {
 				return this.emit("error", new ORMError("Connection lost - driver does not support reconnection", 'CONNECTION_LOST'));
@@ -170,7 +175,10 @@ function ORM(driver_name, driver, settings) {
 
 util.inherits(ORM, events.EventEmitter);
 
-ORM.prototype.use = function (plugin_const, opts) {
+ORM.prototype.use = function (
+	this: FxOrmNS.ORM,
+	plugin_const, opts
+) {
 	if (typeof plugin_const === "string") {
 		try {
 			plugin_const = require(Utilities.getRealPath(plugin_const));
@@ -179,11 +187,11 @@ ORM.prototype.use = function (plugin_const, opts) {
 		}
 	}
 
-	var plugin = new plugin_const(this, opts || {});
+	var plugin: FxOrmNS.Plugin = new plugin_const(this, opts || {});
 
 	if (typeof plugin.define === "function") {
 		for (var k in this.models) {
-			plugin.define(this.models[k]);
+			plugin.define(this.models[k], this);
 		}
 	}
 
@@ -191,13 +199,14 @@ ORM.prototype.use = function (plugin_const, opts) {
 
 	return this;
 };
-ORM.prototype.define = function (name, properties, opts) {
-    var i;
-
+ORM.prototype.define = function (
+	this: FxOrmNS.ORM,
+	name, properties, opts
+) {
 	properties = properties || {};
-	opts       = opts || {};
+	opts       = opts || <FxOrmModel.ModelOptions>{};
 
-	for (i = 0; i < this.plugins.length; i++) {
+	for (let i = 0; i < this.plugins.length; i++) {
 		if (typeof this.plugins[i].beforeDefine === "function") {
 			this.plugins[i].beforeDefine(name, properties, opts);
 		}
@@ -209,7 +218,8 @@ ORM.prototype.define = function (name, properties, opts) {
 		driver_name    : this.driver_name,
 		driver         : this.driver,
 		table          : opts.table || opts.collection || ((this.settings.get("model.namePrefix") || "") + name),
-		properties     : properties,
+		// not standard FxOrmProperty.NormalizedPropertyHash here, but we should pass it firstly
+		properties     : properties as FxOrmProperty.NormalizedPropertyHash,
 		extension      : opts.extension || false,
 		indexes        : opts.indexes || [],
 		identityCache  : opts.hasOwnProperty("identityCache") ? opts.identityCache : this.settings.get("instance.identityCache"),
@@ -223,7 +233,7 @@ ORM.prototype.define = function (name, properties, opts) {
 		validations    : opts.validations || {}
 	});
 
-	for (i = 0; i < this.plugins.length; i++) {
+	for (let i = 0; i < this.plugins.length; i++) {
 		if (typeof this.plugins[i].define === "function") {
 			this.plugins[i].define(this.models[name], this);
 		}
@@ -231,22 +241,33 @@ ORM.prototype.define = function (name, properties, opts) {
 
 	return this.models[name];
 };
-ORM.prototype.defineType = function (name, opts) {
+ORM.prototype.defineType = function (
+	this: FxOrmNS.ORM,
+	name, opts
+) {
 	this.customTypes[name] = opts;
 	this.driver.customTypes[name] = opts;
 	return this;
 };
-ORM.prototype.ping = function (cb) {
+ORM.prototype.ping = function (
+	this: FxOrmNS.ORM,
+	cb
+) {
 	this.driver.ping(cb);
 
 	return this;
 };
-ORM.prototype.close = function (cb) {
+ORM.prototype.close = function (
+	this: FxOrmNS.ORM,	
+	cb
+) {
 	this.driver.close(cb);
 
 	return this;
 };
-ORM.prototype.load = function () {
+ORM.prototype.load = function (
+	this: FxOrmNS.ORM
+) {
 	var files = util.flatten(Array.prototype.slice.apply(arguments));
 	var cb    = function (err?: Error) {};
 
@@ -274,7 +295,10 @@ ORM.prototype.load = function () {
 
 	return loadNext();
 };
-ORM.prototype.sync = function (cb) {
+ORM.prototype.sync = function (
+	this: FxOrmNS.ORM,
+	cb
+) {
 	var modelIds = Object.keys(this.models);
 	var syncNext = function () {
 		if (modelIds.length === 0) {
@@ -302,7 +326,10 @@ ORM.prototype.sync = function (cb) {
 
 	return this;
 };
-ORM.prototype.drop = function (cb) {
+ORM.prototype.drop = function (
+	this: FxOrmNS.ORM,
+	cb
+) {
 	var modelIds = Object.keys(this.models);
 	var dropNext = function () {
 		if (modelIds.length === 0) {
@@ -311,7 +338,7 @@ ORM.prototype.drop = function (cb) {
 
 		var modelId = modelIds.shift();
 
-		this.models[modelId].drop(function (err) {
+		this.models[modelId].drop(function (err: FxOrmError.ExtendedError) {
 			if (err) {
 				err.model = modelId;
 
@@ -330,11 +357,12 @@ ORM.prototype.drop = function (cb) {
 
 	return this;
 };
-ORM.prototype.serial = function () {
-	var chains = Array.prototype.slice.apply(arguments);
-
+ORM.prototype.serial = function (
+	this: FxOrmNS.ORM,
+	...chains: any[]
+) {
 	return {
-		get: function (cb) {
+		get: function (cb: FibOrmNS.GenericCallback<any[]>) {
 			var params = [];
 			var getNext = function () {
 				if (params.length === chains.length) {
@@ -342,7 +370,7 @@ ORM.prototype.serial = function () {
 					return cb.apply(null, params);
 				}
 
-				chains[params.length].run(function (err, instances) {
+				chains[params.length].run(function (err: Error, instances: any[]) {
 					if (err) {
 						params.unshift(err);
 						return cb.apply(null, params);
@@ -360,7 +388,7 @@ ORM.prototype.serial = function () {
 	};
 };
 
-function ORM_Error(err, cb) {
+function ORM_Error(err: Error, cb: FibOrmNS.VoidCallback) {
 	var Emitter: any = new events.EventEmitter();
 
 	Emitter.use = Emitter.define = Emitter.sync = Emitter.load = function () {};
@@ -376,7 +404,7 @@ function ORM_Error(err, cb) {
 	return Emitter;
 }
 
-function queryParamCast (val) {
+function queryParamCast (val: any): any {
 	if (typeof val == 'string')	{
 		switch (val) {
 			case '1':
@@ -398,8 +426,8 @@ const ORM_Module: FxOrmNS.ExportModule = {
 	singleton,
 	Property,
 
-	Text: Query.Text,
-	...Query.comparators,
+	Text: SqlQuery.Text,
+	...SqlQuery.comparators,
 
 	enforce: Enforces,
 	settings: SettingsInstance,

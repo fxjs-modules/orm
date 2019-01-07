@@ -1,3 +1,5 @@
+import util 	 = require('util')
+
 import Utilities = require("./Utilities");
 import Hook      = require("./Hook");
 import enforce   = require("@fibjs/enforce");
@@ -7,11 +9,14 @@ interface EmitEventFunctionInInstance {
 	(state: string, _instance?: any): void
 }
 
-export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmModel2InstanceOptions) {
-	opts = opts || {};
+export const Instance: FxOrmInstance.InstanceConstructor = function (
+	this: FxOrmInstance.Instance,
+	Model, _opts
+) {
+	const opts: FxOrmInstance.InnerInstanceOptions = util.extend({}, _opts);
 	opts.data = opts.data || {};
 	opts.extra = opts.extra || {};
-	opts.keys = opts.keys || "id";
+	opts.keys = (opts.keys || "id") as string[];
 	opts.changes = (opts.is_new ? Object.keys(opts.data) : []);
 	opts.extrachanges = [];
 	opts.associations = {};
@@ -19,7 +24,7 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 
 	var instance_saving = false;
 	var events = {};
-	var instance: FibOrmNS.FibOrmFixedModelInstance = {} as FibOrmNS.FibOrmFixedModelInstance;
+	var instance: FxOrmInstance.Instance = {} as FxOrmInstance.Instance;
 
 	var emitEvent: EmitEventFunctionInInstance = function () {
 		var args = Array.prototype.slice.apply(arguments);
@@ -32,10 +37,8 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 		});
 	};
 	var rememberKeys = function () {
-		var i, prop;
-
-		for(i = 0; i < opts.keyProperties.length; i++) {
-			prop = opts.keyProperties[i];
+		for(let i = 0; i < opts.keyProperties.length; i++) {
+			const prop = opts.keyProperties[i];
 			opts.originalKeyValues[prop.name] = opts.data[prop.name];
 		}
 	};
@@ -47,10 +50,11 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 		}
 	};
 	var handleValidations = function (cb) {
-		var pending = [], errors = [], required, alwaysValidate;
+		var pending = [], errors = [];
+		var required: boolean,
+			alwaysValidate: boolean;
 
 		Hook.wait(instance, opts.hooks.beforeValidation, function (err) {
-		    var k, i;
 			if (err) {
 				return saveError(cb, err);
 			}
@@ -59,14 +63,14 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 				returnAllErrors : Model.settings.get("instance.returnAllErrors")
 			});
 
-			for (k in opts.validations) {
+			for (let k in opts.validations) {
 				required = false;
 
 				if (Model.allProperties[k]) {
 					required = Model.allProperties[k].required;
 					alwaysValidate = Model.allProperties[k].alwaysValidate;
 				} else {
-					for (i = 0; i < opts.one_associations.length; i++) {
+					for (let i = 0; i < opts.one_associations.length; i++) {
 						if (opts.one_associations[i].field === k) {
 							required = opts.one_associations[i].required;
 							break;
@@ -76,7 +80,7 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 				if (!alwaysValidate && !required && instance[k] == null) {
 					continue; // avoid validating if property is not required and is "empty"
 				}
-				for (i = 0; i < (opts.validations[k] as enforce.ValidationCallback[]).length; i++) {
+				for (let i = 0; i < (opts.validations[k] as enforce.IValidator[]).length; i++) {
 					checks.add(k, opts.validations[k][i]);
 				}
 			}
@@ -218,7 +222,8 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 		});
 	};
 	var savePersisted = function (saveOptions, data, cb) {
-		var changes = {}, conditions = {}, i, prop;
+		var changes = <FxSqlQuerySql.DataToSet>{},
+			conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
 
 		var next = function (saved) {
 			var finish = function () {
@@ -250,11 +255,11 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 		if (opts.changes.length === 0) {
 			next(false);
 		} else {
-			for (i = 0; i < opts.changes.length; i++) {
+			for (let i = 0; i < opts.changes.length; i++) {
 				changes[opts.changes[i]] = data[opts.changes[i]];
 			}
-			for (i = 0; i < opts.keyProperties.length; i++) {
-				prop = opts.keyProperties[i];
+			for (let i = 0; i < opts.keyProperties.length; i++) {
+				const prop = opts.keyProperties[i];
 				conditions[prop.mapsTo] = opts.originalKeyValues[prop.name];
 			}
 			changes = Utilities.transformPropertyNames(changes, Model.allProperties);
@@ -271,7 +276,7 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 		}
 	};
 	var saveAssociations = function (cb) {
-		var pending = 1, errored = false, i, j;
+		var pending = 1, errored = false, i;
 		var saveAssociation = function (accessor, instances) {
 			pending += 1;
 
@@ -296,7 +301,7 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 				if (!Array.isArray(instance[assoc.name])) {
 					instance[assoc.name] = [ instance[assoc.name] ];
 				}
-				for (var i = 0; i < instance[assoc.name].length; i++) {
+				for (let i = 0; i < instance[assoc.name].length; i++) {
 					if (!instance[assoc.name][i].isInstance) {
 						instance[assoc.name][i] = new assoc.model(instance[assoc.name][i]);
 					}
@@ -311,7 +316,7 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 			saveAssociation(assoc.setAccessor, instance[assoc.name]);
 		};
 
-		for (i = 0; i < opts.one_associations.length; i++) {
+		for (let i = 0; i < opts.one_associations.length; i++) {
 			_saveOneAssociation(opts.one_associations[i]);
 		}
 
@@ -322,7 +327,7 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 			if (!Array.isArray(assocVal)) return;
 			if (!opts.associations[assoc.name].changed) return;
 
-			for (j = 0; j < assocVal.length; j++) {
+			for (let j = 0; j < assocVal.length; j++) {
 				if (!assocVal[j].isInstance) {
 					assocVal[j] = new assoc.model(assocVal[j]);
 				}
@@ -331,7 +336,7 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 			saveAssociation(assoc.setAccessor, assocVal);
 		};
 
-		for (i = 0; i < opts.many_associations.length; i++) {
+		for (let i = 0; i < opts.many_associations.length; i++) {
 			_saveManyAssociation(opts.many_associations[i]);
 		}
 
@@ -346,9 +351,9 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 		}
 
 		var data = {};
-		var conditions = {};
+		var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
 
-		for (var i = 0; i < opts.extrachanges.length; i++) {
+		for (let i = 0; i < opts.extrachanges.length; i++) {
 			if (!opts.data.hasOwnProperty(opts.extrachanges[i])) continue;
 
 			if (opts.extra[opts.extrachanges[i]]) {
@@ -361,7 +366,7 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 			}
 		}
 
-		for (i = 0; i < opts.extra_info.id.length; i++) {
+		for (let i = 0; i < opts.extra_info.id.length; i++) {
 			conditions[opts.extra_info.id_prop[i]] = opts.extra_info.id[i];
 			conditions[opts.extra_info.assoc_prop[i]] = opts.data[opts.keys[i]];
 		}
@@ -375,8 +380,8 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 			return cb(null);
 		}
 
-		var conditions = {};
-		for (var i = 0; i < opts.keys.length; i++) {
+		var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
+		for (let i = 0; i < opts.keys.length; i++) {
 		    conditions[opts.keys[i]] = opts.data[opts.keys[i]];
 		}
 
@@ -405,8 +410,9 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 		});
 	};
 	var saveInstanceProperty = function (key, value) {
-		var changes = {}, conditions = {};
-		changes[key] = value;
+		var changes = {},
+			conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
+			changes[key] = value;
 
 		if (Model.properties[key]) {
 			if (opts.driver.propertyToValue) {
@@ -414,7 +420,7 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 			}
 		}
 
-		for (var i = 0; i < opts.keys.length; i++) {
+		for (let i = 0; i < opts.keys.length; i++) {
 			conditions[opts.keys[i]] = opts.data[opts.keys[i]];
 		}
 
@@ -679,8 +685,8 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 		enumerable: false
 	});
 	Object.defineProperty(instance, "validate", {
-		value: function (cb) {
-			handleValidations(function (errors) {
+		value: function (cb: FxOrmNS.GenericCallback<Error[]|false>) {
+			handleValidations(function (errors: Error[]) {
 				cb(null, errors || false);
 			});
 		},
@@ -688,7 +694,7 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 		writable: true
 	});
 	Object.defineProperty(instance, "__singleton_uid", {
-		value: function (cb) {
+		value: function () {
 			return opts.uid;
 		},
 		enumerable: false
@@ -698,7 +704,7 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 		enumerable: false
 	});
 	Object.defineProperty(instance, "model", {
-		value: function (cb) {
+		value: function () {
 			return Model;
 		},
 		enumerable: false
@@ -720,7 +726,7 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 		var asc = opts.one_associations[i];
 
 		if (!asc.reversed && !asc.extension) {
-			for (k in asc.field) {
+			for (k in asc.field as FxOrmProperty.NormalizedFieldOptionsHash) {
 				if (!opts.data.hasOwnProperty(k)) {
 					addInstanceProperty(k);
 				}
@@ -753,7 +759,7 @@ export function Instance (Model: FibOrmNS.Model, opts: FibOrmNS.TransformFibOrmM
 		}
 	}
 
-	Hook.wait(instance, opts.hooks.afterLoad, function (err) {
+	Hook.wait(instance, opts.hooks.afterLoad, function (err: Error) {
 		process.nextTick(function () {
 			emitEvent("ready", err);
 		});

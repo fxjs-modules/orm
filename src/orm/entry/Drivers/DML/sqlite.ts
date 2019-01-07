@@ -5,7 +5,9 @@ var Query   = require("@fxjs/sql-query").Query;
 var shared  = require("./_shared");
 var DDL     = require("../DDL/SQL");
 
-export function Driver(config, connection, opts) {
+export const Driver: FxOrmDMLDriver.DMLDriverConstructor_SQLite = function(
+	this: FxOrmDMLDriver.DMLDriver_SQLite, config, connection, opts
+) {
 	this.dialect = 'sqlite';
 	this.config = config || {};
 	this.opts   = opts || {};
@@ -40,39 +42,53 @@ export function Driver(config, connection, opts) {
 
 util.extend(Driver.prototype, shared, DDL);
 
-Driver.prototype.ping = function (cb) {
+Driver.prototype.ping = function (
+	this: FxOrmDMLDriver.DMLDriver_SQLite, cb
+) {
 	process.nextTick(cb);
 	return this;
 };
 
-Driver.prototype.on = function (ev, cb) {
+Driver.prototype.on = function (this: FxOrmDMLDriver.DMLDriver_SQLite, 
+	ev, cb
+) {
 	if (ev == "error") {
 		this.db.on("error", cb);
 	}
 	return this;
 };
 
-Driver.prototype.connect = function (cb) {
+Driver.prototype.connect = function (
+	this: FxOrmDMLDriver.DMLDriver_SQLite, cb
+) {
 	process.nextTick(cb);
 };
 
-Driver.prototype.close = function (cb) {
+Driver.prototype.close = function (
+	this: FxOrmDMLDriver.DMLDriver_SQLite, cb
+) {
 	this.db.close();
 	if (typeof cb == "function") process.nextTick(cb);
 };
 
-Driver.prototype.getQuery = function () {
+Driver.prototype.getQuery = function (
+	this: FxOrmDMLDriver.DMLDriver_SQLite, 
+) {
 	return this.query;
 };
 
-Driver.prototype.execSimpleQuery = function (query, cb) {
+Driver.prototype.execSimpleQuery = function (
+	this: FxOrmDMLDriver.DMLDriver_SQLite, query, cb
+) {
 	if (this.opts.debug) {
 		require("../../Debug").sql('sqlite', query);
 	}
 	this.db.all(query, cb);
 };
 
-Driver.prototype.find = function (fields, table, conditions, opts, cb) {
+Driver.prototype.find = function (
+	this: FxOrmDMLDriver.DMLDriver_SQLite, fields, table, conditions, opts, cb
+) {
 	var q = this.query.select()
 	                  .from(table).select(fields);
 
@@ -108,15 +124,17 @@ Driver.prototype.find = function (fields, table, conditions, opts, cb) {
 		}
 	}
 
-	q = q.build();
+	const qstr = q.build();
 
 	if (this.opts.debug) {
-		require("../../Debug").sql('sqlite', q);
+		require("../../Debug").sql('sqlite', qstr);
 	}
-	this.db.all(q, cb);
+	this.db.all(qstr, cb);
 };
 
-Driver.prototype.count = function (table, conditions, opts, cb) {
+Driver.prototype.count = function (
+	this: FxOrmDMLDriver.DMLDriver_SQLite, table, conditions, opts, cb
+) {
 	var q = this.query.select()
 	                  .from(table)
 	                  .count(null, 'c');
@@ -138,15 +156,17 @@ Driver.prototype.count = function (table, conditions, opts, cb) {
 		}
 	}
 
-	q = q.build();
+	const qstr = q.build();
 
 	if (this.opts.debug) {
-		require("../../Debug").sql('sqlite', q);
+		require("../../Debug").sql('sqlite', qstr);
 	}
-	this.db.all(q, cb);
+	this.db.all(qstr, cb);
 };
 
-Driver.prototype.insert = function (table, data, keyProperties, cb) {
+Driver.prototype.insert = function (
+	this: FxOrmDMLDriver.DMLDriver_SQLite, table, data, keyProperties, cb
+) {
 	var q = this.query.insert()
 	                  .into(table)
 	                  .set(data)
@@ -182,7 +202,9 @@ Driver.prototype.insert = function (table, data, keyProperties, cb) {
 	}.bind(this));
 };
 
-Driver.prototype.update = function (table, changes, conditions, cb) {
+Driver.prototype.update = function (
+	this: FxOrmDMLDriver.DMLDriver_SQLite, table, changes, conditions, cb
+) {
 	var q = this.query.update()
 	                  .into(table)
 	                  .set(changes)
@@ -195,7 +217,9 @@ Driver.prototype.update = function (table, changes, conditions, cb) {
 	this.db.all(q, cb);
 };
 
-Driver.prototype.remove = function (table, conditions, cb) {
+Driver.prototype.remove = function (
+	this: FxOrmDMLDriver.DMLDriver_SQLite, table, conditions, cb
+) {
 	var q = this.query.remove()
 	                  .from(table)
 	                  .where(conditions)
@@ -207,7 +231,9 @@ Driver.prototype.remove = function (table, conditions, cb) {
 	this.db.all(q, cb);
 };
 
-Driver.prototype.clear = function (table, cb) {
+Driver.prototype.clear = function (
+	this: FxOrmDMLDriver.DMLDriver_SQLite, table, cb
+) {
 	var debug = this.opts.debug;
 
 	this.execQuery("DELETE FROM ??", [table], function (err) {
@@ -217,7 +243,9 @@ Driver.prototype.clear = function (table, cb) {
 	}.bind(this));
 };
 
-Driver.prototype.valueToProperty = function (value, property) {
+Driver.prototype.valueToProperty = function (
+	this: FxOrmDMLDriver.DMLDriver_SQLite, value, property
+) {
 	var v, customType;
 
 	switch (property.type) {
@@ -288,7 +316,9 @@ Driver.prototype.valueToProperty = function (value, property) {
 	return value;
 };
 
-Driver.prototype.propertyToValue = function (value, property) {
+Driver.prototype.propertyToValue = function (
+	this: FxOrmDMLDriver.DMLDriver_SQLite, value, property
+) {
 	var customType;
 
 	switch (property.type) {

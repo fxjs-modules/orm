@@ -28,7 +28,7 @@ export function standardizeOrder (order: string|string[]) {
 	}
 
 	const new_order = [];
-	let minus;
+	let minus: boolean;
 
 	for (var i = 0; i < order.length; i++) {
 		minus = (order[i][0] === "-");
@@ -50,82 +50,82 @@ export function standardizeOrder (order: string|string[]) {
 };
 
 /**
- * Operations
- * A) Build an index of associations, with their name as the key
- * B) Check for any conditions with a key in the association index
- * C) Ensure that our condition supports array values
- * D) Remove original condition (not DB compatible)
- * E) Convert our association fields into an array, indexes are the same as model.id
- * F) Itterate through values for the condition, only accept instances of the same type as the association
+ * @description filtered out FxOrmInstance.Instance in mixed FxSqlQuerySubQuery.SubQueryConditions | { [k: string]: FxOrmInstance.Instance }
  */
-export function checkConditions (conditions: FibOrmNS.QueryConditions, one_associations) {
-	var k, i, j;
-
-	// A)
-	var associations = {};
-	for (i = 0; i < one_associations.length; i++) {
+export function checkConditions (
+	conditions: ( FxSqlQuerySubQuery.SubQueryConditions | { [k: string]: FxOrmInstance.Instance } ),
+	// one_associations: ( FxOrmAssociation.AssociationDefinitionOptions_HasOne | FxOrmAssociation.InstanceAssociationItem_HasOne )[]
+	one_associations: ( FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociationItem_HasOne )[]
+): FxSqlQuerySubQuery.SubQueryConditions {
+	// A) Build an index of associations, with their name as the key
+	var associations = <{[k: string]: FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociationItem_HasOne}>{};
+	for (let i = 0; i < one_associations.length; i++) {
 		associations[one_associations[i].name] = one_associations[i];
 	}
 
-	for (k in conditions) {
-		// B)
+	for (let k in conditions) {
+		// B) Check for any conditions with a key in the association index
 		if (!associations.hasOwnProperty(k)) continue;
 
-		// C)
-		var values = conditions[k];
-		if (!Array.isArray(values)) values = [values];
+		// C) Ensure that our condition supports array values
+		var values = conditions[k] as (FxOrmAssociation.InstanceAssociatedInstance)[];
+		if (!Array.isArray(values))
+			values = [values] as any;
 
-		// D)
+		// D) Remove original condition (it's instance rather conditon, we would replace it later; not DB compatible)
 		delete conditions[k];
 
-		// E)
-		var association_fields = Object.keys(associations[k].field);
-		var model = associations[k].model;
+		// E) Convert our association fields into an array, indexes are the same as model.id
+		const association_fields = Object.keys(associations[k].field);
+		const model: FxOrmModel.Model = (associations[k] as FxOrmAssociation.InstanceAssociationItem_HasOne).model;
 
-		// F)
-		for (i = 0; i < values.length; i++) {
-			if (values[i].isInstance && values[i].model().uid === model.uid) {
+		// F) Iterate through values for the condition, only accept instances of the same type as the association
+		for (let i = 0; i < values.length; i++) {
+			const instance = (values[i].isInstance && values[i] as FxOrmAssociation.InstanceAssociatedInstance)
+			if (instance && instance.model().uid === model.uid) {
 				if (association_fields.length === 1) {
-					if (typeof conditions[association_fields[0]] === 'undefined') {
-						conditions[association_fields[0]] = values[i][model.id[0]];
-					} else if(Array.isArray(conditions[association_fields[0]])) {
-						conditions[association_fields[0]].push(values[i][model.id[0]]);
+					const cond_k = association_fields[0]
+					
+					if (conditions[cond_k] === undefined) {
+						conditions[cond_k] = instance[model.id[0]];
+					} else if(Array.isArray(conditions[cond_k])) {
+						(conditions[cond_k] as FxSqlQueryComparator.SubQuerySimpleEqInput[]).push(instance[model.id[0]]);
 					} else {
-						conditions[association_fields[0]] = [conditions[association_fields[0]], values[i][model.id[0]]];
+						conditions[cond_k] = [conditions[cond_k], instance[model.id[0]]];
 					}
 				} else {
-					var _conds = {};
-					for (j = 0; j < association_fields.length; i++) {
-						_conds[association_fields[j]] = values[i][model.id[j]];
+					var _conds = <FxSqlQueryComparator.SubQuerySimpleEqInput>{};
+					for (let j = 0; j < association_fields.length; i++) {
+						_conds[association_fields[j]] = instance[model.id[j]];
 					}
 
 					conditions.or = conditions.or || [];
-					conditions.or.push(_conds);
+					(conditions.or as FxSqlQueryComparator.SubQuerySimpleEqInput[]).push(_conds);
 				}
 			}
 		}
 	}
 
-	return conditions;
+	return conditions as FxSqlQuerySubQuery.SubQueryConditions;
 };
 
 /**
  * Gets all the values within an object or array, optionally
  * using a keys array to get only specific values
  */
-export function values (obj, keys) {
-	var i, k, vals = [];
+export function values <T=any>(obj: object|[], keys?: string[]): T[] {
+	var vals = [];
 
 	if (keys) {
-		for (i = 0; i < keys.length; i++) {
+		for (let i = 0; i < keys.length; i++) {
 			vals.push(obj[keys[i]]);
 		}
 	} else if (Array.isArray(obj)) {
-		for (i = 0; i < obj.length; i++) {
+		for (let i = 0; i < obj.length; i++) {
 			vals.push(obj[i]);
 		}
 	} else {
-		for (k in obj) {
+		for (let k in obj) {
 			if (!/[0-9]+/.test(k)) {
 				vals.push(obj[k]);
 			}
@@ -137,34 +137,54 @@ export function values (obj, keys) {
 // Qn:       is Zero a valid value for a FK column?
 // Why?      Well I've got a pre-existing database that started all its 'serial' IDs at zero...
 // Answer:   hasValues() is only used in hasOne association, so it's probably ok...
-export function hasValues (obj, keys) {
+export function hasValues (obj: object, keys: string[]): boolean {
 	for (var i = 0; i < keys.length; i++) {
 		if (!obj[keys[i]] && obj[keys[i]] !== 0) return false;  // 0 is also a good value...
 	}
 	return true;
 };
 
-export function populateConditions (model, fields, source, target, overwrite?) {
+export function populateConditions (
+	model: FxOrmModel.Model,
+	fields: string[],
+	source: FxOrmAssociation.AssociationDefinitionOptions | FxOrmInstance.Instance,
+	target: FxSqlQuerySubQuery.SubQueryConditions,
+	overwrite?: boolean
+): void {
 	for (var i = 0; i < model.id.length; i++) {
 		if (typeof target[fields[i]] === 'undefined' || overwrite !== false) {
 			target[fields[i]] = source[model.id[i]];
 		} else if (Array.isArray(target[fields[i]])) {
-			target[fields[i]].push(source[model.id[i]]);
+			(target[fields[i]] as FxSqlQueryComparator.SubQuerySimpleEqInput[])
+				.push(
+					source[model.id[i]] as FxSqlQueryComparator.SubQuerySimpleEqInput
+				);
 		} else {
 			target[fields[i]] = [target[fields[i]], source[model.id[i]]];
 		}
 	}
 };
 
-export function getConditions (model, fields, from) {
-	var conditions = {};
+export function getConditions (
+	model: FxOrmModel.Model,
+	fields: string[],
+	from: FxSqlQuerySubQuery.SubQueryConditions
+): FxSqlQuerySubQuery.SubQueryConditions {
+	var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
 
 	populateConditions(model, fields, from, conditions);
 
 	return conditions;
 };
 
-export function wrapFieldObject (params) {
+export function wrapFieldObject (
+	params: {
+		field: string | FxOrmProperty.NormalizedFieldOptionsHash
+		model: FxOrmModel.Model
+		altName: string
+		mapsTo?: FxOrmModel.ModelPropertyDefinition['mapsTo']
+	}
+): FxOrmProperty.NormalizedFieldOptionsHash {
 	if (!params.field) {
 		var assoc_key = params.model.settings.get("properties.association_key");
 
@@ -184,21 +204,27 @@ export function wrapFieldObject (params) {
 		}
 	}
 
-	var newObj = {}, newProp, propPreDefined, propFromKey;
+	const field_str = params.field as string
 
-	propPreDefined = params.model.properties[params.field];
+	var newObj = <FxOrmProperty.NormalizedFieldOptionsHash>{},
+		newProp: FxOrmProperty.NormalizedFieldOptions,
+		propPreDefined: FxOrmProperty.NormalizedProperty,
+		propFromKey: FxOrmProperty.NormalizedProperty;
+
+	propPreDefined = params.model.properties[field_str];
 	propFromKey    = params.model.properties[params.model.id[0]];
-	newProp        = { type: 'integer' };
+	newProp        = <FxOrmProperty.NormalizedFieldOptions>{ type: 'integer' };
 
-	var prop = _cloneDeep(propPreDefined || propFromKey || newProp);
+	var prop: FxOrmProperty.NormalizedFieldOptions = _cloneDeep(propPreDefined || propFromKey || newProp);
 
 	if (!propPreDefined) {
 		util.extend(prop, {
-			name: params.field, mapsTo: params.mapsTo || params.field
+			name: field_str,
+			mapsTo: params.mapsTo || field_str
 		});
 	}
 
-	newObj[params.field] = prop;
+	newObj[field_str] = prop;
 
 	return newObj;
 };
@@ -210,10 +236,18 @@ export function wrapFieldObject (params) {
  * @param required is field required for relationship
  * @param reversed is model is reversed in relationship
  */
-export function formatField (model: FibOrmNS.Model, name: string, required: boolean, reversed: boolean): FibOrmNS.ModelPropertyDefinitionHash {
-	let fields: FibOrmNS.ModelPropertyDefinitionHash = {}, field_opts, field_name;
+export function formatField (
+	model: FxOrmModel.Model,
+	name: string,
+	required: boolean,
+	reversed: boolean
+): FxOrmProperty.NormalizedFieldOptionsHash {
+	let fields = <FxOrmProperty.NormalizedFieldOptionsHash>{},
+		field_opts: FxOrmProperty.NormalizedFieldOptions,
+		field_name: string;
+
 	var keys = model.id;
-	var assoc_key: FibOrmNS.AssociationKeyComputation = model.settings.get("properties.association_key");
+	var assoc_key: FxOrmAssociation.AssociationKeyComputation = model.settings.get("properties.association_key");
 
 	for (var i = 0; i < keys.length; i++) {
 		if (reversed) {
@@ -228,7 +262,7 @@ export function formatField (model: FibOrmNS.Model, name: string, required: bool
 		if (model.properties.hasOwnProperty(keys[i])) {
 			var p = model.properties[keys[i]];
 
-			field_opts = {
+			field_opts = <FxOrmProperty.NormalizedFieldOptions>{
 				type     : p.type || "integer",
 				size     : p.size || 4,
 				unsigned : p.unsigned || true,
@@ -240,7 +274,7 @@ export function formatField (model: FibOrmNS.Model, name: string, required: bool
 				mapsTo   : field_name
 			};
 		} else {
-			field_opts = {
+			field_opts = <FxOrmProperty.NormalizedFieldOptions>{
 				type     : "integer",
 				unsigned : true,
 				size     : 4,
@@ -258,8 +292,11 @@ export function formatField (model: FibOrmNS.Model, name: string, required: bool
 
 // If the parent associations key is `serial`, the join tables
 // key should be changed to `integer`.
-export function convertPropToJoinKeyProp (props, opts) {
-	var prop;
+export function convertPropToJoinKeyProp (
+	props: FxOrmProperty.NormalizedFieldOptionsHash,
+	opts: { required: boolean, makeKey: boolean }
+): FxOrmProperty.NormalizedFieldOptionsHash {
+	var prop: FxOrmProperty.NormalizedFieldOptions;
 
 	for (var k in props) {
 		prop = props[k];
@@ -303,9 +340,11 @@ export function getRealPath (path_str, stack_index?) {
 	return path_str;
 };
 
-export function transformPropertyNames (dataIn, properties) {
-	var k: string, prop: FxOrmNS.ModelPropertyDefinition;
-	var dataOut = {};
+export function transformPropertyNames (
+	dataIn: FxOrmInstance.InstanceDataPayload, properties: FxOrmProperty.NormalizedPropertyHash
+) {
+	var k: string, prop: FxOrmModel.ModelPropertyDefinition;
+	var dataOut: FxOrmInstance.InstanceDataPayload = {};
 
 	for (k in dataIn) {
 		prop = properties[k];
@@ -318,7 +357,9 @@ export function transformPropertyNames (dataIn, properties) {
 	return dataOut;
 };
 
-export function transformOrderPropertyNames (order, properties) {
+export function transformOrderPropertyNames (
+	order: string, properties: FxOrmProperty.NormalizedPropertyHash
+) {
 	if (!order) return order;
 
 	var item;
@@ -343,7 +384,9 @@ export function transformOrderPropertyNames (order, properties) {
 	return newOrder;
 }
 
-export function renameDatastoreFieldsToPropertyNames (data, fieldToPropertyMap) {
+export function renameDatastoreFieldsToPropertyNames (
+	data: FxOrmInstance.InstanceDataPayload, fieldToPropertyMap: FxOrmProperty.FieldToPropertyMapType
+) {
 	var k, prop;
 
 	for (k in data) {

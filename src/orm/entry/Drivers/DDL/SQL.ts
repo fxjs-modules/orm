@@ -1,18 +1,19 @@
-const _merge = require('lodash.merge')
+import _merge = require('lodash.merge')
+import { Sync } from "@fxjs/sql-ddl-sync";
 
-const Sync = require("@fxjs/sql-ddl-sync").Sync;
-
-export function sync (opts, cb) {
+export const sync: FxOrmDMLDriver.DMLDriver['sync'] = function (
+	this: FxOrmDMLDriver.DMLDriver, opts, cb
+) {
 	var sync = new Sync({
 		driver  : this,
-		debug   : false //function (text) { console.log(text); }
+		debug   : false // function (text) { console.log(text); }
 	});
 
-	var setIndex = function (p: FxOrmNS.OrigDetailedModelPropertyHash, v: FxOrmNS.OrigDetailedModelProperty, k: string) {
+	var setIndex = function (p: FxOrmProperty.NormalizedPropertyHash, v: FxOrmProperty.NormalizedProperty, k: string) {
 		v.index = true;
 		p[k] = v;
 	};
-	var props: FxOrmNS.OrigDetailedModelPropertyHash = {};
+	var props: FxOrmProperty.NormalizedPropertyHash = {};
 
 	if (this.customTypes) {
 		for (var k in this.customTypes) {
@@ -38,18 +39,20 @@ export function sync (opts, cb) {
 	return this;
 };
 
-export function drop (opts, cb) {
-	var i, queries = [], pending;
+export const drop: FxOrmDMLDriver.DMLDriver['drop'] = function (
+	this: FxOrmDMLDriver.DMLDriver, opts, cb
+) {
+	var queries = [], pending: number;
 
 	queries.push("DROP TABLE IF EXISTS " + this.query.escapeId(opts.table));
 
-	for (i = 0; i < opts.many_associations.length; i++) {
+	for (let i = 0; i < opts.many_associations.length; i++) {
 		queries.push("DROP TABLE IF EXISTS " + this.query.escapeId(opts.many_associations[i].mergeTable));
 	}
 
 	pending = queries.length;
 
-	for (i = 0; i < queries.length; i++) {
+	for (let i = 0; i < queries.length; i++) {
 		this.execQuery(queries[i], function (err) {
 			if (--pending === 0) {
 				return cb(err);

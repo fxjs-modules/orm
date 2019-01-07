@@ -1,14 +1,17 @@
-var util       = require("util");
-var mysql   = require("../DB/mysql");
-var Query   = require("@fxjs/sql-query").Query;
-var shared  = require("./_shared");
-var DDL     = require("../DDL/SQL");
+import util    = require("util");
 
-export function Driver(config, connection, opts) {
+import {Query} from "@fxjs/sql-query";
+import mysql   = require("../DB/mysql");
+import shared  = require("./_shared");
+import DDL     = require("../DDL/SQL");
+
+export const Driver: FxOrmDMLDriver.DMLDriverConstructor_MySQL = function(
+	this: FxOrmDMLDriver.DMLDriver_MySQL, config, connection, opts
+) {
 	this.dialect = 'mysql';
-	this.config = config || {};
-	this.opts   = opts || {};
-	this.customTypes = {};
+	this.config = config || <FxOrmNS.IDBConnectionConfig>{};
+	this.opts   = opts || <FxOrmDMLDriver.DMLDriverOptions>{};
+	this.customTypes = <{[key: string]: FxOrmProperty.CustomPropertyType}>{};
 
 	if (!this.config.timezone) {
 		this.config.timezone = "local";
@@ -29,12 +32,16 @@ export function Driver(config, connection, opts) {
 
 util.extend(Driver.prototype, shared, DDL);
 
-Driver.prototype.ping = function (cb) {
+Driver.prototype.ping = function (
+	this: FxOrmDMLDriver.DMLDriver_MySQL, cb: FxOrmNS.VoidCallback
+) {
 	this.db.ping(cb);
 	return this;
 };
 
-Driver.prototype.on = function (ev, cb) {
+Driver.prototype.on = function (
+	this: FxOrmDMLDriver.DMLDriver_MySQL, ev: string, cb: FxOrmNS.VoidCallback
+) {
 	if (ev == "error") {
 		this.db.on("error", cb);
 		this.db.on("unhandledError", cb);
@@ -42,9 +49,11 @@ Driver.prototype.on = function (ev, cb) {
 	return this;
 };
 
-Driver.prototype.connect = function (cb) {
+Driver.prototype.connect = function (
+	this: FxOrmDMLDriver.DMLDriver_MySQL, cb: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>
+) {
 	if (this.opts.pool) {
-		return this.db.pool.getConnection(function (err, con) {
+		return this.db.pool.getConnection(function (err: Error, con: FxOrmNS.IDbConnection) {
 			if (!err) {
 				if (con.release) {
 					con.release();
@@ -58,7 +67,9 @@ Driver.prototype.connect = function (cb) {
 	this.db.connect(cb);
 };
 
-Driver.prototype.reconnect = function (cb, connection) {
+Driver.prototype.reconnect = function (
+	this: FxOrmDMLDriver.DMLDriver_MySQL, cb: null | FxOrmNS.VoidCallback, connection: FxOrmDb.DatabaseBase_MySQL
+) {
 	var connOpts = this.config.href || this.config;
 
 	// Prevent noisy mysql driver output
@@ -78,7 +89,9 @@ Driver.prototype.reconnect = function (cb, connection) {
 	}
 };
 
-Driver.prototype.close = function (cb) {
+Driver.prototype.close = function (
+	this: FxOrmDMLDriver.DMLDriver_MySQL, cb: FxOrmNS.VoidCallback
+) {
 	if (this.opts.pool) {
 		this.db.pool.end(cb);
 	} else {
@@ -86,11 +99,16 @@ Driver.prototype.close = function (cb) {
 	}
 };
 
-Driver.prototype.getQuery = function () {
+Driver.prototype.getQuery = function 
+(
+	this: FxOrmDMLDriver.DMLDriver_MySQL
+): FxSqlQuery.Class_Query {
 	return this.query;
 };
 
-Driver.prototype.execSimpleQuery = function (query, cb) {
+Driver.prototype.execSimpleQuery = function<T=any> (
+	query: string, cb: FxOrmNS.GenericCallback<T>
+) {
 	if (this.opts.debug) {
 		require("../../Debug").sql('mysql', query);
 	}
@@ -101,9 +119,12 @@ Driver.prototype.execSimpleQuery = function (query, cb) {
 	}
 };
 
-Driver.prototype.find = function (fields, table, conditions, opts, cb) {
+Driver.prototype.find = function (
+	this: FxOrmDMLDriver.DMLDriver_MySQL, fields, table, conditions, opts, cb
+) {
 	var q = this.query.select()
-	                  .from(table).select(fields);
+					  .from(table)
+					  .select(fields);
 
 	if (opts.offset) {
 		q.offset(opts.offset);
@@ -115,13 +136,15 @@ Driver.prototype.find = function (fields, table, conditions, opts, cb) {
 		q.limit('18446744073709551615');
 	}
 	if (opts.order) {
-		for (var i = 0; i < opts.order.length; i++) {
+		for (let i = 0; i < opts.order.length; i++) {
 			q.order(opts.order[i][0], opts.order[i][1]);
 		}
 	}
 
 	if (opts.merge) {
-		q.from(opts.merge.from.table, opts.merge.from.field, opts.merge.to.field).select(opts.merge.select);
+		q.from(opts.merge.from.table, opts.merge.from.field, opts.merge.to.field)
+		.select(opts.merge.select);
+
 		// for hasMany
 		if (opts.merge.where && Object.keys(opts.merge.where[1]).length) {
 			q = q.where(opts.merge.where[0], opts.merge.where[1], opts.merge.table || null, conditions);
@@ -133,17 +156,17 @@ Driver.prototype.find = function (fields, table, conditions, opts, cb) {
 	}
 
 	if (opts.exists) {
-		for (var k in opts.exists) {
+		for (let k in opts.exists) {
 			q.whereExists(opts.exists[k].table, table, opts.exists[k].link, opts.exists[k].conditions);
 		}
 	}
 
-	q = q.build();
-
-	this.execSimpleQuery(q, cb);
+	this.execSimpleQuery(q.build(), cb);
 };
 
-Driver.prototype.count = function (table, conditions, opts, cb) {
+Driver.prototype.count = function (
+	this: FxOrmDMLDriver.DMLDriver_MySQL, table, conditions, opts, cb
+) {
 	var q = this.query.select()
 	                  .from(table)
 	                  .count(null, 'c');
@@ -170,22 +193,25 @@ Driver.prototype.count = function (table, conditions, opts, cb) {
 	this.execSimpleQuery(q, cb);
 };
 
-Driver.prototype.insert = function (table, data, keyProperties, cb) {
+Driver.prototype.insert = function (
+	this: FxOrmDMLDriver.DMLDriver_MySQL, table, data, keyProperties, cb
+) {
 	var q = this.query.insert()
 	                  .into(table)
 	                  .set(data)
 	                  .build();
 
-	this.execSimpleQuery(q, function (err, info) {
+	this.execSimpleQuery(q, function (err, info: FxOrmQuery.InsertResult) {
 		if (err) return cb(err);
 
-		var i, ids = {}, prop;
+		var ids: FxOrmQuery.InsertResult = {},
+			prop: FxOrmProperty.NormalizedProperty;
 
 		if (keyProperties) {
 			if (keyProperties.length == 1 && info.hasOwnProperty("insertId") && info.insertId !== 0 ) {
 				ids[keyProperties[0].name] = info.insertId;
 			} else {
-				for(i = 0; i < keyProperties.length; i++) {
+				for(let i = 0; i < keyProperties.length; i++) {
 					prop = keyProperties[i];
 					ids[prop.name] = data[prop.mapsTo];
 				}
@@ -195,7 +221,9 @@ Driver.prototype.insert = function (table, data, keyProperties, cb) {
 	});
 };
 
-Driver.prototype.update = function (table, changes, conditions, cb) {
+Driver.prototype.update = function (
+	this: FxOrmDMLDriver.DMLDriver_MySQL, table, changes, conditions, cb
+) {
 	var q = this.query.update()
 	                  .into(table)
 	                  .set(changes)
@@ -205,7 +233,9 @@ Driver.prototype.update = function (table, changes, conditions, cb) {
 	this.execSimpleQuery(q, cb);
 };
 
-Driver.prototype.remove = function (table, conditions, cb) {
+Driver.prototype.remove = function (
+	this: FxOrmDMLDriver.DMLDriver_MySQL, table, conditions, cb
+) {
 	var q = this.query.remove()
 	                  .from(table)
 	                  .where(conditions)
@@ -214,19 +244,23 @@ Driver.prototype.remove = function (table, conditions, cb) {
 	this.execSimpleQuery(q, cb);
 };
 
-Driver.prototype.clear = function (table, cb) {
+Driver.prototype.clear = function (
+	this: FxOrmDMLDriver.DMLDriver_MySQL, table, cb
+) {
 	var q = "TRUNCATE TABLE " + this.query.escapeId(table);
 
 	this.execSimpleQuery(q, cb);
 };
 
-Driver.prototype.poolQuery = function (query, cb) {
+Driver.prototype.poolQuery = function (
+	this: FxOrmDMLDriver.DMLDriver_MySQL, query, cb
+) {
 	this.db.pool.getConnection(function (err, con) {
 		if (err) {
 			return cb(err);
 		}
 
-		con.query(query, function (err, data) {
+		con.query(query, function (err: Error, data) {
 			if (con.release) {
 				con.release();
 			} else {
@@ -238,7 +272,9 @@ Driver.prototype.poolQuery = function (query, cb) {
 	});
 };
 
-Driver.prototype.valueToProperty = function (value, property) {
+Driver.prototype.valueToProperty = function (
+	this: FxOrmDMLDriver.DMLDriver_MySQL, value, property
+) {
 	var customType;
 
 	switch (property.type) {
@@ -264,7 +300,9 @@ Driver.prototype.valueToProperty = function (value, property) {
 	return value;
 };
 
-Driver.prototype.propertyToValue = function (value, property) {
+Driver.prototype.propertyToValue = function (
+	this: FxOrmDMLDriver.DMLDriver_MySQL, value, property
+) {
 	var customType;
 
 	switch (property.type) {

@@ -6,66 +6,75 @@ var KNOWN_TYPES = [
 	"binary", "point",  "serial"
 ];
 
-export function normalize (opts) {
+export function normalize (opts: {
+	prop: FxOrmModel.ComplexModelPropertyDefinition
+	name: string
+	customTypes: FxOrmNS.ORM['customTypes']
+	settings: FxOrmNS.ORM['settings']
+}): FxOrmProperty.NormalizedProperty {
+	let result_prop: FxOrmProperty.NormalizedProperty = opts.prop as FxOrmModel.ModelPropertyDefinition
+
 	if (typeof opts.prop === "function") {
-		switch (opts.prop.name) {
+		const primitiveProp: FxOrmModel.PrimitiveConstructorModelPropertyDefinition = opts.prop 
+		switch (primitiveProp.name) {
 			case "String":
-				opts.prop = { type: "text" };
+				result_prop = { type: "text" };
 				break;
 			case "Number":
-				opts.prop = { type: "number" };
+				result_prop = { type: "number" };
 				break;
 			case "Boolean":
-				opts.prop = { type: "boolean" };
+				result_prop = { type: "boolean" };
 				break;
 			case "Date":
-				opts.prop = { type: "date" };
+				result_prop = { type: "date" };
 				break;
 			case "Object":
-				opts.prop = { type: "object" };
+				result_prop = { type: "object" };
 				break;
 			case "Buffer":
-				opts.prop = { type: "binary" };
+				result_prop = { type: "binary" };
 				break;
 		}
 	} else if (typeof opts.prop === "string") {
-		var tmp = opts.prop;
-		opts.prop = {};
-		opts.prop.type = tmp;
+		result_prop = {
+			type: opts.prop as FxOrmModel.PropTypeStrPropertyDefinition
+		};
 	} else if (Array.isArray(opts.prop)) {
-		opts.prop = { type: "enum", values: opts.prop };
+		result_prop = { type: "enum", values: opts.prop };
 	} else {
-		opts.prop = _cloneDeep(opts.prop);
+		result_prop = _cloneDeep(opts.prop);
 	}
 
-	if (KNOWN_TYPES.indexOf(opts.prop.type) === -1 && !(opts.prop.type in opts.customTypes)) {
-		throw new ORMError("Unknown property type: " + opts.prop.type, 'NO_SUPPORT');
+	if (KNOWN_TYPES.indexOf(result_prop.type) === -1 && !(result_prop.type in opts.customTypes)) {
+		throw new ORMError("Unknown property type: " + result_prop.type, 'NO_SUPPORT');
 	}
 
-	if (!opts.prop.hasOwnProperty("required") && opts.settings.get("properties.required")) {
-		opts.prop.required = true;
+	if (!result_prop.hasOwnProperty("required") && opts.settings.get("properties.required")) {
+		result_prop.required = true;
 	}
 
 	// Defaults to true. Setting to false hides properties from JSON.stringify(modelInstance).
-	if (!opts.prop.hasOwnProperty("enumerable") || opts.prop.enumerable === true) {
-		opts.prop.enumerable = true;
+	if (!result_prop.hasOwnProperty("enumerable") || result_prop.enumerable === true) {
+		result_prop.enumerable = true;
 	}
 
 	// Defaults to true. Rational means floating point here.
-	if (opts.prop.type == "number" && opts.prop.rational === undefined) {
-		opts.prop.rational = true;
+	if (result_prop.type == "number" && result_prop.rational === undefined) {
+		result_prop.rational = true;
 	}
 
-	if (!('mapsTo' in opts.prop)) {
-		opts.prop.mapsTo = opts.name
+	if (!('mapsTo' in result_prop)) {
+		result_prop.mapsTo = opts.name
 	}
 
-	if (opts.prop.type == "number" && opts.prop.rational === false) {
-		opts.prop.type = "integer";
-		delete opts.prop.rational;
+	if (result_prop.type == "number" && result_prop.rational === false) {
+		result_prop.type = "integer";
+		delete result_prop.rational;
 	}
 
-	opts.prop.name = opts.name;
+	result_prop.name = opts.name;
 
-	return opts.prop;
+	return result_prop;
+	// return opts.prop;
 };

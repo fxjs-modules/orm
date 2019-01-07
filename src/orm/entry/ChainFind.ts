@@ -1,35 +1,35 @@
-import util = require('util');
-import coroutine = require('coroutine');
+import util 			= require('util');
+import coroutine 		= require('coroutine');
 
-import Utilities     = require("./Utilities");
-import ChainInstance     = require("./ChainInstance");
+import Utilities     	= require("./Utilities");
+import ChainInstance	= require("./ChainInstance");
 
-interface ChainFindType {
-	new (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOptions): FibOrmNS.IChainFindInstance
-	(Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOptions): FibOrmNS.IChainFindInstance
-}
-export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOptions) {
-	var prepareConditions = function () {
-		return Utilities.transformPropertyNames(
-			opts.conditions, opts.properties
-		);
-	};
+var prepareConditions = function (opts: FxOrmQuery.ChainFindOptions) {
+	return Utilities.transformPropertyNames(
+		opts.conditions, opts.properties
+	);
+};
 
-	var prepareOrder = function () {
-		return Utilities.transformOrderPropertyNames(
-			opts.order, opts.properties
-		);
-	};
+var prepareOrder = function (opts: FxOrmQuery.ChainFindOptions) {
+	return Utilities.transformOrderPropertyNames(
+		opts.order, opts.properties
+	);
+};
 
-	var chainRun = function (done: Function) {
-		var order: string, conditions;
+const MODEL_FUNCS = [
+	"hasOne", "hasMany",
+	"drop", "sync", "get", "clear", "create",
+	"exists", "settings", "aggregate"
+];
 
-		conditions = Utilities.transformPropertyNames(
-			opts.conditions, opts.properties
-		);
-		order = Utilities.transformOrderPropertyNames(
-			opts.order, opts.properties
-		);
+const ChainFind: FxOrmQuery.ChainFindGenerator = function (
+	this: void,
+	Model: FxOrmModel.Model, opts: FxOrmQuery.ChainFindOptions
+) {
+
+	var chainRun = function<T> (done: FxOrmNS.GenericCallback<T|T[]|FxOrmInstance.InstanceDataPayload[]>) {
+		const conditions: FxSqlQuerySubQuery.SubQueryConditions = Utilities.transformPropertyNames(opts.conditions, opts.properties);
+		const order = Utilities.transformOrderPropertyNames(opts.order, opts.properties);
 
 		opts.driver.find(opts.only, opts.table, conditions, {
 			limit  : opts.limit,
@@ -37,7 +37,7 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 			merge  : opts.merge,
 			offset : opts.offset,
 			exists : opts.exists
-		}, function (err: Error, dataItems: FxOrmNS.InstanceDataPayload[]) {
+		}, function (err: Error, dataItems: FxOrmInstance.InstanceDataPayload[]) {
 			if (err) {
 				return done(err);
 			}
@@ -45,13 +45,13 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 				return done(null, []);
 			}
 
-			var eagerLoad = function (err: Error, items: FxOrmNS.InstanceDataPayload[]) {
+			var eagerLoad = function (err: Error, items: FxOrmInstance.InstanceDataPayload[]) {
 				var idMap = {};
 
-				var keys = util.map(items, function (item: FxOrmNS.InstanceDataPayload, index: number) {
+				var keys = util.map(items, function (item: FxOrmInstance.InstanceDataPayload, index: number) {
 					var key = item[opts.keys[0]];
 					// Create the association arrays
-					for (var i = 0, association: FxOrmNS.InstanceAssociationItem; association = opts.__eager[i]; i++) {
+					for (var i = 0, association: FxOrmAssociation.InstanceAssociationItem; association = opts.__eager[i]; i++) {
 						item[association.name] = [];
 					}
 					idMap[key] = index;
@@ -59,7 +59,7 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 					return key;
 				});
 
-				coroutine.parallel(opts.__eager, (association: FxOrmNS.InstanceAssociationItem) => {
+				coroutine.parallel(opts.__eager, (association: FxOrmAssociation.InstanceAssociationItem) => {
 					// if err exists, chainRun would finished before this fiber released
 					if (err) return 
 
@@ -77,9 +77,9 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 				})
 			};
 
-			const items = coroutine.parallel(dataItems, (dataItem: FxOrmNS.InstanceDataPayload) => {
-				const newInstanceSync = util.sync(function(obj: FxOrmNS.InstanceDataPayload, cb: Function) {
-					opts.newInstance(obj, function (err: Error, data: FxOrmNS.Instance) {
+			const items = coroutine.parallel(dataItems, (dataItem: FxOrmInstance.InstanceDataPayload) => {
+				const newInstanceSync = util.sync(function(obj: FxOrmInstance.InstanceDataPayload, cb: Function) {
+					opts.newInstance(obj, function (err: Error, data: FxOrmInstance.Instance) {
 						if (err) {
 							done(err)
 							cb(err)
@@ -97,27 +97,26 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 		});
 	}
 
-	var chain: FibOrmNS.IChainFindInstance = {
+	var chain: FxOrmQuery.IChainFind = {
 		model: null,
 		options: null,
 		
 		all: null,
 		where: null,
-		find: function () {
-			var cb = null;
+		find: function <T>(...args: any[]) {
+			var cb: FxOrmNS.GenericCallback<T> = null;
 
-			var args = Array.prototype.slice.call(arguments);
 			opts.conditions = opts.conditions || {};
 
 			if (typeof util.last(args) === "function") {
-			    cb = args.pop();
+			    cb = args.pop() as any;
 			}
 
 			if (typeof args[0] === "object") {
 				util.extend(opts.conditions, args[0]);
 			} else if (typeof args[0] === "string") {
-				opts.conditions.__sql = opts.conditions.__sql || [];
-				opts.conditions.__sql.push(args);
+				opts.conditions.__sql = (opts.conditions.__sql || []) as FxSqlQuerySubQuery.UnderscoreSqlInput;
+				opts.conditions.__sql.push(args as any);
 			}
 
 			if (cb) {
@@ -174,7 +173,7 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 			return this;
 		},
 		count: function (cb) {
-			opts.driver.count(opts.table, prepareConditions(), {
+			opts.driver.count(opts.table, prepareConditions(opts), {
 				merge  : opts.merge
 			}, function (err, data) {
 				if (err || data.length === 0) {
@@ -187,9 +186,9 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 		remove: function (cb) {
 			var keys = opts.keyProperties.map(x => x.mapsTo); // util.map(opts.keyProperties, 'mapsTo');
 
-			opts.driver.find(keys, opts.table, prepareConditions(), {
+			opts.driver.find(keys, opts.table, prepareConditions(opts), {
 				limit  : opts.limit,
-				order  : prepareOrder(),
+				order  : prepareOrder(opts),
 				merge  : opts.merge,
 				offset : opts.offset,
 				exists : opts.exists
@@ -201,7 +200,7 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 					return cb(null);
 				}
 
-				var ids = [], conditions: FibOrmNS.QueryConditions = {};
+				var conditions: FxSqlQuerySubQuery.SubQueryConditions = {};
 				var or;
 
 				conditions.or = [];
@@ -219,19 +218,19 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 			return this;
 		},
 		first: function (cb) {
-			return this.run(function (err, items) {
+			return this.run(function (err: Error, items: any) {
 				return cb(err, items && items.length > 0 ? items[0] : null);
 			});
 		},
 		last: function (cb) {
-			return this.run(function (err, items) {
+			return this.run(function (err: Error, items: any) {
 				return cb(err, items && items.length > 0 ? items[items.length - 1] : null);
 			});
 		},
 		each: function (cb?) {
 			return ChainInstance(this, cb);
 		},
-		run: function (cb) {
+		run: function<T> (cb: FxOrmNS.ExecutionCallback<T>) {
 			chainRun(cb);
 			return this;
 		},
@@ -259,11 +258,7 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 		}
 	}
 	for (var k in Model) {
-		if ([
-			"hasOne", "hasMany",
-			"drop", "sync", "get", "clear", "create",
-			"exists", "settings", "aggregate"
-		].indexOf(k) >= 0) {
+		if (MODEL_FUNCS.indexOf(k) >= 0) {
 			continue;
 		}
 		if (typeof Model[k] !== "function" || chain[k]) {
@@ -273,12 +268,18 @@ export = function ChainFind (Model: FibOrmNS.Model, opts: FibOrmNS.ChainFindOpti
 		chain[k] = Model[k];
 	}
 	chain.model   = Model;
-	chain.options = opts as FibOrmNS.ChainFindInstanceOptions;
+	chain.options = opts as FxOrmQuery.ChainFindInstanceOptions;
 
-	return chain;
-} as ChainFindType
+	return chain
+}
 
-function addChainMethod(chain, association, opts) {
+export = ChainFind
+
+function addChainMethod(
+	chain: FxOrmQuery.IChainFind,
+	association: FxOrmAssociation.InstanceAssociationItem,
+	opts: FxOrmQuery.ChainFindOptions
+) {
 	chain[association.hasAccessor] = function (value) {
 		if (!opts.exists) {
 			opts.exists = [];

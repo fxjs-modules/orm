@@ -8,7 +8,7 @@ type HashOfModelFuncNameToPath = string[];
 
 // patch async function to sync function
 export function patchSync(
-    o: FxOrmNS.Model | FxOrmNS.FibOrmFixedModelInstance | FxOrmNS.FibOrmDB,
+    o: FxOrmModel.Model | FxOrmNS.FibOrmFixedModelInstance | FxOrmNS.FibOrmDB,
     funcs: HashOfModelFuncNameToPath
 ) {
     funcs.forEach(function (func) {
@@ -23,9 +23,9 @@ export function patchSync(
 }
 
 // hook find, patch result
-export function patchResult(o: FxOrmNS.FibOrmFixedModelInstance | FxOrmNS.Model): void {
+export function patchResult(o: FxOrmNS.FibOrmFixedModelInstance | FxOrmModel.Model): void {
     var old_func: ModelFuncToPatch = o.find;
-    var m: FxOrmNS.Model = o.model || o;
+    var m: FxOrmModel.Model = o.model || o;
     var comps = ['val', 'from', 'to'];
 
     if (old_func.is_new)
@@ -104,7 +104,7 @@ export function patchObject(m: FxOrmNS.FibOrmFixedModelInstance) {
         "model"
     ];
 
-    function enum_associations(assoc: FxOrmNS.InstanceAssociationItem[]) {
+    function enum_associations(assoc: FxOrmAssociation.InstanceAssociationItem[]) {
         assoc.forEach(function (item) {
             if (item.getAccessor)
                 methods.push(item.getAccessor);
@@ -141,7 +141,7 @@ export function patchObject(m: FxOrmNS.FibOrmFixedModelInstance) {
     patchSync(m, methods);
 }
 
-export function patchHas(m: FxOrmNS.Model, funcs: HashOfModelFuncNameToPath) {
+export function patchHas(m: FxOrmModel.Model, funcs: HashOfModelFuncNameToPath) {
     funcs.forEach(function (func) {
         var old_func: ModelFuncToPatch = m[func];
         if (old_func)
@@ -157,7 +157,7 @@ export function patchHas(m: FxOrmNS.Model, funcs: HashOfModelFuncNameToPath) {
     })
 }
 
-export function patchAggregate(m: FxOrmNS.Model) {
+export function patchAggregate(m: FxOrmModel.Model) {
     var aggregate: FxOrmNS.OrigAggreteGenerator = m.aggregate;
     m.aggregate = function () {
         var r = aggregate.apply(this, Array.prototype.slice.apply(arguments));
@@ -166,7 +166,7 @@ export function patchAggregate(m: FxOrmNS.Model) {
     };
 }
 
-export function patchModel(m: FxOrmNS.Model, opts: FxOrmNS.ModelOptions) {
+export function patchModel(m: FxOrmModel.Model, opts: FxOrmModel.ModelOptions) {
     var _afterAutoFetch;
     if (opts !== undefined && opts.hooks)
         _afterAutoFetch = opts.hooks.afterAutoFetch;
@@ -238,7 +238,7 @@ export function patchInsert(table: string, data: any, keyProperties: keyProperti
     }.bind(this));
 };
 
-export function patchDriver(driver: FxOrmNS.OrigOrmConnDriver) {
+export function patchDriver(driver: FxOrmDMLDriver.DMLDriver) {
     if (driver.dialect === 'sqlite')
         driver.insert = patchInsert;
 
@@ -259,7 +259,7 @@ export function patchDriver(driver: FxOrmNS.OrigOrmConnDriver) {
     }
 }
 
-export function execQuerySync(query: FxOrmNSSqlQueryNS.Query, opt) {
+export function execQuerySync(query: string, opt) {
     if (arguments.length == 2)
         query = this.query.escape(query, opt);
 

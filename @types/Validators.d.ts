@@ -19,4 +19,9 @@ declare namespace FxOrmValidators {
         unique(opts?: { ignoreCase: boolean }, message?: string): enforce.ValidationCallback;
         /* extra validators: end */
    }
+
+   interface ValidationOptionHash {
+      [validation: string]: enforce.IValidator | enforce.IValidator[]
+      // [validation: string]: enforce.ValidationCallback | enforce.ValidationCallback[]
+  }
 }

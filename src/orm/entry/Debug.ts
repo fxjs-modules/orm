@@ -1,7 +1,7 @@
 import util = require("util");
 import tty  = require("tty");
 
-export function sql (driver, sql: string) {
+export function sql (driver: FxOrmDMLDriver.DMLDriver, sql: string) {
 	var fmt: string;
 
 	if (tty.isatty(process.stdout as any)) {

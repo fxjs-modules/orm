@@ -1,2 +1,2 @@
 // Moved to 'Error.js'
-module.exports = require('./error').codes;
+export = require('./error').codes;
