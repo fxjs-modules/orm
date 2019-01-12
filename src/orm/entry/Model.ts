@@ -15,7 +15,8 @@ import Utilities         = require("./Utilities");
 import Validators        = require("./Validators");
 import ORMError          = require("./Error");
 import Hook              = require("./Hook");
-import AggregateFunctions = require("./AggregateFunctions")
+import AggregateFunctions = require("./AggregateFunctions");
+
 const AvailableHooks: (keyof FxOrmModel.Hooks)[] = [
 	"beforeCreate", "afterCreate",
 	"beforeSave", "afterSave",
@@ -425,6 +426,7 @@ export const Model: FxOrmModel.ModelConstructor = function (
 			limit        : options.limit,
 			order        : order,
 			merge        : merge,
+			exists		 : options.exists || [],
 			offset       : options.offset,
 			properties   : allProperties,
 			keyProperties: keyProperties,

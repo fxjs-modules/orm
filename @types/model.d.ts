@@ -278,6 +278,7 @@ declare namespace FxOrmModel {
         autoSave?: boolean
         autoFetchLimit?: number
         __merge?: FxOrmAssociation.ModelAssociationMethod__ComputationPayload__Merge
+        exists?: FxOrmQuery.ChainWhereExistsInfo[]
         extra?: FxOrmModel.ModelPropertyDefinitionHash | any[]
         extra_info?: {
             table: string
