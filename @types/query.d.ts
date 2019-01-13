@@ -104,6 +104,10 @@ declare namespace FxOrmQuery {
         find: {
             (...conditions: FxOrmModel.ModelQueryConditionsItem[]): IChainFind;
         }
+        whereExists: {
+            (...exists: FxOrmQuery.ChainWhereExistsInfo[]): IChainFind;
+            (exists: FxOrmQuery.ChainWhereExistsInfo[]): IChainFind;
+        }
         all: IChainFind['find']
         where: IChainFind['find']
         

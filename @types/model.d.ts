@@ -283,8 +283,8 @@ declare namespace FxOrmModel {
         extra_info?: {
             table: string
             id: any
-            id_prop
-            assoc_prop
+            id_prop: string[]
+            assoc_prop: string[]
         }
     }
 

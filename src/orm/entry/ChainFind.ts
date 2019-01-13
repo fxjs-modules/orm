@@ -124,6 +124,14 @@ const ChainFind: FxOrmQuery.ChainFindGenerator = function (
 			}
 			return this;
 		},
+		whereExists: function <T>() {
+			if (arguments.length && Array.isArray(arguments[0])) {
+				opts.exists = arguments[0];
+			} else {
+				opts.exists = Array.prototype.slice.apply(arguments);
+			}
+			return this;
+		},
 		only: function () {
 			if (arguments.length && Array.isArray(arguments[0])) {
 				opts.only = arguments[0];

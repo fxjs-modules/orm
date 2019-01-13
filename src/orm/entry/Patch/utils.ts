@@ -22,6 +22,18 @@ export function patchSync(
     })
 }
 
+const model_conjunctions_keys: (keyof FxSqlQuerySubQuery.ConjunctionInput__Sample)[] = [
+    'or',
+    'and',
+    'not_or',
+    'not_and',
+    'not'
+];
+
+function is_model_conjunctions_key (k: string) {
+    return model_conjunctions_keys.includes(k as any)
+}
+
 // hook find, patch result
 export function patchResult(o: FxOrmNS.FibOrmFixedModelInstance | FxOrmModel.Model): void {
     var old_func: ModelFuncToPatch = o.find;
@@ -38,8 +50,8 @@ export function patchResult(o: FxOrmNS.FibOrmFixedModelInstance | FxOrmModel.Mod
      */
     function filter_date(opt) {
         for (var k in opt) {
-            if (k === 'or')
-                opt[k].forEach(filter_date);
+            if (is_model_conjunctions_key(k))
+                Array.isArray(opt[k]) && opt[k].forEach(filter_date);
             else {
                 var p = m.allProperties[k];
                 if (p && p.type === 'date') {
