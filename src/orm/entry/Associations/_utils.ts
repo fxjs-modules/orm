@@ -1,3 +1,5 @@
+/// <reference lib="es6" />
+
 export function defineDefaultExtendsToTableName (modelTableName: string, assocName: string): string {
 	return `${modelTableName}_${assocName}`
 }
@@ -41,4 +43,28 @@ export function cutOffAssociatedModelFindOptions (
 		return 
 	
 	return opts
+}
+
+export function addAssociationInfoToModel (
+	Model: FxOrmModel.Model,
+	association_name: string,
+	opts: {
+		type: FxOrmAssociation.AssociationType
+		association: FxOrmAssociation.InstanceAssociationItem
+	}
+): FxOrmModel.Model['associations'][string] {
+	if (opts.type === 'extendsTo') {
+		Model.associations[association_name] = {
+			type: opts.type,
+			association: opts.association
+		};
+	} else {
+		Model.associations[association_name] = {
+			type: opts.type,
+			association: opts.association
+		};
+	}
+	
+
+	return Model.associations[association_name];
 }

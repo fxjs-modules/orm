@@ -186,7 +186,7 @@ describe("hasOne", function () {
         });
 
         // broken in mongo
-        describe("findBy()", function () {
+        describe("findBy*()", function () {
             before(setup());
 
             before(function () {
@@ -323,11 +323,11 @@ describe("hasOne", function () {
             });
             Person.hasOne("father", {
                 autoFetch: false,
-                reverse: 'Children_of_f'
+                reverse: 'children_of_f'
             });
             Person.hasOne("mother", {
                 autoFetch: false,
-                reverse: 'Children_of_m'
+                reverse: 'children_of_m'
             });
 
             helper.dropSync(Person, function () {
@@ -346,14 +346,20 @@ describe("hasOne", function () {
                     name: ORM.eq("Child")
                 });
                 assert.equal(parents.length, 1);
-                assert.deepEqual(parents.map(x => x.name).sort(), ['Father'])
+                assert.deepEqual(parents.map(x => x.name), ['Father'])
 
                 // reverse
                 var parents = Person.findByChildren_of_mSync({
                     name: ORM.eq("Child")
                 });
                 assert.equal(parents.length, 1);
-                assert.deepEqual(parents.map(x => x.name).sort(), ['Mother'])
+                assert.deepEqual(parents.map(x => x.name), ['Mother'])
+
+                var parents = Person.findBy("children_of_m", {
+                    name: ORM.eq("Child")
+                }).runSync();
+                assert.equal(parents.length, 1);
+                assert.deepEqual(parents.map(x => x.name), ['Mother'])
 
                 // manually
                 var children = Person.findSync({}, {

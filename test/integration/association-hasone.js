@@ -339,6 +339,12 @@ describe("hasOne", function () {
                 assert.equal(children.length, 1);
                 assert.equal(children[0].name, 'Child');
 
+                var children = Person.findBy('mother', {
+                    name: ORM.eq("Mother")
+                }).runSync();
+                assert.equal(children.length, 1);
+                assert.equal(children[0].name, 'Child');
+
                 // manually
                 var children = Person.findSync({}, {
                     // chainfind_linktable: 'person as p2',
@@ -382,7 +388,7 @@ describe("hasOne", function () {
         });
     });
 
-    describe("findBy()", function () {
+    describe("findBy*()", function () {
         before(setup());
 
         it("should throw if no conditions passed", function () {

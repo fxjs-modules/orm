@@ -33,6 +33,13 @@ declare namespace FxOrmSynchronous {
         getSync: {
             (...ids: any[]): FxOrmInstance.Instance; // this Instance is from its callback
         }
+        findBySync: {
+            <T = any>(
+                ext_name: string,
+                conditions?: FxOrmModel.ModelQueryConditions__Find,
+                options?: FxOrmAssociation.ModelAssociationMethod__FindByOptions,
+            ): FxOrmInstance.Instance[]
+        }
 
         // it's callback version could return `this: ORM`
         syncSync: VoidReturn

@@ -1,6 +1,8 @@
 /// <reference path="model.d.ts" />
 
 declare namespace FxOrmAssociation {
+    type AssociationType = 'extendsTo' | 'hasOne' | 'hasMany'
+
     type AssociationKeyComputation = Function | string
     interface AssociationDefinitionOptions {
         /**
@@ -80,6 +82,7 @@ declare namespace FxOrmAssociation {
         delAccessor: string
 
         addAccessor?: string
+        modelFindByAccessor?: string
 
         // model: FxOrmModel.Model
         reversed?: boolean
@@ -147,10 +150,10 @@ declare namespace FxOrmAssociation {
     interface ModelAssociationMethod__FindOptions extends FxOrmModel.ModelOptions__Find, ModelAssociationMethod__Options {
     }
 
-    interface ModelAssociationMethod__FindByOptions extends FxOrmModel.ModelOptions__Find, ModelAssociationMethod__Options {
+    interface ModelAssociationMethod__GetOptions extends FxOrmModel.ModelOptions__Find, ModelAssociationMethod__Options {
     }
 
-    interface ModelAssociationMethod__GetOptions extends FxOrmModel.ModelOptions__Find, ModelAssociationMethod__Options {
+    interface ModelAssociationMethod__FindByOptions extends FxOrmModel.ModelOptions__Findby, ModelAssociationMethod__Options {
     }
 
     interface HasManyHooks {

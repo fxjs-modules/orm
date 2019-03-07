@@ -709,6 +709,20 @@ export const Model = function (
 	// control current owned fields
 	const currFields: {[k: string]: true} = {};
 
+	model.findBy = function (ext_name, conditions, findby_options, cb): FxOrmQuery.IChainFind {
+		const findByAccessor = model.associations[ext_name].association.modelFindByAccessor
+		
+		if (!findByAccessor || typeof model[findByAccessor] !== 'function')
+			throw `invalid extension name ${ext_name} provided!`
+
+		if (typeof cb === 'function')
+			return model[findByAccessor](conditions, findby_options, cb)
+
+		return model[findByAccessor](conditions, findby_options)
+	}
+
+	model.findBySync = util.sync(model.findBy) as FxOrmModel.Model['findBySync']
+
 	model.addProperty = function (propIn, options) {
 		var cType: FxOrmProperty.CustomPropertyType;
 		var prop = Property.normalize({
@@ -803,6 +817,7 @@ export const Model = function (
 		model[AvailableHooks[k]] = createHookHelper(AvailableHooks[k]);
 	}
 
+	model.associations = {};
 	OneAssociation.prepare(model, one_associations);
 	ManyAssociation.prepare(m_opts.db, model, many_associations);
 	ExtendAssociation.prepare(m_opts.db, model, extend_associations);

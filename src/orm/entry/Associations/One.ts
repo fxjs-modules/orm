@@ -2,7 +2,7 @@ import util = require('util')
 
 import Utilities = require("../Utilities");
 import ORMError = require("../Error");
-import { ACCESSOR_KEYS } from './_utils';
+import { ACCESSOR_KEYS, addAssociationInfoToModel } from './_utils';
 
 export function prepare (
 	Model: FxOrmModel.Model, associations: FxOrmAssociation.InstanceAssociationItem_HasOne[]
@@ -13,10 +13,11 @@ export function prepare (
 			ext_model = arguments[1] = null as FxOrmModel.Model
 		}
 
+		assoc_name = assoc_name || ext_model.table;
 		ext_model = ext_model || Model;
 		
 		var association: FxOrmAssociation.InstanceAssociationItem_HasOne = {
-			name           : assoc_name || ext_model.table,
+			name           : assoc_name,
 			model          : ext_model,
 
 			field		   : null,
@@ -149,6 +150,11 @@ export function prepare (
 			}
 			return Model.find({}, options);
 		};
+
+		addAssociationInfoToModel(Model, assoc_name, {
+			type: 'hasOne',
+			association
+		});
 
 		return this;
 	};

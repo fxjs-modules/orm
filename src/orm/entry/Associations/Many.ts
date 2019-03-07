@@ -8,7 +8,7 @@ import Settings = require("../Settings");
 import Property = require("../Property");
 import ORMError = require("../Error");
 import Utilities = require("../Utilities");
-import { ACCESSOR_KEYS, getMapsToFromProperty, cutOffAssociatedModelFindOptions } from './_utils';
+import { ACCESSOR_KEYS, getMapsToFromProperty, cutOffAssociatedModelFindOptions, addAssociationInfoToModel } from './_utils';
 import { patchIChainFindLikeRs } from '../Patch/utils';
 
 export function prepare(db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associations: FxOrmAssociation.InstanceAssociationItem_HasMany[]) {
@@ -207,6 +207,11 @@ export function prepare(db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associatio
 
 			return chain
 		};
+
+		addAssociationInfoToModel(Model, name, {
+			type: 'hasMany',
+			association: association
+		});
 
 		return this;
 	};

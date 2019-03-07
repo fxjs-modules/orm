@@ -532,6 +532,9 @@ describe("hasMany", function () {
                     var people = Person.findByPetsSync({ name: "Mutt" });
                     assertion_people_for_findby(people);
 
+                    var people = Person.findBy('pets', { name: "Mutt" }).runSync();
+                    assertion_people_for_findby(people);
+
                     // asynchronous version
                     Person.findByPets({ name: "Mutt" })
                         .run(function (err, people) {
@@ -568,6 +571,9 @@ describe("hasMany", function () {
                     });
 
                     var pets = Pet.findByOwnersSync({ name: "John" });
+                    assertion_pets_for_findby(pets);
+
+                    var pets = Pet.findBy('owners', { name: "John" }).runSync();
                     assertion_pets_for_findby(pets);
 
                     // asynchronous version
@@ -613,6 +619,9 @@ describe("hasMany", function () {
                     });
 
                     var people = Person.findByPetsSync({ name: "Mutt" });
+                    assertion_people_for_findby(people);
+
+                    var people = Person.findBy('pets', { name: "Mutt" }).runSync();
                     assertion_people_for_findby(people);
 
                     // asynchronous version

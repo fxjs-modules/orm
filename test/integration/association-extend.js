@@ -172,7 +172,7 @@ describe("Model.extendsTo()", function () {
         });
     });
 
-    describe("findBy()", function () {
+    describe("findBy*()", function () {
         before(setup());
 
         it("should throw if no conditions passed", function () {
@@ -183,11 +183,32 @@ describe("Model.extendsTo()", function () {
 
         it("should lookup in Model based on associated model properties", function () {
             var people = Person.findByAddressSync({
-                number: 123
+                number: 123,
+            }, {
+                autoFetch: true
             });
-
             assert.ok(Array.isArray(people));
             assert.ok(people.length == 1);
+            assert.equal(people[0].address.street, 'Liberty');
+            
+            var people = Person.findBy('address', {
+                number: 123,
+            }, {
+                autoFetch: true
+            }).runSync();
+            
+            assert.ok(Array.isArray(people));
+            assert.ok(people.length == 1);
+            assert.equal(people[0].address.street, 'Liberty');
+            
+            var people = Person.findBy('address', {
+                number: ORM.ne(123),
+            }, {
+                autoFetch: true
+            }).runSync();
+            
+            assert.ok(Array.isArray(people));
+            assert.ok(people.length == 0);
         });
 
         it("should return a ChainFind if no callback passed", function () {

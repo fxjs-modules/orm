@@ -1,6 +1,6 @@
 import util = require('util')
 
-import { defineDefaultExtendsToTableName, defineAssociationAccessorMethodName, ACCESSOR_KEYS } from "./_utils";
+import { defineDefaultExtendsToTableName, defineAssociationAccessorMethodName, ACCESSOR_KEYS, addAssociationInfoToModel } from "./_utils";
 
 import _cloneDeep = require('lodash.clonedeep');
 import ORMError   = require("../Error");
@@ -106,6 +106,11 @@ export function prepare (db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associati
 			}
 			return Model.find({}, options);
 		};
+
+		addAssociationInfoToModel(Model, name, {
+			type: 'extendsTo',
+			association: association
+		});
 
 		return association.model;
 	};

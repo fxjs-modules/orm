@@ -1,5 +1,6 @@
 /// <reference types="@fxjs/sql-query" />
 /// <reference path="Validators.d.ts" />
+/// <reference path="assoc.d.ts" />
 /// <reference path="patch.d.ts" />
 /// <reference path="hook.d.ts" />
 /// <reference path="instance.d.ts" />
@@ -47,6 +48,7 @@ declare namespace FxOrmModel {
         /**
          * methods used to add associations
          */
+        /* association about api :start */
         hasOne: {
             (assoc_name: string, ext_model?: Model, assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_HasOne): FxOrmModel.Model
         }
@@ -54,7 +56,34 @@ declare namespace FxOrmModel {
             (assoc_name: string, ext_model: Model, assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_HasMany): FxOrmModel.Model
             (assoc_name: string, ext_model: Model, assoc_props: ModelPropertyDefinitionHash, assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_HasMany): FxOrmModel.Model
         }
-        extendsTo: (...args: any[]) => Model;
+        extendsTo: {
+            (name: string, properties: FxOrmModel.DetailedPropertyDefinitionHash, assoc_options: FxOrmAssociation.AssociationDefinitionOptions_ExtendsTo): Model
+        };
+
+        associations: {
+            [k: string]: {
+                type: 'hasOne'
+                association: FxOrmAssociation.InstanceAssociationItem_HasOne
+            } | {
+                type: 'hasMany'
+                association: FxOrmAssociation.InstanceAssociationItem_HasMany
+            } | {
+                type: 'extendsTo'
+                association: FxOrmAssociation.InstanceAssociationItem_ExtendTos
+            } | {
+                type: FxOrmAssociation.AssociationType
+                association: FxOrmAssociation.InstanceAssociationItem
+            }
+        }
+        findBy: {
+            <T = any>(
+                ext_name: string,
+                conditions?: ModelQueryConditions__Find,
+                options?: FxOrmAssociation.ModelAssociationMethod__FindByOptions,
+                cb?: FxOrmNS.ExecutionCallback<T>
+            ): FxOrmQuery.IChainFind
+        }
+        /* association about api :end */
 
         /* data operation api :start */
         create: {
@@ -269,6 +298,10 @@ declare namespace FxOrmModel {
 
         // access dynamic findby options
         [k: string]: any
+    }
+    
+    interface ModelOptions__Findby extends ModelOptions__Find {
+        
     }
 
     interface ModelOptions__Get extends ModelOptions__Find {}
