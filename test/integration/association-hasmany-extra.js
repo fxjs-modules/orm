@@ -4,6 +4,13 @@ test.setup()
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
+function cutOffMilliSecond (time) {
+    const t = time.getTime()
+    const millis = time.getMilliseconds()
+
+    return new Date(t - millis)
+}
+
 describe("hasMany extra properties", function () {
     var db = null;
     var Person = null;
@@ -21,7 +28,10 @@ describe("hasMany extra properties", function () {
                 name: String
             });
             Person.hasMany('pets', Pet, {
-                since: Date,
+                since: {
+                    type: 'date',
+                    time: true
+                },
                 data: Object
             }, {
                 reverse: opts.reversePets ? 'owners' : null,
@@ -107,7 +117,11 @@ describe("hasMany extra properties", function () {
         }
 
         describe("findBy() - A hasMany B, without reverse", function () {
-            const since = new Date();
+            /**
+             * mysql would deprecate millisecond when store field as `datetime` type,
+             * avoid this difference to make test case working.
+             */
+            const since = cutOffMilliSecond(new Date());
             before(function () {
                 setup({
                     autoFetchPets: false,
