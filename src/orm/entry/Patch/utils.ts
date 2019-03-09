@@ -269,7 +269,10 @@ export function patchIChainFindLikeRs (
     });
 }
 
-export function patchInsert(table: string, data: any, keyProperties: FxOrmProperty.NormalizedProperty[], cb: Function) {
+export function patchInsert(
+    this: FxOrmDMLDriver.DMLDriver_SQLite,
+    table: string, data: any, keyProperties: FxOrmProperty.NormalizedProperty[], cb: Function
+) {
     var q = this.query.insert()
         .into(table)
         .set(data)

@@ -89,7 +89,8 @@ Driver.prototype.find = function (
 	this: FxOrmDMLDriver.DMLDriver_SQLite, fields, table, conditions, opts, cb
 ) {
 	var q = this.query.select()
-	                  .from(table, undefined, undefined).select(fields);
+	                  .from(table)
+					  .select(fields);
 
 	if (opts.offset) {
 		q.offset(opts.offset);
@@ -139,7 +140,7 @@ Driver.prototype.count = function (
 	this: FxOrmDMLDriver.DMLDriver_SQLite, table, conditions, opts, cb
 ) {
 	var q = this.query.select()
-	                  .from(table, undefined, undefined)
+	                  .from(table)
 	                  .count(null, 'c');
 
 	if (opts.merge) {

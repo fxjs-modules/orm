@@ -123,7 +123,7 @@ Driver.prototype.find = function (
 	this: FxOrmDMLDriver.DMLDriver_MySQL, fields, table, conditions, opts, cb
 ) {
 	var q = this.query.select()
-					  .from(table, undefined, undefined)
+					  .from(table)
 					  .select(fields);
 
 	if (opts.offset) {
@@ -169,7 +169,7 @@ Driver.prototype.count = function (
 	this: FxOrmDMLDriver.DMLDriver_MySQL, table, conditions, opts, cb
 ) {
 	var q = this.query.select()
-	                  .from(table, undefined, undefined)
+	                  .from(table)
 	                  .count(null, 'c');
 
 	if (opts.merge) {

@@ -103,7 +103,7 @@ const AggregateFunctions = function (
 
 			const query = opts.driver.getQuery()
 				.select()
-				.from(opts.table, undefined, undefined)
+				.from(opts.table)
 				.select(opts.propertyList);
 
 			for (let i = 0; i < aggregates.length; i++) {

@@ -72,5 +72,4 @@ export const normalize: FxOrmNS.PropertyModule['normalize'] = function (opts): F
 	result_prop.name = opts.name;
 
 	return result_prop;
-	// return opts.prop;
 };

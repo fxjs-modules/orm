@@ -34,6 +34,7 @@ declare namespace FxOrmDMLDriver {
 
     type AggregationFuncTuple = [string, string]
     interface DMLDriver extends FxOrmSqlDDLSync__Driver.Driver {
+        db: FxOrmDb.DatabaseBase
         dialect: FxSqlQueryDialect.DialectType
         config: FxOrmNS.IDBConnectionConfig
         opts: DMLDriverOptions
