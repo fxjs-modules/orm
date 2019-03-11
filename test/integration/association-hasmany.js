@@ -771,10 +771,10 @@ describe("hasMany", function () {
             if (protocol == 'SQLite') {
                 sql = "PRAGMA table_info(?)";
             } else {
-                sql = "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = ? ORDER BY data_type";
+                sql = "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = ? AND table_schema = ? ORDER BY data_type";
             }
 
-            var cols = db.driver.execQuerySync(sql, ['account_emails']);
+            var cols = db.driver.execQuerySync(sql, ['account_emails', db.driver.config.database]);
 
             if (protocol == 'SQLite') {
                 assert.equal(cols[0].name, 'account_id');

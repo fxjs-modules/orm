@@ -59,10 +59,10 @@ describe("Model.get()", function () {
             if (protocol == 'SQLite') {
                 sql = "PRAGMA table_info(?)";
             } else {
-                sql = "SELECT column_name FROM information_schema.columns WHERE table_name = ?";
+                sql = "SELECT column_name FROM information_schema.columns WHERE table_name = ? AND table_schema = ?";
             }
 
-            var data = db.driver.execQuerySync(sql, [Person.table]);
+            var data = db.driver.execQuerySync(sql, [Person.table, db.driver.config.database]);
             var names = _.map(data, protocol == 'SQLite' ? 'name' : 'column_name')
 
             assert.equal(typeof Person.properties.name, 'object');
