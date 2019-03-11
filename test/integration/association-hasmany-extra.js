@@ -239,51 +239,38 @@ describe("hasMany extra properties", function () {
             });
 
             it("use right extra data find A with `findByB()`", function () {
-                var John = Person.findByPets(
-                    { name: "Mutt" }, 
-                    // find options for host model `Person`
-                    {
-                        exists: [
-                            {
-                                table: 'person_pets',
-                                link: [
-                                    'pets_id', 'id'
-                                ],
-                                conditions: {
-                                    since: since
+                ;[
+                    [
+                        {since: since},
+                    ],
+                    [
+                        {since: ORM.eq(since)},
+                    ],
+                    [
+                        {since: {eq: since}},
+                    ]
+                ].forEach(([conditions]) => {
+                    var John = Person.findByPets(
+                        { name: "Mutt" }, 
+                        // find options for host model `Person`
+                        {
+                            exists: [
+                                {
+                                    table: 'person_pets',
+                                    link: [
+                                        'pets_id', 'id'
+                                    ],
+                                    conditions: conditions
                                 }
-                            }
-                        ],
-                        order: 'name',
-                        autoFetch: true
-                    }
-                ).firstSync();
+                            ],
+                            order: 'name',
+                            autoFetch: true
+                        }
+                    ).firstSync();
 
-                assert.property(John, "pets");
-                assertion_people_for_findby([John]);
-
-                var John = Person.findByPets(
-                    { name: "Mutt" }, 
-                    // find options for host model `Person`
-                    {
-                        exists: [
-                            {
-                                table: 'person_pets',
-                                link: [
-                                    'pets_id', 'id'
-                                ],
-                                conditions: {
-                                    since: ORM.eq(since)
-                                }
-                            }
-                        ],
-                        order: 'name',
-                        autoFetch: true
-                    }
-                ).firstSync();
-
-                assert.property(John, "pets");
-                assertion_people_for_findby([John]);
+                    assert.property(John, "pets");
+                    assertion_people_for_findby([John]);
+                });
             });
         });
     });
