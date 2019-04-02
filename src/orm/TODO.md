@@ -20,6 +20,12 @@
     - [ ] `driver.query`
     - [ ] `driver.execQuerySync`
     - [ ] `driver.trans`
+* [ ] mixture findBy
+    - [ ] hasOne + hasMany
+    - [ ] hasOne + extendsTo
+    - [ ] hasMany + extendsTo
+    - [ ] hasOne + hasMany + extendsTo
+* [ ] `join_where` in findBy
 
 ### benchmark
 

@@ -37,11 +37,14 @@ declare namespace FxOrmQuery {
     type QueryConditions = FxSqlQuerySubQuery.SubQueryConditions
     /* query conditions :end */
 
-    type OrderRawInput = string | OrderRawTuple
-    type OrderRawTuple = [string, string?]
     type OrderNormalizedTuple = FxSqlQuery.OrderNormalizedTuple
     type OrderSqlStyleTuple = FxSqlQuery.OrderSqlStyleTuple
     type OrderNormalizedResult = FxSqlQuery.OrderNormalizedResult
+
+    type OrderSeqRawTuple = (OrderNormalizedTupleWithoutTable[0] | OrderNormalizedTupleWithoutTable[1])[]
+    type OrderRawInput = string | OrderSeqRawTuple
+    type OrderNormalizedTupleWithoutTable = [string, "Z" | "A"]
+    type OrderNormalizedTupleMixin = (OrderNormalizedTupleWithoutTable|FxSqlQuery.OrderNormalizedResult)[]
     
     interface ChainFindMergeInfo {
         from: {
@@ -100,7 +103,7 @@ declare namespace FxOrmQuery {
         driver: FxOrmDMLDriver.DMLDriver
         driver_name?: string
         limit?: [number, number]
-        order?: FxOrmQuery.OrderNormalizedTuple[]
+        order?: FxOrmQuery.ChainFindOptions['order']
         // property name's list
         propertyList?: string[]
         table?: string
@@ -129,6 +132,7 @@ declare namespace FxOrmQuery {
         offset(offset: number): IChainFind;
 
         order(propertyOrderDesc: string, order?: FxOrmQuery.OrderNormalizedTuple[1]): IChainFind;
+        order(...orders: FxOrmQuery.OrderSeqRawTuple): IChainFind;
         orderRaw(str: FxOrmQuery.OrderSqlStyleTuple[0], args?: FxOrmQuery.OrderSqlStyleTuple[1]): IChainFind;
         limit(limit: number): IChainFind;
         count(callback: FxOrmNS.ExecutionCallback<number>): IChainFind;
@@ -173,7 +177,7 @@ declare namespace FxOrmQuery {
         only: (string|FxSqlQueryColumns.SelectInputArgType)[]
         limit: number
         offset: number
-        merge: FxOrmQuery.ChainFindMergeInfo
+        merge: FxOrmQuery.ChainFindMergeInfo | FxOrmQuery.ChainFindMergeInfo[]
         newInstance: {
             (data: FxOrmInstance.InstanceDataPayload, cb: FxOrmNS.GenericCallback<FxOrmInstance.Instance>): void
         }

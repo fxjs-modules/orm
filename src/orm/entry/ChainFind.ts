@@ -26,6 +26,7 @@ const ChainFind = function (
 	this: void,
 	Model: FxOrmModel.Model, opts: FxOrmQuery.ChainFindOptions
 ) {
+	const merges = opts.merge = Utilities.combineMergeInfoToArray( opts.merge );
 
 	const chainRun = function<T> (done: FxOrmNS.GenericCallback<T|T[]|FxOrmInstance.InstanceDataPayload[]>) {
 		const conditions: FxSqlQuerySubQuery.SubQueryConditions = Utilities.transformPropertyNames(opts.conditions, opts.properties);
@@ -34,7 +35,7 @@ const ChainFind = function (
 		opts.driver.find(opts.only, opts.table, conditions, {
 			limit  : opts.limit,
 			order  : order,
-			merge  : opts.merge,
+			merge  : merges,
 			offset : opts.offset,
 			exists : opts.exists
 		}, function (err: Error, dataItems: FxOrmInstance.InstanceDataPayload[]) {
@@ -162,15 +163,12 @@ const ChainFind = function (
 			opts.offset = offset;
 			return this;
 		},
-		order: function (property, order?) {
+		order: function (...orders: FxOrmQuery.OrderSeqRawTuple) {
 			if (!Array.isArray(opts.order)) {
 				opts.order = [];
 			}
-			if (property[0] === "-") {
-				opts.order.push([ property.substr(1), "Z" ]);
-			} else {
-				opts.order.push([ property, (order && order.toUpperCase() === "Z" ? "Z" : "A") ]);
-			}
+			opts.order = opts.order.concat(Utilities.standardizeOrder(orders));
+
 			return this;
 		},
 		orderRaw: function (str, args?) {
@@ -184,7 +182,7 @@ const ChainFind = function (
 		},
 		count: function (cb) {
 			opts.driver.count(opts.table, prepareConditions(opts), {
-				merge  : opts.merge
+				merge  : merges
 			}, function (err, data) {
 				if (err || data.length === 0) {
 					return cb(err);
@@ -199,7 +197,7 @@ const ChainFind = function (
 			opts.driver.find(keys, opts.table, prepareConditions(opts), {
 				limit  : opts.limit,
 				order  : prepareOrder(opts),
-				merge  : opts.merge,
+				merge  : merges,
 				offset : opts.offset,
 				exists : opts.exists
 			}, function (err, data) {

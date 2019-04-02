@@ -29,13 +29,22 @@ export function getMapsToFromProperty (property: FxOrmProperty.NormalizedPropert
 	return property.mapsTo || property.name
 }
 
+export function getMapsToFromPropertyHash (hash: FxOrmProperty.NormalizedPropertyHash) {
+	return Object.keys(hash).map(k => {
+		const item = hash[k]
+
+		return item.mapsTo || k
+	})
+}
+
 export function cutOffAssociatedModelFindOptions (
 	findby_options: FxOrmAssociation.ModelAssociationMethod__FindByOptions,
-	assocNameTplName: string
+	association_name: string
 ) {
 	let opts = null;
-	if (findby_options.hasOwnProperty(assocNameTplName)) {
-		const k = `${assocNameTplName}_find_options`;
+
+	const k = `find_options:${association_name}`;
+	if (findby_options.hasOwnProperty(k)) {
 		opts = findby_options[k];
 		
 		delete findby_options[k]
@@ -48,23 +57,12 @@ export function cutOffAssociatedModelFindOptions (
 export function addAssociationInfoToModel (
 	Model: FxOrmModel.Model,
 	association_name: string,
-	opts: {
-		type: FxOrmAssociation.AssociationType
-		association: FxOrmAssociation.InstanceAssociationItem
-	}
+	opts: FxOrmModel.Model['associations'][any]
 ): FxOrmModel.Model['associations'][string] {
-	if (opts.type === 'extendsTo') {
-		Model.associations[association_name] = {
-			type: opts.type,
-			association: opts.association
-		};
-	} else {
-		Model.associations[association_name] = {
-			type: opts.type,
-			association: opts.association
-		};
-	}
+	Model.associations[association_name] = {
+		type: opts.type,
+		association: opts.association
+	} as FxOrmModel.Model['associations'][any];
 	
-
 	return Model.associations[association_name];
 }

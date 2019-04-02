@@ -6,6 +6,7 @@ import _cloneDeep = require('lodash.clonedeep');
 import ORMError   = require("../Error");
 import Singleton  = require("../Singleton");
 import Utilities  = require("../Utilities");
+import { findByList } from '../Model';
 
 /**
  * 
@@ -92,19 +93,17 @@ export function prepare (db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associati
 				throw new ORMError(`.${association.modelFindByAccessor}() is missing a conditions object`, 'PARAM_MISMATCH');
 			}
 
-			options.__merge = {
-				from  : { table: association.model.table, field: Object.keys(assoc_field) },
-				to    : { table: Model.table, field: Model.id },
-				where : [ association.model.table, conditions ],
-				table : Model.table,
-				select: []
-			};
-			options.extra = [];
-
-			if (typeof cb === "function") {
-				return Model.find({}, options, cb);
-			}
-			return Model.find({}, options);
+			return findByList(Model, 
+				{},
+				[
+					{
+						association_name: association.name,
+						conditions: conditions
+					},
+				],
+				options,
+				cb
+			);
 		};
 
 		addAssociationInfoToModel(Model, name, {

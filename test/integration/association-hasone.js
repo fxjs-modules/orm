@@ -360,6 +360,23 @@ describe("hasOne", function () {
                 });
                 assert.equal(children.length, 1);
                 assert.equal(children[0].name, 'Child');
+
+                var children = Person.findSync({}, {
+                    // chainfind_linktable: 'person as p2',
+                    __merge: [
+                        {
+                            from  : { table: 'person as p1', field: ['id'] },
+                            // to    : { table: 'person as p2', field: ['father_id'] },
+                            // where : [ 'p2', { id: ORM.ne(Date.now()) } ],
+                            to    : { table: 'person', field: ['father_id'] },
+                            where : [ 'person', { id: ORM.ne(Date.now()) } ],
+                            table : 'person'
+                        }
+                    ],
+                    extra: []
+                });
+                assert.equal(children.length, 1);
+                assert.equal(children[0].name, 'Child');
             });
         });
     });

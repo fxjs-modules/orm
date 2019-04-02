@@ -72,10 +72,6 @@ declare namespace FxOrmAssociation {
         // is the association is extendsTo
         extension?: boolean
 
-        mergeId?: FxOrmProperty.NormalizedPropertyHash
-        mergeAssocId?: FxOrmProperty.NormalizedPropertyHash
-        mergeTable?: string
-
         getAccessor: string
         setAccessor: string
         hasAccessor: string
@@ -103,7 +99,7 @@ declare namespace FxOrmAssociation {
     }
 
     interface InstanceAssociationItem_HasOne extends InstanceAssociationItem {
-        field: string | FxOrmProperty.NormalizedPropertyHash
+        field: FxOrmProperty.NormalizedPropertyHash
         
         reverse?: string;
         // template name
@@ -141,11 +137,19 @@ declare namespace FxOrmAssociation {
         data?: InstanceAssociationItem
     }
 
+    // @deprecated
     type ModelAssociationMethod__ComputationPayload__Merge = FxOrmQuery.ChainFindMergeInfo
 
     interface ModelAssociationMethod__Options {
         // only valid for hasMany assoc
-        join_where?: FxOrmModel.ModelOptions__Find
+        join_where?: FxOrmModel.ModelFindByDescriptorItem['join_where']
+        extra?: FxOrmModel.ModelOptions__Find['extra']
+        extra_info?: {
+            table: string
+            id: FxOrmModel.Model['id']
+            id_prop: string[]
+            assoc_prop: string[]
+        }
     }
 
     interface ModelAssociationMethod__FindOptions extends FxOrmModel.ModelOptions__Find, ModelAssociationMethod__Options {

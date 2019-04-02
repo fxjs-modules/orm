@@ -173,11 +173,11 @@ declare namespace FxOrmDMLDriver {
         offset?: number
         limit?: number
         order?: FxOrmQuery.OrderNormalizedResult[]
-        merge?: FxOrmQuery.ChainFindMergeInfo
+        merge?: FxOrmQuery.ChainFindMergeInfo[]
         exists?: ChainWhereExistsInfoPayload
     }
     interface DMLDriver_CountOptions {
-        merge?: FxOrmQuery.ChainFindMergeInfo
+        merge?: DMLDriver_FindOptions['merge']
         exists?: DMLDriver_FindOptions['exists']
     }
     /* ============================= DMLDriver API Options :end   ============================= */

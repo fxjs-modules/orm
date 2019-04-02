@@ -1,5 +1,6 @@
+/// <reference lib="es5" />
+
 import util = require('util');
-import coroutine = require('coroutine');
 
 import _flatten = require('lodash.flatten')
 
@@ -8,8 +9,8 @@ import Settings = require("../Settings");
 import Property = require("../Property");
 import ORMError = require("../Error");
 import Utilities = require("../Utilities");
-import { ACCESSOR_KEYS, getMapsToFromProperty, cutOffAssociatedModelFindOptions, addAssociationInfoToModel } from './_utils';
-import { patchIChainFindLikeRs } from '../Patch/utils';
+import { ACCESSOR_KEYS, addAssociationInfoToModel } from './_utils';
+import { findByList } from '../Model';
 
 export function prepare(db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associations: FxOrmAssociation.InstanceAssociationItem_HasMany[]) {
 	Model.hasMany = function () {
@@ -112,8 +113,8 @@ export function prepare(db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associatio
 		Model[association.modelFindByAccessor] = function () {
 			var cb: FxOrmModel.ModelMethodCallback__Find = null,
 				conditions: FxOrmModel.ModelQueryConditions__Find = null,
-				findby_opts: FxOrmAssociation.ModelAssociationMethod__FindByOptions = null,
-				assoc_find_opts: FxOrmAssociation.ModelAssociationMethod__FindByOptions = {};
+				right_find_opts: FxOrmAssociation.ModelAssociationMethod__FindByOptions = null,
+				join_conditions = {};
 
 			for (let i = 0; i < arguments.length; i++) {
 				switch (typeof arguments[i]) {
@@ -123,90 +124,31 @@ export function prepare(db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associatio
 					case "object":
 						if (conditions === null) {
 							conditions = arguments[i];
-						} else if (findby_opts === null) {
-							findby_opts = arguments[i];
+						} else if (right_find_opts === null) {
+							right_find_opts = arguments[i];
 						}
 						break;
 				}
 			}
-			
+
 			if (conditions === null) {
 				throw new ORMError(`.${association.modelFindByAccessor}() is missing a conditions object`, 'PARAM_MISMATCH');
 			}
 
-			findby_opts = findby_opts || {};
-			assoc_find_opts = cutOffAssociatedModelFindOptions(findby_opts, association.name) || {};
-			
-			assoc_find_opts.exists = Array.isArray(assoc_find_opts.exists) ? assoc_find_opts.exists : [];
-			assoc_find_opts.exists.push({
-				table: association.mergeTable,
-				link: [
-					Object.values(association.mergeAssocId).map(getMapsToFromProperty),
-					association.model.id
+			right_find_opts = right_find_opts || {};
+
+			return findByList(Model, 
+				{},
+				[
+					{
+						association_name: association.name,
+						conditions: conditions
+					},
 				],
-				conditions: conditions
-			});
-
-			const get_run_callback = function (rcb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance | FxOrmInstance.Instance[]>) {
-				return function (err: FxOrmError.ExtendedError, foundAssocItems: FxOrmInstance.Instance[]) {
-					if (err)
-						return rcb(err)
-
-					const query_exists: FxOrmQuery.ChainWhereExistsInfo[] = foundAssocItems.map(foundAssocItem => {
-						const rev_conditions = {};
-						Utilities.populateModelIdKeysConditions(
-							Model,
-							Object.values(association.mergeAssocId).map(getMapsToFromProperty),
-							foundAssocItem,
-							rev_conditions
-						);
-
-						return {
-							table: association.mergeTable,
-							link: [
-								Object.values(association.mergeId).map(getMapsToFromProperty),
-								Model.id
-							] as FxSqlQuerySql.WhereExistsLinkTuple,
-							conditions: rev_conditions
-						}
-					});
-
-					findby_opts.exists = Array.isArray(findby_opts.exists) ? findby_opts.exists : [];
-					findby_opts.exists = findby_opts.exists.concat(query_exists);
-					
-					const keyChainFind = Model.find({}, findby_opts);
-
-					const finalFoundItems = keyChainFind.runSync();
-					
-					return rcb(null, finalFoundItems);
-				}
-			}
-
-			const chain = association.model.find({}, assoc_find_opts);
-
-			if (typeof cb === 'function') {
-				return chain.find(get_run_callback(cb));
-			}
-
-			/**
-			 * don't support IChainFind's meaningless apis here:
-			 * - .remove()
-			 */
-			delete chain.remove
-			
-			patchIChainFindLikeRs(chain, {
-				new_callback_generator: get_run_callback,
-				/**
-				 * support IChainFind's apis:
-				 * - .fisrt()
-				 * - .last()
-				 * - .count()
-				 */
-				exlude_keys: ['first', 'last', 'count']
-			});
-
-			return chain
-		};
+				right_find_opts,
+				cb
+			);
+		}
 
 		addAssociationInfoToModel(Model, name, {
 			type: 'hasMany',

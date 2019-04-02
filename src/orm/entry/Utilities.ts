@@ -3,6 +3,8 @@ import events         = require("events");
 
 import _cloneDeep = require('lodash.clonedeep')
 
+import { Helpers as QueryHelpers } from '@fxjs/sql-query';
+
 /**
  * Order should be a String (with the property name assumed ascending)
  * or an Array or property String names.
@@ -20,42 +22,91 @@ import _cloneDeep = require('lodash.clonedeep')
  * 9. [ 'property1', '-property2' ] (ORDER BY property1 ASC, property2 DESC)
  * ...
  */
-export function standardizeOrder (order: FxOrmQuery.OrderRawInput): FxOrmQuery.OrderNormalizedTuple[] {
+const ZIS = [ "A", "Z" ] as FxSqlQuery.OrderNormalizedTuple[1][]
+export function standardizeOrder (
+	order: FxOrmModel.ModelOptions__Find['order']
+): FxOrmQuery.OrderNormalizedTupleMixin {
 	if (typeof order === "string") {
+		let item: FxOrmQuery.OrderNormalizedTupleWithoutTable = [ order.substr(1), "Z" ];
 		if (order[0] === "-") {
-			return [ [ order.substr(1), "Z" ] ];
+			return [ item ];
 		}
-		return [ [ order, "A" ] ];
+		item = [ order, "A" ];
+		return [ item ];
 	}
 
-	const new_order: FxOrmQuery.OrderNormalizedTuple[] = [];
+	// maybe `FxSqlQuery.OrderNormalizedResult`
+	if (
+		Array.isArray(order)
+		&& (Array.isArray(order[1]) || Array.isArray(order[0]))
+	) {
+		// is `FxSqlQuery.OrderSqlStyleTuple`
+		if (Array.isArray(order[1]))
+			return [order] as FxSqlQuery.OrderSqlStyleTuple[];
+
+		// is `FxSqlQuery.OrderNormalizedTuple`
+		return [order] as FxSqlQuery.OrderNormalizedTuple[];
+	}
+
+	const new_order: FxOrmQuery.OrderNormalizedTupleWithoutTable[] = [];
 	let minus: boolean;
 
-	for (let i = 0; i < order.length; i++) {
-		minus = (order[i][0] === "-");
+	for (let i = 0, item: typeof order[any]; i < order.length; i++) {
+		item = order[i];
 
-		if (i < order.length - 1 && [ "A", "Z" ].indexOf(order[i + 1].toUpperCase()) >= 0) {
+		// deprecate all non-string item
+		if (typeof item !== 'string') continue ;
+
+		/**
+		 * order from here would not be add table name afterwards
+		 */
+		minus = (item[0] === "-");
+
+		const next_one = order[i + 1]
+		const maybe_Z = typeof next_one === 'string' ? next_one.toUpperCase() as FxSqlQuery.OrderNormalizedTuple[1] : 'Z'
+		if (i < order.length - 1 && ZIS.indexOf(maybe_Z) >= 0) {
 			new_order.push([
-				(minus ? order[i].substr(1) : order[i]),
-				order[i + 1] as FxSqlQuery.OrderNormalizedTuple[1]
+				(minus ? item.substr(1) : item),
+				maybe_Z
 			]);
 			i += 1;
 		} else if (minus) {
-			new_order.push([ order[i].substr(1), "Z" ]);
+			new_order.push([ item.substr(1), "Z" ]);
 		} else {
-			new_order.push([ order[i], "A" ]);
+			new_order.push([ item, "A" ]);
 		}
 	}
 
 	return new_order;
 };
 
+export function addTableToStandardedOrder (
+	order: FxOrmQuery.OrderNormalizedTupleMixin,
+	table_alias: string
+): FxOrmQuery.ChainFindOptions['order'] {
+	const new_order: FxOrmQuery.ChainFindOptions['order'] = []
+	for (let i = 0, item: typeof order[any]; i < order.length; i++) {
+		item = order[i]
+		// strange here, we support item[0] here as `FxOrmQuery.OrderNormalizedTuple` :)
+		if (Array.isArray(item[0])) {
+			new_order.push(item)
+			continue ;
+		}
+		
+		new_order.push([
+			[table_alias, item[0]],
+			item[1]
+		] as FxOrmQuery.OrderNormalizedTuple)
+	}
+
+	return new_order
+}
+
 /**
  * @description filtered out FxOrmInstance.Instance in mixed FxSqlQuerySubQuery.SubQueryConditions | { [k: string]: FxOrmInstance.Instance }
  */
 export function checkConditions (
 	conditions: ( FxSqlQuerySubQuery.SubQueryConditions | { [k: string]: FxOrmInstance.Instance } ),
-	// one_associations: ( FxOrmAssociation.AssociationDefinitionOptions_HasOne | FxOrmAssociation.InstanceAssociationItem_HasOne )[]
 	one_associations: ( FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociationItem_HasOne )[]
 ): FxSqlQuerySubQuery.SubQueryConditions {
 	// A) Build an index of associations, with their name as the key
@@ -369,19 +420,17 @@ export function transformOrderPropertyNames (
 ) {
 	if (!order) return order;
 
-	var item: FxOrmQuery.ChainFindOptions['order'][0];
 	var newOrder: FxOrmQuery.ChainFindOptions['order'] = JSON.parse(JSON.stringify(order));
 
 	// Rename order properties according to mapsTo
-	for (let i = 0; i < newOrder.length; i++) {
+	for (let i = 0, item: typeof newOrder[any]; i < newOrder.length; i++) {
 		item = newOrder[i];
 
-		// orderRaw
+		// [ ['SQL..??', [arg1, arg2]]
 		if (Array.isArray(item[1])) continue;
 
 		if (Array.isArray(item[0])) {
-			// order on a hasMany
-			// [ ['modelName', 'propName'], 'Z']
+			// [ ['table or alias Name', 'propName'], 'Z']
 			item[0][1] = properties[item[0][1]].mapsTo;
 		} else {
 			// normal order
@@ -432,6 +481,38 @@ export function formatNameFor (
 			return ucfirst(name.toLocaleLowerCase())
 			break
 	}	
+}
+
+export function combineMergeInfoToArray (
+	merges: FxOrmQuery.ChainFindOptions['merge']
+): FxOrmQuery.ChainFindMergeInfo[] {
+	if (!Array.isArray(merges))
+		merges = [merges]
+	
+	return merges.filter(x => x)
+}
+
+export function parseFallbackTableAlias (ta_str: string) {
+	const [t, a = t] = QueryHelpers.parseTableInputStr(ta_str)
+
+	return a
+}
+
+export function tableAlias (table: string, alias: string = table, same_suffix: string = '') {
+	return `${table} ${alias}${same_suffix ? ` ${same_suffix}` : ''}`
+}
+
+export function tableAliasCalculatorInOneQuery () {
+	const countHash = {} as {[k: string]: number}
+
+	return function increment (tableName: string, get_only: boolean = false) {
+		countHash[tableName] = countHash[tableName] || 0;
+		if (!get_only) {
+			countHash[tableName]++;
+		}
+
+		return countHash[tableName]
+	}
 }
 
 export function ORM_Error(err: Error, cb: FibOrmNS.VoidCallback) {

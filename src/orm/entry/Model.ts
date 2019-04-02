@@ -16,6 +16,8 @@ import Validators        = require("./Validators");
 import ORMError          = require("./Error");
 import Hook              = require("./Hook");
 import AggregateFunctions = require("./AggregateFunctions");
+import { tryGetAssociationItemFromModel, getManyAssociationItemFromModel, getOneAssociationItemFromModel, getExtendsToAssociationItemFromModel } from './Helpers';
+import { getMapsToFromPropertyHash } from './Associations/_utils';
 import { patchHooksInModelOptions } from './Patch/utils';
 
 const AvailableHooks: (keyof FxOrmModel.Hooks)[] = [
@@ -354,7 +356,7 @@ export const Model = function (
 		var options = <FxOrmModel.ModelOptions__Find>{};
 		var cb: FxOrmModel.ModelMethodCallback__Find = null;
 		var order: FxOrmModel.ModelOptions__Find['order'] = null;
-		var merge: FxOrmQuery.ChainFindMergeInfo = null;
+		var merges: FxOrmQuery.ChainFindMergeInfo[] = [];
 
 		for (let i = 0; i < arguments.length; i++) {
 			switch (typeof arguments[i]) {
@@ -376,8 +378,19 @@ export const Model = function (
 							options = arguments[i];
 
 							if (options.hasOwnProperty("__merge")) {
-								merge = options.__merge;
-								merge.select = Object.keys(options.extra);
+								merges = Utilities.combineMergeInfoToArray(options.__merge);
+								merges.forEach(merge => {
+									if (Array.isArray(merge.select) && merge.select.length) {
+									} else {
+										merge.select = [];
+
+										// compat old interface, but not recommended
+										if (options.extra && Object.keys(options.extra).length)
+											merge.select = merge.select.concat(Object.keys(options.extra))
+									}
+
+									merge.select = Array.from( new Set(merge.select) )
+								});
 								delete options.__merge;
 							}
 							if (options.hasOwnProperty("order")) {
@@ -391,11 +404,12 @@ export const Model = function (
 					cb = arguments[i];
 					break;
 				case "string":
-					if (arguments[i][0] === "-") {
-						order = [ arguments[i].substr(1), "Z" ] as FxOrmModel.ModelOptions__Find['order'];
-					} else {
-						order = [ arguments[i] ] as FxOrmModel.ModelOptions__Find['order'];
-					}
+					order = arguments[i]
+					// if (arguments[i][0] === "-") {
+					// 	order = [ arguments[i].substr(1), "Z" ];
+					// } else {
+					// 	order = [ arguments[i] ];
+					// }
 					break;
 			}
 		}
@@ -410,9 +424,18 @@ export const Model = function (
 			options.cascadeRemove = m_opts.cascadeRemove;
 		}
 
-		let normalized_order: FxOrmQuery.OrderNormalizedTuple[] = null
+		let normalized_order_without_table: FxOrmQuery.OrderNormalizedTupleMixin = []
 		if (order) {
-			normalized_order = Utilities.standardizeOrder(order);
+			normalized_order_without_table = Utilities.standardizeOrder(order);
+		} else {
+			normalized_order_without_table = []
+		}
+
+		const base_table = options.chainfind_linktable || m_opts.table;
+		let normalized_order = normalized_order_without_table
+		if (merges && merges.length) {
+			const table_alias = Utilities.parseFallbackTableAlias(base_table);
+			normalized_order = Utilities.addTableToStandardedOrder(normalized_order_without_table, table_alias);
 		}
 		
 		if (conditions) {
@@ -422,13 +445,13 @@ export const Model = function (
 		var chain = new ChainFind(model, {
 			only         : options.only || model_fields,
 			keys         : m_opts.keys,
-			table        : options.chainfind_linktable || m_opts.table,
+			table        : base_table,
 			driver       : m_opts.driver,
 			conditions   : conditions,
 			associations : many_associations,
 			limit        : options.limit,
 			order        : normalized_order,
-			merge        : merge,
+			merge        : merges,
 			exists		 : options.exists || [],
 			offset       : options.offset,
 			properties   : allProperties,
@@ -439,7 +462,8 @@ export const Model = function (
 				Utilities.renameDatastoreFieldsToPropertyNames(data, fieldToPropertyMap);
 
 				// Construct UID
-				var uid = m_opts.driver.uid + "/" + m_opts.table + (merge ? "+" + merge.from.table : "");
+				const merge_id = merges.map(merge => (merge ? merge.from.table : "")).join(',');
+				var uid = m_opts.driver.uid + "/" + m_opts.table + (merge_id ? `+${merge_id}` : "");
 				for (let i = 0; i < m_opts.keys.length; i++) {
 					uid += "/" + data[m_opts.keys[i]];
 				}
@@ -712,16 +736,24 @@ export const Model = function (
 	// control current owned fields
 	const currFields: {[k: string]: true} = {};
 
-	model.findBy = function (ext_name, conditions, findby_options, cb): FxOrmQuery.IChainFind {
-		const findByAccessor = model.associations[ext_name].association.modelFindByAccessor
+	model.findBy = function <T = any> (...args: any[]): FxOrmQuery.IChainFind {
+		if (Array.isArray(args[0])) {
+			const [by_list, self_conditions = {}, self_options, cb] = args as [
+				FxOrmModel.ModelFindByDescriptorItem[],
+				FxOrmModel.ModelQueryConditions__Find,
+				FxOrmModel.ModelOptions__Find,
+				FxOrmNS.ExecutionCallback<T>
+			]
+			return findByList(model, self_conditions, by_list, self_options, cb)
+		}
 		
-		if (!findByAccessor || typeof model[findByAccessor] !== 'function')
-			throw `invalid extension name ${ext_name} provided!`
-
-		if (typeof cb === 'function')
-			return model[findByAccessor](conditions, findby_options, cb)
-
-		return model[findByAccessor](conditions, findby_options)
+		const [association_name, self_conditions, findby_options, cb] = args as [
+			FxOrmModel.ModelFindByDescriptorItem['association_name'],
+			FxOrmModel.ModelFindByDescriptorItem['conditions'],
+			FxOrmModel.ModelFindByDescriptorItem['options'],
+			FxOrmNS.ExecutionCallback<T>
+		]
+		return findBySolo(model, association_name, self_conditions, findby_options, cb)
 	}
 
 	model.findBySync = util.sync(model.findBy) as FxOrmModel.Model['findBySync']
@@ -827,3 +859,159 @@ export const Model = function (
 
 	return model;
 } as any as FxOrmModel.ModelConstructor;
+
+export function findBySolo <T = any>(
+	model: FxOrmModel.Model,
+	association_name: FxOrmModel.ModelFindByDescriptorItem['association_name'],
+	conditions: FxOrmModel.ModelFindByDescriptorItem['conditions'],
+	findby_options: FxOrmModel.ModelFindByDescriptorItem['options'],
+	cb: FxOrmNS.ExecutionCallback<T>
+): FxOrmQuery.IChainFind {
+	const findByAccessor = model.associations[association_name].association.modelFindByAccessor
+	
+	if (!findByAccessor || typeof model[findByAccessor] !== 'function')
+		throw `invalid association name ${association_name} provided!`
+
+	if (typeof cb === 'function')
+		return model[findByAccessor](conditions, findby_options, cb)
+
+	return model[findByAccessor](conditions, findby_options)
+}
+
+export function findByList <T = any> (
+	model: FxOrmModel.Model,
+	self_conditions: FxOrmModel.ModelQueryConditions__Find,
+	by_list: FxOrmModel.ModelFindByDescriptorItem[],
+	self_options: FxOrmModel.ModelOptions__Find,
+	cb: FxOrmNS.ExecutionCallback<T>
+): FxOrmQuery.IChainFind {
+	self_options = self_options || {};
+	const merges = Utilities.combineMergeInfoToArray(self_options.__merge);
+
+	const tableCountHash = {} as {[t: string]: number}
+	function countTable (t: string, is_add: boolean = false) {
+		if (!tableCountHash[t])
+			tableCountHash[t] = 0
+
+		if (is_add)
+			tableCountHash[t]++
+
+		return tableCountHash[t];
+	}
+
+	function getTableAlias(alias_from_t: string) {
+		return `${alias_from_t}${countTable(alias_from_t, true)}`
+	}
+
+	let chainfind_linktable: string = null
+
+	by_list.forEach(by_item => {
+		const association = tryGetAssociationItemFromModel(by_item.association_name, model);
+		if (!association)
+			return ;
+
+		const isHasMany = getManyAssociationItemFromModel(by_item.association_name, model) === association;
+		const isHasOne = getOneAssociationItemFromModel(by_item.association_name, model) === association;
+		const isExtendsTo = getExtendsToAssociationItemFromModel(by_item.association_name, model) === association;
+
+		let merge_item: FxOrmQuery.ChainFindMergeInfo = null;
+		
+		if (isHasMany) { // support hasmany
+			const left_info = {
+				table: `${model.table}`,
+				alias: getTableAlias(`lt_${model.table}`),
+				ids: model.id
+			}
+			const ljoin_info = {
+				table: `${association.mergeTable}`,
+				alias: getTableAlias(`lj_${association.mergeTable}`),
+				ids: getMapsToFromPropertyHash(association.mergeId)
+			}
+			const rjoin_info = {
+				table: `${association.mergeTable}`,
+				alias: getTableAlias(`rj_${association.mergeTable}`),
+				ids: getMapsToFromPropertyHash(association.mergeAssocId)
+			}
+			const right_info = {
+				table: `${association.model.table}`,
+				alias: getTableAlias(`rt_${association.model.table}`),
+				ids: association.model.id
+			}
+			const extra_props = (association as FxOrmAssociation.InstanceAssociationItem_HasMany).props;
+
+			const join_where = by_item.join_where || {};
+
+			merge_item = {
+				from: { table: Utilities.tableAlias(ljoin_info.table, ljoin_info.alias), field: ljoin_info.ids },
+				to: { table: left_info.table, field: left_info.ids },
+				where : [ ljoin_info.alias, join_where ],
+				table : left_info.alias,
+				select: (by_item.extra_select || []).filter(x => extra_props.hasOwnProperty(x))
+			};
+
+			merges.push(merge_item);
+
+			merge_item = {
+				from: { table: Utilities.tableAlias(right_info.table, right_info.alias), field: right_info.ids },
+				to: { table: rjoin_info.table, field: rjoin_info.ids },
+				where : [ right_info.alias, by_item.conditions ],
+				table : ljoin_info.alias,
+				select: [],
+			};
+
+			merges.push(merge_item);
+
+			chainfind_linktable = Utilities.tableAlias(model.table);
+		} else if (isHasOne) { // support hasone
+			const reled_ids = typeof association.field === 'string' ? [association.field] : (
+				Array.isArray(association.field) ? association.field : getMapsToFromPropertyHash(association.field)
+			)
+
+			const base_info = {
+				table: `${model.table}`,
+				alias: `_base$${model.table}`,
+				ids: !association.reversed ? reled_ids : association.model.id 
+			}
+
+			const rel_info = {
+				table: `${association.model.table}`,
+				alias: `_rel$${association.model.table}`,
+				ids: !association.reversed ? association.model.id : reled_ids
+			}
+
+			merge_item = {
+				from: { table: Utilities.tableAlias(rel_info.table, rel_info.alias), field: rel_info.ids },
+				to: { table: Utilities.tableAlias(base_info.table, base_info.alias), field: base_info.ids },
+				where : [ rel_info.alias, by_item.conditions ],
+				table : base_info.alias,
+				select: []
+			}
+
+			merges.push(merge_item);
+
+			chainfind_linktable = Utilities.tableAlias(base_info.table, base_info.alias);
+		} else if (isExtendsTo) { // support extendsTo
+			merge_item = {
+				from  : { table: association.model.table, field: Object.keys(association.field) },
+				to    : { table: model.table, field: model.id },
+				where : [ association.model.table, by_item.conditions ],
+				table : model.table,
+				select: []
+			};
+
+			merges.push(merge_item);
+		}
+	});
+
+	self_options.__merge = merges;
+	self_options.extra = {};
+	
+	if (chainfind_linktable)
+		self_options.chainfind_linktable = chainfind_linktable;
+
+	if (typeof cb === "function") {
+		return model.find.call(model, self_conditions, self_options, cb);
+	}
+
+	return model.find(self_conditions, self_options);
+}

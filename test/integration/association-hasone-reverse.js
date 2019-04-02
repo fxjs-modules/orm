@@ -375,6 +375,21 @@ describe("hasOne", function () {
                 assert.equal(children.length, 1);
                 assert.equal(children[0].name, 'Father');
 
+                var children = Person.findSync({}, {
+                    chainfind_linktable: 'person as p2',
+                    __merge: [
+                        {
+                            from  : { table: 'person as p1', field: ['father_id'] },
+                            to    : { table: 'person as p2', field: ['id'] },
+                            where : [ 'p2', { id: ORM.ne(Date.now()) } ],
+                            table : 'person'
+                        }
+                    ],
+                    extra: []
+                });
+                assert.equal(children.length, 1);
+                assert.equal(children[0].name, 'Father');
+
                 var persons = Person.findSync({
                 });
                 assert.equal(persons.length, 3);

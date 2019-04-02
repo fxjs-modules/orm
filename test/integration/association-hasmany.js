@@ -49,6 +49,7 @@ describe("hasMany", function () {
                     reverse: opts.reversePets,
                     autoFetch: opts.autoFetchPets
                 });
+                Person.hasMany('friends', Person, {}, {});
 
                 helper.dropSync([Person, Pet], function () {
                     Pet.createSync([{
@@ -58,8 +59,10 @@ describe("hasMany", function () {
                     }]);
 
                     /**
+                     * @relationship
+                     * 
                      * John --+---> Deco
-                     *        '---> Mutt <----- Jane
+                     *        '---> Mutt <----- Jane <---- Bob
                      *
                      * Justin
                      */
@@ -86,13 +89,20 @@ describe("hasMany", function () {
                         age: 18
                     }]);
 
-                    var people = Person.findSync({
+                    var Jane = Person.find({
                         name: "Jane"
-                    });
+                    }).firstSync();
+
                     var pets = Pet.findSync({
                         name: "Mutt"
                     });
-                    people[0].addPetsSync(pets);
+
+                    Jane.addPetsSync(pets);
+                    Jane.addFriendsSync(
+                        Person.findSync({
+                            name: "Bob",
+                        })
+                    );
                     done();
                 });
             };
@@ -457,7 +467,7 @@ describe("hasMany", function () {
             });
         });
 
-        describe("findBy", function () {
+        describe("findBy*()", function () {
             function assertion_people_for_findby (people) {
                 assert.equal(people.length, 2);
                 
@@ -506,7 +516,7 @@ describe("hasMany", function () {
                     autoFetchPets: false
                 }));
 
-                it("could find A with `findbyB()`", function (done) {
+                it("could find A with `findByB()`", function (done) {
                     var John = Person.findByPets({ name: "Mutt" }, { order: 'name' }).lastSync();
                     var Jane = Person.findByPets({ name: "Mutt" }, { order: 'name' }).firstSync();
                     assertion_people_for_findby([John, Jane]);
@@ -584,9 +594,61 @@ describe("hasMany", function () {
                         });
                 });
 
+                it("could find A with `findBy([...])`", function () {
+                    /**
+                     * View details in @relationship above
+                     */
+                    var Nil = Person.findBy(
+                        [
+                            {
+                                association_name: 'pets',
+                                conditions: { name: "Deco" }
+                            },
+                            {
+                                association_name: 'friends',
+                                conditions: { name: "Bob" }
+                            }
+                        ],
+                        {},
+                        {
+                            order: '-name'
+                        }
+                    ).firstSync();
+                    assert.ok(!Nil);
+
+                    var John = Person.findBy(
+                        [
+                            {
+                                association_name: 'pets',
+                                conditions: { name: "Mutt" }
+                            }
+                        ],
+                        {},
+                        {
+                            order: '-name'
+                        }
+                    ).firstSync();
+                    var Jane = Person.findBy(
+                        [
+                            {
+                                association_name: 'pets',
+                                conditions: { name: "Mutt" }
+                            },
+                            {
+                                association_name: 'friends',
+                                conditions: { name: "Bob" }
+                            }
+                        ],
+                        {},
+                        {
+                        }
+                    ).firstSync();
+                    assertion_people_for_findby([John, Jane]);
+                });
+
                 it("zero count", function () {
                     var personCount = Pet.findByOwners({ name: "Bob" }, {  }).countSync();
-                    assert.ok(personCount, 0);
+                    assert.equal(personCount, 0);
                 })
             });
 
@@ -595,7 +657,7 @@ describe("hasMany", function () {
                     autoFetchPets: false
                 }));
 
-                it("could find A with `findbyB()`", function (done) {
+                it("could find A with `findByB()`", function (done) {
                     var John = Person.findByPets({ name: "Mutt" }, { order: 'name' }).lastSync();
                     var Jane = Person.findByPets({ name: "Mutt" }, { order: 'name' }).firstSync();
                     assertion_people_for_findby([John, Jane]);

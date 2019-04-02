@@ -74,9 +74,14 @@ declare namespace FxOrmModel {
         }
         findBy: {
             <T = any>(
-                ext_name: string,
-                conditions?: ModelQueryConditions__Find,
-                options?: FxOrmAssociation.ModelAssociationMethod__FindByOptions,
+                association_name: ModelFindByDescriptorItem['association_name'],
+                conditions?: ModelFindByDescriptorItem['conditions'],
+                options?: ModelFindByDescriptorItem['options'],
+                cb?: FxOrmNS.ExecutionCallback<T>
+            ): FxOrmQuery.IChainFind
+            <T = any>(
+                list: ModelFindByDescriptorItem[],
+                self_conditions: FxOrmModel.ModelQueryConditions__Find,
                 cb?: FxOrmNS.ExecutionCallback<T>
             ): FxOrmQuery.IChainFind
         }
@@ -96,14 +101,16 @@ declare namespace FxOrmModel {
 
         find: {
             (conditions?: ModelQueryConditions__Find): FxOrmQuery.IChainFind
+            (callback: ModelMethodCallback__Find): Model
             (conditions: ModelQueryConditions__Find, callback: ModelMethodCallback__Find): Model
-            (conditions: ModelQueryConditions__Find, id: FxOrmNS.IdType): FxOrmQuery.IChainFind
-            (conditions: ModelQueryConditions__Find, id: FxOrmNS.IdType, callback: ModelMethodCallback__Get): Model
-            (conditions: ModelQueryConditions__Find, options?: ModelOptions__Find): FxOrmQuery.IChainFind
+            
+            (conditions: ModelQueryConditions__Find, options: ModelOptions__Find): FxOrmQuery.IChainFind
             (conditions: ModelQueryConditions__Find, options: ModelOptions__Find, callback: ModelMethodCallback__Find): Model
-            (conditions: ModelQueryConditions__Find, limit: number, order?: string[]): FxOrmQuery.IChainFind
-            (conditions: ModelQueryConditions__Find, limit: number, callback: ModelMethodCallback__Find): Model
-            (conditions: ModelQueryConditions__Find, limit: number, order: string[], callback: ModelMethodCallback__Find): Model
+
+            (conditions: ModelQueryConditions__Find, limit_order?: number | string, limit_order2?: number | string): FxOrmQuery.IChainFind
+            
+            (conditions: ModelQueryConditions__Find, limit_order: number | string, callback: ModelMethodCallback__Find): Model
+            (conditions: ModelQueryConditions__Find, limit_order: number | string, limit_order2: number | string, callback: ModelMethodCallback__Find): Model
         }
 
         all: Model['find']
@@ -152,6 +159,20 @@ declare namespace FxOrmModel {
     //     (opts: ModelConstructorOptions): void
     //     prototype: Model
     // }
+
+    interface ModelFindByDescriptorItem {
+        // association name
+        association_name: string,
+        // findby conditions 
+        conditions?: ModelQueryConditions__Find,
+        // findby options
+        options?: FxOrmAssociation.ModelAssociationMethod__FindByOptions,
+
+        // extra where conditions fields for hasmany-assoc
+        join_where?: FxOrmModel.ModelQueryConditions__Find
+        // extra select fields for hasmany-assoc
+        extra_select?: string[]
+    }
 
     interface ModelConstructorOptions {
         db: FxOrmNS.ORM
@@ -275,7 +296,8 @@ declare namespace FxOrmModel {
         
         only?: string[];
         limit?: number;
-        order?: string | [string, string?];
+        order?: FxOrmQuery.OrderRawInput | FxOrmQuery.ChainFindOptions['order']
+        // order?: FxOrmQuery.OrderRawInput
         offset?: number;
         identityCache?: boolean
 
@@ -283,15 +305,11 @@ declare namespace FxOrmModel {
         cascadeRemove?: boolean
         autoSave?: boolean
         autoFetchLimit?: number
-        __merge?: FxOrmAssociation.ModelAssociationMethod__ComputationPayload__Merge
+        __merge?: FxOrmQuery.ChainFindOptions['merge']
         exists?: FxOrmQuery.ChainWhereExistsInfo[]
-        extra?: FxOrmInstance.InstanceConstructorOptions['extra']
-        extra_info?: {
-            table: string
-            id: Model['id']
-            id_prop: string[]
-            assoc_prop: string[]
-        }
+
+        // useless, just for compat
+        extra?: FxOrmAssociation.InstanceAssociationItem_HasMany['props']
 
         // access dynamic findby options
         [k: string]: any

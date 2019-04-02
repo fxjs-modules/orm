@@ -2,7 +2,8 @@ import util = require('util')
 
 import Utilities = require("../Utilities");
 import ORMError = require("../Error");
-import { ACCESSOR_KEYS, addAssociationInfoToModel } from './_utils';
+import { ACCESSOR_KEYS, addAssociationInfoToModel, getMapsToFromPropertyHash } from './_utils';
+import { findByList } from '../Model';
 
 export function prepare (
 	Model: FxOrmModel.Model, associations: FxOrmAssociation.InstanceAssociationItem_HasOne[]
@@ -109,46 +110,17 @@ export function prepare (
 				throw new ORMError(`.${association.modelFindByAccessor}() is missing a conditions object`, 'PARAM_MISMATCH');
 			}
 
-			const ft_tuple_fields = [Object.keys(normalizedField), association.model.id]
-			let ft_tuple_table = null
-
-			let from_table = `${association.model.table}`,
-				to_table = `${Model.table}`,
-				where_table = from_table;
-
-			const same_ft = from_table === to_table;
-			if (same_ft) {
-				ft_tuple_table = [
-					// from
-					!association.reversed ? `${from_table}2` : `${to_table}1`,
-					// to
-					!association.reversed ? `${from_table}1` : `${to_table}2`,
-				]
-
-				where_table = ft_tuple_table[0]
-
-				from_table = `${from_table} as ${ft_tuple_table[0]}`
-				to_table = `${to_table} as ${ft_tuple_table[1]}`
-			}
-
-			options.__merge = {
-				from  : { table: from_table, field: (!association.reversed ? ft_tuple_fields[1] : ft_tuple_fields[0]) },
-				to    : { table: to_table, field: (!association.reversed ? ft_tuple_fields[0] : ft_tuple_fields[1] ) },
-				where : [ where_table, conditions ],
-				table : Model.table,
-				select: []
-			};
-
-			if (same_ft) {
-				options.chainfind_linktable = to_table
-			}
-
-			options.extra = [];
-
-			if (typeof cb === "function") {
-				return Model.find({}, options, cb);
-			}
-			return Model.find({}, options);
+			return findByList(Model, 
+				{},
+				[
+					{
+						association_name: association.name,
+						conditions: conditions
+					},
+				],
+				options,
+				cb
+			);
 		};
 
 		addAssociationInfoToModel(Model, assoc_name, {
@@ -255,17 +227,10 @@ function extendInstance(
 					);
 
 					if (typeof cb !== "function") {
-						return association.model.find(
-							query_conds,
-							opts as FxOrmNS.IdType
-						);
+						return association.model.find.call(association.model, query_conds, opts);
 					}
 
-					association.model.find(
-						query_conds,
-						opts as FxOrmNS.IdType,
-						saveAndReturn
-					);
+					association.model.find.call(association.model, query_conds, opts, saveAndReturn);
 				} else {
 					cb(null);
 				}

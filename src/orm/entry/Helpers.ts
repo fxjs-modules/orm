@@ -183,6 +183,10 @@ export const getAssociationItemFromModel: FxOrmHelper.HelperModules['getAssociat
             return getExtendsToAssociationItemFromModel(extend_name, _model);
     }
 }
+export const tryGetAssociationItemFromModel: FxOrmHelper.HelperModules['tryGetAssociationItemFromModel'] = function (extend_name, _model) {
+    return getManyAssociationItemFromModel(extend_name, _model) || getOneAssociationItemFromModel(extend_name, _model) || getExtendsToAssociationItemFromModel(extend_name, _model)
+}
+/* by ext_name x assoc_model :end */
 /* by ext_name x assoc_model :end */
 
 /* hooks :start */

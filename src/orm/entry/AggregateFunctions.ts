@@ -48,7 +48,10 @@ const AggregateFunctions = function (
 			}
 			return this;
 		},
-		order: function (...orders: FxOrmQuery.OrderRawTuple) {
+		order: function (...orders: FxOrmQuery.OrderSeqRawTuple) {
+			if (!Array.isArray(opts.order)) {
+				opts.order = [];
+			}
 			opts.order = Utilities.standardizeOrder(orders);
 			return this;
 		},

@@ -1,19 +1,27 @@
+import { parseFallbackTableAlias } from "../../Utilities";
+
 export function buildMergeToQuery (
 	this: FxOrmDMLDriver.DMLDriver,
 	q: FxSqlQuery.ChainBuilder__Select,
-	merge: FxOrmDMLDriver.DMLDriver_FindOptions['merge'],
+	merges: FxOrmDMLDriver.DMLDriver_FindOptions['merge'],
 	conditions: FxSqlQuerySubQuery.SubQueryConditions
 ) {
-	if (merge) {
-		q
-			.from(merge.from.table, merge.from.field, merge.to.table, merge.to.field)
-			.select(merge.select);
-		
-		if (merge.where && Object.keys(merge.where[1]).length) {
-			q = q.where(merge.where[0], merge.where[1], merge.table || null, conditions);
-		} else {
-			q = q.where(merge.table || null, conditions);
-		}
+	if (merges && merges.length) {			
+		merges.forEach(merge => {
+			/**
+			 * you should always pass alias as `merge.from.table` --- it's need indicate where conditions;
+			 * you dont need pass alias as `merge.to.table` --- it's dont need indicate where conditions;
+			 */
+			q
+				.from(merge.from.table, merge.from.field, merge.to.table, merge.to.field)
+				.select(merge.select);
+			
+			if (merge.where && Object.keys(merge.where[1]).length) {
+				q = q.where(merge.where[0], merge.where[1], merge.table || null, conditions);
+			} else {
+				q = q.where(merge.table || null, conditions);
+			}
+		});
 	} else {
 		q = q.where(conditions);
 	}
@@ -30,7 +38,12 @@ export function buildExistsToQuery (
 	if (exists) {
 		for (let k in exists) {
 			const exist_item = exists[k];
-			q.whereExists(exist_item.table, table, exist_item.link, exist_item.conditions);
+			q.whereExists(
+				exist_item.table,
+				parseFallbackTableAlias(table),
+				exist_item.link,
+				exist_item.conditions
+			);
 		}
 	}
 }
