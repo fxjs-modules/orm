@@ -24,7 +24,7 @@ declare namespace FxOrmNS {
             ): boolean
         }
         execute: {
-            <T=any>(sql: string, cb: FxOrmNS.GenericCallback<T>): any;
+            <T=any, T2=any>(sql: string, cb?: FxOrmNS.GenericCallback<T>): T2;
             (sql: string, ...args: any[]): any;
         }
 

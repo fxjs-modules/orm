@@ -128,17 +128,20 @@ export const Model = function (
 			association_properties : association_properties,
 			setupAssociations      : setupAssociations,
 			fieldToPropertyMap     : fieldToPropertyMap,
-			keyProperties          : keyProperties
-		});
-		instance.on("ready", function (err: Error) {
-			if (--pending > 0) {
-				create_err = err;
-				return;
+			keyProperties          : keyProperties,
+			events				   : {
+				'ready': function (err, instance) {
+					if (--pending > 0) {
+						create_err = err;
+						return;
+					}
+					if (typeof cb === "function") {
+						cb(err || create_err, instance);
+					}
+				}
 			}
-			if (typeof cb === "function") {
-				return cb(err || create_err, instance);
-			}
 		});
+		
 		if (model_fields !== null) {
 			LazyLoad.extend(instance, model, m_opts.properties);
 		}
@@ -412,6 +415,9 @@ export const Model = function (
 					// }
 					break;
 			}
+		}
+		if (!options.hasOwnProperty("limit")) {
+			options.limit = m_opts.settings.get('instance.defaultFindLimit');
 		}
 
 		if (!options.hasOwnProperty("identityCache")) {

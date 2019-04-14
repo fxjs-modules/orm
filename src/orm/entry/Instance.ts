@@ -4,6 +4,7 @@ import util 	 = require('util')
 
 import Utilities = require("./Utilities");
 import Hook      = require("./Hook");
+import ORMError       = require("./Error");
 import enforce   = require("@fibjs/enforce");
 
 interface EmitEventFunctionInInstance {
@@ -26,6 +27,7 @@ export const Instance = function (
 	opts.changes = (opts.is_new ? Object.keys(opts.data) : []);
 	opts.extrachanges = [];
 	opts.associations = {};
+	opts.events	= util.extend({}, opts.events);
 	opts.originalKeyValues = {};
 
 	var instance_saving = false;
@@ -81,7 +83,8 @@ export const Instance = function (
 					alwaysValidate = Model.allProperties[k].alwaysValidate;
 				} else {
 					for (let i = 0; i < opts.one_associations.length; i++) {
-						if (opts.one_associations[i].field === k) {
+						/* non-normalized `field` maybe string now */
+						if (opts.one_associations[i].field as any === k) {
 							required = opts.one_associations[i].required;
 							break;
 						}
@@ -779,10 +782,15 @@ export const Instance = function (
 		}
 	}
 
+	Object.keys(opts.events).forEach((evtName: FxOrmInstance.InstanceEventType) => {
+		if (typeof opts.events[evtName] !== 'function')
+			throw new ORMError("INVALID_EVENT_HANDLER", 'PARAM_MISMATCH');
+
+		instance.on(evtName, opts.events[evtName]);
+	});
+
 	Hook.wait(instance, opts.hooks.afterLoad, function (err: Error) {
-		process.nextTick(function () {
-			emitEvent("ready", err);
-		});
+		emitEvent("ready", err, instance);
 	});
 
 	return instance;

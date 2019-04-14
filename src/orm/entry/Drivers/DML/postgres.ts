@@ -85,6 +85,7 @@ export const Driver: FxOrmDMLDriver.DMLDriverConstructor = function (
 	}
 
 	this.query  = new Query({ dialect: this.dialect, timezone: this.config.timezone });
+
 	this.customTypes = {};
 
 	if (connection) {
@@ -140,6 +141,15 @@ Driver.prototype.close = function<T = any> (cb: FxOrmNS.SuccessCallback<T>) {
 
 Driver.prototype.getQuery = function () {
 	return this.query;
+};
+
+Driver.prototype.execSimpleQuery = function (
+	this: FxOrmDMLDriver.DMLDriver_PostgreSQL, query, cb
+) {
+	if (this.opts.debug) {
+		require("../../Debug").sql('sqlite', query);
+	}
+	return this.db.query(query, cb);
 };
 
 Driver.prototype.find = function (fields, table, conditions, opts, cb: FxOrmNS.GenericCallback<any>) {

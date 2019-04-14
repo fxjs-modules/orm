@@ -1,14 +1,18 @@
 import db = require('db');
 import url = require('url');
+const events = require('events')
+const EventEmitter: typeof Class_EventEmitter = events.EventEmitter
 
 declare var setImmediate: any;
 
-class Database implements FxOrmDb.DatabaseBase_MySQL {
+class Database extends EventEmitter implements FxOrmDb.DatabaseBase_MySQL {
     conn: FxOrmNS.IDbConnection;
     opts: FxOrmNS.IDBConnectionConfig;
     pool: any;
     
     constructor(conn_opts: string | FxOrmNS.IDBConnectionConfig) {
+        super();
+        
         if (typeof conn_opts === 'object') {
             this.opts = conn_opts as FxOrmNS.IDBConnectionConfig
             this.opts.username = this.opts.username || this.opts.user
@@ -17,36 +21,38 @@ class Database implements FxOrmDb.DatabaseBase_MySQL {
         }
     }
 
-    on(ev: string) {}
-
-    ping(cb: FxOrmNS.VoidCallback) {
-        setImmediate(cb);
+    ping(cb?: FxOrmNS.VoidCallback) {
+        if (typeof cb === 'function')
+            setImmediate(cb);
     }
 
-    connect(cb: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): void {
-        const that = this;
-        const openMySQL: {
-            (connString: string, cb: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): void
-            (connString: FxOrmNS.IDBConnectionConfig, cb: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): void
-        } = db.openMySQL as any
+    connect(cb?: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): void {
+        let err = null as Error
+            
+        try {
+            this.conn = db.openMySQL.call(db.openMySQL, this.opts);
+        } catch (e) {
+            err = e;
+            this.conn = null;
+        }
 
-        openMySQL(this.opts, function (e: Error, conn: FxOrmNS.IDbConnection) {
-            if (!e)
-                that.conn = conn;
-            cb(e, conn);
-        });
+        if (typeof cb === "function") cb(err, this.conn);
     }
 
     execute(sql: string, ...args: any[]) {
         return this.conn.execute(sql, ...args);
     }
 
-    query<T = any>(sql: string, cb: FxOrmNS.GenericCallback<T>) {
-        this.conn.execute(sql, cb);
+    query<T = any>(sql: string, cb?: FxOrmNS.GenericCallback<T>) {
+        return this.execute(sql, cb);
+    }
+
+    close(cb?: FxOrmNS.VoidCallback) {
+        return this.conn.close(cb);
     }
 
     end(cb?: FxOrmNS.VoidCallback) {
-        this.conn.close(cb);
+        return this.close(cb);
     }
 }
 

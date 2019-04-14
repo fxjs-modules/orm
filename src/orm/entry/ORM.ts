@@ -1,4 +1,5 @@
 import util           = require("util");
+import coroutine           = require("coroutine");
 import events         = require("events");
 import uuid			  = require('uuid')
 
@@ -301,32 +302,19 @@ ORM.prototype.sync = function (
 };
 ORM.prototype.drop = function (
 	this: FxOrmNS.ORM,
-	cb
+	cb?
 ) {
-	var modelIds = Object.keys(this.models);
-	var dropNext = function () {
-		if (modelIds.length === 0) {
-			return cb(null);
+	var modelKeys = Object.keys(this.models);
+	modelKeys.forEach((modelKey: string) => {
+		try {
+			this.models[modelKey].dropSync()
+		} catch (e) {
+			e.model = modelKey;
+			cb(e)
 		}
+	});
 
-		var modelId = modelIds.shift();
-
-		this.models[modelId].drop(function (err: FxOrmError.ExtendedError) {
-			if (err) {
-				err.model = modelId;
-
-				return cb(err);
-			}
-
-			return dropNext();
-		});
-	}.bind(this);
-
-	if (arguments.length === 0) {
-		cb = function () {};
-	}
-
-	dropNext();
+	cb(null);
 
 	return this;
 };

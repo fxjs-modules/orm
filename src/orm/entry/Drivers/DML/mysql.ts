@@ -116,12 +116,12 @@ Driver.prototype.execSimpleQuery = function<T=any> (
 	if (this.opts.pool) {
 		this.poolQuery(query, cb);
 	} else {
-		this.db.query(query, cb);
+		return this.db.query(query, cb);
 	}
 };
 
 Driver.prototype.find = function (
-	this: FxOrmDMLDriver.DMLDriver_MySQL, fields, table, conditions, opts, cb
+	this: FxOrmDMLDriver.DMLDriver_MySQL, fields, table, conditions, opts, cb?
 ) {
 	var q = this.query.select()
 					  .from(table)
@@ -141,11 +141,11 @@ Driver.prototype.find = function (
 	q = utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
 	utils.buildExistsToQuery.apply(this, [q, table, opts.exists]);
 
-	this.execSimpleQuery(q.build(), cb);
+	return this.execSimpleQuery(q.build(), cb);
 };
 
 Driver.prototype.count = function (
-	this: FxOrmDMLDriver.DMLDriver_MySQL, table, conditions, opts, cb
+	this: FxOrmDMLDriver.DMLDriver_MySQL, table, conditions, opts, cb?
 ) {
 	var q = this.query.select()
 	                  .from(table)
@@ -154,20 +154,18 @@ Driver.prototype.count = function (
 	q = utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
 	utils.buildExistsToQuery.apply(this, [q, table, opts.exists]);
 
-	q = q.build();
-
-	this.execSimpleQuery(q, cb);
+	return this.execSimpleQuery(q.build(), cb);
 };
 
 Driver.prototype.insert = function (
-	this: FxOrmDMLDriver.DMLDriver_MySQL, table, data, keyProperties, cb
+	this: FxOrmDMLDriver.DMLDriver_MySQL, table, data, keyProperties, cb?
 ) {
 	var q = this.query.insert()
 	                  .into(table)
 	                  .set(data)
 	                  .build();
 
-	this.execSimpleQuery(q, function (err, info: FxOrmQuery.InsertResult) {
+	return this.execSimpleQuery(q, function (err, info: FxOrmQuery.InsertResult) {
 		if (err) return cb(err);
 
 		var ids: FxOrmQuery.InsertResult = {},
@@ -188,7 +186,7 @@ Driver.prototype.insert = function (
 };
 
 Driver.prototype.update = function (
-	this: FxOrmDMLDriver.DMLDriver_MySQL, table, changes, conditions, cb
+	this: FxOrmDMLDriver.DMLDriver_MySQL, table, changes, conditions, cb?
 ) {
 	var q = this.query.update()
 	                  .into(table)
@@ -196,30 +194,30 @@ Driver.prototype.update = function (
 	                  .where(conditions)
 	                  .build();
 
-	this.execSimpleQuery(q, cb);
+	return this.execSimpleQuery(q, cb);
 };
 
 Driver.prototype.remove = function (
-	this: FxOrmDMLDriver.DMLDriver_MySQL, table, conditions, cb
+	this: FxOrmDMLDriver.DMLDriver_MySQL, table, conditions, cb?
 ) {
 	var q = this.query.remove()
 	                  .from(table)
 	                  .where(conditions)
 	                  .build();
 
-	this.execSimpleQuery(q, cb);
+	return this.execSimpleQuery(q, cb);
 };
 
 Driver.prototype.clear = function (
-	this: FxOrmDMLDriver.DMLDriver_MySQL, table, cb
+	this: FxOrmDMLDriver.DMLDriver_MySQL, table, cb?
 ) {
 	var q = "TRUNCATE TABLE " + this.query.escapeId(table);
 
-	this.execSimpleQuery(q, cb);
+	return this.execSimpleQuery(q, cb);
 };
 
 Driver.prototype.poolQuery = function (
-	this: FxOrmDMLDriver.DMLDriver_MySQL, query, cb
+	this: FxOrmDMLDriver.DMLDriver_MySQL, query, cb?
 ) {
 	this.db.pool.getConnection(function (err: FxOrmError.ExtendedError, con: any) {
 		if (err) {
@@ -269,8 +267,6 @@ Driver.prototype.valueToProperty = function (
 Driver.prototype.propertyToValue = function (
 	this: FxOrmDMLDriver.DMLDriver_MySQL, value, property
 ) {
-	var customType;
-
 	switch (property.type) {
 		case "boolean":
 			value = (value) ? 1 : 0;
@@ -283,7 +279,7 @@ Driver.prototype.propertyToValue = function (
 		case "point":
 			return function() { return 'POINT(' + value.x + ', ' + value.y + ')'; };
 		default:
-			customType = this.customTypes[property.type];
+			const customType = this.customTypes[property.type];
 			if(customType && 'propertyToValue' in customType) {
 				value = customType.propertyToValue(value);
 			}

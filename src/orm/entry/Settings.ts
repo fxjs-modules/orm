@@ -9,6 +9,7 @@ const default_settings = {
 		required                  : false
 	},
 	instance   : {
+		defaultFindLimit          : 1000,
 		identityCache             : false,
 		identityCacheSaveCheck    : true,
 		autoSave                  : false,

@@ -153,7 +153,6 @@ declare namespace FxOrmNS {
     }
     type PluginConstructCallback = (orm: ORM, opts: PluginOptions) => Plugin
     interface Plugin {
-        // (connection: FibORM, proto: any, opts: any, cb: Function): any
         beforeDefine?: {
             (name?: string, properties?: FxOrmModel.ModelPropertyDefinitionHash, opts?: FxOrmModel.ModelOptions): void
         }

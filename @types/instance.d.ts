@@ -56,6 +56,9 @@ declare namespace FxOrmInstance {
             (instance: Instance): void
         }
         fieldToPropertyMap: FxOrmProperty.FieldToPropertyMapType
+        events?: {
+            [k: string]: FxOrmNS.GenericCallback<any>
+        }
     }
 
     interface InnerInstanceOptions extends InstanceConstructorOptions {

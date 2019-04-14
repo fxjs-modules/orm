@@ -94,7 +94,7 @@ declare namespace FxOrmQuery {
             (fun: string, args: any[]): IAggregated;
         }
         get: {
-            <T = any>(cb: FxOrmNS.GenericCallback<T[]>): void
+            <T = any>(cb?: FxOrmNS.GenericCallback<T[]>): void
         }
     }
     type KeyOfIAggregated = keyof IAggregated

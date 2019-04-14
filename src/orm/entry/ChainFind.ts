@@ -63,19 +63,30 @@ const ChainFind = function (
 				coroutine.parallel(opts.__eager, (association: FxOrmAssociation.InstanceAssociationItem) => {
 					// if err exists, chainRun would finished before this fiber released
 					if (err) return 
+					
+					const newInstanceSync = util.sync(function (association: FxOrmAssociation.InstanceAssociationItem, cb: FxOrmNS.ExecutionCallback<any>) {
+						opts.driver.eagerQuery<FxOrmInstance.Instance>(association, opts, keys, function (eager_err, instances) {
+							err = eager_err
+	
+							if (eager_err) {
+								done(eager_err)
+								cb(eager_err)
+								return ;
+							}
+	
+							for (let i = 0, instance: FxOrmInstance.Instance; instance = instances[i]; i++) {
+								// Perform a parent lookup with $p, and initialize it as an instance.
+								items[idMap[instance.$p]][association.name].push(association.model(instance));
+							}
 
-					opts.driver.eagerQuery<FxOrmInstance.Instance>(association, opts, keys, function (eager_err, instances) {
-						err = eager_err
-						if (eager_err) return done(eager_err)
-
-						for (let i = 0, instance: FxOrmInstance.Instance; instance = instances[i]; i++) {
-							// Perform a parent lookup with $p, and initialize it as an instance.
-							items[idMap[instance.$p]][association.name].push(association.model(instance));
-						}
-
-						done(null, items)
+							cb(null, null);
+						});
 					});
-				})
+
+					return newInstanceSync(association);
+				});
+
+				done(null, items);
 			};
 
 			const items = coroutine.parallel(dataItems, (dataItem: FxOrmInstance.InstanceDataPayload) => {
@@ -84,6 +95,7 @@ const ChainFind = function (
 						if (err) {
 							done(err)
 							cb(err)
+							return ;
 						}
 
 						cb(null, data)
@@ -91,10 +103,12 @@ const ChainFind = function (
 				})
 
 				return newInstanceSync(dataItem)
-			})
-			var shouldEagerLoad = opts.__eager && opts.__eager.length;
-			var completeFn = shouldEagerLoad ? eagerLoad : done;
-			completeFn(null, items)
+			});
+
+			if (opts.__eager && opts.__eager.length)
+				eagerLoad(null, items);
+			else
+				done(null, items);
 		});
 	}
 

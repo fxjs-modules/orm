@@ -1,35 +1,32 @@
 declare namespace FxOrmDb {
-    interface DatabaseBase {
+    interface DatabaseBase extends Class_EventEmitter {
         conn: FxOrmNS.IDbConnection;
-        on: {
-            <T=any>(ev: string, func: FxOrmNS.GenericCallback<T>): void
-        };
+        opts: FxOrmNS.IDBConnectionConfig;
+
         execute: {
             (sql: string, ...args: any[]): any[];
         }
-
-        end?: {
-            (cb: FxOrmNS.VoidCallback): void
-        };
-        connect?: {
-            (cb: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): void
+        query: {
+            <T=any>(query: string, cb?: FxOrmNS.GenericCallback<T>): void
+        }
+        close: {
+            <T=void>(cb?: FxOrmNS.GenericCallback<T>): void
+        }
+        end?: DatabaseBase['close']
+        
+        connect: {
+            (cb?: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): void
         }
         // useless now
         pool: any
     }
 
     interface DatabaseBase_SQLite extends DatabaseBase {
-        close: {
-            <T=any>(cb?: FxOrmNS.GenericCallback<T>): void
-        }
-        all: {
-            <T=any>(query: string, cb?: FxOrmNS.GenericCallback<T>): void
-        }
+        all: DatabaseBase_SQLite['query']
     }
 
     interface DatabaseBase_MySQL extends DatabaseBase {
-        opts: FxOrmNS.IDBConnectionConfig;
-
+        // opts: FxOrmNS.IDBConnectionConfig;
         ping: {
             (cb?: FxOrmNS.VoidCallback): void
         }

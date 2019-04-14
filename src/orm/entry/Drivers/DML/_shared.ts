@@ -19,11 +19,14 @@ export function eagerQuery<T = any> (
 	keys: string[],
 	cb: FibOrmNS.ExecutionCallback<T>
 ) {
-	var desiredKey = Object.keys(association.field);
+	var desiredKey = Object.keys(association.field as FxOrmProperty.NormalizedPropertyHash);
 	var assocKey = Object.keys(association.mergeAssocId);
 
-	var where: {[k: string]: string[]} = {};
-	where[desiredKey + ''] = keys;
+	var where = <{[k: string]: string[]}>{};
+	// TODO: how about composite association keys?
+	desiredKey.forEach((dk) => {
+		where[dk] = keys;
+	});
 
 	var query = this.query.select()
 		.from(association.model.table)
@@ -33,5 +36,5 @@ export function eagerQuery<T = any> (
 		.where(association.mergeTable, where)
 		.build();
 
-	this.execSimpleQuery(query, cb);
+	return this.execSimpleQuery(query, cb);
 }

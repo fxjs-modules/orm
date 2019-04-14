@@ -42,10 +42,10 @@ declare namespace FxOrmDMLDriver {
 
         /* shared :start */
         sync: {
-            <T>(opts: FxOrmDMLShared.SyncOptions, cb: FxOrmNS.GenericCallback<FxOrmSqlDDLSync.SyncResult>): DMLDriver            
+            <T>(opts: FxOrmDMLShared.SyncOptions, cb?: FxOrmNS.GenericCallback<FxOrmSqlDDLSync.SyncResult>): DMLDriver            
         }
         drop: {
-            <T>(opts: FxOrmDMLShared.DropOptions, cb: FxOrmNS.GenericCallback<void>): DMLDriver            
+            <T>(opts: FxOrmDMLShared.DropOptions, cb?: FxOrmNS.GenericCallback<void>): DMLDriver            
         }
         /* shared :end */
 
@@ -53,13 +53,13 @@ declare namespace FxOrmDMLDriver {
             (cb?: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): void
         }
         reconnect: {
-            (cb: null | FxOrmNS.VoidCallback, connection: null | FxOrmDb.DatabaseBase_MySQL): void
+            (cb: null | FxOrmNS.VoidCallback, connection: null | FxOrmDb.DatabaseBase): void
         }
         ping: {
             (cb?: FxOrmNS.VoidCallback): void
         }
         on: {
-            <T>(ev: string, cb: FxOrmNS.GenericCallback<T>): void
+            <T>(ev: string, cb?: FxOrmNS.GenericCallback<T>): void
         }
         close: {
             (cb?: FxOrmNS.VoidCallback): void
@@ -75,7 +75,7 @@ declare namespace FxOrmDMLDriver {
          */
         aggregate_functions: (string|AggregationFuncTuple)[]
         execSimpleQuery: {
-            <T=any>(query: string, cb: FxOrmNS.GenericCallback<T>): void
+            <T=any>(query: string, cb?: FxOrmNS.GenericCallback<T>): void
         }
         /**
          * @description do eager-query
@@ -85,7 +85,7 @@ declare namespace FxOrmDMLDriver {
                 association: FxOrmAssociation.InstanceAssociationItem,
                 opts: FxOrmQuery.ChainFindOptions,
                 keys: string[],
-                cb: FibOrmNS.GenericCallback<T>
+                cb?: FibOrmNS.GenericCallback<T>
             ): void
         }
 
@@ -95,7 +95,7 @@ declare namespace FxOrmDMLDriver {
                 table: string,
                 conditions: FxSqlQuerySubQuery.SubQueryConditions,
                 opts: DMLDriver_FindOptions,
-                cb: FxOrmNS.GenericCallback<T>
+                cb?: FxOrmNS.GenericCallback<T>
             ): void
         }
         count: {
@@ -107,7 +107,7 @@ declare namespace FxOrmDMLDriver {
                 table: string,
                 conditions: FxSqlQuerySubQuery.SubQueryConditions,
                 opts: DMLDriver_CountOptions,
-                cb: FxOrmNS.GenericCallback<T>
+                cb?: FxOrmNS.GenericCallback<T>
             ): void
         }
         insert: {
@@ -115,7 +115,7 @@ declare namespace FxOrmDMLDriver {
                 table: string,
                 data: FxSqlQuerySql.DataToSet,
                 keyProperties: FxOrmProperty.NormalizedProperty[],
-                cb: FxOrmNS.GenericCallback<FxOrmQuery.InsertResult>
+                cb?: FxOrmNS.GenericCallback<FxOrmQuery.InsertResult>
             ): void
         }
         update: {
@@ -123,26 +123,26 @@ declare namespace FxOrmDMLDriver {
                 table: string,
                 changes: FxSqlQuerySql.DataToSet,
                 conditions: FxSqlQuerySubQuery.SubQueryConditions,
-                cb: FxOrmNS.GenericCallback<T>
+                cb?: FxOrmNS.GenericCallback<T>
             ): void
         }
         remove: {
             <T=any>(
                 table: string,
                 conditions: FxSqlQuerySubQuery.SubQueryConditions,
-                cb: FxOrmNS.GenericCallback<T>
+                cb?: FxOrmNS.GenericCallback<T>
             ): void
         }
         clear: {
             <T=any>(
                 table: string,
-                cb: FxOrmNS.GenericCallback<T>
+                cb?: FxOrmNS.GenericCallback<T>
             ): void
         }
         poolQuery: {
             <T=any>(
                 query: string,
-                cb: FxOrmNS.GenericCallback<T>
+                cb?: FxOrmNS.GenericCallback<T>
             ): void
         }
         valueToProperty: {
