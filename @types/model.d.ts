@@ -90,7 +90,7 @@ declare namespace FxOrmModel {
         /* data operation api :start */
         create: {
             (data: FxOrmInstance.InstanceDataPayload): Model;
-            (data: FxOrmInstance.InstanceDataPayload, callback: ModelMethodCallback__CreateItem): Model;
+            (data: FxOrmInstance.InstanceDataPayload, options?: ModelOptions__Create, callback?: ModelMethodCallback__CreateItem): Model;
         }
         clear: {
             (...args: any[]): Model;

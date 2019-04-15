@@ -727,6 +727,7 @@ export const Model = function (
 			}
 		);
 
+		// TODO: try to test it.
 		if (parallel)
 			coroutine.parallel(actions);
 		else
