@@ -338,4 +338,8 @@ declare namespace FxOrmModel {
     type ModelMethodCallback__BatchUpdate = FxOrmNS.GenericCallback<FxOrmInstance.Instance[]>
 
     type ModelMethodCallback__Count = FxOrmNS.GenericCallback<number>
+
+    interface ModelOptions__Create {
+        parallel?: boolean
+    }
 }
