@@ -13,7 +13,7 @@ type HashOfModelFuncNameToPath = string[];
 
 // patch async function to sync function
 export function patchSync(
-    o: FxOrmModelAndIChainFind | FxOrmNS.ORM | FxOrmInstance.Instance,
+    o: FxOrmModelAndIChainFind | FxOrmNS.ORMLike | FxOrmInstance.Instance,
     funcs: HashOfModelFuncNameToPath
 ) {
     funcs.forEach(function (func) {

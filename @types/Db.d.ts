@@ -15,7 +15,8 @@ declare namespace FxOrmDb {
         end?: DatabaseBase['close']
         
         connect: {
-            (cb?: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): void
+            (cb: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): void
+            (): FxOrmNS.IDbConnection
         }
         // useless now
         pool: any

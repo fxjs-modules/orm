@@ -23,8 +23,8 @@
         "build": "fib-typify src -o lib",
         "test": "fibjs test",
         "ci": "npm run build && npm run test",
-        "ci-mysql": "npm run build && npm run test",
-        "ci-sqlite": "npm run build && cross-env FX_ORM_TEST_SQLITE=1 npm run test",
+        "ci-mysql": "npm run build && ORM_PROTOCOL=mysql npm run test",
+        "ci-sqlite": "npm run build && cross-env ORM_PROTOCOL=sqlite npm run test",
         "prepublishOnly": "npm run build"
     },
     "ci": {

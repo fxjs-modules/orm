@@ -166,7 +166,16 @@ declare namespace FxOrmNS {
         prototype: ORM
     }
 
-    interface ORM extends Class_EventEmitter, FxOrmSynchronous.SynchronizedORMInstance, FxOrmPatch.PatchedORMInstance {
+    interface ORMLike extends Class_EventEmitter {
+        use: Function
+        define: Function
+        sync: Function
+        load: Function
+
+        driver?: FxOrmDMLDriver.DMLDriver
+    }
+
+    interface ORM extends ORMLike, FxOrmSynchronous.SynchronizedORMInstance, FxOrmPatch.PatchedORMInstance {
         validators: FxOrmValidators.ValidatorModules;
         enforce: FibjsEnforce.ExportModule;
         settings: FxOrmSettings.SettingInstance;
@@ -266,7 +275,12 @@ declare namespace FxOrmNS {
         /* deprecated :end */
 
         use(connection: FxOrmDb.DatabaseBase, protocol: string, options: IUseOptions, callback: (err: Error, db?: FxOrmNS.ORM) => void): any;
-        connect: IConnectFunction;
+        connect: {
+            (uri: string): FxOrmNS.ORMLike;
+            (uri: string, callback: IConnectionCallback): FxOrmNS.ORMLike;
+            (options: FxOrmNS.IConnectionOptions): FxOrmNS.ORMLike;
+            (options: FxOrmNS.IConnectionOptions, callback: IConnectionCallback): FxOrmNS.ORMLike;
+        };
         connectSync(opts: FibORMIConnectionOptions | string): FibORM;
 
         [extra: string]: any

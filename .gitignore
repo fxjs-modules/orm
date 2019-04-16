@@ -2,3 +2,5 @@ node_modules
 test.db*
 package-lock.json
 lib
+
+config.js*

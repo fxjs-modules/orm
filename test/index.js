@@ -4,6 +4,8 @@ var test = require("test");
 test.setup();
 
 function t() {
+    run('./integration/orm-exports.js');
+
     run('./integration/association-extend.js');
     run('./integration/association-hasmany-extra.js');
     run('./integration/association-hasmany-hooks.js');

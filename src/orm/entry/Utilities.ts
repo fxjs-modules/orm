@@ -515,14 +515,13 @@ export function tableAliasCalculatorInOneQuery () {
 	}
 }
 
-export function ORM_Error(err: Error, cb: FibOrmNS.VoidCallback) {
+export function ORM_Error(err: Error, cb: FibOrmNS.VoidCallback): FxOrmNS.ORMLike {
 	var Emitter: any = new events.EventEmitter();
 
 	Emitter.use = Emitter.define = Emitter.sync = Emitter.load = function () {};
 
-	if (typeof cb === "function") {
+	if (typeof cb === "function")
 		cb(err);
-	}
 
 	process.nextTick(function () {
 		Emitter.emit("connect", err);
@@ -543,4 +542,32 @@ export function queryParamCast (val: any): any {
 		}
 	}
 	return val;
+}
+
+export function isDriverNotSupportedError (err: FxOrmError.ExtendedError) {
+	if (err.code === "MODULE_NOT_FOUND")
+		return true;
+
+	if(
+		[
+			// windows not found
+			'The system cannot find the file specified',
+			// unix like not found
+			'No such file or directory',
+		].some((msg: string) => {
+			return err.message.indexOf(msg) > -1
+		})
+	)
+		return true
+
+	if(
+		[
+			'find module',
+		].some((msg: string) => {
+			return err.message.indexOf(msg) > -1
+		})
+	)
+		return true
+
+	return false;
 }

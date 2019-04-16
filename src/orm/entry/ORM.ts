@@ -48,59 +48,90 @@ const use: FxOrmNS.ExportModule['use'] = function (connection, proto, opts, cb) 
 	}
 };
 
+const FALLBACK_CONNECT_CFG = {
+	protocol: '',
+	user: '',
+	password: '',
+	host: '',
+	query: {},
+	database: ''
+}
+
+function isParsedDbConfigLikeORM (parsedDBConfig: FxOrmNS.IDBConnectionConfig | FxOrmNS.ORMLike): parsedDBConfig is FxOrmNS.ORMLike {
+	return !parsedDBConfig.hasOwnProperty('host')
+}
+
 const connect: FxOrmNS.ExportModule['connect'] = function () {
-	let opts: FxOrmNS.IConnectionOptions = arguments[0],
-		cb: FxOrmNS.IConnectionCallback = arguments[1]
+	let opts: FxOrmNS.IConnectionOptions,
+		cb: FxOrmNS.IConnectionCallback;
 
-	if (arguments.length === 0 || !opts) {
-		return Utilities.ORM_Error(new ORMError("CONNECTION_URL_EMPTY", 'PARAM_MISMATCH'), cb);
-	}
+	Helpers.selectArgs(arguments, function (type, arg) {
+		switch (type) {
+			case 'function':
+				cb = arg;
+				break
+			default:
+				opts = arg;
+				break
+		}
+	});
 
-	const cfg = Helpers.parseDbConfig(opts);
+	const cfg = Helpers.parseDbConfig(opts, cb);
 
-	var proto  = cfg.protocol.replace(/:$/, '');
-	var db: FxOrmNS.ORM;
+	if (isParsedDbConfigLikeORM(cfg))
+		return cfg;
+	
+	let proto  = cfg.protocol.replace(/:$/, '');
+	let db: FxOrmNS.ORMLike;
+	let err: ORMError = null;
 	if (DriverAliases[proto]) {
 		proto = DriverAliases[proto];
 	}
 
 	try {
-		var Driver = adapters.get(proto);
-		var settings = Settings.Container(SettingsInstance.get('*'));
-		var driver   = new Driver(cfg, null, {
+		const Driver = adapters.get(proto);
+		const settings = Settings.Container(SettingsInstance.get('*'));
+		const driver   = new Driver(cfg, null, {
 			debug    : 'debug' in cfg.query ? cfg.query.debug : settings.get("connection.debug"),
 			pool     : 'pool'  in cfg.query ? cfg.query.pool  : settings.get("connection.pool"),
 			settings : settings
 		});
 
-		db = new ORM(proto, driver, settings);
-
-		driver.connect(function (err: Error) {
-			if (typeof cb === "function") {
-				if (err) {
-					return cb(err);
-				} else {
-					return cb(null, db);
-				}
-			}
-
-			db.emit("connect", err, !err ? db : null);
+		driver.connect(function (err) {
+			if (err)
+				throw err
 		});
+
+		db = new ORM(proto, driver, settings);
 	} catch (ex) {
-		if (ex.code === "MODULE_NOT_FOUND" || ex.message.indexOf('find module') > -1) {
-			return Utilities.ORM_Error(new ORMError("Connection protocol not supported - have you installed the database driver for " + proto + "?", 'NO_SUPPORT'), cb);
+		err = ex;
+
+		if (Utilities.isDriverNotSupportedError(err)) {
+			err = new ORMError("Connection protocol not supported - have you installed the database driver for " + proto + "?", 'NO_SUPPORT');
+			db = Utilities.ORM_Error(err, cb);
 		}
-		return Utilities.ORM_Error(ex, cb);
+
+		db = Utilities.ORM_Error(err, cb);
 	}
 
-	patchSync(db, [
-		'sync',
-		'close',
-		'drop',
-		'ping'
-	]);
+	if (!err) {
+		patchSync(db, [
+			'sync',
+			'close',
+			'drop',
+			'ping'
+		]);
 
-	patchDriver(db.driver);
+		if (db.driver)
+			patchDriver(db.driver);
+	}
+
+	process.nextTick(() => {
+		db.emit("connect", err, !err ? db : null);
+	});
+
+	if (typeof cb === 'function')
+		cb(err, db)
 
 	return db;
 };

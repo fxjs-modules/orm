@@ -15,7 +15,7 @@ export class Database extends EventEmitter implements FxOrmDb.DatabaseBase_SQLit
         this.opts = url.parse(sqlite_conn_str) as any;
     }
 
-    connect(cb?: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): void {
+    connect(cb?: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): any {
         let err = null as Error
             
         try {
@@ -26,6 +26,8 @@ export class Database extends EventEmitter implements FxOrmDb.DatabaseBase_SQLit
         }
 
         if (typeof cb == "function") cb(err, this.conn);
+
+        return this.conn;
     }
 
     execute(sql: string, ...args: any[]) {

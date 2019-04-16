@@ -39,15 +39,11 @@ declare namespace FxOrmNS {
     }
     
     interface IConnectionCallback {
-        (err: Error, orm?: FxOrmNS.ORM): void
+        (err: Error, orm?: FxOrmNS.ORMLike): void
     }
 
-    interface IConnectFunction {
-        (uri: string): FxOrmNS.ORM;
-        (uri: string, callback: IConnectionCallback): FxOrmNS.ORM;
-        (options: FxOrmNS.IConnectionOptions): FxOrmNS.ORM;
-        (options: FxOrmNS.IConnectionOptions, callback: IConnectionCallback): FxOrmNS.ORM;
-    }
+    // just for compatible
+    type IConnectFunction = FxOrmNS.ExportModule['connect'];
 
     interface IConnectionOptions {
         protocol?: string;

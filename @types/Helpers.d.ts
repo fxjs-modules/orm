@@ -1,6 +1,6 @@
 declare namespace FxOrmHelper {
    interface HelperModules {
-      parseDbConfig (config: string | FxOrmNS.IConnectionOptions, cb?: FxOrmNS.IConnectionCallback): FxOrmNS.IDBConnectionConfig
+      parseDbConfig (config: string | FxOrmNS.IConnectionOptions, cb?: FxOrmNS.IConnectionCallback): FxOrmNS.IDBConnectionConfig | FxOrmNS.ORMLike
 
       get_many_associations_from_instance_by_extname (instance: FxOrmNS.Instance): FxOrmAssociation.InstanceAssociationItem_HasMany[]
       get_one_associations_from_instance_by_extname (instance: FxOrmNS.Instance): FxOrmAssociation.InstanceAssociationItem_HasOne[]
@@ -24,5 +24,15 @@ declare namespace FxOrmHelper {
 
       prependHook (hooks: FxOrmNS.Hooks, hookName: keyof FxOrmNS.Hooks, preLogic: FxOrmNS.Hooks[keyof FxOrmNS.Hooks]): void
       preReplaceHook (m: FxOrmModel.Model, opts: FxOrmModel.ModelOptions, hookName: keyof FxOrmNS.Hooks, cb: (this: FxOrmInstance.Instance, inst: FxOrmInstance.Instance) => void): void
+
+      selectArgs (
+         args: ArrayLike<any>,
+         callback: {
+            (
+               arg_type: "string" | "number" | "bigint" | "boolean" | "symbol" | "undefined" | "object" | "function",
+               arg: any
+            ): void
+         }
+      ): void
    }
 }

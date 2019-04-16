@@ -15,7 +15,7 @@ export = class ORMError extends Error {
   name: string = 'ORMError';
 
   message: string = '';
-  code: number = 0;
+  code: number | string = 0;
   literalCode: string = '';
 
   [k: string]: any;

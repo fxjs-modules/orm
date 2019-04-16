@@ -5,17 +5,26 @@ import _cloneDeep 	  = require('lodash.clonedeep');
 import Utilities      = require("./Utilities");
 import ORMError       = require("./Error");
 
-export const parseDbConfig: FxOrmHelper.HelperModules['parseDbConfig'] = function (opts, cb) {
-    let config: FxOrmNS.IConnectionOptions = null;
+const SUPPORTED_PROTOCOLS = [
+    'sqlite:',
+    'mysql:',
+    'mssql:',
+]
 
-	if (typeof opts == 'string') {
+export const parseDbConfig: FxOrmHelper.HelperModules['parseDbConfig'] = function (opts, cb) {
+    let config: FxOrmNS.IDBConnectionConfig = null;
+
+    if (!opts) {
+        return Utilities.ORM_Error(new ORMError("CONNECTION_URL_EMPTY", 'PARAM_MISMATCH'), cb);
+    } else if (typeof opts === 'string') {
 		if ((opts as string).trim().length === 0) {
 			return Utilities.ORM_Error(new ORMError("CONNECTION_URL_EMPTY", 'PARAM_MISMATCH'), cb);
 		}
 		config = url.parse(opts, true).toJSON();
-	} else {
-        config = opts
+	} else if (typeof opts === 'object') {
+        config = url.parse(url.format(opts)).toJSON() as FibOrmNS.IDBConnectionConfig;
     }
+
 
 	// support fibjs built-in object
 	if (typeof config.toJSON === 'function')
@@ -34,15 +43,16 @@ export const parseDbConfig: FxOrmHelper.HelperModules['parseDbConfig'] = functio
 		config.query[k] = Utilities.queryParamCast(config.query[k]);
 		config[k] = config.query[k];
 	}
+    
+    if (!config.protocol) {
+		return Utilities.ORM_Error(new ORMError("CONNECTION_URL_NO_PROTOCOL", 'PARAM_MISMATCH'), cb);
+    }
 
 	if (!config.database) {
-		if (!config.pathname) {
-			return cb(new Error("CONNECTION_URL_NO_DATABASE"));
-		}
+		// if (!config.pathname) {
+        //     return Utilities.ORM_Error(new ORMError("CONNECTION_URL_NO_DATABASE", 'PARAM_MISMATCH'), cb);
+		// }
 		config.database = (config.pathname ? config.pathname.substr(1) : "");
-	}
-	if (!config.protocol) {
-		return Utilities.ORM_Error(new ORMError("CONNECTION_URL_NO_PROTOCOL", 'PARAM_MISMATCH'), cb);
 	}
 	if (!config.host && !isSqlite) {
 		config.host = config.hostname = "localhost";
@@ -246,3 +256,12 @@ export const preReplaceHook: FxOrmHelper.HelperModules['preReplaceHook'] = funct
     });
 }
 /* hooks: start */
+
+/* arguments input :start */
+export const selectArgs: FxOrmHelper.HelperModules['selectArgs'] = function (args, callback) {
+    for (let i = 0, arg: any = null; i < args.length; i++) {
+        arg = args[i]
+        callback(typeof arg, arg);
+    }
+}
+/* arguments input :end */

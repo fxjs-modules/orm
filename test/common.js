@@ -16,7 +16,7 @@ common.isTravis = function() {
 };
 
 common.createConnection = function(opts, cb) {
-  ORM.connect(this.getConnectionString(opts), cb);
+  return ORM.connect(this.getConnectionString(opts), cb);
 };
 
 common.hasConfig = function (proto) {
@@ -35,39 +35,29 @@ common.hasConfig = function (proto) {
 
 common.getConfig = function () {
   if (common.isTravis()) {
-    switch (this.protocol()) {
-      case 'mysql':
-        return { user: "root", host: "localhost", database: "orm_test" };
-      case 'postgres':
-      case 'redshift':
-        return { user: "postgres", host: "localhost", database: "orm_test" };
-      case 'sqlite':
-        return {};
-      case 'mongodb':
-        return { host: "localhost", database: "test" };
-      default:
-        throw new Error("Unknown protocol");
-    }
+    var config = require("./config.ci")[this.protocol()];
   } else {
     var config = require("./config")[this.protocol()];
-    if (typeof config == "string") {
-      config = require("url").parse(config);
-    }
-    if (config.hasOwnProperty("auth")) {
-      if (config.auth.indexOf(":") >= 0) {
-        config.user = config.auth.substr(0, config.auth.indexOf(":"));
-        config.password = config.auth.substr(config.auth.indexOf(":") + 1);
-      } else {
-        config.user = config.auth;
-        config.password = "";
-      }
-    }
-    if (config.hostname) {
-      config.host = config.hostname;
-    }
-
-    return config;
   }
+  
+  if (typeof config == "string") {
+    config = require("url").parse(config, this.protocol());
+  }
+
+  if (config.hasOwnProperty("auth")) {
+    if (config.auth.indexOf(":") >= 0) {
+      config.user = config.auth.substr(0, config.auth.indexOf(":"));
+      config.password = config.auth.substr(config.auth.indexOf(":") + 1);
+    } else {
+      config.user = config.auth;
+      config.password = "";
+    }
+  }
+  if (config.hostname) {
+    config.host = config.hostname;
+  }
+
+  return config;
 };
 
 common.getConnectionString = function (opts) {

@@ -1,26 +1,31 @@
-var url = require('url')
+var common = require('../common');
 
-var ORM = require('../../');
+module.exports.connect = function (cb) {
+  var opts = {}
 
-module.exports.connect = function (opts = {}) {
-    return ORM.connectSync({
-        ...url.parse(
-            require('./conn'), true
-        ).toJSON(),
-        ...opts
-    });
-};
+  if (1 in arguments) {
+    opts = arguments[0]
+    cb = arguments[1]
+  }
+
+  return common.createConnection(opts, function (err, conn) {
+    if (err) throw err
+
+    if (typeof cb === 'function')
+        cb(conn)
+  });
+}
 
 module.exports.dropSync = function (models, done) {
-    if (!Array.isArray(models)) {
-        models = [models];
-    }
+  if (!Array.isArray(models)) {
+    models = [models]
+  }
 
-    models.forEach(function (item) {
-        item.dropSync();
-        item.syncSync();
-    });
+  models.forEach(function (item) {
+    item.dropSync()
+    item.syncSync()
+  })
 
-    if (done)
-        done();
-};
+  if (done)
+    done()
+}

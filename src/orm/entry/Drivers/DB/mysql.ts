@@ -26,7 +26,7 @@ class Database extends EventEmitter implements FxOrmDb.DatabaseBase_MySQL {
             setImmediate(cb);
     }
 
-    connect(cb?: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): void {
+    connect(cb?: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): any {
         let err = null as Error
             
         try {
@@ -37,6 +37,8 @@ class Database extends EventEmitter implements FxOrmDb.DatabaseBase_MySQL {
         }
 
         if (typeof cb === "function") cb(err, this.conn);
+
+        return this.conn;
     }
 
     execute(sql: string, ...args: any[]) {
