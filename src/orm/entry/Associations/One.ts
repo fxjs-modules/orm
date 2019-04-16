@@ -5,6 +5,7 @@ import Utilities = require("../Utilities");
 import ORMError = require("../Error");
 import { ACCESSOR_KEYS, addAssociationInfoToModel, getMapsToFromPropertyHash } from './_utils';
 import { findByList } from '../Model';
+import * as Helpers from '../Helpers';
 
 export function prepare (
 	Model: FxOrmModel.Model, associations: FxOrmAssociation.InstanceAssociationItem_HasOne[]
@@ -18,7 +19,7 @@ export function prepare (
 		assoc_name = assoc_name || ext_model.table;
 		ext_model = ext_model || Model;
 		
-		var association: FxOrmAssociation.InstanceAssociationItem_HasOne = {
+		let association: FxOrmAssociation.InstanceAssociationItem_HasOne = {
 			name           : assoc_name,
 			model          : ext_model,
 
@@ -92,20 +93,20 @@ export function prepare (
 				conditions: FxOrmModel.ModelQueryConditions__Find = null,
 				options: FxOrmAssociation.ModelAssociationMethod__FindOptions = {};
 
-			for (let i = 0; i < arguments.length; i++) {
-				switch (typeof arguments[i]) {
+			Helpers.selectArgs(arguments, (arg_type, arg) => {
+				switch (arg_type) {
 					case "function":
-						cb = arguments[i];
+						cb = arg;
 						break;
 					case "object":
 						if (conditions === null) {
-							conditions = arguments[i];
+							conditions = arg;
 						} else {
-							options = arguments[i];
+							options = arg;
 						}
 						break;
 				}
-			}
+			})
 
 			if (conditions === null) {
 				throw new ORMError(`.${association.modelFindByAccessor}() is missing a conditions object`, 'PARAM_MISMATCH');
@@ -187,11 +188,13 @@ function extendInstance(
 			}
 
 			if (Utilities.hasValues(Instance, Object.keys(association.field))) {
-				association.model.get(Utilities.values(Instance, Object.keys(association.field)),
-				_has_opts,
-				function (err: FxOrmError.ExtendedError, instance: FxOrmInstance.Instance) {
-					return cb(err, instance ? true : false);
-				});
+				association.model.get(
+					Utilities.values(Instance, Object.keys(association.field)),
+					_has_opts,
+					function (err: FxOrmError.ExtendedError, instance: FxOrmInstance.Instance) {
+						return cb(err, instance ? true : false);
+					}
+				);
 			} else {
 				cb(null, false);
 			}

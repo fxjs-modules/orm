@@ -46,7 +46,10 @@ class Database extends EventEmitter implements FxOrmDb.DatabaseBase_MySQL {
     }
 
     query<T = any>(sql: string, cb?: FxOrmNS.GenericCallback<T>) {
-        return this.execute(sql, cb);
+        if (typeof cb !== 'function')
+            return this.execute(sql);
+            
+        this.execute(sql, cb);
     }
 
     close(cb?: FxOrmNS.VoidCallback) {

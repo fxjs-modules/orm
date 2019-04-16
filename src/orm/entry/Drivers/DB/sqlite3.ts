@@ -35,7 +35,10 @@ export class Database extends EventEmitter implements FxOrmDb.DatabaseBase_SQLit
     }
 
     query<T = any>(sql: string, cb?: FxOrmNS.GenericCallback<T>) {
-        return this.conn.execute(sql, cb);
+        if (typeof cb !== 'function')
+            return this.execute(sql);
+            
+        this.execute(sql, cb);
     }
 
     close<T=void>(cb?: FxOrmNS.GenericCallback<T>) {
@@ -46,7 +49,7 @@ export class Database extends EventEmitter implements FxOrmDb.DatabaseBase_SQLit
         return this.query(sql, cb);
     }
 
-    get<T extends any[] =any>(sql: string, cb?: FxOrmNS.GenericCallback<T>) {
+    get<T = any>(sql: string, cb?: FxOrmNS.GenericCallback<T>) {
         const results = this.all(sql)[0];
 
         if (typeof cb === 'function')

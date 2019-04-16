@@ -114,8 +114,9 @@ Driver.prototype.execSimpleQuery = function<T=any> (
 	if (this.opts.debug) {
 		require("../../Debug").sql('mysql', query);
 	}
+	
 	if (this.opts.pool) {
-		this.poolQuery(query, cb);
+		return this.poolQuery(query, cb);
 	} else {
 		return this.db.query(query, cb);
 	}

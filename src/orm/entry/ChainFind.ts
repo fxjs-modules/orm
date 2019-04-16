@@ -28,125 +28,96 @@ const ChainFind = function (
 ) {
 	const merges = opts.merge = Utilities.combineMergeInfoToArray( opts.merge );
 
-	const chainRun = function<T> (done: FxOrmNS.GenericCallback<T|T[]|FxOrmInstance.InstanceDataPayload[]>) {
+	const chainRunSync = function (): FxOrmInstance.Instance[] {
 		const conditions: FxSqlQuerySubQuery.SubQueryConditions = Utilities.transformPropertyNames(opts.conditions, opts.properties);
 		const order = Utilities.transformOrderPropertyNames(opts.order, opts.properties);
 
-		opts.driver.find(opts.only, opts.table, conditions, {
+		let foundItems: FxOrmInstance.InstanceDataPayload[];
+
+		foundItems = opts.driver.find(opts.only, opts.table, conditions, {
 			limit  : opts.limit,
 			order  : order,
 			merge  : merges,
 			offset : opts.offset,
 			exists : opts.exists
-		}, function (err: Error, dataItems: FxOrmInstance.InstanceDataPayload[]) {
-			if (err) {
-				return done(err);
-			}
-			if (dataItems.length === 0) {
-				return done(null, []);
-			}
-			
-			/**
-			 * only valid for related table based on single foreign key
-			 * @param err 
-			 * @param items 
-			 */
-			var eagerLoad = function (err: Error, items: FxOrmInstance.InstanceDataPayload[]) {
-				const associationKey_Item_Map: {[key: string]: typeof items[any]} = {};
+		});
+		
+		if (foundItems.length === 0) {
+			return [];
+		}
+		
+		/**
+		 * only valid for related table based on single foreign key
+		 * @param err 
+		 * @param items 
+		 */
+		const eagerLoadSync = function (items: FxOrmInstance.InstanceDataPayload[]) {
+			const associationKey_Item_Map: {[key: string]: typeof items[any]} = {};
 
-				const self_key_field = opts.keys[0];
+			const self_key_field = opts.keys[0];
 
-				const keys = items.map(function (item: FxOrmInstance.InstanceDataPayload) {
-					var key = item[self_key_field];
-					associationKey_Item_Map[key] = item;
+			const keys = items.map(function (item: FxOrmInstance.InstanceDataPayload) {
+				const key = item[self_key_field];
+				associationKey_Item_Map[key] = item;
 
-					return key;
-				});
-
-				opts.__eager.forEach((association: FxOrmAssociation.InstanceAssociationItem) => {
-					// if err exists, chainRun would finished before this fiber released
-					if (err) return ;
-					
-					const fetchAssociatedInstances = util.sync(function (association: FxOrmAssociation.InstanceAssociationItem, cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance[]>) {
-						opts.driver.eagerQuery<FxOrmInstance.Instance[]>(association, opts, keys, function (eager_err, instances) {
-							cb(eager_err, instances);
-						});
-					});
-
-					let instances: FxOrmInstance.Instance[] = [];
-					
-					try {
-						instances = fetchAssociatedInstances(association);
-					} catch (eager_err) {
-						// TODO: try to test error use fake driver
-						err = eager_err;
-						return ;
-					}
-
-					const association_name = association.name;
-
-					for (
-						let idx = 0, instance: FxOrmInstance.Instance, item = null;
-						instance = instances[idx];
-						idx++
-					) {
-						item = associationKey_Item_Map[instance.$p];
-
-						// Create the association arrays
-						if (!item[association_name])
-							item[association_name] = []
-
-						item[association_name].push(instance);
-					}
-				});
-
-				done(err, items);
-			};
-
-			const items = dataItems.map<FxOrmInstance.Instance>((dataItem: FxOrmInstance.InstanceDataPayload) => {
-				const newInstanceSync = util.sync(opts.newInstance);
-
-				try {
-					return newInstanceSync(dataItem);
-				} catch (new_err) {
-					err = new_err;
-				}
+				return key;
 			});
 
-			if (opts.__eager && opts.__eager.length)
-				eagerLoad(err, items);
-			else
-				done(err, items);
+			opts.__eager.forEach((association: FxOrmAssociation.InstanceAssociationItem) => {
+				let instances: FxOrmInstance.Instance[] = [];
+				
+				instances = opts.driver.eagerQuery<FxOrmInstance.Instance[]>(association, opts, keys);
+
+				const association_name = association.name;
+
+				for (
+					let idx = 0, instance: FxOrmInstance.Instance, item = null;
+					instance = instances[idx];
+					idx++
+				) {
+					item = associationKey_Item_Map[instance.$p];
+
+					// Create the association arrays
+					if (!item[association_name])
+						item[association_name] = []
+
+					item[association_name].push(instance);
+				}
+			});
+		};
+
+		const items = foundItems.map<FxOrmInstance.Instance>((dataItem: FxOrmInstance.InstanceDataPayload) => {
+			const newInstanceSync = util.sync(opts.newInstance);
+
+			return newInstanceSync(dataItem);
 		});
+
+		if (opts.__eager && opts.__eager.length)
+			eagerLoadSync(items);
+
+		return items;
+	}
+
+	const chainRun = function<T> (done?: FxOrmNS.GenericCallback<T|T[]|FxOrmInstance.InstanceDataPayload[]>) {
+		let items: FxOrmInstance.Instance[],
+			err: FxOrmError.ExtendedError;
+
+		try {
+			items = chainRunSync();
+		} catch (ex) {
+			err = ex;
+		}
+		
+		if (typeof done === 'function')
+			process.nextTick(() => {
+				done(err, items);
+			});
 	}
 
 	const chain: FxOrmQuery.IChainFind = {
 		model: null,
 		options: null,
 		
-		all: null,
-		where: null,
-		find: function <T>(...args: any[]) {
-			var cb: FxOrmNS.GenericCallback<T> = null;
-
-			opts.conditions = opts.conditions || {};
-
-			if (typeof util.last(args) === "function") {
-			    cb = args.pop() as FxOrmNS.GenericCallback<T>;
-			}
-
-			if (typeof args[0] === "object") {
-				util.extend(opts.conditions, args[0]);
-			} else if (typeof args[0] === "string") {
-				opts.conditions.__sql = (opts.conditions.__sql || []) as FxSqlQuerySubQuery.UnderscoreSqlInput;
-				opts.conditions.__sql.push(args as any);
-			}
-
-			if (cb) {
-				chainRun(cb);
-			}
-			return this;
-		},
 		whereExists: function () {
 			if (arguments.length && Array.isArray(arguments[0])) {
 				opts.exists = arguments[0];
@@ -202,68 +173,6 @@ const ChainFind = function (
 			opts.order.push([ str, args ]);
 			return this;
 		},
-		count: function (cb) {
-			opts.driver.count(opts.table, prepareConditions(opts), {
-				merge  : merges
-			}, function (err, data) {
-				if (err || data.length === 0) {
-					return cb(err);
-				}
-				return cb(null, data[0].c);
-			});
-			return this;
-		},
-		remove: function (cb) {
-			var keys = opts.keyProperties.map((x: FxOrmProperty.NormalizedProperty) => x.mapsTo); // util.map(opts.keyProperties, 'mapsTo');
-
-			opts.driver.find(keys, opts.table, prepareConditions(opts), {
-				limit  : opts.limit,
-				order  : prepareOrder(opts),
-				merge  : merges,
-				offset : opts.offset,
-				exists : opts.exists
-			}, function (err, data) {
-				if (err) {
-					return cb(err);
-				}
-				if (data.length === 0) {
-					return cb(null);
-				}
-
-				var conditions: FxSqlQuerySubQuery.SubQueryConditions = {};
-				var or: FxSqlQueryComparator.SubQueryInput;
-
-				conditions.or = [];
-
-				for (let i = 0; i < data.length; i++) {
-					or = {};
-					for (var j = 0; j < opts.keys.length; j++) {
-						or[keys[j]] = data[i][keys[j]];
-					}
-					conditions.or.push(or);
-				}
-
-				return opts.driver.remove(opts.table, conditions, cb);
-			});
-			return this;
-		},
-		first: function <T>(cb: FxOrmNS.ExecutionCallback<T>) {
-			return this.run(function (err: Error, items: T[]) {
-				return cb(err, items && items.length > 0 ? items[0] : null);
-			});
-		},
-		last: function <T>(cb: FxOrmNS.ExecutionCallback<T>) {
-			return this.run(function (err: Error, items: T[]) {
-				return cb(err, items && items.length > 0 ? items[items.length - 1] : null);
-			});
-		},
-		each: function (cb?: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>) {
-			return ChainInstance(this, cb);
-		},
-		run: function<T> (cb: FxOrmNS.ExecutionCallback<T>) {
-			chainRun(cb);
-			return this;
-		},
 		eager: function () {
 			// This will allow params such as ("abc", "def") or (["abc", "def"])
 			var associations: string[] = util.flatten(arguments);
@@ -278,8 +187,155 @@ const ChainFind = function (
 			});
 
 			return this;
-		}
+		},
+		
+		/* methods to ChainInstance :start */
+		each: function (cb?: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>) {
+			return ChainInstance(this, cb);
+		},
+		/* methods to ChainInstance :end */
+		
+		/* sync, callback-as-run style methods :start */
+		all: null,
+		allSync: null,
+		where: null,
+		whereSync: null,
+
+		find: function (...args: any[]) {
+			var cb: FxOrmNS.GenericCallback<FxOrmInstance.Instance[]> = null;
+
+			opts.conditions = opts.conditions || {};
+
+			if (typeof util.last(args) === "function") {
+			    cb = args.pop() as FxOrmNS.GenericCallback<FxOrmInstance.Instance[]>;
+			}
+
+			if (typeof args[0] === "object") {
+				util.extend(opts.conditions, args[0]);
+			} else if (typeof args[0] === "string") {
+				opts.conditions.__sql = (opts.conditions.__sql || []) as FxSqlQuerySubQuery.UnderscoreSqlInput;
+				opts.conditions.__sql.push(args as any);
+			}
+
+			if (cb) {
+				chainRun(cb);
+			}
+			return this;
+		},
+
+		findSync: function (...args: any[]) {
+			opts.conditions = opts.conditions || {};
+
+			if (typeof args[0] === "object") {
+				util.extend(opts.conditions, args[0]);
+			} else if (typeof args[0] === "string") {
+				opts.conditions.__sql = (opts.conditions.__sql || []) as FxSqlQuerySubQuery.UnderscoreSqlInput;
+				opts.conditions.__sql.push(args as any);
+			}
+
+			return chainRunSync();
+		},
+
+		count: function (cb?) {
+			process.nextTick(() => {
+				const {
+					error,
+					result
+				} = Utilities.exposeErrAndResultFromSyncMethod<number>(chain.countSync)
+
+				if (typeof cb === 'function')
+					cb(error, result)
+			})
+			return this;
+		},
+		
+		countSync: function () {
+			const data: FxOrmQuery.CountResult[] = opts.driver.count(opts.table, prepareConditions(opts), {
+				merge  : merges
+			});
+
+			if (data.length === 0)
+				return 0;
+				 
+			return data[0].c
+		},
+
+		remove: function (cb) {
+			process.nextTick(() => {
+				const {
+					error,
+					result
+				} = Utilities.exposeErrAndResultFromSyncMethod<FxOrmQuery.RemoveResult>(chain.countSync)
+
+				if (typeof cb === 'function')
+					cb(error, result)
+			})
+			return this;
+		},
+
+		// TODO: add test case about `.removeSync()`
+		removeSync: function () {
+			const keys = opts.keyProperties.map((x: FxOrmProperty.NormalizedProperty) => x.mapsTo);
+			
+			const data = opts.driver.find(keys, opts.table, prepareConditions(opts), {
+				limit  : opts.limit,
+				order  : prepareOrder(opts),
+				merge  : merges,
+				offset : opts.offset,
+				exists : opts.exists
+			});
+
+			if (data.length === 0) {
+				return null;
+			}
+
+			const conditions: FxSqlQuerySubQuery.SubQueryConditions = {};
+			let or: FxSqlQueryComparator.SubQueryInput;
+
+			conditions.or = [];
+
+			for (let i = 0; i < data.length; i++) {
+				or = {};
+				for (let j = 0; j < opts.keys.length; j++) {
+					or[keys[j]] = data[i][keys[j]];
+				}
+				conditions.or.push(or);
+			}
+
+			return opts.driver.remove(opts.table, conditions);
+		},
+
+		first: function (cb?) {
+			return this.run(function (err: Error, items: FxOrmInstance.Instance[]) {
+				return cb(err, items && items.length > 0 ? items[0] : null);
+			});
+		},
+		firstSync: function () {
+			const items = this.runSync();
+
+			return items && items.length > 0 ? items[0] : null
+		},
+		last: function (cb?) {
+			return this.run(function (err: Error, items: FxOrmInstance.Instance[]) {
+				return cb(err, items && items.length > 0 ? items[items.length - 1] : null);
+			});
+		},
+		lastSync: function () {
+			const items = this.runSync();
+
+			return items && items.length > 0 ? items[items.length - 1] : null
+		},
+		run: function (cb?) {
+			chainRun(cb);
+			return this;
+		},
+		runSync: function () {
+			return chainRunSync();
+		},
+		/* sync, callback-as-run style methods :end */
 	};
+
+	chain.allSync = chain.whereSync = chain.findSync;
 	chain.all = chain.where = chain.find;
 
 	if (opts.associations) {

@@ -13,10 +13,10 @@ type HashOfModelFuncNameToPath = string[];
 
 // patch async function to sync function
 export function patchSync(
-    o: FxOrmModelAndIChainFind | FxOrmNS.ORMLike | FxOrmInstance.Instance,
+    o: FxOrmModelAndIChainFind | FxOrmNS.ORMLike | FxOrmInstance.Instance | FxOrmDMLDriver.DMLDriver,
     funcs: HashOfModelFuncNameToPath
 ) {
-    funcs.forEach(function (func) {
+    funcs.forEach(function (func: string) {
         const old_func = o[func];
         /**
          * we should re init the sync method in hook `afterAutoFetch`,
@@ -108,7 +108,7 @@ export function patchResult(o: FxOrmModelAndIChainFind): void {
         var rs: FxOrmQuery.IChainFind = old_func.apply(this, Array.prototype.slice.apply(arguments));
         if (rs) {
             patchResult(rs);
-            patchIChainFindLikeRs(rs);
+            // patchIChainFindLikeRs(rs);
         }
         
         return rs;
@@ -215,8 +215,8 @@ export function patchModelAfterDefine(m: FxOrmModel.Model, /* opts: FxOrmModel.M
         'all',
         'create',
         'drop',
-        'find',
-        'get',
+        // 'find',
+        // 'get',
         'sync'
     ]);
 
@@ -229,6 +229,12 @@ export function patchModelAfterDefine(m: FxOrmModel.Model, /* opts: FxOrmModel.M
     patchAggregate(m);
 }
 
+/**
+ * 
+ * @deprecated
+ * @param rs 
+ * @param opts 
+ */
 export function patchIChainFindLikeRs (
     rs: FxOrmModelAndIChainFind,
     opts: {
@@ -246,14 +252,14 @@ export function patchIChainFindLikeRs (
     } = opts || {};
 
     const patchKeys = util.difference([
-        "count",
-        "first",
-        "last",
-        'all',
-        'where',
-        'find',
-        'remove',
-        'run'
+        // "count",
+        // "first",
+        // "last",
+        // 'all',
+        // 'where',
+        // 'find',
+        // 'remove',
+        // 'run'
     ], exlude_keys);
 
     patchKeys.forEach(patchKey => {

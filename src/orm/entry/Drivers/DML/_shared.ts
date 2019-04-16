@@ -1,14 +1,15 @@
+import util = require('util')
+
 export function execQuery <T = any>(
 	this: FxOrmDMLDriver.DMLDriver,
 ) {
 	var query: string, cb: FxOrmNS.GenericCallback<T>;
-	if (arguments.length == 2) {
-		query = arguments[0];
-		cb    = arguments[1];
-	} else if (arguments.length == 3) {
-		query = this.query.escape(arguments[0], arguments[1]);
-		cb    = arguments[2];
-	}
+	const args = Array.prototype.slice.apply(arguments);
+
+	if (typeof util.last(args) === 'function')
+		cb = args.pop();
+
+	query = this.query.escape.apply(this.query, args);
 	return this.execSimpleQuery(query, cb);
 }
 

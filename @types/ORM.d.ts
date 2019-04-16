@@ -239,7 +239,7 @@ declare namespace FxOrmNS {
             (key?: string): SingletonModule
         };
         get: {
-            <T = any>(key: string, opts: SingletonOptions, createCb: Function, returnCb: Function): T
+            <T = any>(key: string, opts: SingletonOptions, createProcess: Function, returnCb: Function): T
         };
     }
     

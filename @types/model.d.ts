@@ -17,6 +17,7 @@ declare namespace FxOrmModel {
         new(...data: ModelInstanceConstructorOptions): FxOrmInstance.Instance;
     }
 
+    type OrderListOrLimitOffer = number | string | string[]
     interface Model extends ModelInstanceConstructor, ModelHooks, FxOrmSynchronous.SynchronizedModel {
         properties: FxOrmProperty.NormalizedPropertyHash;
         settings: FxOrmSettings.SettingInstance;
@@ -98,6 +99,10 @@ declare namespace FxOrmModel {
         get: {
             (...ids: any[]): Model; // this model is from its return
         }
+        
+        chain: {
+            (conditions?: FxOrmModel.ModelQueryConditions__Find, ...args: (FxOrmModel.ModelOptions__Find | OrderListOrLimitOffer)[]): FxOrmQuery.IChainFind;
+        }
 
         find: {
             (conditions?: ModelQueryConditions__Find): FxOrmQuery.IChainFind
@@ -107,10 +112,10 @@ declare namespace FxOrmModel {
             (conditions: ModelQueryConditions__Find, options: ModelOptions__Find): FxOrmQuery.IChainFind
             (conditions: ModelQueryConditions__Find, options: ModelOptions__Find, callback: ModelMethodCallback__Find): Model
 
-            (conditions: ModelQueryConditions__Find, limit_order?: number | string, limit_order2?: number | string): FxOrmQuery.IChainFind
+            (conditions: ModelQueryConditions__Find, limit_order?: OrderListOrLimitOffer, limit_order2?: OrderListOrLimitOffer): FxOrmQuery.IChainFind
             
-            (conditions: ModelQueryConditions__Find, limit_order: number | string, callback: ModelMethodCallback__Find): Model
-            (conditions: ModelQueryConditions__Find, limit_order: number | string, limit_order2: number | string, callback: ModelMethodCallback__Find): Model
+            (conditions: ModelQueryConditions__Find, limit_order: OrderListOrLimitOffer, callback: ModelMethodCallback__Find): Model
+            (conditions: ModelQueryConditions__Find, limit_order: OrderListOrLimitOffer, limit_order2: OrderListOrLimitOffer, callback: ModelMethodCallback__Find): Model
         }
 
         all: Model['find']

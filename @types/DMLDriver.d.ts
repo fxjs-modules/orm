@@ -78,75 +78,39 @@ declare namespace FxOrmDMLDriver {
          */
         aggregate_functions: (string|AggregationFuncTuple)[]
         execSimpleQuery: {
-            <T=any>(query: string, cb?: FxOrmNS.GenericCallback<T>): void
+            <T=any>(query: string, cb?: FxOrmNS.GenericCallback<T>): T
         }
         /**
          * @description do eager-query
          */
         eagerQuery: {
-            <T = any>(
-                association: FxOrmAssociation.InstanceAssociationItem,
-                opts: FxOrmQuery.ChainFindOptions,
-                keys: string[],
-                cb?: FibOrmNS.GenericCallback<T>
-            ): void
+            <T = any>(association: FxOrmAssociation.InstanceAssociationItem, opts: FxOrmQuery.ChainFindOptions, keys: string[], cb?: FibOrmNS.GenericCallback<T>): T
         }
 
         find: {
-            <T=FxOrmDMLDriver.QueryDataPayload[]>(
-                fields: FxSqlQueryColumns.SelectInputArgType[],
-                table: string,
-                conditions: FxSqlQuerySubQuery.SubQueryConditions,
-                opts: DMLDriver_FindOptions,
-                cb?: FxOrmNS.GenericCallback<T>
-            ): void
+            <T=FxOrmDMLDriver.QueryDataPayload[]>(fields: FxSqlQueryColumns.SelectInputArgType[], table: string, conditions: FxSqlQuerySubQuery.SubQueryConditions, opts: DMLDriver_FindOptions, cb?: FxOrmNS.GenericCallback<T>): T
         }
         count: {
             /**
              * mysql: {c: number}
              * sqlite: {c: number}
              */
-            <T=QueriedCountDataPayload[]>(
-                table: string,
-                conditions: FxSqlQuerySubQuery.SubQueryConditions,
-                opts: DMLDriver_CountOptions,
-                cb?: FxOrmNS.GenericCallback<T>
-            ): void
+            (table: string, conditions: FxSqlQuerySubQuery.SubQueryConditions, opts: DMLDriver_CountOptions, cb?: FxOrmNS.GenericCallback<FxOrmQuery.CountResult[]>): FxOrmQuery.CountResult[]
         }
         insert: {
-            (
-                table: string,
-                data: FxSqlQuerySql.DataToSet,
-                keyProperties: FxOrmProperty.NormalizedProperty[],
-                cb?: FxOrmNS.GenericCallback<FxOrmQuery.InsertResult>
-            ): void
+            (table: string, data: FxSqlQuerySql.DataToSet, keyProperties: FxOrmProperty.NormalizedProperty[], cb?: FxOrmNS.GenericCallback<FxOrmQuery.InsertResult>): FxOrmQuery.InsertResult
         }
         update: {
-            <T=any>(
-                table: string,
-                changes: FxSqlQuerySql.DataToSet,
-                conditions: FxSqlQuerySubQuery.SubQueryConditions,
-                cb?: FxOrmNS.GenericCallback<T>
-            ): void
+            <T=any>(table: string, changes: FxSqlQuerySql.DataToSet, conditions: FxSqlQuerySubQuery.SubQueryConditions, cb?: FxOrmNS.GenericCallback<T>): T
         }
         remove: {
-            <T=any>(
-                table: string,
-                conditions: FxSqlQuerySubQuery.SubQueryConditions,
-                cb?: FxOrmNS.GenericCallback<T>
-            ): void
+            <T=any>(table: string, conditions: FxSqlQuerySubQuery.SubQueryConditions, cb?: FxOrmNS.GenericCallback<T>): T
         }
         clear: {
-            <T=any>(
-                table: string,
-                cb?: FxOrmNS.GenericCallback<T>
-            ): void
+            <T=any>(table: string, cb?: FxOrmNS.GenericCallback<T>): T
         }
         poolQuery: {
-            <T=any>(
-                query: string,
-                cb?: FxOrmNS.GenericCallback<T>
-            ): void
+            <T=any>(query: string, cb?: FxOrmNS.GenericCallback<T>): T
         }
         valueToProperty: {
             (value: any, property: FxOrmProperty.NormalizedProperty): any

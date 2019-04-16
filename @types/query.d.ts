@@ -72,6 +72,16 @@ declare namespace FxOrmQuery {
         [extra_key: string]: any
     }
 
+    interface CountResult {
+        c: number
+        
+        [extra_key: string]: any
+    }
+
+    interface RemoveResult {
+        [extra_key: string]: any
+    }
+
     interface IAggregated {
         groupBy: {
             (...columns: string[]): IAggregated;
@@ -116,16 +126,9 @@ declare namespace FxOrmQuery {
     type ChainFindGenerator = new (Model: FxOrmModel.Model, opts: FxOrmQuery.ChainFindOptions) => IChainFind
 
     interface IChainFind {
-        find: {
-            (...conditions: FxOrmModel.ModelQueryConditionsItem[]): IChainFind;
-        }
-        whereExists: {
-            (...exists: FxOrmQuery.ChainWhereExistsInfo[]): IChainFind;
-            (exists: FxOrmQuery.ChainWhereExistsInfo[]): IChainFind;
-        }
-        all: IChainFind['find']
-        where: IChainFind['find']
-        
+        model: FxOrmModel.Model;
+        options: ChainFindInstanceOptions
+
         only(...args: (string|string[])[]): IChainFind;
         omit(...args: (string|string[])[]): IChainFind;
         skip(offset: number): IChainFind;
@@ -135,21 +138,44 @@ declare namespace FxOrmQuery {
         order(...orders: FxOrmQuery.OrderSeqRawTuple): IChainFind;
         orderRaw(str: FxOrmQuery.OrderSqlStyleTuple[0], args?: FxOrmQuery.OrderSqlStyleTuple[1]): IChainFind;
         limit(limit: number): IChainFind;
-        count(callback: FxOrmNS.ExecutionCallback<number>): IChainFind;
-        remove(callback: FxOrmNS.VoidCallback): IChainFind;
-        run<T>(callback?: FxOrmNS.ExecutionCallback<T>): IChainFind;
+
+        count(callback?: FxOrmNS.ExecutionCallback<number>): IChainFind;
+        countSync(): number;
+        
+        remove(callback?: FxOrmNS.ExecutionCallback<FxOrmQuery.RemoveResult>): IChainFind;
+        removeSync(): FxOrmQuery.RemoveResult;
+
+        find: {
+            (...conditions: (FxOrmModel.ModelQueryConditionsItem | FxOrmNS.ExecutionCallback<FxOrmInstance.Instance[]>)[]): IChainFind;
+        }
+        findSync: {
+            (...conditions: (FxOrmModel.ModelQueryConditionsItem | FxOrmNS.ExecutionCallback<FxOrmInstance.Instance[]>)[]): FxOrmInstance.Instance[]
+        }
+        all: IChainFind['find']
+        allSync: IChainFind['findSync']
+
+        where: IChainFind['find']
+        whereSync: IChainFind['findSync']
+        
+        whereExists: {
+            (...exists: FxOrmQuery.ChainWhereExistsInfo[]): IChainFind;
+            (exists: FxOrmQuery.ChainWhereExistsInfo[]): IChainFind;
+        }
+
+        run(callback?: FxOrmQuery.IChainInstanceCallbackFn): IChainFind;
+        runSync(): FxOrmInstance.Instance[]
 
         // removed in commit 717ee65a7a23ed6762856cf3c187700e36c9ba70
         // success(callback?: FxOrmModel.ModelMethodCallback__Find): void;
         // fail(callback?: FxOrmModel.ModelMethodCallback__Find): void;
 
-        first<T>(callback?: FxOrmNS.ExecutionCallback<T>): IChainFind;
-        last<T>(callback?: FxOrmNS.ExecutionCallback<T>): IChainFind;
+        first(callback?: FxOrmNS.GenericCallback<FxOrmInstance.Instance>): IChainFind;
+        firstSync(): FxOrmInstance.Instance;
+        last(callback?: FxOrmNS.GenericCallback<FxOrmInstance.Instance>): IChainFind;
+        lastSync(): FxOrmInstance.Instance;
 
-        // each(callback: (result: FxOrmInstance.Instance) => void): void;
         each: {
-            (cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>): void;
-            (): IChainFind;
+            (cb?: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>): IChainInstance;
         }
 
         eager: {
@@ -157,10 +183,19 @@ declare namespace FxOrmQuery {
             (assocs: string[]): IChainFind;
         }
 
-        model: FxOrmModel.Model;
-        options: ChainFindInstanceOptions
-
         [extraProperty: string]: any;
+    }
+
+    interface IChainInstanceCallbackFn {
+		(...args: any[]): FxOrmQuery.IChainInstance
+	}
+    interface IChainInstance {
+        _each (cb: IChainInstanceCallbackFn): IChainInstance
+        filter (cb: IChainInstanceCallbackFn): IChainInstance
+        sort (cb: IChainInstanceCallbackFn): IChainInstance
+        count (cb: IChainInstanceCallbackFn): IChainInstance
+        get (cb: IChainInstanceCallbackFn): IChainInstance
+        save (cb: IChainInstanceCallbackFn): IChainInstance
     }
 
 

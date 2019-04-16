@@ -16,7 +16,7 @@ import Validators        = require("./Validators");
 import ORMError          = require("./Error");
 import Hook              = require("./Hook");
 import AggregateFunctions = require("./AggregateFunctions");
-import { tryGetAssociationItemFromModel, getManyAssociationItemFromModel, getOneAssociationItemFromModel, getExtendsToAssociationItemFromModel } from './Helpers';
+import * as Helpers from './Helpers';
 import { getMapsToFromPropertyHash } from './Associations/_utils';
 import { patchHooksInModelOptions } from './Patch/utils';
 
@@ -279,20 +279,14 @@ export const Model = function (
 		return cb(new ORMError("Driver does not support Model.sync()", 'NO_SUPPORT', { model: m_opts.table }));
 	};
 
-	model.get = function (
-		this:FxOrmModel.Model,
-		cb?: FxOrmModel.ModelMethodCallback__Get
+	model.getSync = function (
+		this: FxOrmModel.Model,
+		...ids
 	) {
+		
 		const conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
 		let options    = <FxOrmModel.ModelOptions__Get>{};
-		let ids        = Array.prototype.slice.apply(arguments);
 		let prop: FxOrmProperty.NormalizedProperty;
-
-		cb = ids.pop() as any;
-
-		if (typeof cb !== "function") {
-		    throw new ORMError("Missing Model.get() callback", 'MISSING_CALLBACK', { model: m_opts.table });
-		}
 
 		if (typeof ids[ids.length - 1] === "object" && !Array.isArray(ids[ids.length - 1])) {
 			options = ids.pop();
@@ -321,73 +315,116 @@ export const Model = function (
 			options.cascadeRemove = m_opts.cascadeRemove;
 		}
 
-		m_opts.driver.find(
-			model_fields,
-			m_opts.table,
-			conditions,
-			{ limit: 1 },
-			function (err: FxOrmError.ExtendedError, data: FxOrmDMLDriver.QueryDataPayload[]) {
-				if (err) {
-					return cb(new ORMError(err.message, 'QUERY_ERROR', { originalCode: err.code }));
-				}
-				if (data.length === 0) {
-					return cb(new ORMError("Not found", 'NOT_FOUND', { model: m_opts.table }));
-				}
+		let founditems: FxOrmDMLDriver.QueryDataPayload[],
+			err: FxOrmError.ExtendedError
 
-				Utilities.renameDatastoreFieldsToPropertyNames(data[0], fieldToPropertyMap);
+		let found_instance: FxOrmInstance.Instance;
+		const singleton_lock = new coroutine.Event();
 
-				var uid = m_opts.driver.uid + "/" + m_opts.table + "/" + ids.join("/");
-
-				Singleton.get(
-					uid,
-					{
-						identityCache : (options.hasOwnProperty("identityCache") ? options.identityCache : m_opts.identityCache),
-						saveCheck     : m_opts.settings.get("instance.identityCacheSaveCheck")
-					},
-					function (cb: FxOrmNS.GenericCallback<FxOrmInstance.Instance>) {
-						return createInstance(data[0], {
-							uid            : uid,
-							autoSave       : options.autoSave,
-							autoFetch      : (options.autoFetchLimit === 0 ? false : options.autoFetch),
-							autoFetchLimit : options.autoFetchLimit,
-							cascadeRemove  : options.cascadeRemove
-						}, cb);
-					},
-					cb
+		function deferGet () {
+			try {
+				founditems = m_opts.driver.find(
+					model_fields,
+					m_opts.table,
+					conditions,
+					{ limit: 1 }
 				);
+			} catch (ex) {
+				err = ex;
+
+				if (err)
+					throw new ORMError(err.message, 'QUERY_ERROR', { originalCode: err.code });
+			}
+
+			if (founditems.length === 0) {
+				throw new ORMError("Not found", 'NOT_FOUND', { model: m_opts.table });
+			}
+
+			Utilities.renameDatastoreFieldsToPropertyNames(founditems[0], fieldToPropertyMap);
+		}
+
+		const uid = m_opts.driver.uid + "/" + m_opts.table + "/" + ids.join("/");
+		Singleton.get(
+			uid,
+			{
+				identityCache : (options.hasOwnProperty("identityCache") ? options.identityCache : m_opts.identityCache),
+				saveCheck     : m_opts.settings.get("instance.identityCacheSaveCheck")
+			},
+			function (returnCb: FxOrmNS.GenericCallback<FxOrmInstance.Instance>) {
+				deferGet();
+
+				return createInstance(founditems[0], {
+					uid            : uid,
+					autoSave       : options.autoSave,
+					autoFetch      : (options.autoFetchLimit === 0 ? false : options.autoFetch),
+					autoFetchLimit : options.autoFetchLimit,
+					cascadeRemove  : options.cascadeRemove
+				}, returnCb);
+			},
+			function (ex: FxOrmError.ExtendedError, instance: FxOrmInstance.Instance) {
+				err = ex;
+
+				found_instance = instance;
+				singleton_lock.set();
 			}
 		);
+
+		singleton_lock.wait();
+
+		return found_instance;
+	}
+
+	model.get = function (
+		this:FxOrmModel.Model,
+		...args: any[]
+	) {
+		const cb: FxOrmModel.ModelMethodCallback__Get = util.last(args);
+		const with_callback = typeof cb === 'function';
+
+		let err: FxOrmError.ExtendedError,
+			instance: FxOrmInstance.Instance;
+
+		if (typeof cb === 'function')
+			args.pop()
+
+		try {
+			instance = model.getSync.apply(model, args)
+		} catch (ex) {
+			err = ex;
+		}
+
+		if (with_callback)
+			cb(err, instance);
 
 		return this;
 	};
 
-	model.find = function (
-		this:FxOrmModel.Model
+	model.chain = function (
+		this: FxOrmModel.Model
 	) {
 		var conditions: FxSqlQuerySubQuery.SubQueryConditions = null;
 		var options = <FxOrmModel.ModelOptions__Find>{};
-		var cb: FxOrmModel.ModelMethodCallback__Find = null;
 		var order: FxOrmModel.ModelOptions__Find['order'] = null;
 		var merges: FxOrmQuery.ChainFindMergeInfo[] = [];
 
-		for (let i = 0; i < arguments.length; i++) {
-			switch (typeof arguments[i]) {
+		Helpers.selectArgs(arguments, (arg_type, arg) => {
+			switch (arg_type) {
 				case "number":
-					options.limit = arguments[i];
+					options.limit = arg;
 					break;
 				case "object":
-					if (Array.isArray(arguments[i])) {
-						if (arguments[i].length > 0) {
-							order = arguments[i];
+					if (Array.isArray(arg)) {
+						if (arg.length > 0) {
+							order = arg;
 						}
 					} else {
 						if (conditions === null) {
-							conditions = arguments[i];
+							conditions = arg;
 						} else {
 							if (options.hasOwnProperty("limit")) {
-								arguments[i].limit = options.limit;
+								arg.limit = options.limit;
 							}
-							options = arguments[i];
+							options = arg;
 
 							if (options.hasOwnProperty("__merge")) {
 								merges = Utilities.combineMergeInfoToArray(options.__merge);
@@ -412,19 +449,17 @@ export const Model = function (
 						}
 					}
 					break;
-				case "function":
-					cb = arguments[i];
-					break;
 				case "string":
-					order = arguments[i]
-					// if (arguments[i][0] === "-") {
-					// 	order = [ arguments[i].substr(1), "Z" ];
+					order = arg
+					// if (arg[0] === "-") {
+					// 	order = [ arg.substr(1), "Z" ];
 					// } else {
-					// 	order = [ arguments[i] ];
+					// 	order = [ arg ];
 					// }
 					break;
 			}
-		}
+		});
+
 		if (!options.hasOwnProperty("limit")) {
 			options.limit = m_opts.settings.get('instance.defaultFindLimit');
 		}
@@ -501,15 +536,39 @@ export const Model = function (
 			}
 		});
 
+		return chain;
+	}
+
+	model.find = function (
+		this:FxOrmModel.Model,
+		...args: any[]
+	) {
+		var cb: FxOrmModel.ModelMethodCallback__Find = null;
+		if (typeof util.last(args) === 'function')
+			cb = args.pop();
+
+		const chain = model.chain.apply(model, args);
+
 		if (typeof cb !== "function") {
 			return chain;
 		} else {
 			chain.run(cb);
 			return this;
 		}
-	} as FxOrmModel.Model['find'];
+	};
 
 	model.where = model.all = model.find;
+	model.whereSync = model.allSync = model.findSync;
+
+	model.findSync = function (
+		this:FxOrmModel.Model,
+		...args: any[]
+	) {
+		const chain: FxOrmQuery.IChainFind = model.chain.apply(model, args);
+
+		// TODO: let chainRun support runSync natively
+		return util.sync(chain.run)();
+	};
 
 	model.one = function (...args: any[]) {
 		var cb: FxOrmModel.ModelMethodCallback__Get = null;
@@ -923,13 +982,13 @@ export function findByList <T = any> (
 	let chainfind_linktable: string = null
 
 	by_list.forEach(by_item => {
-		const association = tryGetAssociationItemFromModel(by_item.association_name, model);
+		const association = Helpers.tryGetAssociationItemFromModel(by_item.association_name, model);
 		if (!association)
 			return ;
 
-		const isHasMany = getManyAssociationItemFromModel(by_item.association_name, model) === association;
-		const isHasOne = getOneAssociationItemFromModel(by_item.association_name, model) === association;
-		const isExtendsTo = getExtendsToAssociationItemFromModel(by_item.association_name, model) === association;
+		const isHasMany = Helpers.getManyAssociationItemFromModel(by_item.association_name, model) === association;
+		const isHasOne = Helpers.getOneAssociationItemFromModel(by_item.association_name, model) === association;
+		const isExtendsTo = Helpers.getExtendsToAssociationItemFromModel(by_item.association_name, model) === association;
 
 		let merge_item: FxOrmQuery.ChainFindMergeInfo = null;
 		

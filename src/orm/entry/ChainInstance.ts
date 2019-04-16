@@ -1,65 +1,67 @@
 /**
  * NOT SUPPORTED
  */
-export = function ChainInstance(chain: FxOrmQuery.IChainFind, cb: Function): FxOrmQuery.IChainFind|any {
+export = function ChainInstance(chain: FxOrmQuery.IChainFind, chain_cb: FxOrmQuery.IChainInstanceCallbackFn): FxOrmQuery.IChainInstance {
 	let instances: FxOrmInstance.Instance[] = null;
 	let loading   = false;
-	const queue: {hwd: Function, args?: any}[] = [];
+	const queue: {hwd: Function, args?: any[]}[] = [];
 
-	var load = function () {
+	const load = function () {
 		loading = true;
+		
 		chain.run(function (err: FxOrmError.ExtendedError, items: FxOrmInstance.Instance[]) {
 			instances = items;
 
 			return next();
 		});
 	};
-	var promise = function(hwd: Function) {
-		return function (...args: any[]) {
+	
+	const pushIterateeQueue = function<HDLR_TYPE>(hwd: (cb: HDLR_TYPE) => void): FxOrmQuery.IChainInstanceCallbackFn {
+		return function (cb: HDLR_TYPE) {
 			if (!loading) {
 				load();
 			}
 
-			queue.push({ hwd: hwd, args });
+			queue.push({ hwd: hwd, args: [cb] });
 
 			return calls;
 		};
 	};
-	var next = function () {
-		if (queue.length === 0) return;
+	const next = function () {
+		if (queue.length === 0) return ;
 
-		var item = queue.shift();
+		const item = queue.shift();
 
-		item.hwd.apply(calls, item.args);
+		return item.hwd.apply(calls, item.args);
 	};
-	var calls = {
-		_each: promise(function (cb: any) {
+	const calls: FxOrmQuery.IChainInstance = {
+		_each: pushIterateeQueue<FxOrmQuery.IChainInstanceCallbackFn>(function (cb) {
 			instances.forEach(cb);
 
 			return next();
 		}),
-		filter: promise(function (cb: any) {
+		filter: pushIterateeQueue<FxOrmQuery.IChainInstanceCallbackFn>(function (cb) {
 			instances = instances.filter(cb);
 
 			return next();
 		}),
-		sort: promise(function (cb: any) {
+		sort: pushIterateeQueue<(a: FxOrmInstance.Instance, b: FxOrmInstance.Instance) => number>(function (cb) {
 			instances.sort(cb);
 
 			return next();
 		}),
-		count: promise(function (cb: any) {
+		count: pushIterateeQueue<(count: number) => void>(function (cb) {
 			cb(instances.length);
 
 			return next();
 		}),
-		get: promise(function (cb: any) {
+		get: pushIterateeQueue<(instances: FxOrmInstance.Instance[]) => void>(function (cb) {
 			cb(instances);
 
 			return next();
 		}),
-		save: promise(function (cb: any) {
-			var saveNext = function (i: number): any {
+		save: pushIterateeQueue<FxOrmNS.ExecutionCallback<FxOrmError.ExtendedError>>(function (cb) {
+			const saveNext = function (i: number): any {
 				if (i >= instances.length) {
 					if (typeof cb === "function") {
 						cb();
@@ -83,8 +85,8 @@ export = function ChainInstance(chain: FxOrmQuery.IChainFind, cb: Function): FxO
 		})
 	};
 
-	if (typeof cb === "function") {
-		return calls._each(cb);
+	if (typeof chain_cb === "function") {
+		return calls._each(chain_cb);
 	}
 	return calls;
 }

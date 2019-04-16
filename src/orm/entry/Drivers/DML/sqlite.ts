@@ -5,6 +5,7 @@ import shared  		= require("./_shared");
 import DDL     		= require("../DDL/SQL");
 import { Query }	from "@fxjs/sql-query";
 import utils		= require("./_utils");
+import * as Utilities from '../../Utilities';
 
 export const Driver: FxOrmDMLDriver.DMLDriverConstructor_SQLite = function(
 	this: FxOrmDMLDriver.DMLDriver_SQLite, config: FxOrmNS.IDBConnectionConfig, connection: FxOrmDb.DatabaseBase_SQLite, opts: FxOrmDMLDriver.DMLDriverOptions
@@ -63,13 +64,13 @@ Driver.prototype.on = function (this: FxOrmDMLDriver.DMLDriver_SQLite,
 Driver.prototype.connect = function (
 	this: FxOrmDMLDriver.DMLDriver_SQLite, cb?
 ) {
-	this.db.connect(cb);
+	return this.db.connect(cb);
 };
 
 Driver.prototype.close = function (
 	this: FxOrmDMLDriver.DMLDriver_SQLite, cb?
 ) {
-	this.db.close(cb);
+	return this.db.close(cb);
 };
 
 Driver.prototype.getQuery = function (
@@ -108,7 +109,7 @@ Driver.prototype.find = function (
 	q = utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
 	utils.buildExistsToQuery.apply(this, [q, table, opts.exists]);
 
-	this.execSimpleQuery(q.build(), cb);
+	return this.execSimpleQuery(q.build(), cb);
 };
 
 Driver.prototype.count = function (
@@ -121,7 +122,7 @@ Driver.prototype.count = function (
 	q = utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
 	utils.buildExistsToQuery.apply(this, [q, table, opts.exists]);
 
-	this.execSimpleQuery(q.build(), cb);
+	return this.execSimpleQuery(q.build(), cb);
 };
 
 Driver.prototype.insert = function (
@@ -136,30 +137,36 @@ Driver.prototype.insert = function (
 		require("../../Debug").sql('sqlite', q);
 	}
 
-	this.db.all<any>(q, function (err: FxOrmError.ExtendedError, info: any) {
-		if (err)            return cb(err);
-		if (!keyProperties) return cb(null);
+	const {
+		error,
+		result
+	} = Utilities.exposeErrAndResultFromSyncMethod(() => {
+		this.db.all<any>(q);
+
+		if (!keyProperties) return null;
 
 		var ids: {[k: string]: any} = {},
 			prop;
 
 		if (keyProperties.length == 1 && keyProperties[0].type == 'serial') {
-			this.db.get("SELECT last_insert_rowid() AS last_row_id", function (err: FxOrmError.ExtendedError, row: FxSqlQuerySql.SqlFoundRowItem) {
-				if (err) return cb(err);
+			const row: FxSqlQuerySql.SqlFoundRowItem = this.db.get("SELECT last_insert_rowid() AS last_row_id");
 
-				ids[keyProperties[0].name] = row.last_row_id;
-
-				return cb(null, ids);
-			});
+			ids[keyProperties[0].name] = row.last_row_id;
 		} else {
 			for (let i = 0; i < keyProperties.length; i++) {
 				prop = keyProperties[i];
 				// Zero is a valid value for an ID column
 				ids[prop.name] = data[prop.mapsTo] !== undefined ? data[prop.mapsTo] : null;
 			}
-			return cb(null, ids);
 		}
-	}.bind(this));
+
+		return ids;
+	});
+
+	if (typeof cb === 'function')
+		cb(error, result);
+
+	return result
 };
 
 Driver.prototype.update = function (
@@ -174,7 +181,7 @@ Driver.prototype.update = function (
 	if (this.opts.debug) {
 		require("../../Debug").sql('sqlite', q);
 	}
-	this.db.all(q, cb);
+	return this.db.all(q, cb);
 };
 
 Driver.prototype.remove = function (
@@ -188,19 +195,28 @@ Driver.prototype.remove = function (
 	if (this.opts.debug) {
 		require("../../Debug").sql('sqlite', q);
 	}
-	this.db.all(q, cb);
+	return this.db.all(q, cb);
 };
 
 Driver.prototype.clear = function (
 	this: FxOrmDMLDriver.DMLDriver_SQLite, table, cb?
 ) {
-	var debug = this.opts.debug;
+	const {
+		error,
+		result
+	} = Utilities.exposeErrAndResultFromSyncMethod(() => {
+		this.execQuery(
+			this.query.remove()
+	                  .from(table)
+					  .build()
+		);
+		this.execQuery("DELETE FROM ?? WHERE NAME = ?", ['sqlite_sequence', table]);
+	})
 
-	this.execQuery("DELETE FROM ??", [table], function (err: FxOrmError.ExtendedError) {
-		if (err) return cb(err);
+	if (typeof cb === 'function')
+		cb(error, result);
 
-		this.execQuery("DELETE FROM ?? WHERE NAME = ?", ['sqlite_sequence', table], cb);
-	}.bind(this));
+	return result
 };
 
 Driver.prototype.valueToProperty = function (

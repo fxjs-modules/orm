@@ -1,3 +1,7 @@
+/**
+ * refactor this module with LRUCache
+ */
+
 let map: {[k: string]: any} = {};
 
 export const clear: FxOrmNS.SingletonModule['clear'] = function (key?: string) {
@@ -9,25 +13,25 @@ export const clear: FxOrmNS.SingletonModule['clear'] = function (key?: string) {
 	return this;
 };
 
-export const get: FxOrmNS.SingletonModule['get'] = function (key, opts, createCb, returnCb) {
+export const get: FxOrmNS.SingletonModule['get'] = function (key, opts, createProcess, returnCb) {
 	/**
 	 * @description when dont identity cache
 	 */
 	if (opts && opts.identityCache === false)
-		return createCb(returnCb);
+		return createProcess(returnCb);
 
 	if (map.hasOwnProperty(key)) {
 		if (opts && opts.saveCheck && typeof map[key].o.saved === "function" && !map[key].o.saved()) {
 			// if not saved, don't return it, fetch original from db
-			return createCb(returnCb);
+			return createProcess(returnCb);
 		} else if (map[key].t !== null && map[key].t <= Date.now()) {
 			delete map[key];
-		} else  {
+		} else {
 			return returnCb(null, map[key].o);
 		}
 	}
 
-	createCb(function (err: Error, value: any) {
+	createProcess(function (err: Error, value: any) {
 		if (err) return returnCb(err);
 
 		map[key] = {

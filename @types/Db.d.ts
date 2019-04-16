@@ -7,7 +7,7 @@ declare namespace FxOrmDb {
             (sql: string, ...args: any[]): any[];
         }
         query: {
-            <T=any>(query: string, cb?: FxOrmNS.GenericCallback<T>): void
+            <T=any>(query: string, cb?: FxOrmNS.GenericCallback<T>): T
         }
         close: {
             <T=void>(cb?: FxOrmNS.GenericCallback<T>): void
@@ -24,6 +24,7 @@ declare namespace FxOrmDb {
 
     interface DatabaseBase_SQLite extends DatabaseBase {
         all: DatabaseBase_SQLite['query']
+        get: DatabaseBase_SQLite['query']
     }
 
     interface DatabaseBase_MySQL extends DatabaseBase {
