@@ -19,6 +19,7 @@ export const Driver: FxOrmDMLDriver.DMLDriverConstructor_MySQL = function(
 	}
 
 	this.query  = new Query({dialect: this.dialect, timezone: this.config.timezone });
+	utils.getKnexInstance(this);
 
 	this.reconnect(null, connection);
 

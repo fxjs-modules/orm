@@ -85,6 +85,7 @@ export const Driver: FxOrmDMLDriver.DMLDriverConstructor = function (
 	}
 
 	this.query  = new Query({ dialect: this.dialect, timezone: this.config.timezone });
+	utils.getKnexInstance(this);
 
 	this.customTypes = {};
 

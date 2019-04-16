@@ -1,5 +1,6 @@
 /// <reference types="@fxjs/sql-query" />
 /// <reference types="@fxjs/sql-ddl-sync" />
+/// <reference types="@fxjs/knex" />
 
 /// <reference path="_common.d.ts" />
 /// <reference path="connect.d.ts" />
@@ -39,6 +40,8 @@ declare namespace FxOrmDMLDriver {
         config: FxOrmNS.IDBConnectionConfig
         opts: DMLDriverOptions
         customTypes: {[key: string]: FxOrmProperty.CustomPropertyType}
+
+        knex: FXJSKnex.FXJSKnexModule.KnexInstance
 
         /* shared :start */
         sync: {

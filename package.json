@@ -44,8 +44,11 @@
     },
     "dependencies": {
         "@fibjs/enforce": "0.0.8",
+        "@fxjs/knex": "^0.1.1",
         "@fxjs/sql-ddl-sync": "^0.3.8",
-        "@fxjs/sql-query": "^0.2.5",
+        "@fxjs/sql-query": "^0.4.0",
+        "@types/node": "^11.13.0",
+        "knex": "^0.16.3",
         "lodash.clonedeep": "^4.5.0",
         "lodash.flatten": "^4.4.0",
         "lodash.merge": "^4.6.1"
@@ -64,6 +67,7 @@
     "peerDependencies": {
         "@fxjs/sql-ddl-sync": ">= 0.3.6 < 0.4",
         "@fxjs/sql-query": ">= 0.2.5 < 0.3",
-        "@fibjs/enforce": ">= 0.0.8 < 0.1"
+        "@fibjs/enforce": ">= 0.0.8 < 0.1",
+        "@fxjs/knex": ">= 0.1.1 < 0.2"
     }
 }

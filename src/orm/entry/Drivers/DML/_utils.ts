@@ -59,3 +59,24 @@ export function buildOrderToQuery (
 		}
 	}
 }
+
+export function getKnexInstance (
+	driver: FxOrmDMLDriver.DMLDriver
+) {
+	if (!driver.query.knex)
+		throw `driver.query.knex must be init firstly!`
+	Object.defineProperty(driver, 'knex', {
+		value: driver.knex,
+		configurable: false,
+		writable: false
+	});
+}
+
+export function buildMergeToKnex (
+	this: FxOrmDMLDriver.DMLDriver,
+	knex: FXJSKnex.FXJSKnexModule.KnexInstance,
+	merges: FxOrmDMLDriver.DMLDriver_FindOptions['merge'],
+	conditions: FxSqlQuerySubQuery.SubQueryConditions
+) {
+	
+}
