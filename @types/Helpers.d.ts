@@ -30,7 +30,8 @@ declare namespace FxOrmHelper {
          callback: {
             (
                arg_type: "string" | "number" | "bigint" | "boolean" | "symbol" | "undefined" | "object" | "function",
-               arg: any
+               arg: any,
+               idx: number
             ): void
          }
       ): void

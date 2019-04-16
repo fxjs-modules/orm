@@ -118,7 +118,7 @@ export function patchResult(o: FxOrmModelAndIChainFind): void {
     o.where = o.all = o.find = new_func as FxOrmModel.Model['find'];
 }
 
-export function patchObject(m: FxOrmInstance.Instance) {
+function patchObject(m: FxOrmInstance.Instance) {
     var methods = [
         "save",
         "remove",
@@ -207,14 +207,14 @@ export function patchModelAfterDefine(m: FxOrmModel.Model, /* opts: FxOrmModel.M
     patchResult(m);
 
     patchSync(m, [
-        "clear",
-        "count",
-        "exists",
-        "one",
-        "where",
-        'all',
+        // "clear",
+        // "count",
+        // "exists",
+        // "one",
+        // "where",
+        // 'all',
         'create',
-        'drop',
+        // 'drop',
         // 'find',
         // 'get',
         'sync'
@@ -235,7 +235,7 @@ export function patchModelAfterDefine(m: FxOrmModel.Model, /* opts: FxOrmModel.M
  * @param rs 
  * @param opts 
  */
-export function patchIChainFindLikeRs (
+function patchIChainFindLikeRs (
     rs: FxOrmModelAndIChainFind,
     opts: {
         new_callback_generator?: {

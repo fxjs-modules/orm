@@ -1,5 +1,6 @@
 import _merge = require('lodash.merge')
 import { Sync } from "@fxjs/sql-ddl-sync";
+import { exposeErrAndResultFromSyncMethod } from '../../Utilities';
 
 export const sync: FxOrmDMLDriver.DMLDriver['sync'] = function (
 	this: FxOrmDMLDriver.DMLDriver, opts, cb
@@ -46,9 +47,9 @@ export const sync: FxOrmDMLDriver.DMLDriver['sync'] = function (
 };
 
 export const drop: FxOrmDMLDriver.DMLDriver['drop'] = function (
-	this: FxOrmDMLDriver.DMLDriver, opts, cb
+	this: FxOrmDMLDriver.DMLDriver, opts, cb?
 ) {
-	var queries = [], pending: number;
+	let queries = [], pending: number, err: FxOrmError.ExtendedError;
 
 	queries.push("DROP TABLE IF EXISTS " + this.query.escapeId(opts.table));
 
@@ -59,12 +60,12 @@ export const drop: FxOrmDMLDriver.DMLDriver['drop'] = function (
 	pending = queries.length;
 
 	for (let i = 0; i < queries.length; i++) {
-		this.execQuery(queries[i], function (err) {
-			if (--pending === 0) {
-				return cb(err);
-			}
-		});
+		err = exposeErrAndResultFromSyncMethod(this.execQuery, [queries[i]], this).error
+		if (err || --pending === 0)
+			break
 	}
+	if (typeof cb === 'function')
+		cb(err);
 
 	return this;
 };

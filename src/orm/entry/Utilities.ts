@@ -573,13 +573,15 @@ export function isDriverNotSupportedError (err: FxOrmError.ExtendedError) {
 }
 
 export function exposeErrAndResultFromSyncMethod<T = any> (
-	doSth: Function
+	doSth: Function,
+	args: any[] = [],
+	self: any = null
 ) {
 	let error: FxOrmError.ExtendedError,
 		result: T
 
 	try {
-		result = doSth();
+		result = doSth.apply(self, args);
 	} catch (ex) {
 		error = ex
 	}

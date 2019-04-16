@@ -87,7 +87,7 @@ const ChainFind = function (
 		};
 
 		const items = foundItems.map<FxOrmInstance.Instance>((dataItem: FxOrmInstance.InstanceDataPayload) => {
-			const newInstanceSync = util.sync(opts.newInstance);
+			const newInstanceSync = opts.newInstanceSync;
 
 			return newInstanceSync(dataItem);
 		});

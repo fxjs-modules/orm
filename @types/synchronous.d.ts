@@ -17,9 +17,11 @@ declare namespace FxOrmSynchronous {
         allSync: SynchronizedModel['findSync']
         whereSync: SynchronizedModel['findSync']
 
-        countSync: FxOrmModel.Model['count']
+        countSync: {
+            (conditions?: FxOrmModel.ModelQueryConditions__Find): number;
+        }
         existsSync: {
-            (conditions: FxOrmModel.ModelQueryConditions__Find): FxOrmInstance.Instance
+            (...conditions: (FibOrmNS.IdType | FxSqlQuerySubQuery.SubQueryConditions)[]): boolean
         }
         oneSync: {
             (conditions?: FxOrmModel.ModelQueryConditions__Find, options?: FxOrmModel.ModelOptions__Find): FxOrmInstance.Instance

@@ -130,10 +130,11 @@ declare namespace FxOrmModel {
          * that's maybe due to their purpose: always return Model rather than IChainFind
          */
         one: {
+            (callback: ModelMethodCallback__Get): Model;
             (conditions: ModelQueryConditions__Find, callback: ModelMethodCallback__Get): Model;
             (conditions: ModelQueryConditions__Find, options: ModelOptions__Find, callback: ModelMethodCallback__Get): Model;
             (conditions: ModelQueryConditions__Find, order: string[], callback: ModelMethodCallback__Get): Model;
-            // (conditions: ModelQueryConditions__Find, limit: number, callback: ModelMethodCallback__Get): Model;
+            (conditions: ModelQueryConditions__Find, limit: number, callback: ModelMethodCallback__Get): Model;
         }
 
         count: {
@@ -142,7 +143,7 @@ declare namespace FxOrmModel {
         }
 
         exists: {
-            (...ids: FxOrmNS.IdType[]): FxOrmQuery.IChainFind;
+            (...conditions: (FibOrmNS.IdType | FxSqlQuerySubQuery.SubQueryConditions | FxOrmNS.ExecutionCallback<boolean>)[]): FxOrmQuery.IChainFind
         }
 
         aggregate: {

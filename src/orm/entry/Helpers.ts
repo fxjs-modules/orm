@@ -261,7 +261,7 @@ export const preReplaceHook: FxOrmHelper.HelperModules['preReplaceHook'] = funct
 export const selectArgs: FxOrmHelper.HelperModules['selectArgs'] = function (args, callback) {
     for (let i = 0, arg: any = null; i < args.length; i++) {
         arg = args[i]
-        callback(typeof arg, arg);
+        callback(typeof arg, arg, i);
     }
 }
 /* arguments input :end */

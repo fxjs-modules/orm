@@ -213,8 +213,8 @@ declare namespace FxOrmQuery {
         limit: number
         offset: number
         merge: FxOrmQuery.ChainFindMergeInfo | FxOrmQuery.ChainFindMergeInfo[]
-        newInstance: {
-            (data: FxOrmInstance.InstanceDataPayload, cb: FxOrmNS.GenericCallback<FxOrmInstance.Instance>): void
+        newInstanceSync: {
+            (data: FxOrmInstance.InstanceDataPayload): FxOrmInstance.Instance
         }
         associations: FxOrmAssociation.InstanceAssociationItem[]
 
