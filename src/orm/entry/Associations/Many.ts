@@ -1,6 +1,7 @@
 /// <reference lib="es5" />
 
 import util = require('util');
+import coroutine = require('coroutine')
 
 import _flatten = require('lodash.flatten')
 
@@ -11,6 +12,7 @@ import ORMError = require("../Error");
 import Utilities = require("../Utilities");
 import { ACCESSOR_KEYS, addAssociationInfoToModel } from './_utils';
 import { findByList } from '../Model';
+import * as Helpers from '../Helpers';
 
 export function prepare(db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associations: FxOrmAssociation.InstanceAssociationItem_HasMany[]) {
 	Model.hasMany = function () {
@@ -176,24 +178,26 @@ export function autoFetch(
 	Instance: FxOrmInstance.Instance,
 	associations: FxOrmAssociation.InstanceAssociationItem_HasMany[],
 	opts: FxOrmAssociation.AssociationDefinitionOptions_HasMany,
-	cb: FxOrmNS.GenericCallback<void>
 ) {
 	if (associations.length === 0) {
-		return cb(null);
+		return ;
 	}
+	const ev_lock = new coroutine.Event();
 
 	var pending = associations.length;
 	var autoFetchDone = function autoFetchDone() {
 		pending -= 1;
 
 		if (pending === 0) {
-			return cb(null);
+			ev_lock.set();
 		}
 	};
 
 	for (let i = 0; i < associations.length; i++) {
 		autoFetchInstance(Instance, associations[i], opts, autoFetchDone);
 	}
+
+	ev_lock.wait();
 };
 
 function adjustForMapsTo(properties: FxOrmProperty.NormalizedPropertyHash, field: string[]) {
@@ -298,41 +302,41 @@ function extendInstance(
 	});
 	Object.defineProperty(Instance, association.getAccessor, {
 		value: function () {
-			var options = <FxOrmAssociation.ModelAssociationMethod__GetOptions>{};
-			var conditions = null;
-			var join_conditions = {};
-			var order = null;
-			var cb = null;
+			let options = <FxOrmAssociation.ModelAssociationMethod__GetOptions>{};
+			let conditions = null as FxOrmModel.ModelOptions__Find;
+			let join_conditions = {};
+			let order = null;
+			let cb = null;
 
-			for (let i = 0; i < arguments.length; i++) {
-				switch (typeof arguments[i]) {
+			Helpers.selectArgs(arguments, function (arg_type, arg) {
+				switch (arg_type) {
 					case "function":
-						cb = arguments[i];
+						cb = arg;
 						break;
 					case "object":
-						if (Array.isArray(arguments[i])) {
-							order = arguments[i];
+						if (Array.isArray(arg)) {
+							order = arg;
 							order[0] = [association.model.table, order[0]];
 						} else {
 							if (conditions === null) {
-								conditions = arguments[i];
+								conditions = arg;
 							} else {
-								options = arguments[i];
+								options = arg;
 							}
 						}
 						break;
 					case "string":
-						if (arguments[i][0] == "-") {
-							order = [[association.model.table, arguments[i].substr(1)], "Z"];
+						if (arg[0] == "-") {
+							order = [[association.model.table, arg.substr(1)], "Z"];
 						} else {
-							order = [[association.model.table, arguments[i]]];
+							order = [[association.model.table, arg]];
 						}
 						break;
 					case "number":
-						options.limit = arguments[i];
+						options.limit = arg;
 						break;
 				}
-			}
+			});
 
 			if (order !== null) {
 				options.order = order;

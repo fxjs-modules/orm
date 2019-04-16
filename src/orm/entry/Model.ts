@@ -95,20 +95,32 @@ export const Model = function (
 			}
 		}
 
-		var assoc_opts = {
+		const assoc_opts = {
 			autoFetch      : inst_opts.autoFetch || false,
 			autoFetchLimit : inst_opts.autoFetchLimit,
 			cascadeRemove  : inst_opts.cascadeRemove
 		};
 
-		var setupAssociations = function (instance: FxOrmInstance.Instance) {
+		const setupAssociations = function (instance: FxOrmInstance.Instance) {
 			OneAssociation.extend(model, instance, m_opts.driver, one_associations);
 			ManyAssociation.extend(model, instance, m_opts.driver, many_associations, assoc_opts, createInstance);
 			ExtendAssociation.extend(model, instance, m_opts.driver, extend_associations, assoc_opts);
 		};
 
-		var pending  = 2, create_err: FxOrmError.ExtendedError = null;
-		var instance = new Instance(model, {
+		let pending = 2, create_err: FxOrmError.ExtendedError = null;
+
+		const create_instance_evt_lock = new coroutine.Event();
+
+		const readyTrigger = function (err?: Error, instance_item?: FxOrmInstance.Instance) {
+			if (err)
+				create_err = err;
+
+			// TODO: add timeout for callback
+			if (--pending === 0 || create_err) {
+				create_instance_evt_lock.set();
+			}
+		}
+		const instance = new Instance(model, {
 			uid                    : inst_opts.uid, // singleton unique id
 			keys                   : m_opts.keys,
 			is_new                 : inst_opts.is_new || false,
@@ -131,13 +143,7 @@ export const Model = function (
 			keyProperties          : keyProperties,
 			events				   : {
 				'ready': function (err, instance) {
-					if (--pending > 0) {
-						create_err = err;
-						return;
-					}
-					if (typeof cb === "function") {
-						cb(err || create_err, instance);
-					}
+					readyTrigger(err, instance);
 				}
 			}
 		});
@@ -146,21 +152,22 @@ export const Model = function (
 			LazyLoad.extend(instance, model, m_opts.properties);
 		}
 
-		OneAssociation.autoFetch(instance, one_associations, assoc_opts, function () {
-			ManyAssociation.autoFetch(instance, many_associations, assoc_opts, function () {
-				ExtendAssociation.autoFetch(instance, extend_associations, assoc_opts, function () {
-					Hook.wait(instance, m_opts.hooks.afterAutoFetch, function (err: Error) {
-						if (--pending > 0) {
-							create_err = err;
-							return;
-						}
-						if (typeof cb === "function") {
-							return cb(err || create_err, instance);
-						}
-					});
-				});
-			});
+		OneAssociation.autoFetch(instance, one_associations, assoc_opts);
+		ManyAssociation.autoFetch(instance, many_associations, assoc_opts);
+		ExtendAssociation.autoFetch(instance, extend_associations, assoc_opts);
+
+		Hook.wait(instance, m_opts.hooks.afterAutoFetch, function (err: Error) {
+			readyTrigger(err, instance);
 		});
+
+		if (typeof cb === "function") {
+			cb(create_err, instance);
+		} else {
+			create_instance_evt_lock.set();
+		}
+
+		create_instance_evt_lock.wait();
+
 		return instance;
 	};
 

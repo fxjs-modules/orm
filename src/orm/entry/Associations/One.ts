@@ -1,4 +1,5 @@
 import util = require('util')
+import coroutine = require('coroutine')
 
 import Utilities = require("../Utilities");
 import ORMError = require("../Error");
@@ -148,24 +149,27 @@ export function autoFetch (
 	Instance: FxOrmInstance.Instance,
 	associations: FxOrmAssociation.InstanceAssociationItem[],
 	opts: FxOrmAssociation.AutoFetchInstanceOptions,
-	cb: FxOrmNS.GenericCallback<void>
 ) {
 	if (associations.length === 0) {
-		return cb(null);
+		return ;
 	}
 
-	var pending = associations.length;
-	var autoFetchDone = function autoFetchDone() {
+	const ev_lock = new coroutine.Event();
+
+	let pending = associations.length;
+	const autoFetchDone = function () {
 		pending -= 1;
 
 		if (pending === 0) {
-			return cb(null);
+			ev_lock.set();
 		}
 	};
 
 	for (let i = 0; i < associations.length; i++) {
 		autoFetchInstance(Instance, associations[i], opts, autoFetchDone);
 	}
+
+	ev_lock.wait();
 };
 
 function extendInstance(

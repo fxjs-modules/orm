@@ -1,4 +1,5 @@
 import util = require('util')
+import coroutine = require('coroutine')
 
 import { defineDefaultExtendsToTableName, defineAssociationAccessorMethodName, ACCESSOR_KEYS, addAssociationInfoToModel } from "./_utils";
 
@@ -130,11 +131,12 @@ export function extend (
 export function autoFetch (
 	Instance: FxOrmInstance.Instance,
 	associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[],
-	opts: FibOrmNS.ModelAutoFetchOptions,
-	cb: FxOrmNS.GenericCallback<void>
+	opts: FibOrmNS.ModelAutoFetchOptions
 ) {
+	const ev_lock = new coroutine.Event();
+
 	if (associations.length === 0) {
-		return cb(null);
+		return ;
 	}
 
 	var pending = associations.length;
@@ -142,13 +144,15 @@ export function autoFetch (
 		pending -= 1;
 
 		if (pending === 0) {
-			return cb(null);
+			ev_lock.set();
 		}
 	};
 
 	for (let i = 0; i < associations.length; i++) {
 		autoFetchInstance(Instance, associations[i], opts, autoFetchDone);
 	}
+
+	ev_lock.wait();
 };
 
 function extendInstance(
