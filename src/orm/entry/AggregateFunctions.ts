@@ -1,3 +1,5 @@
+import util = require("util")
+
 import ORMError   = require("./Error");
 import Utilities  = require("./Utilities");
 
@@ -25,7 +27,7 @@ const AggregateFunctions = function (
 			
 			if (args.length > 0) {
 				aggregates[aggregates.length - 1].push({ func_name: fun, args: args, as: aggregateAlias(fun, args) });
-				aggregates.push([]);
+				// aggregates.push([]);
 			} else {
 				aggregates[aggregates.length - 1].push({ func_name: fun, as: aggregateAlias(fun, args) });
 			}

@@ -31,23 +31,15 @@ export function patchSync(
     })
 }
 
-const model_conjunctions_keys: (keyof FxSqlQuerySubQuery.ConjunctionInput__Sample)[] = [
-    'or',
-    'and',
-    'not_or',
-    'not_and',
-    'not'
-];
-
-function is_model_conjunctions_key (k: string) {
-    return model_conjunctions_keys.includes(k as any)
-}
-
 function is_ichainfind (o: FxOrmModelAndIChainFind): o is FxOrmQuery.IChainFind {
     return o.model && o.model.allProperties
 }
 
-// hook find, patch result
+/**
+ * hook find, patch result
+ * 
+ * @deprecated
+ */
 function patchResult(o: FxOrmModelAndIChainFind): void {
     var old_func: ModelFuncToPatch = o.find;
     if (!old_func)
@@ -55,54 +47,16 @@ function patchResult(o: FxOrmModelAndIChainFind): void {
 
     var m: FxOrmModel.Model = is_ichainfind(o) ? o.model : o;
     
-    // keyof FxSqlQuerySql.DetailedQueryWhereCondition
-    var comps = ['val', 'from', 'to'];
 
     if (old_func.is_new)
         return;
-
-    /**
-     * filter the Date-Type SelectQuery Property corresponding item when call find-like executor ('find', 'get', 'where')
-     * @param opt 
-     */
-    function filter_date(opt: FxOrmInstance.Instance) {
-        for (let k in opt) {
-            if (is_model_conjunctions_key(k))
-                Array.isArray(opt[k]) && opt[k].forEach(filter_date);
-            else {
-                var p = m.allProperties[k];
-                if (p && p.type === 'date') {
-                    var v: any = opt[k];
-
-                    if (!util.isDate(v)) {
-                        if (util.isNumber(v) || util.isString(v))
-                            opt[k] = new Date(v);
-                        else if (util.isObject(v)) {
-                            comps.forEach(c => {
-                                var v1 = v[c];
-
-                                if (Array.isArray(v1)) {
-                                    v1.forEach((v2: any, i) => {
-                                        if (!util.isDate(v2))
-                                            v1[i] = new Date(v2);
-                                    });
-                                } else if (v1 !== undefined && !util.isDate(v1)) {
-                                    v[c] = new Date(v1);
-                                }
-                            });
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     var new_func: ModelFuncToPatch = function () {
         var opt = arguments[0];
 
         if (util.isObject(opt) && !util.isFunction(opt)) {
             /** filter opt to make Date-Type SelectQuery Property corresponding item */
-            filter_date(opt);
+            Utilities.filterWhereConditionsInput(opt, m);
         }
 
         var rs: FxOrmQuery.IChainFind = old_func.apply(this, Array.prototype.slice.apply(arguments));
@@ -207,7 +161,7 @@ export function patchHooksInModelOptions(
 }
 
 export function patchModelAfterDefine(m: FxOrmModel.Model, /* opts: FxOrmModel.ModelOptions */) {
-    patchResult(m);
+    // patchResult(m);
 
     patchSync(m, [
         // "clear",

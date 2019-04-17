@@ -282,6 +282,7 @@ export const Instance = function (
 			}
 			changes = Utilities.transformPropertyNames(changes, Model.allProperties);
 
+			Utilities.filterWhereConditionsInput(conditions, instance.model());
 			opts.driver.update(opts.table, changes, conditions, function (err: FxOrmError.ExtendedError) {
 				if (err) {
 					return saveError(cb, err);
@@ -391,8 +392,10 @@ export const Instance = function (
 		for (let i = 0; i < opts.extra_info.id.length; i++) {
 			conditions[opts.extra_info.id_prop[i]] = opts.extra_info.id[i];
 			conditions[opts.extra_info.assoc_prop[i]] = opts.data[opts.keys[i]];
+			Utilities.filterWhereConditionsInput(conditions, instance.model());
 		}
 
+		Utilities.filterWhereConditionsInput(conditions, instance.model());
 		opts.driver.update(opts.extra_info.table, data, conditions, function (err: FxOrmError.ExtendedError) {
 			return cb(err);
 		});
@@ -417,7 +420,8 @@ export const Instance = function (
 			}
 
 			emitEvent("beforeRemove", instance);
-
+			
+			Utilities.filterWhereConditionsInput(conditions, instance.model());
 			opts.driver.remove(opts.table, conditions, function (err, data) {
 				Hook.trigger(instance, opts.hooks.afterRemove, !err);
 
@@ -453,6 +457,7 @@ export const Instance = function (
 				return;
 			}
 
+			Utilities.filterWhereConditionsInput(conditions, instance.model());
 			opts.driver.update(opts.table, changes, conditions, function (err: FxOrmError.ExtendedError) {
 				if (!err) {
 					opts.data[key] = value;

@@ -147,7 +147,7 @@ describe("Model.aggregate()", function () {
         it("should use them as properties if 1st argument is Array", function () {
             var people = Person.aggregate().select(['id']).count('id').groupBy('id').getSync();
 
-            // assert.ok(Array.isArray(people));
+            assert.ok(Array.isArray(people));
             assert.greaterThan(people.length, 0);
 
             assert.isObject(people[0]);
@@ -157,7 +157,7 @@ describe("Model.aggregate()", function () {
 
         it("should use them as properties", function () {
             var people = Person.aggregate().select('id').count().groupBy('id').getSync();
-            // assert.ok(Array.isArray(people));
+            assert.ok(Array.isArray(people));
             assert.greaterThan(people.length, 0);
 
             assert.isObject(people[0]);
@@ -246,7 +246,7 @@ describe("Model.aggregate()", function () {
 
         it("should use as an alias", function () {
             var people = Person.aggregate().count().as('total').groupBy('name').getSync();
-            // assert.ok(Array.isArray(people));
+            assert.ok(Array.isArray(people));
             assert.greaterThan(people.length, 0);
 
             assert.isObject(people[0]);

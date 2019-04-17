@@ -30,6 +30,8 @@ const ChainFind = function (
 
 	const chainRunSync = function (): FxOrmInstance.Instance[] {
 		const conditions: FxSqlQuerySubQuery.SubQueryConditions = Utilities.transformPropertyNames(opts.conditions, opts.properties);
+		Utilities.filterWhereConditionsInput(conditions, Model);
+
 		const order = Utilities.transformOrderPropertyNames(opts.order, opts.properties);
 
 		let foundItems: FxOrmInstance.InstanceDataPayload[];

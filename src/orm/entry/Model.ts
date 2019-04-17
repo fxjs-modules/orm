@@ -308,6 +308,7 @@ export const Model = function (
 			prop = keyProperties[i];
 			conditions[prop.mapsTo] = ids[i];
 		}
+		Utilities.filterWhereConditionsInput(conditions, model);
 
 		if (!options.hasOwnProperty("autoFetch")) {
 			options.autoFetch = m_opts.autoFetch;
@@ -424,6 +425,7 @@ export const Model = function (
 					} else {
 						if (conditions === null) {
 							conditions = arg;
+							Utilities.filterWhereConditionsInput(conditions, model);
 						} else {
 							if (options.hasOwnProperty("limit")) {
 								arg.limit = options.limit;
@@ -625,6 +627,7 @@ export const Model = function (
 	model.countSync = function (conditions) {
 		if (conditions) {
 			conditions = Utilities.checkConditions(conditions, one_associations);
+			Utilities.filterWhereConditionsInput(conditions, model);
 		}
 
 		const data = m_opts.driver.count(
@@ -682,6 +685,7 @@ export const Model = function (
 
 		if (conditions) {
 			conditions = Utilities.checkConditions(conditions, one_associations);
+			Utilities.filterWhereConditionsInput(conditions, model);
 		}
 
 		return new AggregateFunctions({
@@ -742,6 +746,7 @@ export const Model = function (
 
 		if (conditions) {
 			conditions = Utilities.checkConditions(conditions, one_associations);
+			Utilities.filterWhereConditionsInput(conditions, model);
 		}
 
 		const data = m_opts.driver.count(m_opts.table, conditions, {});
@@ -1027,7 +1032,8 @@ export function findByList <T = any> (
 		const isExtendsTo = Helpers.getExtendsToAssociationItemFromModel(by_item.association_name, model) === association;
 
 		let merge_item: FxOrmQuery.ChainFindMergeInfo = null;
-		
+		Utilities.filterWhereConditionsInput(by_item.conditions, model);
+
 		if (isHasMany) { // support hasmany
 			const left_info = {
 				table: `${model.table}`,
@@ -1052,6 +1058,7 @@ export function findByList <T = any> (
 			const extra_props = (association as FxOrmAssociation.InstanceAssociationItem_HasMany).props;
 
 			const join_where = by_item.join_where || {};
+			Utilities.filterWhereConditionsInput(join_where, model);
 
 			merge_item = {
 				from: { table: Utilities.tableAlias(ljoin_info.table, ljoin_info.alias), field: ljoin_info.ids },
