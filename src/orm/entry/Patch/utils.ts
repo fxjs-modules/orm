@@ -48,7 +48,7 @@ function is_ichainfind (o: FxOrmModelAndIChainFind): o is FxOrmQuery.IChainFind 
 }
 
 // hook find, patch result
-export function patchResult(o: FxOrmModelAndIChainFind): void {
+function patchResult(o: FxOrmModelAndIChainFind): void {
     var old_func: ModelFuncToPatch = o.find;
     if (!old_func)
         return ;
@@ -183,11 +183,14 @@ export function patchFindBy(m: FxOrmModel.Model, funcs: HashOfModelFuncNameToPat
     })
 }
 
-export function patchAggregate(m: FxOrmModel.Model) {
+/**
+ * @deprecated
+ */
+function patchAggregate(m: FxOrmModel.Model) {
     var aggregate: FxOrmNS.OrigAggreteGenerator = m.aggregate;
     m.aggregate = function () {
         var r = aggregate.apply(this, Array.prototype.slice.apply(arguments));
-        patchSync(r, ['get']);
+        // patchSync(r, ['get']);
         return r;
     };
 }
@@ -226,7 +229,7 @@ export function patchModelAfterDefine(m: FxOrmModel.Model, /* opts: FxOrmModel.M
         'extendsTo'
     ]);
 
-    patchAggregate(m);
+    // patchAggregate(m);
 }
 
 /**

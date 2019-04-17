@@ -32,8 +32,6 @@ declare namespace FxOrmDMLDriver {
         prototype: DMLDriver
     }
 
-
-    type AggregationFuncTuple = [string, string]
     interface DMLDriver extends DefaultSqlDriver {
         db: FxOrmDb.DatabaseBase
         dialect: FxSqlQueryDialect.DialectType
@@ -75,9 +73,9 @@ declare namespace FxOrmDMLDriver {
          * @description
          *  aggregate_functions could be string tuple such as
          * 
-         *  [`RANDOM`, `RAND`] ---> AggregationFuncTuple
+         *  [`RANDOM`, `RAND`] ---> FxOrmDb.AGGREGATION_METHOD_TUPLE__COMMON
          */
-        aggregate_functions: (string|AggregationFuncTuple)[]
+        aggregate_functions: ( (FxOrmDb.AGGREGATION_METHOD_COMPLEX) | FxOrmDb.AGGREGATION_METHOD_TUPLE__COMMON )[]
         execSimpleQuery: {
             <T=any>(query: string, cb?: FxOrmNS.GenericCallback<T>): T
         }
@@ -158,6 +156,8 @@ declare namespace FxOrmDMLDriver {
     }
     interface DMLDriver_MySQL extends DMLDriver {
         db: FxOrmDb.DatabaseBase_MySQL
+
+        aggregate_functions: (FxOrmDb.AGGREGATION_METHOD_MYSQL | FxOrmDb.AGGREGATION_METHOD_TUPLE__MYSQL)[]
     }
     interface DMLDriverConstructor_PostgreSQL extends DMLDriverConstructor {
         (this: DMLDriver_PostgreSQL, config: FxOrmNS.IDBConnectionConfig, connection: FxOrmDb.DatabaseBase_PostgreSQL, opts: FxOrmDMLDriver.DMLDriverOptions): void
@@ -165,6 +165,8 @@ declare namespace FxOrmDMLDriver {
     }
     interface DMLDriver_PostgreSQL extends DMLDriver {
         db: FxOrmDb.DatabaseBase_PostgreSQL
+
+        aggregate_functions: (FxOrmDb.AGGREGATION_METHOD_POSTGRESQL)[]
     }
 
     interface DMLDriverConstructor_SQLite extends DMLDriverConstructor {
@@ -173,6 +175,8 @@ declare namespace FxOrmDMLDriver {
     }
     interface DMLDriver_SQLite extends DMLDriver {
         db: FxOrmDb.DatabaseBase_SQLite
+
+        aggregate_functions: (FxOrmDb.AGGREGATION_METHOD_SQLITE)[]
     }
 
     /* ============================= typed db :end   ============================= */

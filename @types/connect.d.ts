@@ -58,7 +58,11 @@ declare namespace FxOrmNS {
         pool?: boolean | IConnectionPoolOptions;
         debug?: boolean;
         // query?: { [key: string]: string | number; }
+        pathname?: string
         query?: Class_UrlObject['query']
+        href?: Class_UrlObject['href']
+        
+        timezone?: FxSqlQuery.FxSqlQueryTimezone
 
         [extra: string]: any
     }
@@ -76,5 +80,11 @@ declare namespace FxOrmNS {
         user: IConnectionOptions['user']
         password: IConnectionOptions['password']
         host: IConnectionOptions['host']
+
+        href: IConnectionOptions['href']
+        pathname: IConnectionOptions['pathname']
+        timezone: IConnectionOptions['timezone']
+
+        [extra: string]: any
     }
 }

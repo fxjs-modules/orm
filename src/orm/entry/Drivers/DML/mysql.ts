@@ -73,7 +73,7 @@ Driver.prototype.reconnect = function (
 
 	// Prevent noisy mysql driver output
 	if (typeof connOpts == 'object') {
-		connOpts = util.omit(connOpts, 'debug');
+		connOpts = util.omit(connOpts, 'debug') as any;
 	} else if (typeof connOpts == 'string') {
 		connOpts = connOpts.replace("debug=true", "debug=false");
 	}

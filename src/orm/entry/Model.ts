@@ -670,15 +670,15 @@ export const Model = function (
 		var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
 		var propertyList: string[] = [];
 
-		for (let i = 0; i < arguments.length; i++) {
-			if (typeof arguments[i] === 'object') {
-				if (Array.isArray(arguments[i])) {
-					propertyList = arguments[i];
+		Helpers.selectArgs(arguments, (arg_type, arg) => {
+			if (arg_type === 'object') {
+				if (Array.isArray(arg)) {
+					propertyList = arg;
 				} else {
-					conditions = arguments[i];
+					conditions = arg;
 				}
 			}
-		}
+		});
 
 		if (conditions) {
 			conditions = Utilities.checkConditions(conditions, one_associations);

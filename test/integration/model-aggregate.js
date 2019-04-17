@@ -1,6 +1,7 @@
 var test = require("test");
 test.setup();
 
+var common = require('../common');
 var helper = require('../support/spec_helper');
 
 describe("Model.aggregate()", function () {
@@ -34,6 +35,48 @@ describe("Model.aggregate()", function () {
 
     after(function () {
         return db.closeSync();
+    });
+
+    describe("method checks", function () {
+        before(setup());
+
+        var protocol = common.protocol();
+        var methods = [];
+
+        if (protocol === 'sqlite') {
+            methods = [
+                "ABS", "ROUND",
+                "AVG", "MIN", "MAX",
+                "RANDOM",
+                "SUM", "COUNT",
+                "DISTINCT"
+            ]
+        } else if (protocol === 'mysql') {
+            methods = [
+                "ABS", "CEIL", "FLOOR", "ROUND",
+                "AVG", "MIN", "MAX",
+                "LOG", "LOG2", "LOG10", "EXP", "POWER",
+                "ACOS", "ASIN", "ATAN", "COS", "SIN", "TAN",
+                "CONV", [ "RANDOM", "RAND" ], "RADIANS", "DEGREES",
+                "SUM", "COUNT",
+                "DISTINCT"
+            ]
+        }
+
+        methods.forEach((fun) => {
+            var alias = fun
+            if (Array.isArray(fun)) {
+                alias = fun[0]
+                fun = fun[1]
+            }
+
+            alias = alias.toLocaleLowerCase()
+            it(`driver [${protocol}] support method ${fun} by \`.${alias}()\``, function () {
+                var aggregaton = Person.aggregate();
+                
+                assert.isFunction(aggregaton[alias]);
+            });
+        });
     });
 
     describe("with multiple methods", function () {

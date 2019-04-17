@@ -82,6 +82,11 @@ declare namespace FxOrmQuery {
         [extra_key: string]: any
     }
 
+    interface AggregationMethod {
+        (...args: string[]): IAggregated
+        (arg: string[]): IAggregated
+    }
+
     interface IAggregated {
         groupBy: {
             (...columns: string[]): IAggregated;
@@ -101,13 +106,26 @@ declare namespace FxOrmQuery {
             (alias: string): IAggregated;
         }
         call: {
-            (fun: string, args: any[]): IAggregated;
+            (fun: FxOrmDb.AGGREGATION_METHOD_COMPLEX, args: string[]): IAggregated;
+        }
+        getSync: {
+            <T = any>(): FxOrmNS.ExecutionCallback<T[]>
         }
         get: {
-            <T = any>(cb?: FxOrmNS.GenericCallback<T[]>): void
+            <T = any>(cb?: FxOrmNS.ExecutionCallback<T[]>): void
         }
+
+        // [ext_method: string]: AggregationMethod
+
+        [ext_k: string]: any
     }
+
     type KeyOfIAggregated = keyof IAggregated
+    type AggregationFuncTuple = FxOrmDb.AGGREGATION_METHOD_TUPLE__COMMON
+
+    interface SqlSelectFieldsDescriptor extends FxSqlQuerySql.SqlSelectFieldsDescriptor {
+        args?: string | string[]
+    }
 
     interface AggregateConstructorOptions {
         driver: FxOrmDMLDriver.DMLDriver

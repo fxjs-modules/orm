@@ -12,20 +12,22 @@ const AggregateFunctions = function (
 		throw new ORMError("This driver does not support aggregate functions", 'NO_SUPPORT');
 	}
 
-	const aggregates: [ FxSqlQuerySql.SqlSelectFieldsDescriptor[] ]    = [ [] ];
+	const aggregates: FxOrmQuery.SqlSelectFieldsDescriptor[][]    = [ [] ];
 	let group_by: string[]      = null;
 	let used_distinct 			= false;
 
-	const appendFunction = function (fun: string) {
-		return function () {
-			// select 1st array as aargs
-			var args: string[] = (arguments.length && Array.isArray(arguments[0]) ? arguments[0] : Array.prototype.slice.apply(arguments));
+	const aggregationFunc = function (fun: string) {
+		fun = fun.toLocaleLowerCase()
 
+		return function () {
+			// select 1st array as args
+			var args: string[] = (arguments.length && Array.isArray(arguments[0]) ? arguments[0] : Array.prototype.slice.apply(arguments));
+			
 			if (args.length > 0) {
-				aggregates[aggregates.length - 1].push({ f: fun, a: args, alias: aggregateAlias(fun, args) });
+				aggregates[aggregates.length - 1].push({ func_name: fun, args: args, as: aggregateAlias(fun, args) });
 				aggregates.push([]);
 			} else {
-				aggregates[aggregates.length - 1].push({ f: fun, alias: aggregateAlias(fun, args) });
+				aggregates[aggregates.length - 1].push({ func_name: fun, as: aggregateAlias(fun, args) });
 			}
 
 			if (fun === "distinct") {
@@ -35,6 +37,11 @@ const AggregateFunctions = function (
 			return proto;
 		};
 	};
+
+	const distinct_to_one_row = function () {
+		return used_distinct && aggregates.length === 1;
+	}
+
 	const proto: FxOrmQuery.IAggregated = {
 		groupBy: function (...columns: string[]) {
 			group_by = columns;
@@ -75,16 +82,15 @@ const AggregateFunctions = function (
 
 			aggregates[len - 1][
 				aggregates[len - 1].length - 1
-			].alias = alias;
+			].as = alias;
 
 			return this;
 		},
 		call: function (fun, args) {
 			if (args && args.length > 0) {
-				aggregates[aggregates.length - 1].push({ f: fun, a: args, alias: aggregateAlias(fun, args) });
-				// aggregates.push([]);
+				aggregates[aggregates.length - 1].push({ func_name: fun, args: args, as: aggregateAlias(fun, args) });
 			} else {
-				aggregates[aggregates.length - 1].push({ f: fun, alias: aggregateAlias(fun, args) });
+				aggregates[aggregates.length - 1].push({ func_name: fun, as: aggregateAlias(fun, args) });
 			}
 
 			if (fun.toLowerCase() === "distinct") {
@@ -93,10 +99,7 @@ const AggregateFunctions = function (
 
 			return this;
 		},
-		get: function <T>(cb: FxOrmNS.GenericCallback<T[]>) {
-			if (typeof cb !== "function") {
-				throw new ORMError("You must pass a callback to Model.aggregate().get()", 'MISSING_CALLBACK');
-			}
+		getSync: function <T>() {
 			if (aggregates[aggregates.length - 1].length === 0) {
 				aggregates.length -= 1;
 			}
@@ -111,7 +114,7 @@ const AggregateFunctions = function (
 
 			for (let i = 0; i < aggregates.length; i++) {
 				for (let j = 0; j < aggregates[i].length; j++) {
-					query.fun(aggregates[i][j].f, aggregates[i][j].a, aggregates[i][j].alias);
+					query.fun(aggregates[i][j].func_name, aggregates[i][j].args, aggregates[i][j].as);
 				}
 			}
 
@@ -131,54 +134,74 @@ const AggregateFunctions = function (
 			}
 
 			const q_str = query.build();
+			
+			const data: any = opts.driver.execQuery<any>(q_str);
 
-			opts.driver.execQuery<any>(q_str, function (err: Error, data: any) {
-				if (err) {
-					return cb(err);
+			if (group_by !== null) {
+				return data;
+			}
+
+			var items = [];
+
+			if (distinct_to_one_row()) {
+				for (let i = 0; i < data.length; i++) {
+					items.push(
+						data[i][
+							Object.keys(data[i]).pop()
+						]
+					);
 				}
 
-				if (group_by !== null) {
-					return cb(null, data);
+				return items;
+			}
+
+			for (let i = 0; i < aggregates.length; i++) {
+				for (let j = 0; j < aggregates[i].length; j++) {
+					items.push(
+						data[0][
+							aggregates[i][j].as
+						] || null
+					);
 				}
+			}
 
-				var items = [];
+			return items;
+		}, 
+		get: function <T>(cb?: FxOrmNS.ExecutionCallback<T[]>) {
+			if (typeof cb !== "function") {
+				throw new ORMError("You must pass a callback to Model.aggregate().get()", 'MISSING_CALLBACK');
+			}
 
-				if (used_distinct && aggregates.length === 1) {
-					for (let i = 0; i < data.length; i++) {
-						items.push(
-							data[i][
-								Object.keys(data[i]).pop()
-							]
-						);
+			const syncReponse = Utilities.exposeErrAndResultFromSyncMethod(proto.getSync, [], { thisArg: proto })
+			Utilities.throwErrOrCallabckErrResult(
+				syncReponse,
+				{
+					callback: cb && function (err, results) {
+						if (err)
+							return cb(err)
+						
+						if (distinct_to_one_row())
+							return cb(null, results)
+
+
+						/**
+						 * when not used_distinct, support to spread results as callback's arguments
+						 */
+						results.unshift(null)
+						return cb.apply(null, results)
 					}
-
-					return cb(null, items);
 				}
-
-				for (let i = 0; i < aggregates.length; i++) {
-					for (let j = 0; j < aggregates[i].length; j++) {
-						items.push(
-							data[0][
-								aggregates[i][j].alias
-							] || null
-						);
-					}
-				}
-
-				items.unshift(null);
-
-				return cb.apply(null, items);
-			});
+			);
 		}
 	};
 
-	for (let i = 0; i < opts.driver.aggregate_functions.length; i++) {
+	opts.driver.aggregate_functions.forEach(aggregate_function => {
 		addAggregate(
 			proto,
-			opts.driver.aggregate_functions[i] as FxOrmQuery.KeyOfIAggregated,
-			appendFunction
+			aggregate_function,
+			aggregationFunc
 		);
-	}
+	})
 
 	return proto;
 } as any as FxOrmQuery.AggregateConstructor;
@@ -187,16 +210,18 @@ export = AggregateFunctions
 
 function addAggregate(
 	proto: FxOrmQuery.IAggregated,
-	fun: FxOrmQuery.KeyOfIAggregated|FxOrmQuery.KeyOfIAggregated[],
-	builder: Function
+	fun: FxOrmDb.AGGREGATION_METHOD_COMPLEX | FxOrmDb.AGGREGATION_METHOD_TUPLE__COMMON,
+	builder: {
+		(fun: FxOrmQuery.KeyOfIAggregated): FxOrmQuery.AggregationMethod
+	}
 ) {
 	let k: FxOrmQuery.KeyOfIAggregated
 	if (Array.isArray(fun)) {
-		k = fun[0].toLowerCase() as FxOrmQuery.KeyOfIAggregated
-		proto[k] = builder((fun[1] || fun[0]).toLowerCase());
+		k = fun[0].toLowerCase()
+		proto[k] = builder( fun[1] || fun[0] );
 	} else {
-		k = fun.toLowerCase() as FxOrmQuery.KeyOfIAggregated
-		proto[k] = builder(fun.toLowerCase());
+		k = fun.toLowerCase()
+		proto[k] = builder( fun );
 	}
 }
 

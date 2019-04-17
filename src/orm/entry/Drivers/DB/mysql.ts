@@ -68,7 +68,7 @@ class Database extends EventEmitter implements FxOrmDb.DatabaseBase_MySQL {
     }
 }
 
-export const createConnection = function (conn_opts: FxOrmDb.DatabaseBaseConfig): FxOrmDb.DatabaseBase_MySQL {
+export const createConnection = function (conn_opts: string | FxOrmDb.DatabaseBaseConfig): FxOrmDb.DatabaseBase_MySQL {
     return new Database(conn_opts);
 };
 
