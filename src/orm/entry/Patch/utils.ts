@@ -213,11 +213,11 @@ export function patchModelAfterDefine(m: FxOrmModel.Model, /* opts: FxOrmModel.M
         // "one",
         // "where",
         // 'all',
-        'create',
+        // 'create',
         // 'drop',
         // 'find',
         // 'get',
-        'sync'
+        // 'sync'
     ]);
 
     patchFindBy(m, [

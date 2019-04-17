@@ -1,13 +1,14 @@
+import coroutine = require('coroutine')
+
 import _merge = require('lodash.merge')
 import { Sync } from "@fxjs/sql-ddl-sync";
 import * as Utilities from '../../Utilities';
 
 export const sync: FxOrmDMLDriver.DMLDriver['sync'] = function (
-	this: FxOrmDMLDriver.DMLDriver, opts, cb
+	this: FxOrmDMLDriver.DMLDriver, opts, cb?
 ) {
 	var sync = new Sync({
 		driver  : this,
-		// debug   : false // function (text) { console.log(text); }
 		debug: function (text: string) {
 			(process.env as any).DEBUG_SQLDDLSYNC && (global as any).console.log("> %s", text);
 		}
@@ -41,7 +42,26 @@ export const sync: FxOrmDMLDriver.DMLDriver['sync'] = function (
 		);
 	}
 
-	sync.sync(cb);
+	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmSqlDDLSync.SyncResult>(
+		() => {
+			const evt = new coroutine.Event();
+		
+			let result = null as FxOrmSqlDDLSync.SyncResult
+			sync.sync(function (err, res) {
+				evt.set();
+				
+				if (err) throw err;
+		
+				result = res;
+			});
+
+			evt.wait();
+
+			return result;
+		}
+	);
+
+	Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb });
 
 	return this;
 };

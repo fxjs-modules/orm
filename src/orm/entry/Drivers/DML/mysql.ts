@@ -1,5 +1,4 @@
 import util    = require("util");
-import coroutine    = require("coroutine");
 
 import mysql 		= require("../DB/mysql");
 import shared  		= require("./_shared");

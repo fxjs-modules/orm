@@ -572,10 +572,6 @@ export function isDriverNotSupportedError (err: FxOrmError.ExtendedError) {
 	return false;
 }
 
-interface ExposedResult<T = any> {
-	error: FxOrmError.ExtendedError,
-	result?: T
-}
 export function exposeErrAndResultFromSyncMethod<T = any> (
 	exec: Function,
 	args: any[] = [],
@@ -583,7 +579,7 @@ export function exposeErrAndResultFromSyncMethod<T = any> (
 		thisArg?: any,
 		// callback?: FibOrmNS.ExecutionCallback<T>
 	}
-): ExposedResult {
+): FxOrmNS.ExposedResult {
 	let error: FxOrmError.ExtendedError,
 		result: T
 
@@ -599,7 +595,7 @@ export function exposeErrAndResultFromSyncMethod<T = any> (
 }
 
 export function throwErrOrCallabckErrResult<RESULT_T = any> (
-	input: ExposedResult<RESULT_T>,
+	input: FxOrmNS.ExposedResult<RESULT_T>,
 	opts?: {
 		callback?: FibOrmNS.ExecutionCallback<RESULT_T>,
 		use_tick?: boolean

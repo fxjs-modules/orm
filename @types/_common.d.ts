@@ -29,4 +29,9 @@ declare namespace FxOrmNS {
     }
 
     type Nilable<T> = null | T
+
+    interface ExposedResult<T = any> {
+        error: FxOrmError.ExtendedError,
+        result?: T
+    }
 }

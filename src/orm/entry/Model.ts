@@ -246,45 +246,41 @@ export const Model = function (
 		this:FxOrmModel.Model,
 		cb?: FxOrmNS.GenericCallback<void>
 	) {
-		if (arguments.length === 0) {
-			cb = noOp;
-		}
-		
 		const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(model.dropSync, [], { thisArg: model });
 		Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb });
 
 		return this;
 	};
 
+	model.syncSync = function () {
+		m_opts.driver.sync({
+			extension           : m_opts.extension,
+			id                  : m_opts.keys,
+			table               : m_opts.table,
+			properties          : m_opts.properties,
+			allProperties       : allProperties,
+			indexes             : m_opts.indexes || [],
+			customTypes         : m_opts.db.customTypes,
+			one_associations    : one_associations,
+			many_associations   : many_associations,
+			extend_associations : extend_associations
+		});
+	}
+
 	model.sync = function <T>(
 		this:FxOrmModel.Model,
 		cb?: FxOrmNS.GenericCallback<FxOrmSqlDDLSync.SyncResult>
 	) {
-		if (arguments.length === 0) {
-			cb = function () {};
-		}
-		if (typeof m_opts.driver.sync === "function") {
-			try {
-				m_opts.driver.sync({
-					extension           : m_opts.extension,
-					id                  : m_opts.keys,
-					table               : m_opts.table,
-					properties          : m_opts.properties,
-					allProperties       : allProperties,
-					indexes             : m_opts.indexes || [],
-					customTypes         : m_opts.db.customTypes,
-					one_associations    : one_associations,
-					many_associations   : many_associations,
-					extend_associations : extend_associations
-				}, cb);
-			} catch (e) {
-				return cb(e);
+		const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(() => {
+			if (typeof m_opts.driver.sync !== "function") {
+				throw new ORMError("Driver does not support Model.sync()", 'NO_SUPPORT', { model: m_opts.table })
 			}
 
-			return this;
-		}
+			model.syncSync();
+		});
+		Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb });
 
-		return cb(new ORMError("Driver does not support Model.sync()", 'NO_SUPPORT', { model: m_opts.table }));
+		return this;
 	};
 
 	model.getSync = function (
@@ -769,13 +765,33 @@ export const Model = function (
 		return this;
 	}
 
-	model.create = function () {
-		var itemsParams: FxOrmInstance.InstanceDataPayload[] = []
-		var items: FxOrmInstance.Instance[] = [];
-		// var options: FxOrmModel.ModelOptions__Create     = {};
+	model.create = function (...args: any[]) {
 		var done: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance | FxOrmInstance.Instance[]>        = null;
-		var create_err: FxOrmError.ExtendedError	= null;
-		var create_single: boolean      = false;
+		Helpers.selectArgs(arguments, (arg_type, arg, idx) => {
+			switch (arg_type) {
+				case "function":
+					done = arg;
+					args = args.filter(x => x !== done)
+					break;
+			}
+		});
+	
+		const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(
+			model.createSync,
+			args,
+			{ thisArg: model }
+		)
+
+		Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: done });
+
+		return syncResponse.result;
+	}
+
+	model.createSync = function (): any {
+		const items: FxOrmInstance.Instance[] = [];
+
+		let create_single: boolean      = false;
+		let itemsParams: FxOrmInstance.InstanceDataPayload[] = []
 
 		Helpers.selectArgs(arguments, (arg_type, arg, idx) => {
 			switch (arg_type) {
@@ -785,55 +801,28 @@ export const Model = function (
 					} else if (idx === 0) {
 						create_single = true;
 						itemsParams.push(arg);
-					// } else {
-					// 	options = arg;
 					}
-					break;
-				case "function":
-					done = arg;
 					break;
 			}
 		});
 
-		function throw_if_catch_err (err: FxOrmNS.ExtensibleError, item: FxOrmInstance.InstanceDataPayload) {
-			if (create_err = err) {
-				err.instance = item;
-				
-				done(err);
+		for (let idx = 0, syncResponse: FxOrmNS.ExposedResult<void>; idx < itemsParams.length; idx++) {
+			const data = itemsParams[idx];
+			
+			const item = createInstanceSync(data, {
+				is_new    : true,
+				autoSave  : m_opts.autoSave,
+				// not fetch associated instance on its creation.
+				autoFetch : false
+			});
 
-				throw create_err;
-			}
+			item.saveSync();
+			items.push(item);
 		}
 
-		items = itemsParams.map(
-			(data: FxOrmInstance.InstanceDataPayload) => {
-				if (create_err)
-					return ;
-
-				let item: FxOrmInstance.Instance = null;
-				try {
-					item = createInstanceSync(data, {
-						is_new    : true,
-						autoSave  : m_opts.autoSave,
-						// not fetch associated instance on its creation.
-						autoFetch : false
-					});
-
-					item.saveSync();
-				} catch (err) {
-					throw_if_catch_err(err, item || data);
-				}
-
-				return item
-			}
-		);
-
 		const results = create_single ? items[0] : items;
-
-		if (typeof done === 'function')
-			done(null, results);
 		
-		return this;
+		return results;
 	};
 
 	model.clearSync = function () {
