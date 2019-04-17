@@ -11,7 +11,7 @@ const SUPPORTED_PROTOCOLS = [
     'mssql:',
 ]
 
-export const parseDbConfig: FxOrmHelper.HelperModules['parseDbConfig'] = function (opts, cb) {
+export const parseDbConfig: FxOrmHelper.HelperModules['parseDbConfig'] = function (opts, cb?) {
     let config: FxOrmNS.IDBConnectionConfig = null;
 
     if (!opts) {

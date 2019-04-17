@@ -1,4 +1,5 @@
 import util = require('util')
+import * as Utilities from '../../Utilities';
 
 export function execQuery <T = any>(
 	this: FxOrmDMLDriver.DMLDriver,
@@ -37,3 +38,9 @@ export function eagerQuery<T = any> (
 
 	return this.execSimpleQuery(query, cb);
 }
+
+export const poolQuery: FxOrmDMLDriver.DMLDriver['poolQuery'] = function (
+	this: FxOrmDMLDriver.DMLDriver, query, cb?
+) {
+	return this.db.query(query, cb);
+};

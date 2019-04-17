@@ -572,22 +572,52 @@ export function isDriverNotSupportedError (err: FxOrmError.ExtendedError) {
 	return false;
 }
 
+interface ExposedResult<T = any> {
+	error: FxOrmError.ExtendedError,
+	result?: T
+}
 export function exposeErrAndResultFromSyncMethod<T = any> (
-	doSth: Function,
+	exec: Function,
 	args: any[] = [],
-	self: any = null
-) {
+	opts?: {
+		thisArg?: any,
+		// callback?: FibOrmNS.ExecutionCallback<T>
+	}
+): ExposedResult {
 	let error: FxOrmError.ExtendedError,
 		result: T
 
+	const { thisArg = null } = opts || {};
+
 	try {
-		result = doSth.apply(self, args);
+		result = exec.apply(thisArg, args);
 	} catch (ex) {
 		error = ex
 	}
 
-	return {
-		error,
-		result
+	return { error, result }
+}
+
+export function throwErrOrCallabckErrResult<RESULT_T = any> (
+	input: ExposedResult<RESULT_T>,
+	opts?: {
+		callback?: FibOrmNS.ExecutionCallback<RESULT_T>,
+		use_tick?: boolean
 	}
+) {
+	if (input.error)
+		throw input.error;
+
+	const {
+		use_tick = false,
+		callback = null
+	} = opts || {}
+
+	if (typeof callback === 'function')
+		if (use_tick)
+			process.nextTick(() => {
+				callback(input.error, input.result);
+			});
+		else
+			callback(input.error, input.result);
 }

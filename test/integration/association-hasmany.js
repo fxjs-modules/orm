@@ -2,6 +2,7 @@ var test = require("test");
 test.setup();
 
 var helper = require('../support/spec_helper');
+var common = require('../common');
 
 function assertModelInstanceWithHasMany(instance) {
     assert.property(instance, '__opts')
@@ -819,10 +820,11 @@ describe("hasMany", function () {
         it("should generate correct tables", function () {
             setup({});
 
-            var protocol = db.driver.db.conn.type;
+            var protocol = common.protocol();
+
             var sql;
 
-            if (protocol == 'SQLite') {
+            if (protocol == 'sqlite') {
                 sql = "PRAGMA table_info(?)";
             } else {
                 sql = "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = ? AND table_schema = ? ORDER BY data_type";
@@ -830,7 +832,7 @@ describe("hasMany", function () {
 
             var cols = db.driver.execQuerySync(sql, ['account_emails', db.driver.config.database]);
 
-            if (protocol == 'SQLite') {
+            if (protocol == 'sqlite') {
                 assert.equal(cols[0].name, 'account_id');
                 assert.equal(cols[0].type, 'INTEGER');
                 assert.equal(cols[1].name, 'emails_text');
@@ -848,7 +850,7 @@ describe("hasMany", function () {
                 key: true
             });
 
-            var protocol = db.driver.db.conn.type;
+            var protocol = common.protocol();
             var sql;
 
             if (protocol == 'mysql') {
@@ -859,7 +861,7 @@ describe("hasMany", function () {
                 assert.equal(data[0].Key_name, 'PRIMARY');
                 assert.equal(data[1].Column_name, 'emails_text');
                 assert.equal(data[1].Key_name, 'PRIMARY');
-            } else if (protocol == 'SQLite') {
+            } else if (protocol == 'sqlite') {
                 var data = db.driver.execQuerySync("pragma table_info(??)", ['account_emails']);
                 assert.equal(data.length, 2);
                 assert.equal(data[0].name, 'account_id');

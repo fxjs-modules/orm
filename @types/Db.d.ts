@@ -1,7 +1,15 @@
+/// <reference types="fib-pool" />
+
 declare namespace FxOrmDb {
+    interface DatabaseBaseConfig extends FxOrmNS.IDBConnectionConfig, Class_UrlObject {
+        pool: FxOrmNS.IConnectionPoolOptions
+    }
+
     interface DatabaseBase extends Class_EventEmitter {
         conn: FxOrmNS.IDbConnection;
-        opts: FxOrmNS.IDBConnectionConfig;
+        readonly uri: string;
+
+        opts: DatabaseBaseConfig;
 
         execute: {
             (sql: string, ...args: any[]): any[];
@@ -15,20 +23,19 @@ declare namespace FxOrmDb {
         end?: DatabaseBase['close']
         
         connect: {
-            (cb: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): void
-            (): FxOrmNS.IDbConnection
+            (cb?: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): FxOrmNS.IDbConnection
         }
-        // useless now
-        pool: any
+        pool: FibPoolNS.FibPoolFunction<DatabaseBase['conn']>
     }
 
     interface DatabaseBase_SQLite extends DatabaseBase {
+        readonly use_memory: boolean
+        
         all: DatabaseBase_SQLite['query']
         get: DatabaseBase_SQLite['query']
     }
 
     interface DatabaseBase_MySQL extends DatabaseBase {
-        // opts: FxOrmNS.IDBConnectionConfig;
         ping: {
             (cb?: FxOrmNS.VoidCallback): void
         }

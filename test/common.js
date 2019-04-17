@@ -8,7 +8,7 @@ var ORM         = require('../');
 common.ORM = ORM;
 
 common.protocol = function () {
-  return process.env.ORM_PROTOCOL;
+  return (process.env.ORM_PROTOCOL || '').toLocaleLowerCase();
 };
 
 common.isTravis = function() {

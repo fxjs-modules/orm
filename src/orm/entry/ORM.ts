@@ -82,7 +82,7 @@ const connect: FxOrmNS.ExportModule['connect'] = function () {
 		return cfg;
 	
 	let proto  = cfg.protocol.replace(/:$/, '');
-	let db: FxOrmNS.ORMLike;
+	let orm: FxOrmNS.ORMLike;
 	let err: ORMError = null;
 	if (DriverAliases[proto]) {
 		proto = DriverAliases[proto];
@@ -97,43 +97,44 @@ const connect: FxOrmNS.ExportModule['connect'] = function () {
 			settings : settings
 		});
 
-		driver.connect(function (err) {
-			if (err)
-				throw err
+		driver.connect(conn_err => {
+			if (conn_err)
+				throw conn_err;
 		});
 
-		db = new ORM(proto, driver, settings);
+		orm = new ORM(proto, driver, settings);
 	} catch (ex) {
 		err = ex;
 
 		if (Utilities.isDriverNotSupportedError(err)) {
 			err = new ORMError("Connection protocol not supported - have you installed the database driver for " + proto + "?", 'NO_SUPPORT');
-			db = Utilities.ORM_Error(err, cb);
+			orm = Utilities.ORM_Error(err, cb);
 		}
 
-		db = Utilities.ORM_Error(err, cb);
+		orm = Utilities.ORM_Error(err, cb);
 	}
 
 	if (!err) {
-		patchSync(db, [
+		patchSync(orm, [
 			'sync',
 			'close',
 			'drop',
 			'ping'
 		]);
 
-		if (db.driver)
-			patchDriver(db.driver);
+		if (orm.driver)
+			patchDriver(orm.driver);
 	}
 
 	process.nextTick(() => {
-		db.emit("connect", err, !err ? db : null);
+		orm.emit("connect", err, !err ? orm : null);
+
+		if (typeof cb === 'function') {
+			cb(err, orm);
+		};
 	});
 
-	if (typeof cb === 'function')
-		cb(err, db)
-
-	return db;
+	return orm;
 };
 
 const ORM = function (
@@ -264,9 +265,10 @@ ORM.prototype.ping = function (
 };
 ORM.prototype.close = function (
 	this: FxOrmNS.ORM,	
-	cb
+	cb?
 ) {
-	this.driver.close(cb);
+	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(this.driver.close, [], { thisArg: this.driver});
+	Utilities.throwErrOrCallabckErrResult(syncResponse, { use_tick: true, callback: cb });
 
 	return this;
 };

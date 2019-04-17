@@ -54,16 +54,16 @@ describe("Model.get()", function () {
 
         it("should create the table with a different column name than property name", function () {
             var sql;
-            var protocol = db.driver.db.conn.type;
+            var protocol = common.protocol();
 
-            if (protocol == 'SQLite') {
+            if (protocol == 'sqlite') {
                 sql = "PRAGMA table_info(?)";
             } else {
                 sql = "SELECT column_name FROM information_schema.columns WHERE table_name = ? AND table_schema = ?";
             }
 
             var data = db.driver.execQuerySync(sql, [Person.table, db.driver.config.database]);
-            var names = _.map(data, protocol == 'SQLite' ? 'name' : 'column_name')
+            var names = _.map(data, protocol == 'sqlite' ? 'name' : 'column_name')
 
             assert.equal(typeof Person.properties.name, 'object');
             assert.notEqual(names.indexOf('fullname'), -1);

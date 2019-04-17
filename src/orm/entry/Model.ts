@@ -250,12 +250,8 @@ export const Model = function (
 			cb = noOp;
 		}
 		
-		const {
-			error,
-			result
-		} = Utilities.exposeErrAndResultFromSyncMethod(model.dropSync, [], model);
-
-		cb(error, result)
+		const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(model.dropSync, [], { thisArg: model });
+		Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb });
 
 		return this;
 	};
@@ -623,7 +619,7 @@ export const Model = function (
 		const {
 			error,
 			result
-		} = Utilities.exposeErrAndResultFromSyncMethod(chain.runSync, args, model);
+		} = Utilities.exposeErrAndResultFromSyncMethod(chain.runSync, args, {thisArg: model});
 
 		cb(error, result);
 
@@ -667,12 +663,8 @@ export const Model = function (
 		}
 		
 		process.nextTick(() => {
-			const {
-				error,
-				result
-			} = Utilities.exposeErrAndResultFromSyncMethod(model.countSync, [conditions, cb], model);
-
-			cb(error, result);
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(model.countSync, [conditions, cb], {thisArg: model});
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb });
 		});
 
 		return this;
@@ -771,12 +763,8 @@ export const Model = function (
 		    throw new ORMError("Missing Model.exists() callback", 'MISSING_CALLBACK', { model: m_opts.table });
 		}
 
-		const {
-			error,
-			result
-		} = Utilities.exposeErrAndResultFromSyncMethod(model.existsSync, ids, model);
-
-		cb(error, result);
+		const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(model.existsSync, ids, { thisArg: model });
+		Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb });
 
 		return this;
 	}

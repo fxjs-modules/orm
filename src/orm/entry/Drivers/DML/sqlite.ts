@@ -62,7 +62,7 @@ Driver.prototype.on = function (this: FxOrmDMLDriver.DMLDriver_SQLite,
 };
 
 Driver.prototype.connect = function (
-	this: FxOrmDMLDriver.DMLDriver_SQLite, cb?
+	this: FxOrmDMLDriver.DMLDriver_SQLite, cb?: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>
 ) {
 	return this.db.connect(cb);
 };
@@ -137,10 +137,7 @@ Driver.prototype.insert = function (
 		require("../../Debug").sql('sqlite', q);
 	}
 
-	const {
-		error,
-		result
-	} = Utilities.exposeErrAndResultFromSyncMethod(() => {
+	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(() => {
 		this.db.all<any>(q);
 
 		if (!keyProperties) return null;
@@ -162,11 +159,9 @@ Driver.prototype.insert = function (
 
 		return ids;
 	});
+	Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb });
 
-	if (typeof cb === 'function')
-		cb(error, result);
-
-	return result
+	return syncResponse.result
 };
 
 Driver.prototype.update = function (
@@ -201,22 +196,23 @@ Driver.prototype.remove = function (
 Driver.prototype.clear = function (
 	this: FxOrmDMLDriver.DMLDriver_SQLite, table, cb?
 ) {
-	const {
-		error,
-		result
-	} = Utilities.exposeErrAndResultFromSyncMethod(() => {
+	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(() => {
 		this.execQuery(
 			this.query.remove()
 	                  .from(table)
 					  .build()
 		);
-		this.execQuery("DELETE FROM ?? WHERE NAME = ?", ['sqlite_sequence', table]);
+		
+		this.execQuery(
+			this.query.remove()
+	                  .from(table)
+					  .where({ name: 'sqlite_sequence' })
+					  .build()
+		);
 	})
+	Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb });
 
-	if (typeof cb === 'function')
-		cb(error, result);
-
-	return result
+	return syncResponse.result;
 };
 
 Driver.prototype.valueToProperty = function (

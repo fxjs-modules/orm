@@ -29,13 +29,6 @@ declare namespace FxOrmNS {
         }
 
         [ext: string]: any;
-        /* maybe useless :start */
-        // hasMany?: Function;
-        // remove?: Function;
-
-        // propertyToValue?: Function;
-        // insert?: Function;
-        /* maybe useless :end */
     }
     
     interface IConnectionCallback {
@@ -62,16 +55,21 @@ declare namespace FxOrmNS {
         password?: string;
 
         database?: string;
-        pool?: boolean;
+        pool?: boolean | IConnectionPoolOptions;
         debug?: boolean;
-        query?: {
-            [key: string]: string | number;
-        }
+        // query?: { [key: string]: string | number; }
+        query?: Class_UrlObject['query']
 
         [extra: string]: any
     }
 
-    interface IDBConnectionConfig extends IConnectionOptions {
+    interface IConnectionPoolOptions {
+        maxsize?: FibPoolNS.FibPoolOptionArgs['maxsize']
+        timeout?: FibPoolNS.FibPoolOptionArgs['timeout']
+        retry?: FibPoolNS.FibPoolOptionArgs['retry']
+    }
+
+    interface IDBConnectionConfig {
         protocol: IConnectionOptions['protocol']
         query: IConnectionOptions['query']
         database: IConnectionOptions['database']

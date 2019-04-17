@@ -53,10 +53,11 @@ declare namespace FxOrmDMLDriver {
         /* shared :end */
 
         connect: {
-            (cb?: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): void
+            (cb: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>): void
+            (): FxOrmNS.IDbConnection
         }
         reconnect: {
-            (cb: null | FxOrmNS.VoidCallback, connection: null | FxOrmDb.DatabaseBase): void
+            (cb?: null | FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>, connection?: null | FxOrmDb.DatabaseBase): FxOrmNS.IDbConnection
         }
         ping: {
             (cb?: FxOrmNS.VoidCallback): void

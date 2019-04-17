@@ -1,10 +1,12 @@
 import util    = require("util");
+import coroutine    = require("coroutine");
 
 import mysql 		= require("../DB/mysql");
 import shared  		= require("./_shared");
 import DDL     		= require("../DDL/SQL");
 import { Query }	from "@fxjs/sql-query";
 import utils		= require("./_utils");
+import * as Utilities from "../../Utilities";
 
 export const Driver: FxOrmDMLDriver.DMLDriverConstructor_MySQL = function(
 	this: FxOrmDMLDriver.DMLDriver_MySQL, config: FxOrmNS.IDBConnectionConfig, connection: FxOrmDb.DatabaseBase_MySQL, opts: FxOrmDMLDriver.DMLDriverOptions
@@ -42,7 +44,7 @@ Driver.prototype.ping = function (
 };
 
 Driver.prototype.on = function (
-	this: FxOrmDMLDriver.DMLDriver_MySQL, ev: string, cb: FxOrmNS.VoidCallback
+	this: FxOrmDMLDriver.DMLDriver_MySQL, ev: string, cb?: FxOrmNS.VoidCallback
 ) {
 	if (ev == "error") {
 		this.db.on("error", cb);
@@ -52,53 +54,45 @@ Driver.prototype.on = function (
 };
 
 Driver.prototype.connect = function (
-	this: FxOrmDMLDriver.DMLDriver_MySQL, cb: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>
+	this: FxOrmDMLDriver.DMLDriver_MySQL, cb?: FxOrmNS.GenericCallback<FxOrmNS.IDbConnection>
 ) {
-	if (this.opts.pool) {
-		return this.db.pool.getConnection(function (err: Error, con: FxOrmNS.IDbConnection) {
-			if (!err) {
-				if (con.release) {
-					con.release();
-				} else {
-					con.end();
-				}
-			}
-			return cb(err);
-		});
-	}
-	this.db.connect(cb);
+	let conn: FxOrmNS.IDbConnection = null;
+
+	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(() => {
+		return this.db.connect()
+	})
+
+	Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb });
+
+	return syncResponse.result;
 };
 
 Driver.prototype.reconnect = function (
-	this: FxOrmDMLDriver.DMLDriver_MySQL, cb: null | FxOrmNS.VoidCallback, connection: FxOrmDb.DatabaseBase_MySQL
+	this: FxOrmDMLDriver.DMLDriver_MySQL, cb?, connection?: FxOrmDb.DatabaseBase_MySQL
 ) {
 	var connOpts = this.config.href || this.config;
 
 	// Prevent noisy mysql driver output
 	if (typeof connOpts == 'object') {
 		connOpts = util.omit(connOpts, 'debug');
-	}
-	if (typeof connOpts == 'string') {
+	} else if (typeof connOpts == 'string') {
 		connOpts = connOpts.replace("debug=true", "debug=false");
 	}
 
 	this.db = (connection ? connection : mysql.createConnection(connOpts));
-	if (this.opts.pool) {
-		this.db.pool = (connection ? connection : mysql.createPool(connOpts));
-	}
-	if (typeof cb == "function") {
-		this.connect(cb);
-	}
+
+	const conn = this.connect();
+
+	if (typeof cb === 'function')
+		cb(null, conn);
+
+	return conn;
 };
 
 Driver.prototype.close = function (
 	this: FxOrmDMLDriver.DMLDriver_MySQL, cb: FxOrmNS.VoidCallback
 ) {
-	if (this.opts.pool) {
-		this.db.pool.end(cb);
-	} else {
-		this.db.end(cb);
-	}
+	this.db.end(cb);
 };
 
 Driver.prototype.getQuery = function 
@@ -115,11 +109,7 @@ Driver.prototype.execSimpleQuery = function<T=any> (
 		require("../../Debug").sql('mysql', query);
 	}
 	
-	if (this.opts.pool) {
-		return this.poolQuery(query, cb);
-	} else {
-		return this.db.query(query, cb);
-	}
+	return this.db.query(query, cb);
 };
 
 Driver.prototype.find = function (
@@ -216,26 +206,6 @@ Driver.prototype.clear = function (
 	var q = "TRUNCATE TABLE " + this.query.escapeId(table);
 
 	return this.execSimpleQuery(q, cb);
-};
-
-Driver.prototype.poolQuery = function (
-	this: FxOrmDMLDriver.DMLDriver_MySQL, query, cb?
-) {
-	this.db.pool.getConnection(function (err: FxOrmError.ExtendedError, con: any) {
-		if (err) {
-			return cb(err);
-		}
-
-		con.query(query, function (err: Error, data: any) {
-			if (con.release) {
-				con.release();
-			} else {
-				con.end();
-			}
-
-			return cb(err, data);
-		});
-	});
 };
 
 Driver.prototype.valueToProperty = function (

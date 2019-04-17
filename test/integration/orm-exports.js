@@ -396,7 +396,6 @@ describe('ORM', function () {
       })
 
       it('should be able to ping the server', function (done) {
-        console.log('try to ping')
         db.ping(function () {
           return done()
         })

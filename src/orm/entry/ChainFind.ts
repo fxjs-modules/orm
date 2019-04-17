@@ -238,14 +238,9 @@ const ChainFind = function (
 
 		count: function (cb?) {
 			process.nextTick(() => {
-				const {
-					error,
-					result
-				} = Utilities.exposeErrAndResultFromSyncMethod<number>(chain.countSync)
-
-				if (typeof cb === 'function')
-					cb(error, result)
-			})
+				const syncResult = Utilities.exposeErrAndResultFromSyncMethod<number>(chain.countSync)
+				Utilities.throwErrOrCallabckErrResult<number>(syncResult, { callback: cb });
+			});
 			return this;
 		},
 		

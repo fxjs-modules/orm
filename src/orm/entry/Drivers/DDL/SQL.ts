@@ -1,6 +1,6 @@
 import _merge = require('lodash.merge')
 import { Sync } from "@fxjs/sql-ddl-sync";
-import { exposeErrAndResultFromSyncMethod } from '../../Utilities';
+import * as Utilities from '../../Utilities';
 
 export const sync: FxOrmDMLDriver.DMLDriver['sync'] = function (
 	this: FxOrmDMLDriver.DMLDriver, opts, cb
@@ -60,12 +60,11 @@ export const drop: FxOrmDMLDriver.DMLDriver['drop'] = function (
 	pending = queries.length;
 
 	for (let i = 0; i < queries.length; i++) {
-		err = exposeErrAndResultFromSyncMethod(this.execQuery, [queries[i]], this).error
+		err = Utilities.exposeErrAndResultFromSyncMethod(this.execQuery, [queries[i]], { thisArg: this }).error
 		if (err || --pending === 0)
 			break
 	}
-	if (typeof cb === 'function')
-		cb(err);
+	Utilities.throwErrOrCallabckErrResult({ error: err }, { callback: cb });
 
 	return this;
 };
