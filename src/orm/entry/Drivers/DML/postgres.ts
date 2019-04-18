@@ -253,6 +253,9 @@ Driver.prototype.valueToProperty = function (value, property) {
 			}
 			break;
 		case "date":
+			if ((util.isNumber(value) || util.isString(value)))
+            	value = new Date(value);
+			
 			if (util.isDate(value) && this.config.timezone && this.config.timezone != 'local') {
 				var tz = convertTimezone(this.config.timezone);
 
@@ -310,6 +313,9 @@ Driver.prototype.propertyToValue = function (value, property) {
 			}
 			break;
 		case "date":
+			if ((util.isNumber(value) || util.isString(value)))
+            	value = new Date(value);
+				
 			if (util.isDate(value) && this.config.timezone && this.config.timezone != 'local') {
 				var tz = convertTimezone(this.config.timezone);
 

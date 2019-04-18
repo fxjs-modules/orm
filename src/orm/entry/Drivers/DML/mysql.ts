@@ -78,7 +78,7 @@ Driver.prototype.reconnect = function (
 		connOpts = connOpts.replace("debug=true", "debug=false");
 	}
 
-	this.db = (connection ? connection : mysql.createConnection(connOpts));
+	this.db = (connection ? connection : mysql.createConnection(connOpts as any));
 
 	const conn = this.connect();
 
@@ -213,6 +213,10 @@ Driver.prototype.valueToProperty = function (
 	var customType;
 
 	switch (property.type) {
+		case "date":
+			if (util.isNumber(value) || util.isString(value))
+            	value = new Date(value);
+			break;
 		case "boolean":
 			value = !!value;
 			break;
@@ -239,6 +243,10 @@ Driver.prototype.propertyToValue = function (
 	this: FxOrmDMLDriver.DMLDriver_MySQL, value, property
 ) {
 	switch (property.type) {
+		case "date":
+			if (util.isNumber(value) || util.isString(value))
+            	value = new Date(value);
+			break;
 		case "boolean":
 			value = (value) ? 1 : 0;
 			break;

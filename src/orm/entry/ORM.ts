@@ -114,18 +114,6 @@ const connect: FxOrmNS.ExportModule['connect'] = function () {
 		orm = Utilities.ORM_Error(err, cb);
 	}
 
-	if (!err) {
-		patchSync(orm, [
-			'sync',
-			'close',
-			'drop',
-			'ping'
-		]);
-
-		if (orm.driver)
-			patchDriver(orm.driver);
-	}
-
 	process.nextTick(() => {
 		orm.emit("connect", err, !err ? orm : null);
 
@@ -255,23 +243,36 @@ ORM.prototype.defineType = function (
 	this.driver.customTypes[name] = opts;
 	return this;
 };
+
+ORM.prototype.pingSync = function (
+	this: FxOrmNS.ORM,
+) {
+	this.driver.ping();
+}
 ORM.prototype.ping = function (
 	this: FxOrmNS.ORM,
-	cb
+	cb?
 ) {
 	this.driver.ping(cb);
 
 	return this;
 };
+
+ORM.prototype.closeSync = function (
+	this: FxOrmNS.ORM,
+) {
+	this.driver.close()
+}
 ORM.prototype.close = function (
-	this: FxOrmNS.ORM,	
+	this: FxOrmNS.ORM,
 	cb?
 ) {
-	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(this.driver.close, [], { thisArg: this.driver});
+	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(this.closeSync, [], { thisArg: this});
 	Utilities.throwErrOrCallabckErrResult(syncResponse, { use_tick: true, callback: cb });
 
 	return this;
 };
+
 ORM.prototype.load = function (
 	this: FxOrmNS.ORM
 ) {
@@ -302,52 +303,47 @@ ORM.prototype.load = function (
 
 	return loadNext();
 };
+ORM.prototype.syncSync = function (
+	this: FxOrmNS.ORM,
+): void {
+	var modelIds = Object.keys(this.models);
+
+	if (modelIds.length === 0)
+		return ;
+		
+	modelIds.forEach(modelId => {
+		this.models[modelId].syncSync()
+	})
+};
 ORM.prototype.sync = function (
 	this: FxOrmNS.ORM,
-	cb
+	cb?
 ) {
-	var modelIds = Object.keys(this.models);
-	var syncNext = function () {
-		if (modelIds.length === 0) {
-			return cb(null);
-		}
-
-		var modelId = modelIds.shift();
-
-		this.models[modelId].sync(function (err: FxOrmError.ExtendedError) {
-			if (err) {
-				err.model = modelId;
-
-				return cb(err);
-			}
-
-			return syncNext();
-		});
-	}.bind(this);
-
-	if (arguments.length === 0) {
-		cb = function () {};
-	}
-
-	syncNext();
+	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(this.syncSync, [], { thisArg: this })
+	Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb })
 
 	return this;
+};
+
+ORM.prototype.dropSync = function (
+	this: FxOrmNS.ORM,
+): void {
+	var modelIds = Object.keys(this.models);
+
+	if (modelIds.length === 0)
+		return ;
+		
+	modelIds.forEach(modelId => {
+		this.models[modelId].dropSync()
+	})
 };
 ORM.prototype.drop = function (
 	this: FxOrmNS.ORM,
 	cb?
 ) {
-	var modelKeys = Object.keys(this.models);
-	modelKeys.forEach((modelKey: string) => {
-		try {
-			this.models[modelKey].dropSync()
-		} catch (e) {
-			e.model = modelKey;
-			cb(e)
-		}
-	});
+	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(this.dropSync, [], { thisArg: this })
+	Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb })
 
-	cb(null);
 
 	return this;
 };
@@ -404,7 +400,7 @@ ORM.prototype.trans = function (
 	return this.driver.db.conn.trans(func);	
 };
 
-import { patchSync, patchDriver, execQuerySync } from "./Patch/utils";
+import { execQuerySync } from "./Patch/utils";
 
 const ORM_Module: FxOrmNS.ExportModule = {
 	validators,

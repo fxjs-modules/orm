@@ -48,7 +48,7 @@ util.extend(Driver.prototype, shared, DDL);
 Driver.prototype.ping = function (
 	this: FxOrmDMLDriver.DMLDriver_SQLite, cb?
 ) {
-	process.nextTick(cb);
+	Utilities.throwErrOrCallabckErrResult({ error: null }, { callback: cb, use_tick: true });
 	return this;
 };
 
@@ -138,28 +138,26 @@ Driver.prototype.insert = function (
 	}
 
 	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(() => {
-		this.db.all<any>(q);
+		const info = this.db.all<FxOrmQuery.InsertResult>(q);
 
-		if (!keyProperties) return null;
+        if (!keyProperties) return null;
 
-		var ids: {[k: string]: any} = {},
-			prop;
+        var ids: {[k: string]: any} = {},
+            prop;
 
-		if (keyProperties.length == 1 && keyProperties[0].type == 'serial') {
-			const row: FxSqlQuerySql.SqlFoundRowItem = this.db.get("SELECT last_insert_rowid() AS last_row_id");
-
-			ids[keyProperties[0].name] = row.last_row_id;
-		} else {
-			for (let i = 0; i < keyProperties.length; i++) {
-				prop = keyProperties[i];
-				// Zero is a valid value for an ID column
-				ids[prop.name] = data[prop.mapsTo] !== undefined ? data[prop.mapsTo] : null;
-			}
-		}
+        if (keyProperties.length == 1 && keyProperties[0].type == 'serial') {
+            ids[keyProperties[0].name] = info.insertId;
+        } else {
+            for (let i = 0; i < keyProperties.length; i++) {
+                prop = keyProperties[i];
+                // Zero is a valid value for an ID column
+                ids[prop.name] = data[prop.mapsTo] !== undefined ? data[prop.mapsTo] : null;
+            }
+        }
 
 		return ids;
 	});
-	Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb });
+	Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb, use_tick: true });
 
 	return syncResponse.result
 };
@@ -260,24 +258,9 @@ Driver.prototype.valueToProperty = function (
 			}
 			break;
 		case "date":
-			if (typeof value == 'string') {
-				if (value.indexOf('Z', value.length - 1) === -1) {
-					value = new Date(value + 'Z');
-				} else {
-					value = new Date(value);
-				}
+			if (util.isNumber(value) || util.isString(value))
+            	value = new Date(value);
 
-				if (this.config.timezone && this.config.timezone != 'local') {
-					var tz = convertTimezone(this.config.timezone);
-
-					// shift local to UTC
-					value.setTime(value.getTime() - (value.getTimezoneOffset() * 60000));
-					if (tz !== false) {
-						// shift UTC to timezone
-						value.setTime(value.getTime() - (tz * 60000));
-					}
-				}
-			}
 			break;
 		default:
 			customType = this.customTypes[property.type];
@@ -301,46 +284,8 @@ Driver.prototype.propertyToValue = function (
 			}
 			break;
 		case "date":
-			if (this.config.query && this.config.query.strdates) {
-				if (value instanceof Date) {
-					var year = value.getUTCFullYear();
-					var month: string | number = value.getUTCMonth() + 1;
-					if (month < 10) {
-						month = '0' + month;
-					}
-					var date: string | number = value.getUTCDate();
-					if (date < 10) {
-						date = '0' + date;
-					}
-					var strdate = year + '-' + month + '-' + date;
-					if (property.time === false) {
-						value = strdate;
-						break;
-					}
-
-					var hours: string | number = value.getUTCHours();
-					if (hours < 10) {
-						hours = '0' + hours;
-					}
-					var minutes: string | number = value.getUTCMinutes();
-					if (minutes < 10) {
-						minutes = '0' + minutes;
-					}
-					var seconds: string | number = value.getUTCSeconds();
-					if (seconds < 10) {
-						seconds = '0' + seconds;
-					}
-					var millis: string | number = value.getUTCMilliseconds();
-					if (millis < 10) {
-						millis = '0' + millis;
-					}
-					if (millis < 100) {
-						millis = '0' + millis;
-					}
-					strdate += ' ' + hours + ':' + minutes + ':' + seconds + '.' + millis + '000';
-					value = strdate;
-				}
-			}
+			if (util.isNumber(value) || util.isString(value))
+            	value = new Date(value);
 			break;
 		default:
 			const customType = this.customTypes[property.type];

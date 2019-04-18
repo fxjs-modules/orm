@@ -12,7 +12,7 @@ type FxOrmModelAndIChainFind = FxOrmModel.Model | FxOrmQuery.IChainFind
 type HashOfModelFuncNameToPath = string[];
 
 // patch async function to sync function
-export function patchSync(
+function patchSync(
     o: FxOrmModelAndIChainFind | FxOrmNS.ORMLike | FxOrmInstance.Instance | FxOrmDMLDriver.DMLDriver,
     funcs: HashOfModelFuncNameToPath
 ) {
@@ -29,47 +29,6 @@ export function patchSync(
             });
         }
     })
-}
-
-function is_ichainfind (o: FxOrmModelAndIChainFind): o is FxOrmQuery.IChainFind {
-    return o.model && o.model.allProperties
-}
-
-/**
- * hook find, patch result
- * 
- * @deprecated
- */
-function patchResult(o: FxOrmModelAndIChainFind): void {
-    var old_func: ModelFuncToPatch = o.find;
-    if (!old_func)
-        return ;
-
-    var m: FxOrmModel.Model = is_ichainfind(o) ? o.model : o;
-    
-
-    if (old_func.is_new)
-        return;
-
-    var new_func: ModelFuncToPatch = function () {
-        var opt = arguments[0];
-
-        if (util.isObject(opt) && !util.isFunction(opt)) {
-            /** filter opt to make Date-Type SelectQuery Property corresponding item */
-            Utilities.filterWhereConditionsInput(opt, m);
-        }
-
-        var rs: FxOrmQuery.IChainFind = old_func.apply(this, Array.prototype.slice.apply(arguments));
-        if (rs) {
-            patchResult(rs);
-            // patchIChainFindLikeRs(rs);
-        }
-        
-        return rs;
-    }
-
-    new_func.is_new = true;
-    o.where = o.all = o.find = new_func as FxOrmModel.Model['find'];
 }
 
 function patchObject(m: FxOrmInstance.Instance) {
@@ -137,18 +96,6 @@ export function patchFindBy(m: FxOrmModel.Model, funcs: HashOfModelFuncNameToPat
     })
 }
 
-/**
- * @deprecated
- */
-function patchAggregate(m: FxOrmModel.Model) {
-    var aggregate: FxOrmNS.OrigAggreteGenerator = m.aggregate;
-    m.aggregate = function () {
-        var r = aggregate.apply(this, Array.prototype.slice.apply(arguments));
-        // patchSync(r, ['get']);
-        return r;
-    };
-}
-
 export function patchHooksInModelOptions(
     opts: FxOrmModel.ModelOptions,
     hooks: (keyof FxOrmNS.Hooks)[] = ['afterLoad', 'afterAutoFetch']
@@ -184,109 +131,6 @@ export function patchModelAfterDefine(m: FxOrmModel.Model, /* opts: FxOrmModel.M
     ]);
 
     // patchAggregate(m);
-}
-
-/**
- * 
- * @deprecated
- * @param rs 
- * @param opts 
- */
-function patchIChainFindLikeRs (
-    rs: FxOrmModelAndIChainFind,
-    opts: {
-        new_callback_generator?: {
-            (cb: FxOrmNS.ExecutionCallback<any>): {
-                (err: FxOrmError.ExtendedError, foundAssocItems: any): FxOrmQuery.IChainFind
-            }
-        },
-        exlude_keys?: string[]
-    } = {}
-) {
-    const {
-        exlude_keys = [],
-        new_callback_generator = null
-    } = opts || {};
-
-    const patchKeys = util.difference([
-        // "count",
-        // "first",
-        // "last",
-        // 'all',
-        // 'where',
-        // 'find',
-        // 'remove',
-        // 'run'
-    ], exlude_keys);
-
-    patchKeys.forEach(patchKey => {
-        if (typeof rs[patchKey] === 'function' && new_callback_generator) {
-            const old_func = rs[patchKey].bind(rs);
-            rs[patchKey] = function (...args: any[]) {
-                old_func(
-                    new_callback_generator.apply(this, args)
-                );
-                
-                return rs
-            } as any
-        }
-
-        patchSync(rs, [patchKey]);
-    });
-}
-
-export function patchInsert(
-    this: FxOrmDMLDriver.DMLDriver_SQLite,
-    table: string, data: any, keyProperties: FxOrmProperty.NormalizedProperty[], cb: Function
-) {
-    var q = this.query.insert()
-        .into(table)
-        .set(data)
-        .build();
-
-    this.db.all(q, function (err: FxOrmError.ExtendedError, info: FxOrmInstance.Instance) {
-        if (err) return cb(err);
-        if (!keyProperties) return cb(null);
-
-        var ids: {[k: string]: any} = {},
-            prop;
-
-        if (keyProperties.length == 1 && keyProperties[0].type == 'serial') {
-            ids[keyProperties[0].name] = info.insertId;
-            return cb(null, ids);
-        } else {
-            for (let i = 0; i < keyProperties.length; i++) {
-                prop = keyProperties[i];
-                // Zero is a valid value for an ID column
-                ids[prop.name] = data[prop.mapsTo] !== undefined ? data[prop.mapsTo] : null;
-            }
-            return cb(null, ids);
-        }
-    }.bind(this));
-};
-
-/**
- * @description patch `date` type property's transform
- */
-export function patchDriver(driver: FxOrmDMLDriver.DMLDriver) {
-    if (driver.dialect === 'sqlite')
-        driver.insert = patchInsert;
-
-    var propertyToValue = driver.propertyToValue;
-    driver.propertyToValue = function (value, property) {
-        if (property.type === 'date' &&
-            (util.isNumber(value) || util.isString(value)))
-            value = new Date(value);
-        return propertyToValue.call(this, value, property);
-    }
-
-    var valueToProperty = driver.valueToProperty;
-    driver.valueToProperty = function (value, property) {
-        if (property.type === 'date' &&
-            (util.isNumber(value) || util.isString(value)))
-            value = new Date(value);
-        return valueToProperty.call(this, value, property);
-    }
 }
 
 export function execQuerySync(
