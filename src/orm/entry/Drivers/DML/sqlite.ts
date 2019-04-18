@@ -157,7 +157,7 @@ Driver.prototype.insert = function (
 
 		return ids;
 	});
-	Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb, use_tick: true });
+	Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb });
 
 	return syncResponse.result
 };

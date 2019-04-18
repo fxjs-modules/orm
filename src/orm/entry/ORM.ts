@@ -268,8 +268,7 @@ ORM.prototype.close = function (
 	cb?
 ) {
 	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(this.closeSync, [], { thisArg: this});
-	Utilities.throwErrOrCallabckErrResult(syncResponse, { use_tick: true, callback: cb });
-
+	Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb });
 	return this;
 };
 

@@ -64,7 +64,7 @@ export class Database extends EventEmitter implements FxOrmDb.DatabaseBase_SQLit
         if (this.conn)
             this.conn.close();
 
-        Utilities.throwErrOrCallabckErrResult({ error: null }, { callback: cb, use_tick: true });
+        Utilities.throwErrOrCallabckErrResult({ error: null }, { callback: cb });
     }
 
     all<T = any>(sql: string, cb?: FxOrmNS.GenericCallback<T>) {
