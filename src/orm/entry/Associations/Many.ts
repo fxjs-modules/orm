@@ -300,237 +300,218 @@ function extendInstance(
 		enumerable: false,
 		writable: true
 	});
-	Object.defineProperty(Instance, association.getAccessor, {
-		value: function () {
-			let options = <FxOrmAssociation.ModelAssociationMethod__GetOptions>{};
-			let conditions = null as FxOrmModel.ModelOptions__Find;
-			let join_conditions = {};
-			let order = null;
-			let cb = null;
 
-			Helpers.selectArgs(arguments, function (arg_type, arg) {
-				switch (arg_type) {
-					case "function":
-						cb = arg;
-						break;
-					case "object":
-						if (Array.isArray(arg)) {
-							order = arg;
-							order[0] = [association.model.table, order[0]];
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.getAccessor, function (this: typeof Instance) {
+		let options = <FxOrmAssociation.ModelAssociationMethod__GetOptions>{};
+		let conditions = null as FxOrmModel.ModelOptions__Find;
+		let join_conditions = {};
+		let order = null;
+		let cb = null;
+
+		Helpers.selectArgs(arguments, function (arg_type, arg) {
+			switch (arg_type) {
+				case "function":
+					cb = arg;
+					break;
+				case "object":
+					if (Array.isArray(arg)) {
+						order = arg;
+						order[0] = [association.model.table, order[0]];
+					} else {
+						if (conditions === null) {
+							conditions = arg;
 						} else {
-							if (conditions === null) {
-								conditions = arg;
-							} else {
-								options = arg;
-							}
+							options = arg;
 						}
-						break;
-					case "string":
-						if (arg[0] == "-") {
-							order = [[association.model.table, arg.substr(1)], "Z"];
-						} else {
-							order = [[association.model.table, arg]];
-						}
-						break;
-					case "number":
-						options.limit = arg;
-						break;
-				}
-			});
-
-			if (order !== null) {
-				options.order = order;
+					}
+					break;
+				case "string":
+					if (arg[0] == "-") {
+						order = [[association.model.table, arg.substr(1)], "Z"];
+					} else {
+						order = [[association.model.table, arg]];
+					}
+					break;
+				case "number":
+					options.limit = arg;
+					break;
 			}
+		});
 
-			if (conditions === null) {
-				conditions = {};
-			}
+		if (order !== null) {
+			options.order = order;
+		}
 
-			if (! (join_conditions = options.join_where) ) {
-				join_conditions = {};
-			}
+		if (conditions === null) {
+			conditions = {};
+		}
 
-			if (Driver.hasMany) {
-				return Driver.hasMany(Model, association).get(Instance, conditions, options, createInstance, cb);
-			}
+		if (! (join_conditions = options.join_where) ) {
+			join_conditions = {};
+		}
 
-			options.__merge = {
-				from: { table: association.mergeTable, field: Object.keys(association.mergeAssocId) },
-				to: { table: association.model.table, field: association.model.id.slice(0) }, // clone model id
-				where: [association.mergeTable, join_conditions],
-				table: association.model.table,
-				select: []
-			};
+		if (Driver.hasMany) {
+			return Driver.hasMany(Model, association).get(Instance, conditions, options, createInstance, cb);
+		}
 
-			adjustForMapsTo(association.model.properties, options.__merge.to.field);
+		options.__merge = {
+			from: { table: association.mergeTable, field: Object.keys(association.mergeAssocId) },
+			to: { table: association.model.table, field: association.model.id.slice(0) }, // clone model id
+			where: [association.mergeTable, join_conditions],
+			table: association.model.table,
+			select: []
+		};
 
-			options.extra = association.props;
-			options.extra_info = {
-				table: association.mergeTable,
-				id: Utilities.values(Instance, Model.id),
-				id_prop: Object.keys(association.mergeId),
-				assoc_prop: Object.keys(association.mergeAssocId)
-			};
+		adjustForMapsTo(association.model.properties, options.__merge.to.field);
 
-			Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, options.__merge.where[1]);
+		options.extra = association.props;
+		options.extra_info = {
+			table: association.mergeTable,
+			id: Utilities.values(Instance, Model.id),
+			id_prop: Object.keys(association.mergeId),
+			assoc_prop: Object.keys(association.mergeAssocId)
+		};
 
-			if (cb === null) {
-				return association.model.find(conditions, options);
-			}
+		Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, options.__merge.where[1]);
 
-			association.model.find(conditions, options, cb);
+		if (cb === null) {
+			return association.model.find(conditions, options);
+		}
 
-			return this;
-		},
-		enumerable: false,
-		writable: true
+		association.model.find(conditions, options, cb);
+
+		return this;
 	});
-	Object.defineProperty(Instance, association.setAccessor, {
-		value: function () {
-			// TODO: shold allow passing `extra` as 2nd argument
-			var items = _flatten(arguments);
-			var cb = util.last(items) instanceof Function ? items.pop() : noOperation;
 
-			Instance[association.delAccessor](function (err: FxOrmError.ExtendedError) {
-				if (err) return cb(err);
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setAccessor, function (this: typeof Instance) {
+		// TODO: shold allow passing `extra` as 2nd argument
+		var items = _flatten(arguments);
+		var cb = util.last(items) instanceof Function ? items.pop() : noOperation;
 
-				if (items.length) {
-					Instance[association.addAccessor](items, cb);
-				} else {
-					cb(null);
-				}
-			});
+		Instance[association.delAccessor](function (err: FxOrmError.ExtendedError) {
+			if (err) return cb(err);
 
-			return this;
-		},
-		enumerable: false,
-		writable: true
-	});
-	Object.defineProperty(Instance, association.delAccessor, {
-		value: function (...args: any[]) {
-			var Associations: FxOrmAssociation.AssociationDefinitionOptions_HasMany[] = [];
-			var cb = noOperation;
-
-			for (let i = 0; i < args.length; i++) {
-				switch (typeof args[i]) {
-					case "function":
-						cb = args[i];
-						break;
-					case "object":
-						if (Array.isArray(args[i])) {
-							Associations = Associations.concat(args[i]);
-						} else if (args[i].isInstance) {
-							Associations.push(args[i]);
-						}
-						break;
-				}
+			if (items.length) {
+				Instance[association.addAccessor](items, cb);
+			} else {
+				cb(null);
 			}
-			var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
-			var run = function () {
+		});
+
+		return this;
+	});
+
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.delAccessor, function (this: typeof Instance, ...args: any[]) {
+		var Associations: FxOrmAssociation.AssociationDefinitionOptions_HasMany[] = [];
+		var cb: FxOrmNS.ExecutionCallback<typeof this>;
+
+		for (let i = 0; i < args.length; i++) {
+			switch (typeof args[i]) {
+				case "function":
+					cb = args[i];
+					break;
+				case "object":
+					if (Array.isArray(args[i])) {
+						Associations = Associations.concat(args[i]);
+					} else if (args[i].isInstance) {
+						Associations.push(args[i]);
+					}
+					break;
+			}
+		}
+		var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
+		var run = function () {
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(() => {
 				if (Driver.hasMany) {
-					return Driver.hasMany(Model, association).del(Instance, Associations, cb);
+					return Driver.hasMany(Model, association).del(Instance, Associations);
 				}
 
 				if (Associations.length === 0) {
-					return Driver.remove(association.mergeTable, conditions, cb);
+					return Driver.remove(association.mergeTable, conditions);
 				}
 
 				for (let i = 0; i < Associations.length; i++) {
 					Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Associations[i], conditions, false);
 				}
 
-				Driver.remove(association.mergeTable, conditions, cb);
-			};
+				Driver.remove(association.mergeTable, conditions);
+			});
 
-			Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, conditions);
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb });
+		};
 
-			if (this.saved()) {
-				run();
-			} else {
-				this.save(function (err: FxOrmError.ExtendedError) {
+		Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, conditions);
+
+		if (this.saved()) {
+			run();
+		} else {
+			this.save(function (err: FxOrmError.ExtendedError) {
+				if (err) {
+					return cb(err);
+				}
+
+				return run();
+			});
+		}
+		return this;
+	});
+
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.addAccessor, function (this: typeof Instance) {
+		var Associations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
+		var add_opts: {[k: string]: any} = {};
+		var cb = noOperation;
+
+		for (let i = 0; i < arguments.length; i++) {
+			switch (typeof arguments[i]) {
+				case "function":
+					cb = arguments[i];
+					break;
+				case "object":
+					if (Array.isArray(arguments[i])) {
+						Associations = Associations.concat(arguments[i]);
+					} else if (arguments[i].isInstance) {
+						Associations.push(arguments[i]);
+					} else {
+						add_opts = arguments[i];
+					}
+					break;
+			}
+		}
+
+		if (Associations.length === 0) {
+			throw new ORMError("No associations defined", 'PARAM_MISMATCH', { model: Model.name });
+		}
+
+		var run = function () {
+			const savedAssociations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
+			var saveNextAssociation = function () {
+				if (Associations.length === 0) {
+					return cb(null, savedAssociations);
+				}
+
+				var Association = Associations.pop();
+				var saveAssociation = function (err: Error) {
 					if (err) {
 						return cb(err);
 					}
 
-					return run();
-				});
-			}
-			return this;
-		},
-		enumerable: false,
-		writable: true
-	});
-	Object.defineProperty(Instance, association.addAccessor, {
-		value: function () {
-			var Associations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
-			var add_opts: {[k: string]: any} = {};
-			var cb = noOperation;
-
-			for (let i = 0; i < arguments.length; i++) {
-				switch (typeof arguments[i]) {
-					case "function":
-						cb = arguments[i];
-						break;
-					case "object":
-						if (Array.isArray(arguments[i])) {
-							Associations = Associations.concat(arguments[i]);
-						} else if (arguments[i].isInstance) {
-							Associations.push(arguments[i]);
-						} else {
-							add_opts = arguments[i];
-						}
-						break;
-				}
-			}
-
-			if (Associations.length === 0) {
-				throw new ORMError("No associations defined", 'PARAM_MISMATCH', { model: Model.name });
-			}
-
-			var run = function () {
-				const savedAssociations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
-				var saveNextAssociation = function () {
-					if (Associations.length === 0) {
-						return cb(null, savedAssociations);
-					}
-
-					var Association = Associations.pop();
-					var saveAssociation = function (err: Error) {
+					Association.save(function (err: Error) {
 						if (err) {
 							return cb(err);
 						}
 
-						Association.save(function (err: Error) {
-							if (err) {
-								return cb(err);
+						var data: {[k: string]: any} = {};
+
+						for (let k in add_opts) {
+							if (k in association.props && Driver.propertyToValue) {
+								data[k] = Driver.propertyToValue(add_opts[k], association.props[k]);
+							} else {
+								data[k] = add_opts[k];
 							}
+						}
 
-							var data: {[k: string]: any} = {};
-
-							for (let k in add_opts) {
-								if (k in association.props && Driver.propertyToValue) {
-									data[k] = Driver.propertyToValue(add_opts[k], association.props[k]);
-								} else {
-									data[k] = add_opts[k];
-								}
-							}
-
-							if (Driver.hasMany) {
-								return Driver.hasMany(Model, association).add(Instance, Association, data, function (err: Error) {
-									if (err) {
-										return cb(err);
-									}
-
-									savedAssociations.push(Association);
-
-									return saveNextAssociation();
-								});
-							}
-
-							Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, data);
-							Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Association, data);
-
-							Driver.insert(association.mergeTable, data, null, function (err) {
+						if (Driver.hasMany) {
+							return Driver.hasMany(Model, association).add(Instance, Association, data, function (err: Error) {
 								if (err) {
 									return cb(err);
 								}
@@ -539,35 +520,46 @@ function extendInstance(
 
 								return saveNextAssociation();
 							});
-						});
-					};
+						}
 
-					if (Object.keys(association.props).length) {
-						Hook.wait(Association, association.hooks.beforeSave, saveAssociation, add_opts);
-					} else {
-						Hook.wait(Association, association.hooks.beforeSave, saveAssociation);
-					}
+						Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, data);
+						Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Association, data);
+
+						Driver.insert(association.mergeTable, data, null, function (err) {
+							if (err) {
+								return cb(err);
+							}
+
+							savedAssociations.push(Association);
+
+							return saveNextAssociation();
+						});
+					});
 				};
 
-				return saveNextAssociation();
+				if (Object.keys(association.props).length) {
+					Hook.wait(Association, association.hooks.beforeSave, saveAssociation, add_opts);
+				} else {
+					Hook.wait(Association, association.hooks.beforeSave, saveAssociation);
+				}
 			};
 
-			if (this.saved()) {
-				run();
-			} else {
-				this.save(function (err: Error) {
-					if (err) {
-						return cb(err);
-					}
+			return saveNextAssociation();
+		};
 
-					return run();
-				});
-			}
+		if (this.saved()) {
+			run();
+		} else {
+			this.save(function (err: Error) {
+				if (err) {
+					return cb(err);
+				}
 
-			return this;
-		},
-		enumerable: false,
-		writable: true
+				return run();
+			});
+		}
+
+		return this;
 	});
 
 	Object.defineProperty(Instance, association.name, {

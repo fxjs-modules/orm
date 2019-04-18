@@ -194,6 +194,20 @@ describe("Hook", function () {
                         assert.equal(err.message, "beforeCreate-error");
                     }
                 });
+
+                it("should catch error", function () {
+                    let error
+                    try {
+                        Person.createSync([{
+                            name: "John Doe"
+                        }]);
+                    } catch (err) {
+                        error = err;
+                    }
+
+                    assert.isObject(error);
+                    assert.equal(error.message, "beforeCreate-error");
+                });
             });
         });
     });

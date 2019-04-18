@@ -579,7 +579,7 @@ export function exposeErrAndResultFromSyncMethod<T = any> (
 		thisArg?: any,
 		// callback?: FibOrmNS.ExecutionCallback<T>
 	}
-): FxOrmNS.ExposedResult {
+): FxOrmNS.ExposedResult<T> {
 	let error: FxOrmError.ExtendedError,
 		result: T
 
@@ -662,10 +662,65 @@ function filter_date_for_where_conditions(opt: FxOrmInstance.InstanceDataPayload
 }
 
 export function filterWhereConditionsInput (
-	conditions: FxSqlQuerySubQuery.SubQueryConditions, m: FxOrmModel.Model
+	conditions: FxSqlQuerySubQuery.SubQueryConditions,
+	m: FxOrmModel.Model
 ): FxSqlQuerySubQuery.SubQueryConditions {
-	if (util.isObject(conditions)) {
+	if (typeof conditions === 'object') {
 		filter_date_for_where_conditions(conditions, m);
 
+	}
+
 	return conditions;
+}
+
+export function addHiddenUnwritableMethodToInstance (
+	instance: FxOrmInstance.Instance,
+	method_name: 'save' | 'saveSync' | string,
+	fn: Function,
+	propertyConfiguration: PropertyDescriptor = {}
+) {
+	Object.defineProperty(
+		instance,
+		method_name,
+		{
+			value: fn,
+			...propertyConfiguration,
+			writable: true,
+			enumerable: false,
+		}
+	)
+}
+
+export function addHiddenPropertyToInstance (
+	instance: FxOrmInstance.Instance,
+	property_name: string,
+	value: any,
+	propertyConfiguration: PropertyDescriptor = {}
+) {
+	Object.defineProperty(
+		instance,
+		property_name,
+		{
+			value: value,
+			...propertyConfiguration,
+			enumerable: false
+		}
+	);
+}
+
+export function addHiddenReadonlyPropertyToInstance (
+	instance: FxOrmInstance.Instance,
+	property_name: string,
+	getter: () => any,
+	propertyConfiguration: PropertyDescriptor = {}
+) {
+	Object.defineProperty(
+		instance,
+		property_name,
+		{
+			get: getter,
+			...propertyConfiguration,
+			enumerable: false
+		}
+	);
 }

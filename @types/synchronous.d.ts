@@ -58,7 +58,7 @@ declare namespace FxOrmSynchronous {
 
     interface SynchronizedInstance {
         saveSync: {
-            (): FxOrmInstance.Instance
+            (data?: FxOrmInstance.InstanceDataPayload, options?: FxOrmInstance.SaveOptions): FxOrmInstance.Instance
         }
         removeSync: {
             (): void

@@ -33,10 +33,10 @@ function patchSync(
 
 function patchObject(m: FxOrmInstance.Instance) {
     var methods = [
-        "save",
-        "remove",
-        "validate",
-        "model"
+        // "save",
+        // "remove",
+        // "validate",
+        // "model"
     ];
 
     function enum_associations(assocs: (FxOrmAssociation.InstanceAssociationItem)[]) {
@@ -108,29 +108,11 @@ export function patchHooksInModelOptions(
 }
 
 export function patchModelAfterDefine(m: FxOrmModel.Model, /* opts: FxOrmModel.ModelOptions */) {
-    // patchResult(m);
-
-    patchSync(m, [
-        // "clear",
-        // "count",
-        // "exists",
-        // "one",
-        // "where",
-        // 'all',
-        // 'create',
-        // 'drop',
-        // 'find',
-        // 'get',
-        // 'sync'
-    ]);
-
     patchFindBy(m, [
         'hasOne',
         'hasMany',
         'extendsTo'
     ]);
-
-    // patchAggregate(m);
 }
 
 export function execQuerySync(

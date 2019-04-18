@@ -1,20 +1,20 @@
 /// <reference types="fibjs" />
 
 import util 	 = require('util')
+import coroutine 	 = require('coroutine')
 
 import Utilities = require("./Utilities");
 import Hook      = require("./Hook");
 import ORMError       = require("./Error");
 import enforce   = require("@fibjs/enforce");
+import * as Helpers from './Helpers';
+
+function noOp () {};
 
 interface EmitEventFunctionInInstance {
-	(state: string, err?: Error, _instance?: any): void
+	(state: string, err?: Error | Error[], _instance?: any): void
 	(state: string, _instance?: any): void
 }
-
-interface InnerSaveOptions {
-		saveAssociations?: boolean
-	}
 
 export const Instance = function (
 	this: FxOrmInstance.Instance,
@@ -61,19 +61,19 @@ export const Instance = function (
 			return !!saveOptions.saveAssociations;
 		}
 	};
-	var handleValidations = function <T = any>(cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>) {
-		// var pending = [], errors = [];
-		var required: boolean,
+	const handleValidationsSync = function (): FxOrmError.ExtendedError | FxOrmError.ExtendedError[] {
+		let required: boolean,
 				alwaysValidate: boolean;
 
+		let validationErr: FxOrmError.ExtendedError | FxOrmError.ExtendedError[]
 		Hook.wait(instance, opts.hooks.beforeValidation, function (err: FxOrmError.ExtendedError) {
 			if (err) {
-				return saveError(cb, err);
+				validationErr = err;
+				// saveError(err);
+				return ;
 			}
 
-			var checks = new enforce.Enforce({
-				returnAllErrors : Model.settings.get("instance.returnAllErrors")
-			});
+			const checks = new enforce.Enforce({ returnAllErrors : Model.settings.get("instance.returnAllErrors") });
 
 			for (let k in opts.validations) {
 				required = false;
@@ -103,12 +103,19 @@ export const Instance = function (
 			checks.context("model", Model);
 			checks.context("driver", opts.driver);
 
-			return checks.check(instance, cb);
+			const lock = new coroutine.Event();
+			checks.check(instance, function (err) {
+				validationErr = err;
+				lock.set();
+			});
+			lock.wait();
 		});
+
+		return validationErr;
 	};
-	var saveError = function (
-		cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>,
-		err: FxOrmError.ExtendedError
+	
+	const saveError = function (
+		err: FxOrmError.ExtendedError | FxOrmError.ExtendedError[],
 	) {
 		instance_saving = false;
 
@@ -116,59 +123,63 @@ export const Instance = function (
 
 		Hook.trigger(instance, opts.hooks.afterSave, false);
 
-		if (typeof cb === "function") {
-			cb(err, instance);
-		}
+		return instance;
 	};
-	var saveInstance = function (saveOptions: InnerSaveOptions, cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>) {
+
+	const saveInstanceSync = function (
+		saveOptions: FxOrmInstance.SaveOptions,
+	) {
 		// what this condition means:
 		// - If the instance is in state mode
 		// - AND it's not an association that is asking it to save
 		//   -> return has already saved
-		if (instance_saving && saveOptions.saveAssociations !== false) {
-			return cb(null, instance);
-		}
+		if (instance_saving && saveOptions.saveAssociations !== false)
+			return instance;
+
 		instance_saving = true;
 
-		handleValidations(function (err: FxOrmError.ExtendedError) {
-			if (err) {
-				return saveError(cb, err);
-			}
+		// TODO: maybe error list
+		const err = handleValidationsSync();
+		if (err) {
+			saveError(err);
+			throw err;
+		}
+		
+		if (opts.is_new) {
+			waitHooks([ "beforeCreate", "beforeSave" ], function (err: FxOrmError.ExtendedError) {
+				if (err) {
+					saveError(err);
+					throw err;
+				}
 
-			if (opts.is_new) {
-				waitHooks([ "beforeCreate", "beforeSave" ], function (err: FxOrmError.ExtendedError) {
-					if (err) {
-						return saveError(cb, err);
-					}
+				saveNewSync(saveOptions, getInstanceData());
+			});
+		} else {
+			waitHooks([ "beforeSave" ], function (err: FxOrmError.ExtendedError) {
+				if (err) {
+					saveError(err);
+					throw err;
+				}
 
-					return saveNew(saveOptions, getInstanceData(), cb);
-				});
-			} else {
-				waitHooks([ "beforeSave" ], function (err: FxOrmError.ExtendedError) {
-					if (err) {
-						return saveError(cb, err);
-					}
-
-					return savePersisted(saveOptions, getInstanceData(), cb);
-				});
-			}
-		});
+				savePersistedSync(saveOptions, getInstanceData());
+			});
+		}
 	};
-	var runAfterSaveActions = function (cb?: Function, create?: boolean, err?: Error) {
+
+	const runSyncAfterSaveActions = function (is_create?: boolean, err?: Error) {
 		instance_saving = false;
 
 		emitEvent("save", err, instance);
 
-		if (create) {
+		if (is_create)
 			Hook.trigger(instance, opts.hooks.afterCreate, !err);
-		}
-		Hook.trigger(instance, opts.hooks.afterSave, !err);
 
-		cb();
+		Hook.trigger(instance, opts.hooks.afterSave, !err);
 	};
-	var getInstanceData = function () {
-		var data: FxOrmInstance.InstanceDataPayload = {},
-				prop;
+	const getInstanceData = function () {
+		const data: FxOrmInstance.InstanceDataPayload = {};
+		let prop: FxOrmProperty.NormalizedProperty;
+
 		for (let k in opts.data) {
 			if (!opts.data.hasOwnProperty(k)) continue;
 			prop = Model.allProperties[k];
@@ -190,8 +201,8 @@ export const Instance = function (
 
 		return data;
 	};
-	var waitHooks = function (hooks: FxOrmModel.keyofHooks[], next: FxOrmHook.HookActionNextFunction) {
-		var nextHook = function () {
+	const waitHooks = function (hooks: FxOrmModel.keyofHooks[], next: FxOrmHook.HookActionNextFunction) {
+		const nextHook = function () {
 			if (hooks.length === 0) {
 				return next();
 			}
@@ -206,114 +217,128 @@ export const Instance = function (
 
 		return nextHook();
 	};
-	var saveNew = function (saveOptions: InnerSaveOptions, data: FxOrmInstance.InstanceDataPayload, cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>) {
-		var i, prop;
 
-		var finish = function (err?: Error) {
-			runAfterSaveActions(function () {
-				if (err) return cb(err);
-				saveInstanceExtra(cb);
-			}, true);
-		}
-
+	const resetChanges = function () {
+		opts.changes.length = 0;
+	}
+	
+	const saveNewSync = function (
+		saveOptions: FxOrmInstance.SaveOptions,
+		data: FxOrmInstance.InstanceDataPayload,
+	) {
 		data = Utilities.transformPropertyNames(data, Model.allProperties);
 
-		opts.driver.insert(opts.table, data, opts.keyProperties, function (save_err, info) {
-			if (save_err) {
-				return saveError(cb, save_err);
-			}
+		const info = opts.driver.insert(opts.table, data, opts.keyProperties);
 
-			opts.changes.length = 0;
+		resetChanges();
+		for (let i = 0, prop; i < opts.keyProperties.length; i++) {
+			prop = opts.keyProperties[i];
+			opts.data[prop.name] = info.hasOwnProperty(prop.name) ? info[prop.name] : data[prop.name];
+		}
+		opts.is_new = false;
+		rememberKeys();
 
-			for (let i = 0; i < opts.keyProperties.length; i++) {
-				prop = opts.keyProperties[i];
-				opts.data[prop.name] = info.hasOwnProperty(prop.name) ? info[prop.name] : data[prop.name];
-			}
-			opts.is_new = false;
-			rememberKeys();
+		let err: FxOrmError.ExtendedError;
+		
+		if (shouldSaveAssocs(saveOptions)) {
+			const syncReponse = Utilities.exposeErrAndResultFromSyncMethod<boolean>(saveAssociationsSync)
+			err = syncReponse.error;
+		}
+		
+		runSyncAfterSaveActions(true, err);
 
+		if (err)
+			throw err;
+
+		saveInstanceExtraSync();
+	};
+
+	const savePersistedSync = function (
+		saveOptions: FxOrmInstance.SaveOptions,
+		data: FxOrmInstance.InstanceDataPayload,
+	) {
+		let changes = <FxSqlQuerySql.DataToSet>{},
+				conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
+
+		const savedCheckSync = function (saved: boolean) {
+			if (!saved && !shouldSaveAssocs(saveOptions))
+				return saveInstanceExtraSync();
+			
 			if (!shouldSaveAssocs(saveOptions)) {
-				return finish();
+				runSyncAfterSaveActions(false);
+				return saveInstanceExtraSync();
+			}
+			
+			const { error: err, result: assocSaved } = Utilities.exposeErrAndResultFromSyncMethod<boolean>(saveAssociationsSync)
+
+			if (saved || assocSaved) {
+				runSyncAfterSaveActions(false, err);
+				if (err)
+					throw err;
 			}
 
-			return saveAssociations(finish);
-		});
-	};
-	var savePersisted = function (saveOptions: InnerSaveOptions, data: FxOrmInstance.InstanceDataPayload, cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>) {
-		var changes = <FxSqlQuerySql.DataToSet>{},
-			conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
-
-		var next = function (saved: boolean) {
-			var finish = function () {
-				saveInstanceExtra(cb);
-			}
-
-			if(!saved && !shouldSaveAssocs(saveOptions)) {
-				finish();
-			} else {
-				if (!shouldSaveAssocs(saveOptions)) {
-					runAfterSaveActions(function () {
-						finish();
-					}, false);
-				} else {
-					saveAssociations(function (err: FxOrmError.ExtendedError, assocSaved: boolean) {
-						if (saved || assocSaved) {
-							runAfterSaveActions(function () {
-								if (err) return cb(err);
-								finish();
-							}, false, err);
-						} else {
-							finish();
-						}
-					});
-				}
-			}
+			return saveInstanceExtraSync();
 		}
 
-		if (opts.changes.length === 0) {
-			next(false);
-		} else {
-			for (let i = 0; i < opts.changes.length; i++) {
-				changes[opts.changes[i]] = data[opts.changes[i]];
-			}
-			for (let i = 0; i < opts.keyProperties.length; i++) {
-				const prop = opts.keyProperties[i];
-				conditions[prop.mapsTo] = opts.originalKeyValues[prop.name];
-			}
-			changes = Utilities.transformPropertyNames(changes, Model.allProperties);
+		if (instance.saved())
+			return savedCheckSync(false);
 
-			Utilities.filterWhereConditionsInput(conditions, instance.model());
-			opts.driver.update(opts.table, changes, conditions, function (err: FxOrmError.ExtendedError) {
-				if (err) {
-					return saveError(cb, err);
-				}
-				opts.changes.length = 0;
-				rememberKeys();
-
-				next(true);
-			});
+		for (let i = 0; i < opts.changes.length; i++) {
+			changes[opts.changes[i]] = data[opts.changes[i]];
 		}
+		
+		for (let i = 0; i < opts.keyProperties.length; i++) {
+			const prop = opts.keyProperties[i];
+			conditions[prop.mapsTo] = opts.originalKeyValues[prop.name];
+		}
+		changes = Utilities.transformPropertyNames(changes, Model.allProperties);
+
+		Utilities.filterWhereConditionsInput(conditions, instance.model());
+
+		const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(() => opts.driver.update(opts.table, changes, conditions));
+			
+		if (syncResponse.error) {
+			saveError(syncResponse.error)
+			throw syncResponse.error;
+		}
+		resetChanges();
+		rememberKeys();
+
+		savedCheckSync(true);
 	};
-	var saveAssociations = function (cb: FxOrmNS.ExecutionCallback<boolean>) {
-		var pending = 1, errored = false, i;
-		var saveAssociation = function (accessor: string, instances: FxOrmInstance.Instance[]) {
+
+	const saveAssociationsSync = function (cb?: FxOrmNS.ExecutionCallback<boolean>): boolean {
+		let pending = 1,
+				// to check if error passed by cb if cb exists
+				error_passed = false,
+				assocSaved: boolean;
+
+		const saveAssociationItemSync = function (accessor: string, instances: FxOrmInstance.InstanceDataPayload[]) {
 			pending += 1;
 
-			instance[accessor](instances, function (err: FxOrmError.ExtendedError) {
-				if (err) {
-					if (errored) return;
+			let error: FxOrmError.ExtendedError = null;
 
-					errored = true;
-					return cb(err, true);
-				}
-
-				if (--pending === 0) {
-					return cb(null, true);
-				}
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(() => {
+				instance[accessor + 'Sync'](instances);
 			});
+			
+			error = syncResponse.error;
+				
+			if (syncResponse.error) {
+				if (error_passed) return ;
+
+				error_passed = true;
+				assocSaved = true;
+			}
+
+			if (--pending === 0) {
+				assocSaved = true;
+			}
+
+			Utilities.throwErrOrCallabckErrResult({ error: error, result: assocSaved }, { callback: cb });
 		};
 
-		var _saveOneAssociation = function (assoc: FxOrmAssociation.InstanceAssociationItem) {
+		const _saveOneAssociation = function (assoc: FxOrmAssociation.InstanceAssociationItem) {
 			if (!instance[assoc.name] || typeof instance[assoc.name] !== "object") return;
 			if (assoc.reversed) {
 				// reversed hasOne associations should behave like hasMany
@@ -324,7 +349,7 @@ export const Instance = function (
 					if (!instance[assoc.name][i].isInstance) {
 						instance[assoc.name][i] = new assoc.model(instance[assoc.name][i]);
 					}
-					saveAssociation(assoc.setAccessor, instance[assoc.name][i]);
+					saveAssociationItemSync(assoc.setAccessor, instance[assoc.name][i]);
 				}
 				return;
 			}
@@ -332,15 +357,14 @@ export const Instance = function (
 			  instance[assoc.name] = new assoc.model(instance[assoc.name]);
 			}
 
-			saveAssociation(assoc.setAccessor, instance[assoc.name]);
+			saveAssociationItemSync(assoc.setAccessor, instance[assoc.name]);
 		};
 
 		for (let i = 0; i < opts.one_associations.length; i++) {
 			_saveOneAssociation(opts.one_associations[i]);
 		}
 
-
-		var _saveManyAssociation = function (assoc: FxOrmAssociation.InstanceAssociationItem) {
+		const _saveManyAssociation = function (assoc: FxOrmAssociation.InstanceAssociationItem) {
 			var assocVal = instance[assoc.name];
 
 			if (!Array.isArray(assocVal)) return;
@@ -352,26 +376,25 @@ export const Instance = function (
 				}
 			}
 
-			saveAssociation(assoc.setAccessor, assocVal);
+			saveAssociationItemSync(assoc.setAccessor, assocVal);
 		};
 
 		for (let i = 0; i < opts.many_associations.length; i++) {
 			_saveManyAssociation(opts.many_associations[i]);
 		}
 
-		if (--pending === 0) {
-			return cb(null, false);
-		}
+		if (--pending === 0)
+			cb && cb(null, false);
+
+		return assocSaved;
 	};
-	var getNormalizedExtraDataInPropertyTime = function () {
+	var getNormalizedExtraDataAtPropertyTime = function () {
 		return opts.extra as FxOrmProperty.NormalizedPropertyHash
 	};
 
-	var saveInstanceExtra = function (cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>) {
-		if (opts.extrachanges.length === 0) {
-			if (cb) return cb(null, instance);
-			else return;
-		}
+	const saveInstanceExtraSync = function (): FxOrmInstance.Instance {
+		if (opts.extrachanges.length === 0)
+			return instance;
 
 		var data: FxOrmInstance.InstanceDataPayload = {};
 		var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
@@ -379,10 +402,10 @@ export const Instance = function (
 		for (let i = 0; i < opts.extrachanges.length; i++) {
 			if (!opts.data.hasOwnProperty(opts.extrachanges[i])) continue;
 
-			if (getNormalizedExtraDataInPropertyTime()[opts.extrachanges[i]]) {
+			if (getNormalizedExtraDataAtPropertyTime()[opts.extrachanges[i]]) {
 				data[opts.extrachanges[i]] = opts.data[opts.extrachanges[i]];
 				if (opts.driver.propertyToValue) {
-					data[opts.extrachanges[i]] = opts.driver.propertyToValue(data[opts.extrachanges[i]], getNormalizedExtraDataInPropertyTime()[opts.extrachanges[i]]);
+					data[opts.extrachanges[i]] = opts.driver.propertyToValue(data[opts.extrachanges[i]], getNormalizedExtraDataAtPropertyTime()[opts.extrachanges[i]]);
 				}
 			} else {
 				data[opts.extrachanges[i]] = opts.data[opts.extrachanges[i]];
@@ -396,55 +419,20 @@ export const Instance = function (
 		}
 
 		Utilities.filterWhereConditionsInput(conditions, instance.model());
-		opts.driver.update(opts.extra_info.table, data, conditions, function (err: FxOrmError.ExtendedError) {
-			return cb(err);
-		});
-	};
-	var removeInstance = function (cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>) {
-		if (opts.is_new) {
-			return cb(null);
-		}
+		
+		opts.driver.update(opts.extra_info.table, data, conditions);
 
-		var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
-		for (let i = 0; i < opts.keys.length; i++) {
-		    conditions[opts.keys[i]] = opts.data[opts.keys[i]];
-		}
+		return instance;
+	};;
 
-		Hook.wait(instance, opts.hooks.beforeRemove, function (err: FxOrmError.ExtendedError) {
-			if (err) {
-				emitEvent("remove", err, instance);
-				if (typeof cb === "function") {
-					cb(err, instance);
-				}
-				return;
-			}
+	const saveInstanceProperty = function (key: string, value: any) {
+		const changes: FxOrmInstance.InstanceDataPayload = {},
+					conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
+					changes[key] = value;
 
-			emitEvent("beforeRemove", instance);
-			
-			Utilities.filterWhereConditionsInput(conditions, instance.model());
-			opts.driver.remove(opts.table, conditions, function (err, data) {
-				Hook.trigger(instance, opts.hooks.afterRemove, !err);
-
-				emitEvent("remove", err, instance);
-
-				if (typeof cb === "function") {
-					cb(err, instance);
-				}
-
-				instance = undefined;
-			});
-		});
-	};
-	var saveInstanceProperty = function (key: string, value: any) {
-		var changes: FxOrmInstance.InstanceDataPayload = {},
-			conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
-			changes[key] = value;
-
-		if (Model.properties[key]) {
-			if (opts.driver.propertyToValue) {
+		if (Model.properties[key])
+			if (opts.driver.propertyToValue)
 				changes[key] = opts.driver.propertyToValue(changes[key], Model.properties[key]);
-			}
-		}
 
 		for (let i = 0; i < opts.keys.length; i++) {
 			conditions[opts.keys[i]] = opts.data[opts.keys[i]];
@@ -458,17 +446,16 @@ export const Instance = function (
 			}
 
 			Utilities.filterWhereConditionsInput(conditions, instance.model());
-			opts.driver.update(opts.table, changes, conditions, function (err: FxOrmError.ExtendedError) {
-				if (!err) {
-					opts.data[key] = value;
-				}
-				Hook.trigger(instance, opts.hooks.afterSave, !err);
-				emitEvent("save", err, instance);
-			});
+			const syncReponse = Utilities.exposeErrAndResultFromSyncMethod(() => opts.driver.update(opts.table, changes, conditions))
+			if (!syncReponse.error)
+				opts.data[key] = value;
+
+			Hook.trigger(instance, opts.hooks.afterSave, !syncReponse.error);
+			emitEvent("save", syncReponse.error, instance);
 		});
 	};
-	var setInstanceProperty = function (key: string, value: any) {
-		var prop = Model.allProperties[key] || getNormalizedExtraDataInPropertyTime()[key];
+	const setInstanceProperty = function (key: string, value: any) {
+		const prop = Model.allProperties[key] || getNormalizedExtraDataAtPropertyTime()[key];
 
 		if (prop) {
 			if ('valueToProperty' in opts.driver) {
@@ -483,7 +470,7 @@ export const Instance = function (
 	}
 
 	// ('data.a.b', 5) => opts.data.a.b = 5
-	var setPropertyByPath: FxOrmInstance.Instance['set'] = function (path, value) {
+	const setPropertyByPath: FxOrmInstance.Instance['set'] = function (path, value) {
 		if (typeof path == 'string') {
 			path = path.split('.');
 		} else if (!Array.isArray(path)) {
@@ -491,7 +478,7 @@ export const Instance = function (
 		}
 
 		var propName = path.shift();
-		var prop = Model.allProperties[propName] || getNormalizedExtraDataInPropertyTime()[propName];
+		var prop = Model.allProperties[propName] || getNormalizedExtraDataAtPropertyTime()[propName];
 		var currKey: string, currObj: any;
 
 		if (!prop) {
@@ -599,143 +586,163 @@ export const Instance = function (
 		addInstanceExtraProperty(k);
 	}
 
-	Object.defineProperty(instance, "on", {
-		value: function (event: string, cb: FxOrmNS.VoidCallback) {
-			if (!events.hasOwnProperty(event)) {
-				events[event] = [];
+	Utilities.addHiddenUnwritableMethodToInstance(instance, "on", function (event: string, cb: FxOrmNS.VoidCallback) {
+		if (!events.hasOwnProperty(event)) {
+			events[event] = [];
+		}
+		events[event].push(cb);
+
+		return this;
+	});
+
+	Utilities.addHiddenUnwritableMethodToInstance(instance, "saveSync", function (this: typeof instance) {
+		var objCount = 0;
+		var data: FxOrmInstance.InstanceDataPayload = {},
+				saveOptions = {};
+
+		Helpers.selectArgs(arguments, function (arg_type, arg) {
+			switch (arg_type) {
+				case 'object':
+					switch (objCount) {
+						case 0:
+							data = arg;
+							break;
+						case 1:
+							saveOptions = arg;
+							break;
+					}
+					objCount++;
+					break;
+				default:
+						const err: FibOrmNS.ExtensibleError = new Error("Unknown parameter type '" + (typeof arg) + "' in Instance.save()");
+						err.model = Model.table;
+						throw err;
 			}
-			events[event].push(cb);
+		});
 
-			return this;
-		},
-		enumerable: false,
-		writable: true
+		for (let k in data) {
+			if (data.hasOwnProperty(k)) {
+				this[k] = data[k];
+			}
+		}
+
+		saveInstanceSync(saveOptions);
+
+		return instance;
 	});
-	Object.defineProperty(instance, "save", {
-		value: function () {
-			var arg = null, objCount = 0;
-			var data: FxOrmInstance.InstanceDataPayload = {},
-					saveOptions = {},
-					cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance> = null;
+	
+	Utilities.addHiddenUnwritableMethodToInstance(instance, "save", function (this: typeof instance) {
+		var cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance> = null;
 
-			while (arguments.length > 0) {
-				arg = Array.prototype.shift.call(arguments);
+		let args = Array.prototype.slice.apply(arguments);
+		let cb_idx
+		Helpers.selectArgs(args, function (arg_type, arg, idx) {
+			switch (arg_type) {
+				case 'function':
+					cb = arg;
+					cb_idx = idx;
+					break;
+			}
+		});
+		args.splice(cb_idx);
 
-				switch (typeof arg) {
-					case 'object':
-						switch (objCount) {
-							case 0:
-								data = arg;
-								break;
-							case 1:
-								saveOptions = arg;
-								break;
-						}
-						objCount++;
-						break;
-					case 'function':
-						cb = arg;
-						break;
-					default:
-					    const err: FibOrmNS.ExtensibleError = new Error("Unknown parameter type '" + (typeof arg) + "' in Instance.save()");
-					    err.model = Model.table;
-					    throw err;
-				}
+		process.nextTick(() => {
+			const syncRespone = Utilities.exposeErrAndResultFromSyncMethod(() => instance.saveSync(...args))
+
+			if (!cb)
+				return;
+
+			if (syncRespone.error)
+				return cb(syncRespone.error);
+
+			return cb(null, instance);
+		});
+
+		return this;
+	})
+
+	Utilities.addHiddenUnwritableMethodToInstance(instance, "saved", function (this: typeof instance) {
+		return opts.changes.length === 0;
+	});
+
+	Utilities.addHiddenUnwritableMethodToInstance(instance, "removeSync", function () {
+		if (opts.is_new)
+			return ;
+
+		var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
+		for (let i = 0; i < opts.keys.length; i++) {
+		    conditions[opts.keys[i]] = opts.data[opts.keys[i]];
+		}
+
+		let removeErr = null as FxOrmError.ExtendedError;
+
+		Hook.wait(instance, opts.hooks.beforeRemove, function (err: FxOrmError.ExtendedError) {
+			if (err) {
+				emitEvent("remove", err, instance);
+
+				removeErr = err;
+				return ;
 			}
 
-			for (let k in data) {
-				if (data.hasOwnProperty(k)) {
-					this[k] = data[k];
-				}
-			}
+			emitEvent("beforeRemove", instance);
+			
+			Utilities.filterWhereConditionsInput(conditions, instance.model());
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(() => opts.driver.remove(opts.table, conditions));
 
-			saveInstance(saveOptions, function (err: FxOrmError.ExtendedError) {
-				if (!cb) return;
-				if (err) return cb(err);
+			Hook.trigger(instance, opts.hooks.afterRemove, !syncResponse.error);
 
-				return cb(null, instance);
-			});
+			emitEvent("remove", syncResponse.error, instance);
 
-			return this;
-		},
-		enumerable: false,
-		writable: true
-	});
-	Object.defineProperty(instance, "saved", {
-		value: function () {
-			return opts.changes.length === 0;
-		},
-		enumerable: false,
-		writable: true
-	});
-	Object.defineProperty(instance, "remove", {
-		value: function (cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>) {
-			removeInstance(cb);
+			removeErr = syncResponse.error;
 
-			return this;
-		},
-		enumerable: false,
-		writable: true
+			instance = undefined;
+		});
+
+		if (removeErr)
+			throw removeErr;
+	})
+
+	Utilities.addHiddenUnwritableMethodToInstance(instance, "remove", function (cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>) {
+		const syncReponse = Utilities.exposeErrAndResultFromSyncMethod(() => instance.removeSync());
+		Utilities.throwErrOrCallabckErrResult(syncReponse, { callback: cb });
+
+		return this;
 	});
-	Object.defineProperty(instance, "set", {
-		value: setPropertyByPath,
-		enumerable: false,
-		writable: true
+
+	Utilities.addHiddenUnwritableMethodToInstance(instance, "set", setPropertyByPath);
+	Utilities.addHiddenUnwritableMethodToInstance(instance, "markAsDirty", function (propName: string) {
+		if (propName != undefined) {
+			opts.changes.push(propName);
+		}
 	});
-	Object.defineProperty(instance, "markAsDirty", {
-		value: function (propName: string) {
-			if (propName != undefined) {
-				opts.changes.push(propName);
-			}
-		},
-		enumerable: false,
-		writable: true
+	
+	Utilities.addHiddenReadonlyPropertyToInstance(instance, "dirtyProperties", function () { return opts.changes; });
+
+	Utilities.addHiddenPropertyToInstance(instance, "isInstance", true);
+	
+	Utilities.addHiddenUnwritableMethodToInstance(instance, "isPersisted", function (this: typeof instance) {
+		return !opts.is_new;
 	});
-	Object.defineProperty(instance, "dirtyProperties", {
-		get: function () { return opts.changes; },
-		enumerable: false
+
+	Utilities.addHiddenPropertyToInstance(instance, "isShell", function () {
+		return opts.isShell;
 	});
-	Object.defineProperty(instance, "isInstance", {
-		value: true,
-		enumerable: false
+
+	Utilities.addHiddenUnwritableMethodToInstance(instance, "validateSync", function () {
+		return handleValidationsSync() || false;
 	});
-	Object.defineProperty(instance, "isPersisted", {
-		value: function () {
-			return !opts.is_new;
-		},
-		enumerable: false,
-		writable: true
+
+	Utilities.addHiddenUnwritableMethodToInstance(instance, "validate", function (cb: FxOrmNS.GenericCallback<FxOrmError.ExtendedError | FxOrmError.ExtendedError[] |false>) {
+		cb(null, instance.validateSync());
 	});
-	Object.defineProperty(instance, "isShell", {
-		value: function () {
-			return opts.isShell;
-		},
-		enumerable: false
+
+	Utilities.addHiddenPropertyToInstance(instance, "__singleton_uid", function (this: typeof instance) {
+		return opts.uid;
 	});
-	Object.defineProperty(instance, "validate", {
-		value: function (cb: FxOrmNS.GenericCallback<FxOrmError.ExtendedError|false>) {
-			handleValidations(function (errors: FxOrmError.ExtendedError) {
-				cb(null, errors || false);
-			});
-		},
-		enumerable: false,
-		writable: true
-	});
-	Object.defineProperty(instance, "__singleton_uid", {
-		value: function () {
-			return opts.uid;
-		},
-		enumerable: false
-	});
-	Object.defineProperty(instance, "__opts", {
-		value: opts,
-		enumerable: false
-	});
-	Object.defineProperty(instance, "model", {
-		value: function () {
-			return Model;
-		},
-		enumerable: false
+
+	Utilities.addHiddenPropertyToInstance(instance, "__opts", opts);
+	Utilities.addHiddenPropertyToInstance(instance, "model", function (this: typeof instance) {
+		return Model;
 	});
 
 	for (let i = 0; i < opts.keyProperties.length; i++) {

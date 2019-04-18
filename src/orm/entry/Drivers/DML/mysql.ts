@@ -151,29 +151,33 @@ Driver.prototype.count = function (
 Driver.prototype.insert = function (
 	this: FxOrmDMLDriver.DMLDriver_MySQL, table, data, keyProperties, cb?
 ) {
-	var q = this.query.insert()
+	const q = this.query.insert()
 	                  .into(table)
 	                  .set(data)
 	                  .build();
 
-	return this.execSimpleQuery(q, function (err, info: FxOrmQuery.InsertResult) {
-		if (err) return cb(err);
+	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(() => {
+		const info = this.execSimpleQuery(q);
 
-		var ids: FxOrmQuery.InsertResult = {},
-			prop: FxOrmProperty.NormalizedProperty;
+		const ids: FxOrmQuery.InsertResult = {};
 
 		if (keyProperties) {
 			if (keyProperties.length == 1 && info.hasOwnProperty("insertId") && info.insertId !== 0 ) {
 				ids[keyProperties[0].name] = info.insertId;
 			} else {
-				for(let i = 0; i < keyProperties.length; i++) {
+				for(let i = 0, prop: FxOrmProperty.NormalizedProperty; i < keyProperties.length; i++) {
 					prop = keyProperties[i];
 					ids[prop.name] = data[prop.mapsTo];
 				}
 			}
 		}
-		return cb(null, ids);
-	});
+
+		return ids
+	})
+
+	Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb });
+
+	return syncResponse.result;
 };
 
 Driver.prototype.update = function (

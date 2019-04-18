@@ -16,6 +16,9 @@ declare namespace FxOrmInstance {
         extra?: InstanceConstructorOptions['extra']
         extra_info?: InstanceConstructorOptions['extra_info']
     }
+    interface SaveOptions {
+        saveAssociations?: boolean
+    }
 
     type InstanceChangeRecords = string[]
 
@@ -73,9 +76,6 @@ declare namespace FxOrmInstance {
     type InstanceEventType = 
         'ready' | 'save' | 'beforeRemove' | 'remove'
     interface Instance extends FxOrmSynchronous.SynchronizedInstance {
-        save(): Instance;
-        save(data: { [property: string]: any; }, callback: FxOrmNS.VoidCallback): Instance;
-        save(data: { [property: string]: any; }, options: any, callback: FxOrmNS.VoidCallback): Instance;
         saved(): boolean;
         remove(callback: FxOrmNS.VoidCallback): Instance;
         validate: {
@@ -83,8 +83,8 @@ declare namespace FxOrmInstance {
         };
         on(event: InstanceEventType, callback: FxOrmNS.GenericCallback<any>): Instance;
         save(callback?: FxOrmNS.VoidCallback): Instance;
-        save(data: { [property: string]: any; }, callback?: FxOrmNS.VoidCallback): Instance;
-        save(data: { [property: string]: any; }, options: any, callback?: FxOrmNS.VoidCallback): Instance;
+        save(data: InstanceDataPayload, callback?: FxOrmNS.VoidCallback): Instance;
+        save(data: InstanceDataPayload, options: SaveOptions, callback?: FxOrmNS.VoidCallback): Instance;
         saved(): boolean;
         remove(callback?: FxOrmNS.VoidCallback): Instance;
 
@@ -117,6 +117,8 @@ declare namespace FxOrmInstance {
          * @noenum
          */
         __opts?: InnerInstanceOptions;
+
+        readonly __events?: {[k: string]: Function[]}
 
         /**
          * @noenum

@@ -14,11 +14,11 @@ declare namespace FxOrmHook {
     }
 
     interface HookTrigger<CTX_SELF = FxOrmInstance.Instance>{
-        (self: CTX_SELF, cb: HookActionCallback | HookResultCallback, _: boolean): void
+        (self: CTX_SELF, cur: HookActionCallback | HookResultCallback, _: boolean): void
     }
 
     interface HookWait<CTX_SELF = FxOrmInstance.Instance, TN=any>{
-        (self: CTX_SELF, cb: HookActionCallback | HookResultCallback, saveAssociation: FxOrmNS.GenericCallback<void>, opts: object): void
-        (self: CTX_SELF, cb: HookActionCallback | HookResultCallback, next: FxOrmNS.GenericCallback<TN>): void
+        (self: CTX_SELF, cur: HookActionCallback | HookResultCallback, saveAssociation: FxOrmNS.GenericCallback<void>, opts: object): void
+        (self: CTX_SELF, cur: HookActionCallback | HookResultCallback, next: FxOrmNS.GenericCallback<TN>): void
     }
 }
