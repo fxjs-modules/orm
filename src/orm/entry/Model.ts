@@ -400,7 +400,7 @@ export const Model = function (
 		return this;
 	};
 
-	model.chain = function (
+	const chainOrRun = function (
 		this: FxOrmModel.Model
 	) {
 		var conditions: FxSqlQuerySubQuery.SubQueryConditions = null;
@@ -494,9 +494,6 @@ export const Model = function (
 			conditions = Utilities.checkConditions(conditions, one_associations);
 		}
 
-		// TODO: if deal with that?
-		let err: FxOrmError.ExtendedError;
-
 		var chain = new ChainFind(model, {
 			only         : options.only || model_fields,
 			keys         : m_opts.keys,
@@ -540,10 +537,11 @@ export const Model = function (
 						extra_info     : options.extra_info
 					}, cb);
 				}, function (ex: FxOrmError.ExtendedError, instance: FxOrmInstance.Instance) {
-					err = ex;
-	
 					found_instance = instance;
+
 					singleton_lock.set();
+					if (ex)
+						throw ex;
 				});
 
 				singleton_lock.wait();
@@ -559,7 +557,7 @@ export const Model = function (
 		this:FxOrmModel.Model,
 		...args: any[]
 	) {
-		const chain: FxOrmQuery.IChainFind = model.chain.apply(model, args);
+		const chain: FxOrmQuery.IChainFind = chainOrRun.apply(model, args);
 
 		return chain.runSync()
 	};
@@ -572,13 +570,12 @@ export const Model = function (
 		if (typeof util.last(args) === 'function')
 			cb = args.pop();
 
-		const chain = model.chain.apply(model, args);
+		const chain = chainOrRun.apply(model, args);
 
-		if (typeof cb !== "function")
-			return chain;
-
-		chain.run(cb);
-		return this;
+		if (cb)
+			chain.run(cb);
+			
+		return chain;
 	};
 
 	model.where = model.all = model.find;

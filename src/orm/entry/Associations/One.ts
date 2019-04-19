@@ -211,8 +211,7 @@ function extendInstance(
 
 	const getAccessorChainOrRunSync = function  (
 		opts: FxOrmModel.ModelOptions__Find = {},
-		cb: FxOrmNS.GenericCallback<FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[]>,
-		is_sync: boolean = false
+		withOutCallbackWhenNonSync: boolean,
 	): FxOrmQuery.IChainFind | FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[] {
 		const saveAndReturn = function (Assoc: FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[]) {
 			Instance[association.name] = Assoc;
@@ -233,7 +232,7 @@ function extendInstance(
 					Instance
 				);
 				
-				if (!is_sync && typeof cb !== "function") {
+				if (withOutCallbackWhenNonSync) {
 					return association.model.find.call(association.model, query_conds, opts);
 				}
 
@@ -267,7 +266,7 @@ function extendInstance(
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.getSyncAccessor, function (
 		opts: FxOrmModel.ModelOptions__Find = {},
 	): FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[] {
-		return getAccessorChainOrRunSync(opts, noOperation, true) as FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[];
+		return getAccessorChainOrRunSync(opts, false) as FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[];
 	});
 
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.getAccessor, function (
@@ -279,16 +278,18 @@ function extendInstance(
 			opts = {};
 		}
 
-		if (cb) {
+		const withCallback = typeof cb === 'function';
+
+		if (withCallback) {
 			process.nextTick(() => {
-				const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance>(getAccessorChainOrRunSync, [opts, noOperation]);
-				Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
+				const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance>(getAccessorChainOrRunSync, [opts, !withCallback]);
+				Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb });
 			});
 
 			return this;
 		}
 
-		return getAccessorChainOrRunSync(opts, cb) as FxOrmQuery.IChainFind;
+		return getAccessorChainOrRunSync(opts, !withCallback) as FxOrmQuery.IChainFind;
 	});
 
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setSyncAccessor, function (
