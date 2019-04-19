@@ -1,15 +1,15 @@
 /// <reference types="fibjs" />
 
-import util 	 = require('util')
-import coroutine 	 = require('coroutine')
+import util 	 = require('util');
+import coroutine 	 = require('coroutine');
+const events = require('events');
+const EventEmitter = events.EventEmitter;
 
 import Utilities = require("./Utilities");
 import Hook      = require("./Hook");
 import ORMError       = require("./Error");
 import enforce   = require("@fibjs/enforce");
 import * as Helpers from './Helpers';
-
-function noOp () {};
 
 interface EmitEventFunctionInInstance {
 	(state: string, err?: Error | Error[], _instance?: any): void
@@ -30,19 +30,16 @@ export const Instance = function (
 	opts.events	= util.extend({}, opts.events);
 	opts.originalKeyValues = {};
 
+	const eventor = new EventEmitter();
+
 	var instance_saving = false;
-	var events: {[k: string]: Function[]} = {};
 	var instance: FxOrmInstance.Instance = {} as FxOrmInstance.Instance;
 
 	var emitEvent: EmitEventFunctionInInstance = function () {
 		var args = Array.prototype.slice.apply(arguments);
 		var event = args.shift();
 
-		if (!events.hasOwnProperty(event)) return;
-
-		events[event].map(function (cb) {
-			cb.apply(instance, args);
-		});
+		eventor.emit(event, ...args);
 	};
 	var rememberKeys = function () {
 		for(let i = 0; i < opts.keyProperties.length; i++) {
@@ -595,10 +592,7 @@ export const Instance = function (
 	}
 
 	Utilities.addHiddenUnwritableMethodToInstance(instance, "on", function (event: string, cb: FxOrmNS.VoidCallback) {
-		if (!events.hasOwnProperty(event)) {
-			events[event] = [];
-		}
-		events[event].push(cb);
+		eventor.on(event, cb);
 
 		return this;
 	});
