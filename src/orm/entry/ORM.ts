@@ -161,8 +161,6 @@ const ORM = function (
 
 	driver.on("error", onError);
 
-	driver.execQuerySync = execQuerySync;
-
 	this.use(ormPluginSyncPatch);
 } as any as FxOrmNS.ORMConstructor;
 
@@ -398,8 +396,6 @@ ORM.prototype.trans = function (
 	func = func.bind(this.driver.db.conn);
 	return this.driver.db.conn.trans(func);	
 };
-
-import { execQuerySync } from "./Patch/utils";
 
 const ORM_Module: FxOrmNS.ExportModule = {
 	validators,
