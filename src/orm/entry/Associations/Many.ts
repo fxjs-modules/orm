@@ -14,6 +14,8 @@ import { ACCESSOR_KEYS, addAssociationInfoToModel } from './_utils';
 import { findByList } from '../Model';
 import * as Helpers from '../Helpers';
 
+function noOperation (...args: any[]) {};
+
 export function prepare(db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associations: FxOrmAssociation.InstanceAssociationItem_HasMany[]) {
 	Model.hasMany = function () {
 		let name: string,
@@ -77,7 +79,7 @@ export function prepare(db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associatio
 		var associationSemanticNameCore = assoc_options.name || Utilities.formatNameFor("assoc:hasMany", name);
 		
 		const fieldhash = Utilities.wrapFieldObject({ field: assoc_options.field, model: OtherModel, altName: Model.table }) || Utilities.formatField(Model, name, true, assoc_options.reversed)
-		var association: FxOrmAssociation.InstanceAssociationItem_HasMany = {
+		var association = <FxOrmAssociation.InstanceAssociationItem_HasMany>{
 			name: name,
 			model: OtherModel,
 			props: props,
@@ -97,6 +99,8 @@ export function prepare(db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associatio
 
 			modelFindByAccessor: assoc_options.modelFindByAccessor || (ACCESSOR_KEYS.modelFindBy + associationSemanticNameCore),
 		};
+		Utilities.fillSyncVersionAccessorForAssociation(association);
+
 		associations.push(association);
 
 		if (assoc_options.reverse) {
@@ -236,72 +240,78 @@ function extendInstance(
 		});
 	}
 
-	Object.defineProperty(Instance, association.hasAccessor, {
-		value: function (...Instances: FxOrmInstance.Instance[]) {
-			var cb: FxOrmNS.GenericCallback<boolean> = Instances.pop() as any;
-			var conditions = {},
-				join_conditions = {},
-				options: FxOrmAssociation.ModelAssociationMethod__FindOptions = {};
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.hasSyncAccessor, function (...Instances: (FxOrmInstance.Instance | FxOrmInstance.Instance)[]) {
+		var conditions = {},
+			join_conditions = {},
+			options: FxOrmAssociation.ModelAssociationMethod__FindOptions = {};
 
-			if (Instances.length) {
-				if (Array.isArray(Instances[0])) {
-					Instances = Instances[0] as any;
-				}
-			}
-			if (Driver.hasMany) {
-				return Driver.hasMany(Model, association)
-					.has(Instance, Instances, conditions, cb);
-			}
+		if (Instances.length)
+			if (Array.isArray(Instances[0]))
+				Instances = Instances[0] as any;
 
-			options.autoFetchLimit = 0;
-			options.__merge = {
-				from: { table: association.mergeTable, field: Object.keys(association.mergeAssocId) },
-				to: { table: association.model.table, field: association.model.id.slice(0) },   // clone model id
-				where: [association.mergeTable, join_conditions],
-				table: association.model.table,
-				select: []
-			};
+		// if (Driver.hasMany) {
+		// 	return Driver.hasMany(Model, association)
+		// 		.has(Instance, Instances, conditions);
+		// }
 
-			adjustForMapsTo(association.model.properties, options.__merge.to.field);
+		options.autoFetchLimit = 0;
+		options.__merge = {
+			from: { table: association.mergeTable, field: Object.keys(association.mergeAssocId) },
+			to: { table: association.model.table, field: association.model.id.slice(0) },   // clone model id
+			where: [association.mergeTable, join_conditions],
+			table: association.model.table,
+			select: []
+		};
 
-			options.extra = association.props;
-			options.extra_info = {
-				table: association.mergeTable,
-				id: Utilities.values(Instance, Model.id),
-				id_prop: Object.keys(association.mergeId),
-				assoc_prop: Object.keys(association.mergeAssocId)
-			};
+		adjustForMapsTo(association.model.properties, options.__merge.to.field);
 
-			Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, options.__merge.where[1]);
+		options.extra = association.props;
+		options.extra_info = {
+			table: association.mergeTable,
+			id: Utilities.values(Instance, Model.id),
+			id_prop: Object.keys(association.mergeId),
+			assoc_prop: Object.keys(association.mergeAssocId)
+		};
 
-			for (let i = 0; i < Instances.length; i++) {
-				Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Instances[i], options.__merge.where[1], false);
-			}
+		Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, options.__merge.where[1]);
 
-			association.model.find(conditions, options, function (err, foundItems) {
-				if (err) return cb(err);
+		for (let i = 0; i < Instances.length; i++) {
+			Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Instances[i], options.__merge.where[1], false);
+		}
 
-				if (util.isEmpty(Instances)) return cb(null, foundItems.length > 0);
+		const foundItems = association.model.findSync(conditions, options);
 
-				var foundItemsIDs = Array.from( new Set (
-					foundItems.map(item => mapKeysToString(association.model.keys, item))
-				));
-				var InstancesIDs = Array.from( new Set (
-					Instances.map(item => mapKeysToString(association.model.keys, item))
-				));
+		if (util.isEmpty(Instances)) return foundItems.length > 0;
 
-				var sameLength = foundItemsIDs.length === InstancesIDs.length;
-				var sameContents = sameLength && util.isEmpty(util.difference(foundItemsIDs, InstancesIDs));
+		var foundItemsIDs = Array.from( new Set (
+			foundItems.map(item => mapKeysToString(association.model.keys, item))
+		));
+		var InstancesIDs = Array.from( new Set (
+			Instances.map(item => mapKeysToString(association.model.keys, item))
+		));
 
-				return cb(null, sameContents);
-			});
-			return this;
-		},
-		enumerable: false,
-		writable: true
+		var sameLength = foundItemsIDs.length === InstancesIDs.length;
+		var sameContents = sameLength && util.isEmpty(util.difference(foundItemsIDs, InstancesIDs));
+
+		return sameContents;
 	});
 
-	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.getAccessor, function (this: typeof Instance) {
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.hasAccessor, function (...Instances: FxOrmInstance.Instance[]) {
+		let cb: FxOrmNS.GenericCallback<boolean>;
+		if (typeof util.last(Instances) === 'function')
+			cb = Instances.pop() as any;
+
+		process.nextTick(() => {
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<boolean>(Instance[association.hasSyncAccessor], Instances);
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb })
+		});
+
+		return this;
+	});
+
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.getAccessor, function (
+		this: typeof Instance
+	): typeof Instance | FxOrmQuery.IChainFind {
 		let options = <FxOrmAssociation.ModelAssociationMethod__GetOptions>{};
 		let conditions = null as FxOrmModel.ModelOptions__Find;
 		let join_conditions = {};
@@ -350,9 +360,9 @@ function extendInstance(
 			join_conditions = {};
 		}
 
-		if (Driver.hasMany) {
-			return Driver.hasMany(Model, association).get(Instance, conditions, options, createInstance, cb);
-		}
+		// if (Driver.hasMany) {
+		// 	return Driver.hasMany(Model, association).get(Instance, conditions, options, createInstance, cb);
+		// }
 
 		options.__merge = {
 			from: { table: association.mergeTable, field: Object.keys(association.mergeAssocId) },
@@ -374,190 +384,185 @@ function extendInstance(
 
 		Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, options.__merge.where[1]);
 
-		if (cb === null) {
+		if (cb === null)
 			return association.model.find(conditions, options);
-		}
 
 		association.model.find(conditions, options, cb);
 
 		return this;
 	});
 
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.getSyncAccessor, function (this: typeof Instance, ...args: any[]): FxOrmInstance.Instance[] {
+		args = args.filter(x => !util.isFunction(x));
+
+		const chain = Instance[association.getAccessor].apply(Instance, args);
+
+		return chain.runSync();
+	});
+
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setSyncAccessor, function (this: typeof Instance) {
+		var items = _flatten(arguments);
+
+		Instance[association.delSyncAccessor]();
+
+		if (!items.length)
+			return ;
+
+		return Instance[association.addSyncAccessor](items);
+	});
+
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setAccessor, function (this: typeof Instance) {
 		// TODO: shold allow passing `extra` as 2nd argument
 		var items = _flatten(arguments);
-		var cb = util.last(items) instanceof Function ? items.pop() : noOperation;
+		var cb = typeof util.last(items) === 'function' ? items.pop() : noOperation;
 
-		Instance[association.delAccessor](function (err: FxOrmError.ExtendedError) {
-			if (err) return cb(err);
-
-			if (items.length) {
-				Instance[association.addAccessor](items, cb);
-			} else {
-				cb(null);
-			}
+		process.nextTick(() => {
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<boolean>(Instance[association.setSyncAccessor], items);
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
 		});
 
 		return this;
 	});
 
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.delAccessor, function (this: typeof Instance, ...args: any[]) {
-		var Associations: FxOrmAssociation.AssociationDefinitionOptions_HasMany[] = [];
 		var cb: FxOrmNS.ExecutionCallback<typeof this>;
 
-		for (let i = 0; i < args.length; i++) {
-			switch (typeof args[i]) {
+		Helpers.selectArgs(args, (arg_type, arg, idx) => {
+			switch (arg_type) {
 				case "function":
-					cb = args[i];
-					break;
-				case "object":
-					if (Array.isArray(args[i])) {
-						Associations = Associations.concat(args[i]);
-					} else if (args[i].isInstance) {
-						Associations.push(args[i]);
-					}
+					cb = arg;
 					break;
 			}
-		}
-		var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
-		var run = function () {
-			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(() => {
-				if (Driver.hasMany) {
-					return Driver.hasMany(Model, association).del(Instance, Associations);
-				}
+		});
+		args = args.filter(x => x !== cb);
 
-				if (Associations.length === 0) {
-					return Driver.remove(association.mergeTable, conditions);
-				}
+		process.nextTick(() => {
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<void>(Instance[association.delSyncAccessor], args);
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
+		});
 
-				for (let i = 0; i < Associations.length; i++) {
-					Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Associations[i], conditions, false);
-				}
-
-				Driver.remove(association.mergeTable, conditions);
-			});
-
-			Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb });
-		};
-
-		Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, conditions);
-
-		if (this.saved()) {
-			run();
-		} else {
-			this.save(function (err: FxOrmError.ExtendedError) {
-				if (err) {
-					return cb(err);
-				}
-
-				return run();
-			});
-		}
 		return this;
 	});
 
-	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.addAccessor, function (this: typeof Instance) {
-		var Associations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
-		var add_opts: {[k: string]: any} = {};
-		var cb = noOperation;
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.delSyncAccessor, function (this: typeof Instance, ...args: any[]) {
+		var Associations: FxOrmAssociation.AssociationDefinitionOptions_HasMany[] = [];
 
-		for (let i = 0; i < arguments.length; i++) {
-			switch (typeof arguments[i]) {
-				case "function":
-					cb = arguments[i];
-					break;
+		Helpers.selectArgs(args, (arg_type, arg) => {
+			switch (arg_type) {
 				case "object":
-					if (Array.isArray(arguments[i])) {
-						Associations = Associations.concat(arguments[i]);
-					} else if (arguments[i].isInstance) {
-						Associations.push(arguments[i]);
-					} else {
-						add_opts = arguments[i];
+					if (Array.isArray(arg)) {
+						Associations = Associations.concat(arg);
+					} else if (arg.isInstance) {
+						Associations.push(arg);
 					}
 					break;
 			}
+		});
+
+		const conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
+
+		Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, conditions);
+
+		if (!this.saved())
+			this.saveSync();
+
+		if (Driver.hasMany) {
+			return Driver.hasMany(Model, association).del(Instance, Associations);
 		}
+
+		if (Associations.length === 0) {
+			return Driver.remove(association.mergeTable, conditions);
+		}
+
+		for (let i = 0; i < Associations.length; i++) {
+			Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Associations[i], conditions, false);
+		}
+
+		Driver.remove(association.mergeTable, conditions);
+
+		return this;
+	});
+	
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.addSyncAccessor, function (this: typeof Instance) {
+		let args: any[]= Array.prototype.slice.apply(arguments);
+
+		var Associations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
+		var add_opts: {[k: string]: any} = {};
+
+		Helpers.selectArgs(args, (arg_type, arg) => {
+			switch (arg_type) {
+				case "object":
+					if (Array.isArray(arg)) {
+						Associations = Associations.concat(arg);
+					} else if (arg.isInstance) {
+						Associations.push(arg);
+					} else {
+						add_opts = arg;
+					}
+					break;
+			}
+		});
 
 		if (Associations.length === 0) {
 			throw new ORMError("No associations defined", 'PARAM_MISMATCH', { model: Model.name });
 		}
 
-		var run = function () {
-			const savedAssociations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
-			var saveNextAssociation = function () {
-				if (Associations.length === 0) {
-					return cb(null, savedAssociations);
-				}
+		const savedAssociations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
 
-				var Association = Associations.pop();
-				var saveAssociation = function (err: Error) {
-					if (err) {
-						return cb(err);
+		Associations.forEach((Association) => {
+			const saveAssociation = function (err: FxOrmError.ExtendedError) {
+				if (err)
+					throw err;
+
+				Association.saveSync();
+
+				const data: {[k: string]: any} = {};
+
+				for (let k in add_opts) {
+					if (k in association.props && Driver.propertyToValue) {
+						data[k] = Driver.propertyToValue(add_opts[k], association.props[k]);
+					} else {
+						data[k] = add_opts[k];
 					}
-
-					Association.save(function (err: Error) {
-						if (err) {
-							return cb(err);
-						}
-
-						var data: {[k: string]: any} = {};
-
-						for (let k in add_opts) {
-							if (k in association.props && Driver.propertyToValue) {
-								data[k] = Driver.propertyToValue(add_opts[k], association.props[k]);
-							} else {
-								data[k] = add_opts[k];
-							}
-						}
-
-						if (Driver.hasMany) {
-							return Driver.hasMany(Model, association).add(Instance, Association, data, function (err: Error) {
-								if (err) {
-									return cb(err);
-								}
-
-								savedAssociations.push(Association);
-
-								return saveNextAssociation();
-							});
-						}
-
-						Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, data);
-						Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Association, data);
-
-						Driver.insert(association.mergeTable, data, null, function (err) {
-							if (err) {
-								return cb(err);
-							}
-
-							savedAssociations.push(Association);
-
-							return saveNextAssociation();
-						});
-					});
-				};
-
-				if (Object.keys(association.props).length) {
-					Hook.wait(Association, association.hooks.beforeSave, saveAssociation, add_opts);
-				} else {
-					Hook.wait(Association, association.hooks.beforeSave, saveAssociation);
 				}
+
+				Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, data);
+				Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Association, data);
+
+				Driver.insert(association.mergeTable, data, null);
+				savedAssociations.push(Association);
 			};
+			
+			if (Object.keys(association.props).length) {
+				Hook.wait(Association, association.hooks.beforeSave, saveAssociation, add_opts);
+			} else {
+				Hook.wait(Association, association.hooks.beforeSave, saveAssociation);
+			}
+		});
 
-			return saveNextAssociation();
-		};
+		if (!this.saved())
+			this.saveSync();
 
-		if (this.saved()) {
-			run();
-		} else {
-			this.save(function (err: Error) {
-				if (err) {
-					return cb(err);
-				}
+		return savedAssociations;
+	});
 
-				return run();
-			});
-		}
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.addAccessor, function (this: typeof Instance) {
+		let args: any[] = Array.prototype.slice.apply(arguments);
+
+		let cb = noOperation;
+		Helpers.selectArgs(args, (arg_type, arg) => {
+			switch (arg_type) {
+				case "function":
+					cb = arg;
+					break;
+			}
+		});
+		args = args.filter(x => x !== cb);
+
+		process.nextTick(() => {
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<void>(Instance[association.addSyncAccessor], args);
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
+		});
 
 		return this;
 	});
@@ -605,5 +610,3 @@ function autoFetchInstance(
 		}
 	);
 }
-
-function noOperation(...args: any[]) { }

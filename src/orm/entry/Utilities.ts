@@ -746,5 +746,8 @@ export function fillSyncVersionAccessorForAssociation (
 	if (!association.addSyncAccessor && association.addAccessor)
 		association.addSyncAccessor = formatNameFor('syncify:assoc', association.addAccessor)
 
+	if (!association.modelFindBySyncAccessor && association.modelFindByAccessor)
+		association.modelFindBySyncAccessor = formatNameFor('syncify:assoc', association.modelFindByAccessor)
+
 	return association;
 }

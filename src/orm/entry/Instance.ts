@@ -634,17 +634,15 @@ export const Instance = function (
 	Utilities.addHiddenUnwritableMethodToInstance(instance, "save", function (this: typeof instance) {
 		var cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance> = null;
 
-		let args = Array.prototype.slice.apply(arguments);
-		let cb_idx
+		let args: any[] = Array.prototype.slice.apply(arguments);
 		Helpers.selectArgs(args, function (arg_type, arg, idx) {
 			switch (arg_type) {
 				case 'function':
 					cb = arg;
-					cb_idx = idx;
 					break;
 			}
 		});
-		args.splice(cb_idx);
+		args = args.filter(x => x !== cb);
 
 		const waitor = cb ? new coroutine.Event() : undefined
 

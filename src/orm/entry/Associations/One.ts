@@ -3,9 +3,11 @@ import coroutine = require('coroutine')
 
 import Utilities = require("../Utilities");
 import ORMError = require("../Error");
-import { ACCESSOR_KEYS, addAssociationInfoToModel, getMapsToFromPropertyHash } from './_utils';
+import { ACCESSOR_KEYS, addAssociationInfoToModel } from './_utils';
 import { findByList } from '../Model';
 import * as Helpers from '../Helpers';
+
+function noOperation (...args: any[]) {};
 
 export function prepare (
 	Model: FxOrmModel.Model, associations: FxOrmAssociation.InstanceAssociationItem_HasOne[]
@@ -17,9 +19,11 @@ export function prepare (
 		}
 
 		assoc_name = assoc_name || ext_model.table;
+		assoc_options = assoc_options || {};
+		const associationSemanticNameCore = Utilities.formatNameFor("assoc:hasOne", assoc_name);
 		ext_model = ext_model || Model;
 		
-		let association: FxOrmAssociation.InstanceAssociationItem_HasOne = {
+		let association = <FxOrmAssociation.InstanceAssociationItem_HasOne>{
 			name           : assoc_name,
 			model          : ext_model,
 
@@ -30,16 +34,19 @@ export function prepare (
 			autoFetchLimit : 2,
 			required       : false,
 
-			setAccessor	   : null,
-			getAccessor	   : null,
-			hasAccessor    : null,
+			setAccessor	   : ACCESSOR_KEYS.set + associationSemanticNameCore,
+			getAccessor	   : ACCESSOR_KEYS.get + associationSemanticNameCore,
+			hasAccessor    : ACCESSOR_KEYS.has + associationSemanticNameCore,
 			delAccessor    : null,
 			
-			modelFindByAccessor : null,
+			modelFindByAccessor : assoc_options.modelFindByAccessor || (ACCESSOR_KEYS.modelFindBy + associationSemanticNameCore),
 		};
-		association = util.extend(association, assoc_options || {})
 
-		var associationSemanticNameCore = Utilities.formatNameFor("assoc:hasOne", association.name);
+		if (!association.reversed)
+			association.delAccessor = ACCESSOR_KEYS['del'] + associationSemanticNameCore;
+		
+		association = util.extend(association, assoc_options);
+		Utilities.fillSyncVersionAccessorForAssociation(association);
 
 		if (!association.field) {
 			association.field = Utilities.formatField(association.model, association.name, association.required, association.reversed);
@@ -50,19 +57,9 @@ export function prepare (
 			});
 		}
 
-		const normalizedField = association.field as FxOrmProperty.NormalizedPropertyHash
+		const normalizedField = association.field
 
-		Utilities.convertPropToJoinKeyProp(
-			normalizedField as FxOrmProperty.NormalizedPropertyHash,
-			{
-				makeKey: false, required: association.required
-			});
-
-		for (let k in ACCESSOR_KEYS) {
-			if (!association[k + "Accessor"]) {
-				association[k + "Accessor"] = ACCESSOR_KEYS[k] + associationSemanticNameCore;
-			}
-		}
+		Utilities.convertPropToJoinKeyProp(normalizedField, { makeKey: false, required: association.required });
 
 		associations.push(association);
 		for (let k in normalizedField) {
@@ -180,180 +177,186 @@ function extendInstance(
 	// extend target
 	association: FxOrmAssociation.InstanceAssociationItem_HasOne
 ) {
-	Object.defineProperty(Instance, association.hasAccessor, {
-		value: function (_has_opts?: FxOrmAssociation.AccessorOptions_has, cb?: FxOrmNS.GenericCallback<boolean>) {
-			if (typeof _has_opts === "function") {
-				cb = _has_opts as any;
-				_has_opts = {};
-			}
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.hasSyncAccessor, function (_has_opts?: FxOrmAssociation.AccessorOptions_has) {
+		if (!Utilities.hasValues(Instance, Object.keys(association.field)))
+			return false;
+		
+		const instance = association.model.get(
+			Utilities.values(Instance, Object.keys(association.field)),
+			_has_opts
+		);
 
-			if (Utilities.hasValues(Instance, Object.keys(association.field))) {
-				association.model.get(
-					Utilities.values(Instance, Object.keys(association.field)),
-					_has_opts,
-					function (err: FxOrmError.ExtendedError, instance: FxOrmInstance.Instance) {
-						return cb(err, instance ? true : false);
-					}
-				);
-			} else {
-				cb(null, false);
-			}
-
-			return this;
-		},
-		enumerable: false,
-		writable: true
+		return !!instance;
 	});
-	Object.defineProperty(Instance, association.getAccessor, {
-		value: function (
-			opts?: FxOrmAssociation.AccessorOptions_get,
-			cb?: FxOrmNS.GenericCallback<FxOrmAssociation.InstanceAssociatedInstance>
-		): FxOrmModel.Model | FxOrmQuery.IChainFind {
-			if (typeof opts === "function") {
-				cb = opts as any;
-				opts = {};
-			}
 
-			var saveAndReturn: FxOrmModel.ModelMethodCallback__Get = function (
-				err: Error, Assoc: FxOrmAssociation.InstanceAssociatedInstance
-			) {
-				if (!err) {
-					Instance[association.name] = Assoc;
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.hasAccessor, function (_has_opts?: FxOrmAssociation.AccessorOptions_has, cb?: FxOrmNS.GenericCallback<boolean>) {
+		if (typeof _has_opts === "function") {
+			cb = _has_opts as any;
+			_has_opts = {};
+		}
+
+		process.nextTick(() => {
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance>(Instance[association.hasSyncAccessor], [ _has_opts ]);
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
+		});
+
+		return this;
+	});
+
+	const chainOrRunSync = function  (
+		opts: FxOrmModel.ModelOptions__Find = {},
+		cb: FxOrmNS.GenericCallback<FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[]>,
+		is_sync: boolean = false
+	): FxOrmQuery.IChainFind | FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[] {
+		const saveAndReturn = function (Assoc: FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[]) {
+			Instance[association.name] = Assoc;
+
+			return Assoc;
+		};
+		
+		let result: FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[];
+
+		// process get reversed instance's original instance
+		if (association.reversed) {
+			let reverseHostInstances: FxOrmAssociation.InstanceAssociatedInstance[] = null;
+
+			if (Utilities.hasValues(Instance, Model.id)) {
+				const query_conds: FxOrmModel.ModelQueryConditions__Find = Utilities.getConditions(
+					Model,
+					Object.keys(association.field),
+					Instance
+				);
+				
+				if (!is_sync && typeof cb !== "function") {
+					return association.model.find.call(association.model, query_conds, opts);
 				}
 
-				return cb(err, Assoc);
+				reverseHostInstances = association.model.findSync(query_conds, opts);
+				result = saveAndReturn(reverseHostInstances);
+			}
+
+			return result;
+		}
+			
+		let assocInstance: FxOrmAssociation.InstanceAssociatedInstance = null;
+		if (Instance.isShell()) {
+			Instance = Model.getSync(Utilities.values( Instance, Model.id ))
+
+			if (!Utilities.hasValues(Instance, Object.keys(association.field)))
+				return ;
+				
+			assocInstance = association.model.getSync(Utilities.values(Instance, Object.keys(association.field)), opts);
+			return saveAndReturn(assocInstance);
+		}
+		
+		if (Utilities.hasValues(Instance, Object.keys(association.field))) {
+			assocInstance = association.model.getSync(
+				Utilities.values( Instance, Object.keys(association.field) ),
+				opts,
+			);
+			return saveAndReturn(assocInstance);
+		}
+	}
+
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.getSyncAccessor, function (
+		opts: FxOrmModel.ModelOptions__Find = {},
+	): FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[] {
+		return chainOrRunSync(opts, noOperation, true) as FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[];
+	});
+
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.getAccessor, function (
+		opts?: FxOrmModel.ModelOptions__Find,
+		cb?: FxOrmNS.GenericCallback<FxOrmAssociation.InstanceAssociatedInstance>
+	): FxOrmQuery.IChainFind {
+		if (typeof opts === "function") {
+			cb = opts as any;
+			opts = {};
+		}
+
+		if (cb) {
+			process.nextTick(() => {
+				const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance>(chainOrRunSync, [opts, noOperation]);
+				Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
+			});
+
+			return this;
+		}
+
+		return chainOrRunSync(opts, cb) as FxOrmQuery.IChainFind;
+	});
+
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setSyncAccessor, function (
+		OtherInstance: FxOrmInstance.Instance | FxOrmInstance.Instance[]
+	) {
+		const inst_arr = Array.isArray(OtherInstance) ? Array.from(OtherInstance) : [ OtherInstance ];
+
+		if (association.reversed) {
+			Instance.saveSync();
+
+			const runReversed = function (other: FxOrmInstance.Instance) {
+				Utilities.populateModelIdKeysConditions(Model, Object.keys(association.field), Instance, other, true);
+
+				// link
+				other.saveSync({}, { saveAssociations: false });
+
+				return other;
 			};
 
-			// process get reversed instance's original instance
-			if (association.reversed) {
-				if (Utilities.hasValues(Instance, Model.id)) {
-					const query_conds: FxOrmModel.ModelQueryConditions__Find = Utilities.getConditions(
-						Model,
-						Object.keys(association.field),
-						Instance
-					);
+			return inst_arr.map(runReversed);
+		}
 
-					if (typeof cb !== "function") {
-						return association.model.find.call(association.model, query_conds, opts);
-					}
+		const runNonReversed = function (oinst: FxOrmInstance.Instance) {
+			oinst.saveSync({}, { saveAssociations: false });
 
-					association.model.find.call(association.model, query_conds, opts, saveAndReturn);
-				} else {
-					cb(null);
-				}
-			} else {
-				if (Instance.isShell()) {
-					Model.get(
-						Utilities.values( Instance, Model.id ),
-						function (err: Error, instance: FxOrmAssociation.InstanceAssociationItem) {
-							if (err || !Utilities.hasValues(instance, Object.keys(association.field))) {
-								return cb(null);
-							}
-							association.model.get(Utilities.values(instance, Object.keys(association.field)), opts, saveAndReturn);
-						}
-					);
-				} else if (Utilities.hasValues(Instance, Object.keys(association.field))) {
-					association.model.get(
-						Utilities.values( Instance, Object.keys(association.field) ),
-						opts,
-						saveAndReturn
-					);
-				} else {
-					cb(null);
-				}
-			}
+			Instance[association.name] = oinst;
+			Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.field), oinst, Instance);
 
-			return this;
-		},
-		enumerable: false,
-		writable: true
+			// link
+			Instance.saveSync({}, { saveAssociations: false });
+
+			return oinst;
+		}
+
+		return inst_arr.map(runNonReversed)
 	});
-	Object.defineProperty(Instance, association.setAccessor, {
-		value: function (
-			OtherInstance: FxOrmInstance.Instance,
-			cb: FxOrmNS.GenericCallback<FxOrmInstance.Instance>
-		) {
-			if (association.reversed) {
-				Instance.save(function (err) {
-					if (err) {
-						return cb(err);
-					}
 
-					if (!Array.isArray(OtherInstance)) {
-						Utilities.populateModelIdKeysConditions(
-							Model, Object.keys(association.field), Instance, OtherInstance, true
-						);
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setAccessor, function (
+		OtherInstance: FxOrmInstance.Instance | FxOrmInstance.Instance[],
+		cb?: FxOrmNS.GenericCallback<FxOrmInstance.Instance>
+	) {
+		process.nextTick(() => {
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance | FxOrmInstance.Instance[]>(Instance[association.setSyncAccessor], [ OtherInstance ]);
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
+		});
 
-						return OtherInstance.save({}, { saveAssociations: false }, cb);
-					}
-
-					var associations = util.clone(OtherInstance);
-
-					var saveNext = function () {
-						if (!associations.length) {
-							return cb(null);
-						}
-
-						var other = associations.pop();
-
-						Utilities.populateModelIdKeysConditions(
-							Model, Object.keys(association.field), Instance, other, true
-						);
-
-						other.save({}, { saveAssociations: false }, function (err: Error) {
-							if (err) {
-								return cb(err);
-							}
-
-							saveNext();
-						});
-					};
-
-					return saveNext();
-				});
-			} else {
-				OtherInstance.save({}, {
-					saveAssociations: false
-				}, function (err: Error) {
-					if (err) {
-						return cb(err);
-					}
-
-					Instance[association.name] = OtherInstance;
-
-					Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.field), OtherInstance, Instance);
-
-					return Instance.save({}, { saveAssociations: false }, cb);
-				});
-			}
-
-			return this;
-		},
-		enumerable: false,
-		writable: true
+		return this;
 	});
 	
 	// non-reversed could delete associated instance
 	if (!association.reversed) {
-		Object.defineProperty(Instance, association.delAccessor, {
-			value: function (cb: FxOrmNS.GenericCallback<void>) {
-				for (let k in association.field as FxOrmProperty.NormalizedPropertyHash) {
-					if (association.field.hasOwnProperty(k)) {
-						Instance[k] = null;
-					}
+		Utilities.addHiddenUnwritableMethodToInstance(Instance, association.delSyncAccessor, function (
+		) {
+			for (let k in association.field) {
+				if (association.field.hasOwnProperty(k)) {
+					Instance[k] = null;
 				}
-				Instance.save({}, { saveAssociations: false }, function (err) {
-					if (!err) {
-						delete Instance[association.name];
-					}
+			}
 
-					return cb(null);
-				});
+			Instance.saveSync({}, { saveAssociations: false });
+			delete Instance[association.name];
 
-				return this;
-			},
-			enumerable: false,
-			writable: true
+			return this;
+		});
+
+		Utilities.addHiddenUnwritableMethodToInstance(Instance, association.delAccessor, function (
+			cb?: FxOrmNS.GenericCallback<void>
+		) {
+			process.nextTick(() => {
+				const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance | FxOrmInstance.Instance[]>(Instance[association.delSyncAccessor]);
+				Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
+			});
+			
+			return this;
 		});
 	}
 }

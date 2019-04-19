@@ -39,26 +39,26 @@ function patchObject(m: FxOrmInstance.Instance) {
         // "model"
     ];
 
-    function enum_associations(assocs: (FxOrmAssociation.InstanceAssociationItem)[]) {
-        assocs.forEach(function (item: FxOrmAssociation.InstanceAssociationItem) {
-            if (item.getAccessor)
-                methods.push(item.getAccessor);
-            if (item.setAccessor)
-                methods.push(item.setAccessor);
-            if (item.hasAccessor)
-                methods.push(item.hasAccessor);
-            if (item.delAccessor)
-                methods.push(item.delAccessor);
-            if (item.addAccessor)
-                methods.push(item.addAccessor);
-        });
-    }
+    // function enum_associations(assocs: (FxOrmAssociation.InstanceAssociationItem)[]) {
+    //     assocs.forEach(function (item: FxOrmAssociation.InstanceAssociationItem) {
+    //         if (item.getAccessor)
+    //             methods.push(item.getAccessor);
+    //         if (item.setAccessor)
+    //             methods.push(item.setAccessor);
+    //         if (item.hasAccessor)
+    //             methods.push(item.hasAccessor);
+    //         if (item.delAccessor)
+    //             methods.push(item.delAccessor);
+    //         if (item.addAccessor)
+    //             methods.push(item.addAccessor);
+    //     });
+    // }
 
     // patch associations methods
     var opts = m.__opts;
     if (opts) {
-        enum_associations(opts.one_associations);
-        enum_associations(opts.many_associations);
+        // enum_associations(opts.one_associations);
+        // enum_associations(opts.many_associations);
         // enum_associations(opts.extend_associations);
         /**
          * leave it here just due to historical reason,
@@ -69,7 +69,7 @@ function patchObject(m: FxOrmInstance.Instance) {
         // patch lazyload's accessor
         for (var f in opts.fieldToPropertyMap) {
             if (opts.fieldToPropertyMap[f].lazyload) {
-                var name = f.charAt(0).toUpperCase() + f.slice(1);
+                var name = Utilities.formatNameFor('field:lazyload', f);
                 methods.push('get' + name);
                 methods.push('set' + name);
                 methods.push('remove' + name);
