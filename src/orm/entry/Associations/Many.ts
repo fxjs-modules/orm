@@ -515,36 +515,40 @@ function extendInstance(
 
 		const savedAssociations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
 
-		Associations.forEach((Association) => {
-			const saveAssociation = function (err: FxOrmError.ExtendedError) {
-				if (err)
-					throw err;
+		Utilities.parallelQueryIfPossible(
+			Driver.isPool,
+			Associations,
+			(Association) => {
+				const saveAssociation = function (err: FxOrmError.ExtendedError) {
+					if (err)
+						throw err;
 
-				Association.saveSync();
+					Association.saveSync();
 
-				const data: {[k: string]: any} = {};
+					const data: {[k: string]: any} = {};
 
-				for (let k in add_opts) {
-					if (k in association.props && Driver.propertyToValue) {
-						data[k] = Driver.propertyToValue(add_opts[k], association.props[k]);
-					} else {
-						data[k] = add_opts[k];
+					for (let k in add_opts) {
+						if (k in association.props && Driver.propertyToValue) {
+							data[k] = Driver.propertyToValue(add_opts[k], association.props[k]);
+						} else {
+							data[k] = add_opts[k];
+						}
 					}
+
+					Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, data);
+					Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Association, data);
+
+					Driver.insert(association.mergeTable, data, null);
+					savedAssociations.push(Association);
+				};
+				
+				if (Object.keys(association.props).length) {
+					Hook.wait(Association, association.hooks.beforeSave, saveAssociation, add_opts);
+				} else {
+					Hook.wait(Association, association.hooks.beforeSave, saveAssociation);
 				}
-
-				Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, data);
-				Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Association, data);
-
-				Driver.insert(association.mergeTable, data, null);
-				savedAssociations.push(Association);
-			};
-			
-			if (Object.keys(association.props).length) {
-				Hook.wait(Association, association.hooks.beforeSave, saveAssociation, add_opts);
-			} else {
-				Hook.wait(Association, association.hooks.beforeSave, saveAssociation);
 			}
-		});
+		)
 
 		if (!this.saved())
 			this.saveSync();

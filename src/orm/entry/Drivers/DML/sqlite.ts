@@ -19,6 +19,7 @@ export const Driver: FxOrmDMLDriver.DMLDriverConstructor_SQLite = function(
 	}
 
 	this.query  = new Query({ dialect: this.dialect, timezone: this.config.timezone });
+	utils.setCouldPool(this);
 	utils.getKnexInstance(this);
 
 	this.customTypes = {};

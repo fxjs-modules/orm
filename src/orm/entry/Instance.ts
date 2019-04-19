@@ -313,13 +313,13 @@ export const Instance = function (
 				error_passed = false,
 				assocSaved: boolean;
 
-		const saveAssociationItemSync = function (accessor: string, instances: FxOrmInstance.InstanceDataPayload[]) {
+		const saveAssociationItemSync = function (callbackVersionAccessor: string, instances: FxOrmInstance.InstanceDataPayload) {
 			pending += 1;
 
 			let error: FxOrmError.ExtendedError = null;
 
 			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(() => {
-				instance[accessor + 'Sync'](instances);
+				instance[callbackVersionAccessor + 'Sync'](instances);
 			});
 			
 			error = syncResponse.error;
@@ -345,14 +345,22 @@ export const Instance = function (
 				if (!Array.isArray(instance[assoc.name])) {
 					instance[assoc.name] = [ instance[assoc.name] ];
 				}
-				for (let i = 0; i < instance[assoc.name].length; i++) {
-					if (!instance[assoc.name][i].isInstance) {
-						instance[assoc.name][i] = new assoc.model(instance[assoc.name][i]);
+
+				const instances = instance[assoc.name] as FxOrmInstance.Instance[];
+				Utilities.parallelQueryIfPossible(
+					opts.driver.opts.pool,
+					instances,
+					(item) => {
+						if (!item.isInstance) {
+							item = new assoc.model(item);
+						}
+						saveAssociationItemSync(assoc.setAccessor, item);
 					}
-					saveAssociationItemSync(assoc.setAccessor, instance[assoc.name][i]);
-				}
+				);
+				
 				return;
 			}
+
 			if (!instance[assoc.name].isInstance) {
 			  instance[assoc.name] = new assoc.model(instance[assoc.name]);
 			}
@@ -645,12 +653,11 @@ export const Instance = function (
 		args = args.filter(x => x !== cb);
 
 		const waitor = cb ? new coroutine.Event() : undefined
-
 		process.nextTick(() => {
-			const syncRespone = Utilities.exposeErrAndResultFromSyncMethod(() => instance.saveSync(...args));
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(instance.saveSync, args);
 			if (waitor) waitor.set();
 
-			Utilities.throwErrOrCallabckErrResult({ error: syncRespone.error, result: instance }, { callback: cb });
+			Utilities.throwErrOrCallabckErrResult({ error: syncResponse.error, result: instance }, { callback: cb });
 		});
 
 		if (waitor) waitor.wait();

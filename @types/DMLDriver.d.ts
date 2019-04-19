@@ -37,6 +37,8 @@ declare namespace FxOrmDMLDriver {
         dialect: FxSqlQueryDialect.DialectType
         config: FxOrmNS.IDBConnectionConfig
         opts: DMLDriverOptions
+        readonly isPool: boolean;
+
         customTypes: {[key: string]: FxOrmProperty.CustomPropertyType}
 
         knex: FXJSKnex.FXJSKnexModule.KnexInstance

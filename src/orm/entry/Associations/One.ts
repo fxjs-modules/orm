@@ -308,7 +308,11 @@ function extendInstance(
 				return other;
 			};
 
-			return inst_arr.map(runReversed);
+			return Utilities.parallelQueryIfPossible(
+				Driver.isPool,
+				inst_arr,
+				runReversed
+			);
 		}
 
 		const runNonReversed = function (oinst: FxOrmInstance.Instance) {
@@ -317,13 +321,19 @@ function extendInstance(
 			Instance[association.name] = oinst;
 			Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.field), oinst, Instance);
 
-			// link
-			Instance.saveSync({}, { saveAssociations: false });
-
 			return oinst;
 		}
 
-		return inst_arr.map(runNonReversed)
+		const reults = Utilities.parallelQueryIfPossible(
+			Driver.isPool,
+			inst_arr,
+			runNonReversed
+		);
+
+		// link
+		Instance.saveSync({}, { saveAssociations: false });
+		
+		return reults;
 	});
 
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setAccessor, function (

@@ -65,27 +65,31 @@ const ChainFind = function (
 				return key;
 			});
 
-			opts.__eager.forEach((association: FxOrmAssociation.InstanceAssociationItem) => {
-				let instances: FxOrmInstance.Instance[] = [];
-				
-				instances = opts.driver.eagerQuery<FxOrmInstance.Instance[]>(association, opts, keys);
+			Utilities.parallelQueryIfPossible(
+				opts.driver.isPool,
+				opts.__eager,
+				(association: FxOrmAssociation.InstanceAssociationItem) => {
+					let instances: FxOrmInstance.Instance[] = [];
+					
+					instances = opts.driver.eagerQuery<FxOrmInstance.Instance[]>(association, opts, keys);
 
-				const association_name = association.name;
+					const association_name = association.name;
 
-				for (
-					let idx = 0, instance: FxOrmInstance.Instance, item = null;
-					instance = instances[idx];
-					idx++
-				) {
-					item = associationKey_Item_Map[instance.$p];
+					for (
+						let idx = 0, instance: FxOrmInstance.Instance, item = null;
+						instance = instances[idx];
+						idx++
+					) {
+						item = associationKey_Item_Map[instance.$p];
 
-					// Create the association arrays
-					if (!item[association_name])
-						item[association_name] = []
+						// Create the association arrays
+						if (!item[association_name])
+							item[association_name] = []
 
-					item[association_name].push(instance);
+						item[association_name].push(instance);
+					}
 				}
-			});
+			)
 		};
 
 		const items = foundItems.map<FxOrmInstance.Instance>((dataItem: FxOrmInstance.InstanceDataPayload) => {

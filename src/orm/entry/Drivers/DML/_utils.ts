@@ -80,3 +80,13 @@ export function buildMergeToKnex (
 ) {
 	
 }
+
+export function setCouldPool (
+	driver: FxOrmDMLDriver.DMLDriver
+) {
+	Object.defineProperty(driver, 'isPool', {
+		get () {
+			return driver.opts.pool
+		}
+	});
+}

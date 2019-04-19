@@ -1,4 +1,5 @@
 import util = require('util')
+import coroutine = require('coroutine')
 import events         = require("events");
 
 import _cloneDeep = require('lodash.clonedeep')
@@ -619,6 +620,17 @@ export function throwErrOrCallabckErrResult<RESULT_T = any> (
 			});
 		else
 			callback(input.error, input.result);
+}
+
+export function parallelQueryIfPossible<T = any, RESP = any> (
+	can_parallel: boolean,
+	iteratee: T[],
+	iterator: (value: T, index?: number, array?: T[]) => RESP
+): RESP[] {
+	if (can_parallel && iteratee.length > 1)
+		return coroutine.parallel(iteratee, (item: T) => iterator(item));
+
+	return iteratee.map(iterator)
 }
 
 const model_conjunctions_keys: (keyof FxSqlQuerySubQuery.ConjunctionInput__Sample)[] = [ 'or', 'and', 'not_or', 'not_and', 'not' ];
