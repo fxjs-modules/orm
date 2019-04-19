@@ -15,9 +15,10 @@ exports.mysql = {
   database : "fxjs-orm-test",
   query    : {
     pool     : Boolean(process.env.FX_ORM_TEST_POOL),
-    debug    : Boolean(process.env.FX_ORM_TEST_DEBUG)
   }
 };
+if (Boolean(process.env.FX_ORM_TEST_DEBUG))
+  exports.mysql.query.debug = true;
 exports.postgres = {
   protocol : "postgres://",
   user     : "root",
@@ -39,6 +40,7 @@ exports.sqlite = {
   protocol  : "sqlite:",
   query    : {
     pool     : Boolean(process.env.FX_ORM_TEST_POOL),
-    debug    : Boolean(process.env.FX_ORM_TEST_DEBUG)
   }
 }; // uses in-memory database
+if (Boolean(process.env.FX_ORM_TEST_DEBUG))
+  exports.mysql.query.debug = true;
