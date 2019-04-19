@@ -118,8 +118,6 @@ declare namespace FxOrmInstance {
          */
         __opts?: InnerInstanceOptions;
 
-        readonly __events?: {[k: string]: Function[]}
-
         /**
          * @noenum
          */
