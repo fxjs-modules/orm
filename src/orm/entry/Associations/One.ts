@@ -4,7 +4,7 @@ import coroutine = require('coroutine')
 import Utilities = require("../Utilities");
 import ORMError = require("../Error");
 import { ACCESSOR_KEYS, addAssociationInfoToModel } from './_utils';
-import { findByList } from '../Model';
+import { ListFindByChainOrRunSync } from '../Model';
 import * as Helpers from '../Helpers';
 
 function noOperation (...args: any[]) {};
@@ -85,42 +85,48 @@ export function prepare (
 			});
 		}
 
-		Model[association.modelFindByAccessor] = function () {
-			var cb: FxOrmModel.ModelMethodCallback__Find = null,
-				conditions: FxOrmModel.ModelQueryConditions__Find = null,
-				options: FxOrmAssociation.ModelAssociationMethod__FindOptions = {};
+		const findByAccessorChainOrRunSync = function (is_sync: boolean = false) {
+			return function () {
+				var cb: FxOrmModel.ModelMethodCallback__Find = null,
+					conditions: FxOrmModel.ModelQueryConditions__Find = null,
+					options: FxOrmAssociation.ModelAssociationMethod__FindOptions = {};
 
-			Helpers.selectArgs(arguments, (arg_type, arg) => {
-				switch (arg_type) {
-					case "function":
-						cb = arg;
-						break;
-					case "object":
-						if (conditions === null) {
-							conditions = arg;
-						} else {
-							options = arg;
-						}
-						break;
+				Helpers.selectArgs(arguments, (arg_type, arg) => {
+					switch (arg_type) {
+						case "function":
+							cb = arg;
+							break;
+						case "object":
+							if (conditions === null) {
+								conditions = arg;
+							} else {
+								options = arg;
+							}
+							break;
+					}
+				})
+
+				if (conditions === null) {
+					throw new ORMError(`.${association.modelFindByAccessor}() is missing a conditions object`, 'PARAM_MISMATCH');
 				}
-			})
 
-			if (conditions === null) {
-				throw new ORMError(`.${association.modelFindByAccessor}() is missing a conditions object`, 'PARAM_MISMATCH');
-			}
+				return ListFindByChainOrRunSync(Model, 
+					{},
+					[
+						{
+							association_name: association.name,
+							conditions: conditions
+						},
+					],
+					options,
+					cb,
+					is_sync
+				);
+			};
+		}
 
-			return findByList(Model, 
-				{},
-				[
-					{
-						association_name: association.name,
-						conditions: conditions
-					},
-				],
-				options,
-				cb
-			);
-		};
+		Model[association.modelFindByAccessor] = findByAccessorChainOrRunSync();
+		Model[association.modelFindBySyncAccessor] = findByAccessorChainOrRunSync(true);
 
 		addAssociationInfoToModel(Model, assoc_name, {
 			type: 'hasOne',
@@ -203,7 +209,7 @@ function extendInstance(
 		return this;
 	});
 
-	const chainOrRunSync = function  (
+	const getAccessorChainOrRunSync = function  (
 		opts: FxOrmModel.ModelOptions__Find = {},
 		cb: FxOrmNS.GenericCallback<FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[]>,
 		is_sync: boolean = false
@@ -261,7 +267,7 @@ function extendInstance(
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.getSyncAccessor, function (
 		opts: FxOrmModel.ModelOptions__Find = {},
 	): FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[] {
-		return chainOrRunSync(opts, noOperation, true) as FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[];
+		return getAccessorChainOrRunSync(opts, noOperation, true) as FxOrmAssociation.InstanceAssociatedInstance | FxOrmAssociation.InstanceAssociatedInstance[];
 	});
 
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.getAccessor, function (
@@ -275,14 +281,14 @@ function extendInstance(
 
 		if (cb) {
 			process.nextTick(() => {
-				const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance>(chainOrRunSync, [opts, noOperation]);
+				const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance>(getAccessorChainOrRunSync, [opts, noOperation]);
 				Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
 			});
 
 			return this;
 		}
 
-		return chainOrRunSync(opts, cb) as FxOrmQuery.IChainFind;
+		return getAccessorChainOrRunSync(opts, cb) as FxOrmQuery.IChainFind;
 	});
 
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setSyncAccessor, function (

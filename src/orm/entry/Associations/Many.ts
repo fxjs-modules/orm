@@ -11,7 +11,7 @@ import Property = require("../Property");
 import ORMError = require("../Error");
 import Utilities = require("../Utilities");
 import { ACCESSOR_KEYS, addAssociationInfoToModel } from './_utils';
-import { findByList } from '../Model';
+import { ListFindByChainOrRunSync } from '../Model';
 import * as Helpers from '../Helpers';
 
 function noOperation (...args: any[]) {};
@@ -116,45 +116,51 @@ export function prepare(db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associatio
 			});
 		}
 
-		Model[association.modelFindByAccessor] = function () {
-			var cb: FxOrmModel.ModelMethodCallback__Find = null,
-				conditions: FxOrmModel.ModelQueryConditions__Find = null,
-				right_find_opts: FxOrmAssociation.ModelAssociationMethod__FindByOptions = null,
-				join_conditions = {};
+		const findByAccessorChainOrRunSync = function (is_sync: boolean = false) {
+			return function () {
+				var cb: FxOrmModel.ModelMethodCallback__Find = null,
+					conditions: FxOrmModel.ModelQueryConditions__Find = null,
+					right_find_opts: FxOrmAssociation.ModelAssociationMethod__FindByOptions = null,
+					join_conditions = {};
 
-			for (let i = 0; i < arguments.length; i++) {
-				switch (typeof arguments[i]) {
-					case "function":
-						cb = arguments[i];
-						break;
-					case "object":
-						if (conditions === null) {
-							conditions = arguments[i];
-						} else if (right_find_opts === null) {
-							right_find_opts = arguments[i];
-						}
-						break;
+				for (let i = 0; i < arguments.length; i++) {
+					switch (typeof arguments[i]) {
+						case "function":
+							cb = arguments[i];
+							break;
+						case "object":
+							if (conditions === null) {
+								conditions = arguments[i];
+							} else if (right_find_opts === null) {
+								right_find_opts = arguments[i];
+							}
+							break;
+					}
 				}
+
+				if (conditions === null) {
+					throw new ORMError(`.${association.modelFindByAccessor}() is missing a conditions object`, 'PARAM_MISMATCH');
+				}
+
+				right_find_opts = right_find_opts || {};
+
+				return ListFindByChainOrRunSync(Model, 
+					{},
+					[
+						{
+							association_name: association.name,
+							conditions: conditions
+						},
+					],
+					right_find_opts,
+					cb,
+					is_sync
+				);
 			}
-
-			if (conditions === null) {
-				throw new ORMError(`.${association.modelFindByAccessor}() is missing a conditions object`, 'PARAM_MISMATCH');
-			}
-
-			right_find_opts = right_find_opts || {};
-
-			return findByList(Model, 
-				{},
-				[
-					{
-						association_name: association.name,
-						conditions: conditions
-					},
-				],
-				right_find_opts,
-				cb
-			);
 		}
+
+		Model[association.modelFindByAccessor] = findByAccessorChainOrRunSync();
+		Model[association.modelFindBySyncAccessor] = findByAccessorChainOrRunSync(true);
 
 		addAssociationInfoToModel(Model, name, {
 			type: 'hasMany',

@@ -1,5 +1,3 @@
-import { patchModelAfterDefine } from "./utils";
-
 export default function (
     orm: FxOrmNS.ORM,
     plugin_opts: {
@@ -11,7 +9,6 @@ export default function (
     }
 
     function define (m: FxOrmModel.Model) {
-        patchModelAfterDefine(m);
     }
 
     return {

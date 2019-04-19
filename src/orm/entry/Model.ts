@@ -857,7 +857,7 @@ export const Model = function (
 				FxOrmModel.ModelOptions__Find,
 				FxOrmNS.ExecutionCallback<T>
 			]
-			return findByList(model, self_conditions, by_list, self_options, cb)
+			return ListFindByChainOrRunSync(model, self_conditions, by_list, self_options, cb) as FxOrmQuery.IChainFind;
 		}
 		
 		const [association_name, self_conditions, findby_options, cb] = args as [
@@ -991,13 +991,14 @@ export function findBySolo <T = any>(
 	return model[findByAccessor](conditions, findby_options)
 }
 
-export function findByList <T = any> (
+export function ListFindByChainOrRunSync <T = any> (
 	model: FxOrmModel.Model,
 	self_conditions: FxOrmModel.ModelQueryConditions__Find,
 	by_list: FxOrmModel.ModelFindByDescriptorItem[],
 	self_options: FxOrmModel.ModelOptions__Find,
-	cb: FxOrmNS.ExecutionCallback<T>
-): FxOrmQuery.IChainFind {
+	cb: FxOrmNS.ExecutionCallback<T>,
+	is_sync: boolean = false
+): FxOrmQuery.IChainFind | (FxOrmInstance.Instance | FxOrmInstance.Instance[]) {
 	self_options = self_options || {};
 	const merges = Utilities.combineMergeInfoToArray(self_options.__merge);
 
@@ -1128,5 +1129,10 @@ export function findByList <T = any> (
 		return model.find.call(model, self_conditions, self_options, cb);
 	}
 
-	return model.find(self_conditions, self_options);
+	const chain = model.find(self_conditions, self_options);
+
+	if (is_sync)
+		return chain.runSync();
+
+	return chain;
 }

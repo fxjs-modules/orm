@@ -7,7 +7,10 @@ import _cloneDeep = require('lodash.clonedeep');
 import ORMError   = require("../Error");
 import Singleton  = require("../Singleton");
 import Utilities  = require("../Utilities");
-import { findByList } from '../Model';
+import Helpers  = require("../Helpers");
+import { ListFindByChainOrRunSync } from '../Model';
+
+function noOperation (...args: any[]) {};
 
 /**
  * 
@@ -71,42 +74,49 @@ export function prepare (db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associati
 
 		associations.push(association);
 
-		Model[association.modelFindByAccessor] = function () {
-			var cb: FxOrmModel.ModelMethodCallback__Find = null,
-				conditions: FxOrmModel.ModelQueryConditions__Find = null,
-				options: FxOrmAssociation.ModelAssociationMethod__FindOptions = {};
+		const findByAccessorChainOrRunSync = function (is_sync: boolean = false) {
+			return function () {
+				var cb: FxOrmModel.ModelMethodCallback__Find = null,
+					conditions: FxOrmModel.ModelQueryConditions__Find = null,
+					options: FxOrmAssociation.ModelAssociationMethod__FindOptions = {};
 
-			for (let i = 0; i < arguments.length; i++) {
-				switch (typeof arguments[i]) {
-					case "function":
-						cb = arguments[i];
-						break;
-					case "object":
-						if (conditions === null) {
-							conditions = arguments[i];
-						} else {
-							options = arguments[i];
-						}
-						break;
+				const args = Array.prototype.slice.apply(arguments)
+				Helpers.selectArgs(args, (arg_type, arg) => {
+					switch (arg_type) {
+						case "function":
+							cb = arg;
+							break;
+						case "object":
+							if (conditions === null) {
+								conditions = arg;
+							} else {
+								options = arg;
+							}
+							break;
+					}
+				});
+
+				if (conditions === null) {
+					throw new ORMError(`.${association.modelFindByAccessor}() is missing a conditions object`, 'PARAM_MISMATCH');
 				}
-			}
 
-			if (conditions === null) {
-				throw new ORMError(`.${association.modelFindByAccessor}() is missing a conditions object`, 'PARAM_MISMATCH');
+				return ListFindByChainOrRunSync(Model, 
+					{},
+					[
+						{
+							association_name: association.name,
+							conditions: conditions
+						},
+					],
+					options,
+					cb,
+					is_sync
+				);
 			}
-
-			return findByList(Model, 
-				{},
-				[
-					{
-						association_name: association.name,
-						conditions: conditions
-					},
-				],
-				options,
-				cb
-			);
 		};
+		
+		Model[association.modelFindByAccessor] = findByAccessorChainOrRunSync();
+		Model[association.modelFindBySyncAccessor] = findByAccessorChainOrRunSync(true);
 
 		addAssociationInfoToModel(Model, name, {
 			type: 'extendsTo',
