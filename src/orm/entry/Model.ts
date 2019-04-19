@@ -386,20 +386,19 @@ export const Model = function (
 		const cb: FxOrmModel.ModelMethodCallback__Get = util.last(args);
 		const with_callback = typeof cb === 'function';
 
-		let err: FxOrmError.ExtendedError,
-			instance: FxOrmInstance.Instance;
-
-		if (typeof cb === 'function')
-			args.pop()
-
-		try {
-			instance = model.getSync.apply(model, args)
-		} catch (ex) {
-			err = ex;
-		}
-
 		if (with_callback)
-			cb(err, instance);
+			args.pop();
+
+		const waitor = with_callback ? new coroutine.Event() : undefined
+
+		process.nextTick(() => {
+			const syncReponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance>(model.getSync, args, { thisArg: model });
+
+			if (waitor) waitor.set();
+			if (with_callback)
+				cb(syncReponse.error, syncReponse.result);
+		});
+		if (waitor) waitor.wait();
 
 		return this;
 	};

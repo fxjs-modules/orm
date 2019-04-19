@@ -1,7 +1,7 @@
 import * as util from 'util'
 
 import * as Utilities from '../Utilities'
-import { preReplaceHook, prependHook } from '../Helpers';
+import { prependHook } from '../Helpers';
 
 interface ModelFuncToPatch extends Function {
     is_new?: boolean;
@@ -59,7 +59,7 @@ function patchObject(m: FxOrmInstance.Instance) {
     if (opts) {
         enum_associations(opts.one_associations);
         enum_associations(opts.many_associations);
-        enum_associations(opts.extend_associations);
+        // enum_associations(opts.extend_associations);
         /**
          * leave it here just due to historical reason,
          * maybe useless here, its's all string in it

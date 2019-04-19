@@ -73,12 +73,19 @@ declare namespace FxOrmAssociation {
         extension?: boolean
 
         getAccessor: string
+        getSyncAccessor: string
         setAccessor: string
+        setSyncAccessor: string
         hasAccessor: string
+        hasSyncAccessor: string
         delAccessor: string
+        delSyncAccessor: string
 
         addAccessor?: string
+        addSyncAccessor?: string
+
         modelFindByAccessor?: string
+        modelFindBySyncAccessor?: string
 
         reversed?: boolean
         autoFetch: boolean

@@ -464,7 +464,7 @@ export function ucfirst(text: string) {
 }
 
 export function formatNameFor (
-	key: 'assoc:hasMany' | 'assoc:hasOne' | 'findBy:common' | 'findBy:hasOne' | 'assoc:extendsTo' | 'findBy:extendsTo' | 'field:lazyload',
+	key: 'assoc:hasMany' | 'assoc:hasOne' | 'findBy:common' | 'findBy:hasOne' | 'assoc:extendsTo' | 'findBy:extendsTo' | 'field:lazyload' | 'syncify:assoc',
 	name: string
 ) {
 	switch (key) {
@@ -479,7 +479,8 @@ export function formatNameFor (
 			return ucfirst(name)
 		case 'field:lazyload':
 			return ucfirst(name.toLocaleLowerCase())
-			break
+		case 'syncify:assoc':
+			return name + 'Sync'
 	}	
 }
 
@@ -577,7 +578,6 @@ export function exposeErrAndResultFromSyncMethod<T = any> (
 	args: any[] = [],
 	opts?: {
 		thisArg?: any,
-		// callback?: FibOrmNS.ExecutionCallback<T>
 	}
 ): FxOrmNS.ExposedResult<T> {
 	let error: FxOrmError.ExtendedError,
@@ -597,11 +597,14 @@ export function exposeErrAndResultFromSyncMethod<T = any> (
 export function throwErrOrCallabckErrResult<RESULT_T = any> (
 	input: FxOrmNS.ExposedResult<RESULT_T>,
 	opts?: {
-		callback?: FibOrmNS.ExecutionCallback<RESULT_T>,
+		no_throw?: boolean
+		callback?: FibOrmNS.ExecutionCallback<any, RESULT_T>,
 		use_tick?: boolean
 	}
 ) {
-	if (input.error)
+	const { no_throw = false } = opts || {};
+
+	if (!no_throw && input.error)
 		throw input.error;
 
 	const {
@@ -723,4 +726,25 @@ export function addHiddenReadonlyPropertyToInstance (
 			enumerable: false
 		}
 	);
+}
+
+export function fillSyncVersionAccessorForAssociation (
+	association: FxOrmAssociation.InstanceAssociationItem
+) {
+	if (!association.getSyncAccessor)
+		association.getSyncAccessor = formatNameFor('syncify:assoc', association.getAccessor)
+
+	if (!association.setSyncAccessor)
+		association.setSyncAccessor = formatNameFor('syncify:assoc', association.setAccessor)
+		
+	if (!association.delSyncAccessor)
+		association.delSyncAccessor = formatNameFor('syncify:assoc', association.delAccessor)
+
+	if (!association.hasSyncAccessor)
+		association.hasSyncAccessor = formatNameFor('syncify:assoc', association.hasAccessor)
+
+	if (!association.addSyncAccessor && association.addAccessor)
+		association.addSyncAccessor = formatNameFor('syncify:assoc', association.addAccessor)
+
+	return association;
 }

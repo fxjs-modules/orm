@@ -24,7 +24,7 @@ export function prepare (db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associati
 		assoc_options = assoc_options || {};
 
 		const associationSemanticNameCore = assoc_options.name || Utilities.formatNameFor("assoc:extendsTo", name);
-		const association: FxOrmAssociation.InstanceAssociationItem_ExtendTos = {
+		const association = <FxOrmAssociation.InstanceAssociationItem_ExtendTos>{
 			name           : name,
 			table          : assoc_options.table || defineDefaultExtendsToTableName(Model.table, name),
 			reversed       : assoc_options.reversed,
@@ -49,6 +49,7 @@ export function prepare (db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associati
 
 			model: null
 		};
+		Utilities.fillSyncVersionAccessorForAssociation(association);
 
 		const newProperties: FxOrmModel.DetailedPropertyDefinitionHash = _cloneDeep(properties);
 		const assoc_field = association.field as FxOrmProperty.NormalizedPropertyHash
@@ -162,103 +163,99 @@ function extendInstance(
 	association: FxOrmAssociation.InstanceAssociationItem_ExtendTos,
 	opts: FibOrmNS.InstanceExtendOptions
 ) {
-	Object.defineProperty(Instance, association.hasAccessor, {
-		value : function (cb: FxOrmNS.GenericCallback<boolean>) {
-			if (!Instance[Model.id + '']) {
-			    cb(new ORMError("Instance not saved, cannot get extension", 'NOT_DEFINED', { model: Model.table }));
-			} else {
-				association.model.get(Utilities.values(Instance, Model.id), function (err: Error, extension: FxOrmInstance.Instance) {
-					return cb(err, !err && extension ? true : false);
-				});
-			}
-			return this;
-		},
-		enumerable : false
+	Utilities.addHiddenPropertyToInstance(Instance, association.hasSyncAccessor, function () {
+		if (!Instance[Model.id + ''])
+			throw new ORMError("Instance not saved, cannot get extension", 'NOT_DEFINED', { model: Model.table });
+			
+		return !!association.model.getSync(Utilities.values(Instance, Model.id));
 	});
-	Object.defineProperty(Instance, association.getAccessor, {
-		value: function (opts: FxOrmModel.ModelOptions__Get, cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>) {
-			if (typeof opts == "function") {
-				cb = opts;
-				opts = {};
-			}
 
-			if (!Instance[Model.id + '']) {
-			    cb(new ORMError("Instance not saved, cannot get extension", 'NOT_DEFINED', { model: Model.table }));
-			} else {
-				association.model.get(Utilities.values(Instance, Model.id), opts, cb);
-			}
-			return this;
-		},
-		enumerable : false
+	Utilities.addHiddenPropertyToInstance(Instance, association.hasAccessor, function (cb: FxOrmNS.GenericCallback<boolean>) {
+		process.nextTick(() => {
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<boolean>(Instance[association.hasSyncAccessor]);
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
+		});
+
+		return this;
 	});
-	Object.defineProperty(Instance, association.setAccessor, {
-		value : function (
-			Extension: FxOrmInstance.Instance | FxOrmInstance.InstanceDataPayload,
-			cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>
-		) {
-			Instance.save(function (err: FxOrmError.ExtendedError) {
-				if (err) {
-					return cb(err);
-				}
 
-				Instance[association.delAccessor](function (err: FxOrmError.ExtendedError) {
-					if (err) {
-						return cb(err);
-					}
-
-					var fields = Object.keys(association.field);
-
-					if (!Extension.isInstance) {
-						Extension = new association.model(Extension);
-					}
-
-					for (let i = 0; i < Model.id.length; i++) {
-						Extension[fields[i]] = Instance[Model.id[i]];
-					}
-
-					Extension.save(cb);
-				});
-			});
-			return this;
-		},
-		enumerable : false
+	Utilities.addHiddenPropertyToInstance(Instance, association.getSyncAccessor, function (opts: FxOrmModel.ModelOptions__Get = {}) {
+		if (!Instance[Model.id + ''])
+			throw new ORMError("Instance not saved, cannot get extension", 'NOT_DEFINED', { model: Model.table });
+		
+		return association.model.getSync(Utilities.values(Instance, Model.id), opts);
 	});
-	Object.defineProperty(Instance, association.delAccessor, {
-		value : function (cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>) {
-			if (!Instance[Model.id + '']) {
-			    cb(new ORMError("Instance not saved, cannot get extension", 'NOT_DEFINED', { model: Model.table }));
-			} else {
-				var conditions: {[k: string]: any} = {};
-				var fields = Object.keys(association.field);
 
-				for (let i = 0; i < Model.id.length; i++) {
-				    conditions[fields[i]] = Instance[Model.id[i]];
-				}
+	Utilities.addHiddenPropertyToInstance(Instance, association.getAccessor, function (opts: FxOrmModel.ModelOptions__Get, cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>) {
+		process.nextTick(() => {
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance>(Instance[association.getSyncAccessor], [ opts ]);
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
+		});
 
-				association.model.find(conditions, function (err, extensions) {
-					if (err) {
-						return cb(err);
-					}
+		return this;
+	});
 
-					var pending = extensions.length;
+	Utilities.addHiddenPropertyToInstance(Instance, association.setSyncAccessor, function (
+		Extension: FxOrmInstance.Instance | FxOrmInstance.InstanceDataPayload
+	) {
+		Instance.saveSync();
+		Instance[association.delSyncAccessor]();
 
-					for (let i = 0; i < extensions.length; i++) {
-						Singleton.clear(extensions[i].__singleton_uid() + '');
-						extensions[i].remove(function () {
-							if (--pending === 0) {
-								return cb(null);
-							}
-						});
-					}
+		const fields = Object.keys(association.field);
 
-					if (pending === 0) {
-						return cb(null);
-					}
-				});
-			}
-			return this;
-		},
-		enumerable : false
+		if (!Extension.isInstance) {
+			Extension = new association.model(Extension);
+		}
+
+		for (let i = 0; i < Model.id.length; i++) {
+			Extension[fields[i]] = Instance[Model.id[i]];
+		}
+
+		Extension.saveSync();
+
+		return Extension;
+	});
+
+	Utilities.addHiddenPropertyToInstance(Instance, association.setAccessor, function (
+		Extension: FxOrmInstance.Instance | FxOrmInstance.InstanceDataPayload,
+		cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>
+	) {
+		process.nextTick(() => {
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(Instance[association.setSyncAccessor], [ Extension ]);
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
+		});
+		
+		return this;
+	});
+
+	Utilities.addHiddenPropertyToInstance(Instance, association.delSyncAccessor, function () {
+		if (!Instance[Model.id + ''])
+			throw new ORMError("Instance not saved, cannot get extension", 'NOT_DEFINED', { model: Model.table });
+
+		const conditions: {[k: string]: any} = {};
+		const fields = Object.keys(association.field);
+
+		for (let i = 0; i < Model.id.length; i++) {
+			conditions[fields[i]] = Instance[Model.id[i]];
+		}
+
+		const extensions = association.model.findSync(conditions)
+
+		for (let i = 0; i < extensions.length; i++) {
+			Singleton.clear(extensions[i].__singleton_uid() + '');
+			extensions[i].removeSync();
+		}
+
+		return ;
+	});
+
+	Utilities.addHiddenPropertyToInstance(Instance, association.delAccessor, function (cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance, FxOrmInstance.Instance>) {
+		process.nextTick(() => {
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<void>(Instance[association.delSyncAccessor]);
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
+		});
+
+		return this;
 	});
 }
 
