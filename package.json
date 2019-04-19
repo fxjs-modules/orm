@@ -67,7 +67,7 @@
     },
     "peerDependencies": {
         "@fxjs/sql-ddl-sync": ">= 0.3.6 < 0.4",
-        "@fxjs/sql-query": ">= 0.2.5 < 0.3",
+        "@fxjs/sql-query": ">= 0.4 < 0.5",
         "@fibjs/enforce": ">= 0.0.8 < 0.1",
         "@fxjs/knex": ">= 0.1.1 < 0.2"
     }
