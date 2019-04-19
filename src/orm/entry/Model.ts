@@ -18,7 +18,6 @@ import Hook              = require("./Hook");
 import AggregateFunctions = require("./AggregateFunctions");
 import * as Helpers from './Helpers';
 import { getMapsToFromPropertyHash } from './Associations/_utils';
-import { patchHooksInModelOptions } from './Patch/utils';
 
 const AvailableHooks: (keyof FxOrmModel.Hooks)[] = [
 	"beforeCreate", "afterCreate",
@@ -52,8 +51,6 @@ export const Model = function (
 				delete m_opts.hooks[hook];
 			} else {
 				m_opts.hooks[hook] = cb;
-				if (hook === 'afterLoad' || hook === 'afterAutoFetch')
-					patchHooksInModelOptions(m_opts, [hook])
 			}
 			return this;
 		};

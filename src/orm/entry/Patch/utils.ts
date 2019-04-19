@@ -1,7 +1,6 @@
 import * as util from 'util'
 
 import * as Utilities from '../Utilities'
-import { prependHook } from '../Helpers';
 
 interface ModelFuncToPatch extends Function {
     is_new?: boolean;
@@ -31,55 +30,6 @@ function patchSync(
     })
 }
 
-function patchObject(m: FxOrmInstance.Instance) {
-    var methods = [
-        // "save",
-        // "remove",
-        // "validate",
-        // "model"
-    ];
-
-    // function enum_associations(assocs: (FxOrmAssociation.InstanceAssociationItem)[]) {
-    //     assocs.forEach(function (item: FxOrmAssociation.InstanceAssociationItem) {
-    //         if (item.getAccessor)
-    //             methods.push(item.getAccessor);
-    //         if (item.setAccessor)
-    //             methods.push(item.setAccessor);
-    //         if (item.hasAccessor)
-    //             methods.push(item.hasAccessor);
-    //         if (item.delAccessor)
-    //             methods.push(item.delAccessor);
-    //         if (item.addAccessor)
-    //             methods.push(item.addAccessor);
-    //     });
-    // }
-
-    // patch associations methods
-    var opts = m.__opts;
-    if (opts) {
-        // enum_associations(opts.one_associations);
-        // enum_associations(opts.many_associations);
-        // enum_associations(opts.extend_associations);
-        /**
-         * leave it here just due to historical reason,
-         * maybe useless here, its's all string in it
-         */
-        // enum_associations(opts.association_properties);
-
-        // patch lazyload's accessor
-        for (var f in opts.fieldToPropertyMap) {
-            if (opts.fieldToPropertyMap[f].lazyload) {
-                var name = Utilities.formatNameFor('field:lazyload', f);
-                methods.push('get' + name);
-                methods.push('set' + name);
-                methods.push('remove' + name);
-            }
-        };
-    }
-
-    patchSync(m, methods);
-}
-
 export function patchFindBy(m: FxOrmModel.Model, funcs: HashOfModelFuncNameToPath) {
     funcs.forEach(function (func) {
         var old_func: ModelFuncToPatch = m[func];
@@ -94,17 +44,6 @@ export function patchFindBy(m: FxOrmModel.Model, funcs: HashOfModelFuncNameToPat
                 return r;
             }
     })
-}
-
-export function patchHooksInModelOptions(
-    opts: FxOrmModel.ModelOptions,
-    hooks: (keyof FxOrmNS.Hooks)[] = ['afterLoad', 'afterAutoFetch']
-) {
-    hooks.forEach(hook => {
-        prependHook(opts.hooks, hook, function () {
-            patchObject(this);
-        });
-    });
 }
 
 export function patchModelAfterDefine(m: FxOrmModel.Model, /* opts: FxOrmModel.ModelOptions */) {

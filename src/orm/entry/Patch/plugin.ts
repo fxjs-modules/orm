@@ -1,4 +1,4 @@
-import { patchModelAfterDefine, patchHooksInModelOptions } from "./utils";
+import { patchModelAfterDefine } from "./utils";
 
 export default function (
     orm: FxOrmNS.ORM,
@@ -8,8 +8,6 @@ export default function (
 ): FxOrmNS.Plugin {
 	function beforeDefine (name: string, properties: FxOrmNS.ModelPropertyDefinitionHash, opts: FxOrmNS.ModelOptions) {
         opts.hooks = opts.hooks || {};
-        
-        patchHooksInModelOptions(opts);
     }
 
     function define (m: FxOrmModel.Model) {

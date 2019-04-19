@@ -18,71 +18,88 @@ function addLazyLoadProperty(
 	Model: FxOrmModel.Model,
 	property: string
 ) {
-	var method = Utilities.formatNameFor("field:lazyload", name);
+	const capitalizedPropertyName = Utilities.formatNameFor("field:lazyload", name);
 
-	Object.defineProperty(Instance, "get" + method, {
-		value: function <T>(cb: FxOrmNS.ExecutionCallback<FxOrmNS.Nilable<T>>) {
-			var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
-			conditions[Model.id + ''] = Instance[Model.id + ''];
+	const propertyAccessors = {
+		getSyncAccessor: "get" + capitalizedPropertyName + "Sync",
+		getAccessor: "get" + capitalizedPropertyName,
+		
+		setSyncAccessor: "set" + capitalizedPropertyName + "Sync",
+		setAccessor: "set" + capitalizedPropertyName,
 
-			Model
-				.find(conditions, { identityCache: false })
-				.only(Model.id.concat(property))
-				.first(function (err: Error, item: FxOrmInstance.Instance) {
-					return cb(err, item ? item[property] : null);
-				});
+		removeSyncAccessor: "remove" + capitalizedPropertyName + "Sync",
+		removeAccessor: "remove" + capitalizedPropertyName + "",
+	}
 
-			return this;
-		},
-		enumerable: false
+	Utilities.addHiddenPropertyToInstance(Instance, propertyAccessors.getSyncAccessor, function <T>(): T {
+		var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
+		conditions[Model.id + ''] = Instance[Model.id + ''];
+
+		const item: FxOrmInstance.Instance = Model
+			.find(conditions, { identityCache: false })
+			.only(Model.id.concat(property))
+			.firstSync();
+
+		return item ? item[property] : null
 	});
-	Object.defineProperty(Instance, "remove" + method, {
-		value: function (cb: FxOrmNS.ExecutionCallback<FxOrmNS.Nilable<void>>) {
-			var conditions: {[k: string]: any} = {};
-			conditions[Model.id + ''] = Instance[Model.id + ''];
 
-			Model
-				.find(conditions, { identityCache: false })
-				.only(Model.id.concat(property))
-				.first(function (err: Error, item: FxOrmInstance.Instance) {
-					if (err) {
-						return cb(err);
-					}
-					if (!item) {
-						return cb(null);
-					}
-
-					item[property] = null;
-
-					return item.save(cb);
-				});
-
-			return this;
-		},
-		enumerable: false
+	Utilities.addHiddenPropertyToInstance(Instance, propertyAccessors.getAccessor, function <T>(cb?: FxOrmNS.ExecutionCallback<FxOrmNS.Nilable<T>>) {
+		process.nextTick(() => {
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance | FxOrmInstance.Instance[]>(Instance[propertyAccessors.getSyncAccessor]);
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
+		});
+		
+		return this;
 	});
-	Object.defineProperty(Instance, "set" + method, {
-		value: function (data: FxOrmInstance.InstanceDataPayload, cb: FxOrmNS.ExecutionCallback<void>) {
-			var conditions: {[k: string]: any} = {};
-			conditions[Model.id + ''] = Instance[Model.id + ''];
 
-			Model
-				.find(conditions, { identityCache: false })
-				.first(function (err: Error, item: FxOrmInstance.Instance) {
-					if (err) {
-						return cb(err);
-					}
-					if (!item) {
-						return cb(null);
-					}
+	Utilities.addHiddenPropertyToInstance(Instance, propertyAccessors.removeSyncAccessor, function () {
+		var conditions: {[k: string]: any} = {};
+		conditions[Model.id + ''] = Instance[Model.id + ''];
 
-					item[property] = data;
+		const item: FxOrmInstance.Instance = Model
+			.find(conditions, { identityCache: false })
+			.only(Model.id.concat(property))
+			.firstSync();
 
-					return item.save(cb);
-				});
+		if (!item)
+			return null;
 
-			return this;
-		},
-		enumerable: false
+		item[property] = null;
+		
+		return item.saveSync();
+	});
+
+	Utilities.addHiddenPropertyToInstance(Instance, propertyAccessors.removeAccessor, function <T>(cb?: FxOrmNS.ExecutionCallback<FxOrmNS.Nilable<T>>) {
+		process.nextTick(() => {
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance | FxOrmInstance.Instance[]>(Instance[propertyAccessors.removeSyncAccessor]);
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
+		});
+		
+		return this;
+	});
+
+	Utilities.addHiddenPropertyToInstance(Instance, propertyAccessors.setSyncAccessor, function (data: FxOrmInstance.InstanceDataPayload) {
+		var conditions: {[k: string]: any} = {};
+		conditions[Model.id + ''] = Instance[Model.id + ''];
+
+		const item: FxOrmInstance.Instance = Model
+			.find(conditions, { identityCache: false })
+			.firstSync();
+
+		if (!item)
+			return null;
+
+		item[property] = data;
+
+		return item.saveSync();
+	});
+
+	Utilities.addHiddenPropertyToInstance(Instance, propertyAccessors.setAccessor, function <T>(cb?: FxOrmNS.ExecutionCallback<FxOrmNS.Nilable<T>>) {
+		process.nextTick(() => {
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance | FxOrmInstance.Instance[]>(Instance[propertyAccessors.setSyncAccessor]);
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
+		});
+		
+		return this;
 	});
 }
