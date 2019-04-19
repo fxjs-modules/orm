@@ -646,17 +646,16 @@ export const Instance = function (
 		});
 		args.splice(cb_idx);
 
+		const waitor = cb ? new coroutine.Event() : undefined
+
 		process.nextTick(() => {
-			const syncRespone = Utilities.exposeErrAndResultFromSyncMethod(() => instance.saveSync(...args))
+			const syncRespone = Utilities.exposeErrAndResultFromSyncMethod(() => instance.saveSync(...args));
+			if (waitor) waitor.set();
 
-			if (!cb)
-				return;
-
-			if (syncRespone.error)
-				return cb(syncRespone.error);
-
-			return cb(null, instance);
+			Utilities.throwErrOrCallabckErrResult({ error: syncRespone.error, result: instance }, { callback: cb });
 		});
+
+		if (waitor) waitor.wait();
 
 		return this;
 	})

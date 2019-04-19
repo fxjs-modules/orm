@@ -75,6 +75,9 @@ describe("Model.save()", function () {
                 name: "John"
             });
             John.save();
+
+            const coroutine = require('coroutine');
+            const evt = new coroutine.Event();
             John.on("save", function (err) {
                 assert.equal(err, null);
                 assert.exist(John[Person.id]);
@@ -85,9 +88,11 @@ describe("Model.save()", function () {
                     assert.equal(JohnCopy[Person.id], John[Person.id]);
                     assert.equal(JohnCopy.name, John.name);
 
+                    evt.set();
                     return done();
                 });
             });
+            evt.wait();
         });
     });
 
