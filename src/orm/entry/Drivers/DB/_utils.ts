@@ -22,7 +22,7 @@ export function parsePoolConfig (
     }
 }
 
-export function mountPoolToDb (db: FxOrmDb.DatabaseBase, pool_input?: FxOrmNS.IConnectionOptions['pool']) {
+export function mountPoolToDb (db: FxOrmDb.DatabaseBase) {
     db.pool = FibPool<FxOrmNS.IDbConnection>({
         create: () => {
             return db.connect()
