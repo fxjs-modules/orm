@@ -603,15 +603,16 @@ export function throwErrOrCallabckErrResult<RESULT_T = any> (
 		use_tick?: boolean
 	}
 ) {
+
+	const {
+		use_tick = false,
+		callback = null,
+	} = opts || {}
+
 	const { no_throw = false } = opts || {};
 
 	if (!no_throw && input.error)
 		throw input.error;
-
-	const {
-		use_tick = false,
-		callback = null
-	} = opts || {}
 
 	if (typeof callback === 'function')
 		if (use_tick)
@@ -698,7 +699,7 @@ export function addHiddenUnwritableMethodToInstance (
 		instance,
 		method_name,
 		{
-			value: fn,
+			value: fn.bind(instance),
 			...propertyConfiguration,
 			writable: true,
 			enumerable: false,

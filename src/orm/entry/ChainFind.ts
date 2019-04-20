@@ -266,7 +266,7 @@ const ChainFind = function (
 				const {
 					error,
 					result
-				} = Utilities.exposeErrAndResultFromSyncMethod<FxOrmQuery.RemoveResult>(chain.countSync)
+				} = Utilities.exposeErrAndResultFromSyncMethod<FxOrmQuery.RemoveResult>(chain.removeSync)
 
 				if (typeof cb === 'function')
 					cb(error, result)

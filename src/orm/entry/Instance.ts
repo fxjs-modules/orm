@@ -580,10 +580,8 @@ export const Instance = function (
 	}
 
 	for (let k in opts.methods) {
-		Object.defineProperty(instance, k, {
-			value      : opts.methods[k].bind(instance),
-			enumerable : false,
-			writable  : true
+		Utilities.addHiddenPropertyToInstance(instance, k, opts.methods[k].bind(instance), {
+			writable: true
 		});
 	}
 
@@ -637,7 +635,7 @@ export const Instance = function (
 		var cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance> = null;
 
 		let args: any[] = Array.prototype.slice.apply(arguments);
-		Helpers.selectArgs(args, function (arg_type, arg, idx) {
+		Helpers.selectArgs(args, function (arg_type, arg) {
 			switch (arg_type) {
 				case 'function':
 					cb = arg;
@@ -646,15 +644,15 @@ export const Instance = function (
 		});
 		args = args.filter(x => x !== cb);
 
-		const waitor = cb ? new coroutine.Event() : undefined
+		// const waitor = cb ? new coroutine.Event() : undefined
 		process.nextTick(() => {
 			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(instance.saveSync, args);
-			if (waitor) waitor.set();
+			// if (waitor) waitor.set();
 
-			Utilities.throwErrOrCallabckErrResult({ error: syncResponse.error, result: instance }, { callback: cb });
+			Utilities.throwErrOrCallabckErrResult({ error: syncResponse.error, result: instance }, { no_throw: !!cb, callback: cb });
 		});
 
-		if (waitor) waitor.wait();
+		// if (waitor) waitor.wait();
 
 		return this;
 	})

@@ -593,28 +593,33 @@ export const Model = function (
 	model.one = function (...args: any[]) {
 		var cb: FxOrmModel.ModelMethodCallback__Get = null;
 
-		// extract callback
-		for (let i = 0; i < args.length; i++) {
-			if (typeof args[i] === "function") {
-				cb = args.splice(i, 1)[0];
-				break;
+		Helpers.selectArgs(args, function (arg_type, arg) {
+			switch (arg_type) {
+				case 'function':
+					cb = arg;
+					break;
 			}
-		}
+		});
+		args = args.filter(x => x !== cb);
 
 		if (typeof cb !== "function") {
 		    throw new ORMError("Missing Model.one() callback", 'MISSING_CALLBACK', { model: m_opts.table });
 		}
 
-		const chain = this.find(...args).limit(1);
+		const newCb = function (err: Error, results: FxOrmInstance.Instance[]) {
+			if (err)
+				return cb(err);
 
-		const {
-			error,
-			result
-		} = Utilities.exposeErrAndResultFromSyncMethod(chain.runSync, args, {thisArg: model});
+			return cb(null, results.length ? results[0] : null);
+		}
 
-		cb(error, result);
+		args.push(1);	
 
-		return this;
+		const chain = this.find(...args);
+
+		chain.run(newCb);
+
+		return chain;
 	};
 
 	model.countSync = function (conditions) {
@@ -804,7 +809,7 @@ export const Model = function (
 			}
 		});
 
-		for (let idx = 0, syncResponse: FxOrmNS.ExposedResult<void>; idx < itemsParams.length; idx++) {
+		for (let idx = 0; idx < itemsParams.length; idx++) {
 			const data = itemsParams[idx];
 			
 			const item = createInstanceSync(data, {

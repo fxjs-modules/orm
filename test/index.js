@@ -11,9 +11,13 @@ function t() {
     run('./integration/association-hasmany-hooks.js');
     run('./integration/association-hasmany.js');
     run('./integration/association-hasone.js');
+    run('./integration/association-hasone.callback.js');
     run('./integration/association-hasone-required.js');
+    run('./integration/association-hasone-required.callback.js');
     run('./integration/association-hasone-reverse.js');
+    run('./integration/association-hasone-reverse.callback.js');
     run('./integration/association-hasone-zeroid.js');
+    run('./integration/association-hasone-zeroid.callback.js');
     run('./integration/event.js');
 
     run('./integration/hook.js');
