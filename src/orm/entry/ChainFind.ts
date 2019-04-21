@@ -105,19 +105,8 @@ const ChainFind = function (
 	}
 
 	const chainRun = function<T> (done?: FxOrmNS.GenericCallback<T|T[]|FxOrmInstance.InstanceDataPayload[]>) {
-		let items: FxOrmInstance.Instance[],
-			err: FxOrmError.ExtendedError;
-
-		try {
-			items = chainRunSync();
-		} catch (ex) {
-			err = ex;
-		}
-		
-		if (typeof done === 'function')
-			process.nextTick(() => {
-				done(err, items);
-			});
+		const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(chainRunSync);
+		Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: done, use_tick: true });
 	}
 
 	const chain: FxOrmQuery.IChainFind = {
