@@ -346,7 +346,6 @@ declare namespace FxOrmModel {
     type ModelMethodCallback__Count = FxOrmNS.GenericCallback<number>
 
     interface ModelOptions__Create {
-        // TODO: implement it with driver's pool option.
-        // parallel?: boolean
+        parallel?: boolean
     }
 }

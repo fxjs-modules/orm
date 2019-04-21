@@ -28,8 +28,6 @@ const AvailableHooks: (keyof FxOrmModel.Hooks)[] = [
 	"afterAutoFetch"
 ];
 
-function noOp () {};
-
 export const Model = function (
 	m_opts: FxOrmModel.ModelConstructorOptions
 ) {
@@ -386,16 +384,15 @@ export const Model = function (
 		if (with_callback)
 			args.pop();
 
-		const waitor = with_callback ? new coroutine.Event() : undefined
+		const errWaitor = Utilities.getErrWaitor(with_callback);
 
 		process.nextTick(() => {
 			const syncReponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance>(model.getSync, args, { thisArg: model });
+			Utilities.throwErrOrCallabckErrResult(syncReponse, { no_throw: true, callback: cb });
 
-			if (waitor) waitor.set();
-			if (with_callback)
-				cb(syncReponse.error, syncReponse.result);
+			if (errWaitor.evt) errWaitor.evt.set();
 		});
-		if (waitor) waitor.wait();
+		if (errWaitor.evt) errWaitor.evt.wait();
 
 		return this;
 	};
@@ -791,9 +788,8 @@ export const Model = function (
 	}
 
 	model.createSync = function (): any {
-		const items: FxOrmInstance.Instance[] = [];
-
 		let create_single: boolean      = false;
+		let opts: FxOrmModel.ModelOptions__Create = {};
 		let itemsParams: FxOrmInstance.InstanceDataPayload[] = []
 
 		Helpers.selectArgs(arguments, (arg_type, arg, idx) => {
@@ -804,24 +800,29 @@ export const Model = function (
 					} else if (idx === 0) {
 						create_single = true;
 						itemsParams.push(arg);
+					} else {
+						opts = { parallel: false };
 					}
 					break;
 			}
 		});
 
-		for (let idx = 0; idx < itemsParams.length; idx++) {
-			const data = itemsParams[idx];
-			
-			const item = createInstanceSync(data, {
-				is_new    : true,
-				autoSave  : m_opts.autoSave,
-				// not fetch associated instance on its creation.
-				autoFetch : false
-			});
+		const items: FxOrmInstance.Instance[] = Utilities.parallelQueryIfPossible(
+			opts.parallel && m_opts.driver.isPool,
+			itemsParams,
+			(data) => {
+				const item = createInstanceSync(data, {
+					is_new    : true,
+					autoSave  : m_opts.autoSave,
+					// not fetch associated instance on its creation.
+					autoFetch : false
+				});
+	
+				item.saveSync();
 
-			item.saveSync();
-			items.push(item);
-		}
+				return item;
+			}
+		)
 
 		const results = create_single ? items[0] : items;
 		

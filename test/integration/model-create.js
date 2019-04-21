@@ -62,6 +62,28 @@ describe("Model.create()", function () {
         });
     });
 
+    describe("if passing array, options object", function () {
+        before(setup);
+
+        it("should accept it as a list of items to create", function () {
+            var people = Person.createSync([{
+                name: "John Doe"
+            }, {
+                name: "Jane Doe"
+            }], {
+                parallel: true
+            });
+
+            assert.ok(Array.isArray(people));
+
+            assert.propertyVal(people, "length", 2);
+            people = people.sort((a, b) => a.name > b.name ? -1 : 1);
+
+            assert.propertyVal(people[1], "name", "Jane Doe");
+            assert.propertyVal(people[0], "name", "John Doe");
+        });
+    });
+
     describe("if element has an association", function () {
         before(setup);
 
