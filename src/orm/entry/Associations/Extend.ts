@@ -142,28 +142,18 @@ export function extend (
 export function autoFetch (
 	Instance: FxOrmInstance.Instance,
 	associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[],
-	opts: FibOrmNS.ModelAutoFetchOptions
+	opts: FibOrmNS.ModelAutoFetchOptions,
+	parallel: boolean = false
 ) {
-	const ev_lock = new coroutine.Event();
-
 	if (associations.length === 0) {
 		return ;
 	}
 
-	var pending = associations.length;
-	var autoFetchDone = function autoFetchDone() {
-		pending -= 1;
-
-		if (pending === 0) {
-			ev_lock.set();
-		}
-	};
-
-	for (let i = 0; i < associations.length; i++) {
-		autoFetchInstance(Instance, associations[i], opts, autoFetchDone);
-	}
-
-	ev_lock.wait();
+	Utilities.parallelQueryIfPossible(
+		parallel,
+		associations,
+		(item) => autoFetchInstance(Instance, item, opts)
+	)
 };
 
 function extendInstance(
@@ -289,30 +279,23 @@ function autoFetchInstance(
 	Instance: FxOrmInstance.Instance,
 	association: FxOrmAssociation.InstanceAssociationItem_ExtendTos,
 	opts: FibOrmNS.InstanceAutoFetchOptions,
-	cb: FxOrmNS.GenericCallback<void>
 ) {
-	if (!Instance.saved()) {
-		return cb(null);
-	}
+	if (!Instance.saved())
+		return ;
 
 	if (!opts.hasOwnProperty("autoFetchLimit") || typeof opts.autoFetchLimit == "undefined") {
 		opts.autoFetchLimit = association.autoFetchLimit;
 	}
 
-	if (opts.autoFetchLimit === 0 || (!opts.autoFetch && !association.autoFetch)) {
-		return cb(null);
-	}
+	if (opts.autoFetchLimit === 0 || (!opts.autoFetch && !association.autoFetch))
+		return ;
 
 	if (Instance.isPersisted()) {
-		Instance[association.getAccessor]({ autoFetchLimit: opts.autoFetchLimit - 1 },
-		function (err: FxOrmError.ExtendedError, Assoc: FxOrmAssociation.InstanceAssociationItem) {
-			if (!err) {
-				Instance[association.name] = Assoc;
-			}
-
-			return cb(null);
-		});
-	} else {
-		return cb(null);
+		try {
+			const Assoc = Instance[association.getSyncAccessor]({ autoFetchLimit: opts.autoFetchLimit - 1 })
+			Instance[association.name] = Assoc;
+		} catch (err) {}
 	}
+
+	return ;
 }

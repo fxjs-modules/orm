@@ -153,27 +153,16 @@ export function autoFetch (
 	Instance: FxOrmInstance.Instance,
 	associations: FxOrmAssociation.InstanceAssociationItem[],
 	opts: FxOrmAssociation.AutoFetchInstanceOptions,
+	parallel: boolean
 ) {
-	if (associations.length === 0) {
+	if (associations.length === 0)
 		return ;
-	}
 
-	const ev_lock = new coroutine.Event();
-
-	let pending = associations.length;
-	const autoFetchDone = function () {
-		pending -= 1;
-
-		if (pending === 0) {
-			ev_lock.set();
-		}
-	};
-
-	for (let i = 0; i < associations.length; i++) {
-		autoFetchInstance(Instance, associations[i], opts, autoFetchDone);
-	}
-
-	ev_lock.wait();
+	Utilities.parallelQueryIfPossible(
+		parallel,
+		associations,
+		(item) => autoFetchInstance(Instance, item, opts)
+	)
 };
 
 function extendInstance(
@@ -382,19 +371,16 @@ function autoFetchInstance(
 	Instance: FxOrmInstance.Instance,
 	association: FxOrmAssociation.InstanceAssociationItem,
 	opts: FxOrmAssociation.AutoFetchInstanceOptions,
-	cb: FxOrmNS.GenericCallback<void>
 ) {
-	if (!Instance.saved()) {
-		return cb(null);
-	}
+	if (!Instance.saved())
+		return ;
 
 	if (!opts.hasOwnProperty("autoFetchLimit") || typeof opts.autoFetchLimit === "undefined") {
 		opts.autoFetchLimit = association.autoFetchLimit;
 	}
 
-	if (opts.autoFetchLimit === 0 || (!opts.autoFetch && !association.autoFetch)) {
-		return cb(null);
-	}
+	if (opts.autoFetchLimit === 0 || (!opts.autoFetch && !association.autoFetch))
+		return ;
 
 	/**
 	 * When we have a new non persisted instance for which the association field (eg owner_id)
@@ -403,8 +389,8 @@ function autoFetchInstance(
 	 * The associated entity should probably be fetched when the instance is persisted.
 	 */
 	if (Instance.isPersisted()) {
-		Instance[association.getAccessor]({ autoFetchLimit: opts.autoFetchLimit - 1 }, cb);
-	} else {
-		return cb(null);
+		Instance[association.getSyncAccessor]({ autoFetchLimit: opts.autoFetchLimit - 1 });
 	}
+
+	return ;
 }

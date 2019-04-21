@@ -149,9 +149,9 @@ export const Model = function (
 			LazyLoad.extend(instance, model, m_opts.properties);
 		}
 
-		OneAssociation.autoFetch(instance, one_associations, assoc_opts);
-		ManyAssociation.autoFetch(instance, many_associations, assoc_opts);
-		ExtendAssociation.autoFetch(instance, extend_associations, assoc_opts);
+		OneAssociation.autoFetch(instance, one_associations, assoc_opts, m_opts.driver.isPool);
+		ManyAssociation.autoFetch(instance, many_associations, assoc_opts, m_opts.driver.isPool);
+		ExtendAssociation.autoFetch(instance, extend_associations, assoc_opts, m_opts.driver.isPool);
 
 		Hook.wait(instance, m_opts.hooks.afterAutoFetch, function (err: Error) {
 			readyTrigger(err, instance);

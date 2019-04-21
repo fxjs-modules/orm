@@ -188,26 +188,16 @@ export function autoFetch(
 	Instance: FxOrmInstance.Instance,
 	associations: FxOrmAssociation.InstanceAssociationItem_HasMany[],
 	opts: FxOrmAssociation.AssociationDefinitionOptions_HasMany,
+	parallel: boolean = false
 ) {
-	if (associations.length === 0) {
+	if (associations.length === 0)
 		return ;
-	}
-	const ev_lock = new coroutine.Event();
 
-	var pending = associations.length;
-	var autoFetchDone = function autoFetchDone() {
-		pending -= 1;
-
-		if (pending === 0) {
-			ev_lock.set();
-		}
-	};
-
-	for (let i = 0; i < associations.length; i++) {
-		autoFetchInstance(Instance, associations[i], opts, autoFetchDone);
-	}
-
-	ev_lock.wait();
+	Utilities.parallelQueryIfPossible(
+		parallel,
+		associations,
+		(item) => autoFetchInstance(Instance, item, opts)
+	)
 };
 
 function adjustForMapsTo(properties: FxOrmProperty.NormalizedPropertyHash, field: string[]) {
@@ -614,30 +604,21 @@ function autoFetchInstance(
 	Instance: FxOrmInstance.Instance,
 	association: FxOrmAssociation.InstanceAssociationItem_HasMany,
 	opts: FxOrmAssociation.AssociationDefinitionOptions_HasMany,
-	cb: FxOrmNS.GenericCallback<void>
+	// cb: FxOrmNS.GenericCallback<void>
 ) {
-	if (!Instance.saved()) {
-		return cb(null);
-	}
+	if (!Instance.saved())
+		return ;
 
 	if (!opts.hasOwnProperty("autoFetchLimit") || typeof opts.autoFetchLimit == "undefined") {
 		opts.autoFetchLimit = association.autoFetchLimit;
 	}
 
-	if (opts.autoFetchLimit === 0 || (!opts.autoFetch && !association.autoFetch)) {
-		return cb(null);
-	}
-
-	Instance[association.getAccessor](
-		{},
-		{ autoFetchLimit: opts.autoFetchLimit - 1 },
-		function (err: Error, Assoc: FxOrmAssociation.InstanceAssociatedInstance) {
-			if (!err) {
-				// Set this way to prevent setting 'changed' status
-				Instance.__opts.associations[association.name].value = Assoc;
-			}
-
-			return cb(null);
-		}
-	);
+	if (opts.autoFetchLimit === 0 || (!opts.autoFetch && !association.autoFetch))
+		return ;
+		
+	try {
+		const Assoc  = Instance[association.getSyncAccessor]({}, { autoFetchLimit: opts.autoFetchLimit - 1 });
+		// Set this way to prevent setting 'changed' status
+		Instance.__opts.associations[association.name].value = Assoc;
+	} catch (err) {}
 }
