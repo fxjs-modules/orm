@@ -183,6 +183,7 @@ function extendInstance(
 	Utilities.addHiddenPropertyToInstance(Instance, association.hasAccessor, function (cb: FxOrmNS.GenericCallback<boolean>) {
 		process.nextTick(() => {
 			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<boolean>(Instance[association.hasSyncAccessor]);
+			syncResponse.result = !!syncResponse.result;
 			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
 		});
 
@@ -196,7 +197,22 @@ function extendInstance(
 		return association.model.getSync(Utilities.values(Instance, Model.id), opts);
 	});
 
-	Utilities.addHiddenPropertyToInstance(Instance, association.getAccessor, function (opts: FxOrmModel.ModelOptions__Get, cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>) {
+	Utilities.addHiddenPropertyToInstance(Instance, association.getAccessor, function () {
+		let opts: FxOrmModel.ModelOptions__Get = {};
+		let cb: FxOrmNS.ExecutionCallback<FxOrmInstance.Instance>
+
+		const args = Array.prototype.slice.apply(arguments)
+		Helpers.selectArgs(args, (arg_type, arg) => {
+			switch (arg_type) {
+				case "function":
+					cb = arg;
+					break;
+				case "object":
+					opts = arg;
+					break;
+			}
+		});
+
 		process.nextTick(() => {
 			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance>(Instance[association.getSyncAccessor], [ opts ]);
 			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })

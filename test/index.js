@@ -7,6 +7,7 @@ function t() {
     run('./integration/orm-exports.js');
 
     run('./integration/association-extend.js');
+    run('./integration/association-extend.callback.js');
 
     run('./integration/association-hasmany-extra.js');
     run('./integration/association-hasmany-extra.callback.js');
