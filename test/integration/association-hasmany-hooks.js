@@ -7,7 +7,7 @@ describe("hasMany hooks", function () {
     var Pet = null;
 
     var setup = function (props, opts) {
-        return function () {
+        return function (done) {
             db.settings.set('instance.identityCache', false);
 
             Person = db.define('person', {
@@ -18,16 +18,12 @@ describe("hasMany hooks", function () {
             });
             Person.hasMany('pets', Pet, props || {}, opts || {});
 
-            helper.dropSync([Person, Pet]);
+            return helper.dropSync([Person, Pet], done);
         };
     };
 
     before(function () {
         db = helper.connect();
-    });
-
-    after(function () {
-        return db.closeSync();
     });
 
     describe("beforeSave", function () {
@@ -48,6 +44,7 @@ describe("hasMany hooks", function () {
             var John = Person.createSync({
                 name: "John"
             });
+
             var Deco = Pet.createSync({
                 name: "Deco"
             });
@@ -58,8 +55,6 @@ describe("hasMany hooks", function () {
     });
 
     describe("beforeSave", function () {
-        var had_extra = false;
-
         before(setup({}, {
             hooks: {
                 beforeSave: function (next) {
@@ -73,16 +68,14 @@ describe("hasMany hooks", function () {
             var John = Person.createSync({
                 name: "John"
             });
+
             var Deco = Pet.createSync({
                 name: "Deco"
             });
-            John.addPetsSync(Deco);
         });
     });
 
     describe("beforeSave", function () {
-        var had_extra = false;
-
         before(setup({}, {
             hooks: {
                 beforeSave: function (next) {
@@ -97,6 +90,7 @@ describe("hasMany hooks", function () {
             var John = Person.createSync({
                 name: "John"
             });
+
             var Deco = Pet.createSync({
                 name: "Deco"
             });
@@ -104,6 +98,7 @@ describe("hasMany hooks", function () {
             try {
                 John.addPetsSync(Deco);
             } catch (err) {
+                assert.exist(err);
                 assert.equal(err.message, 'blocked');
             }
         });

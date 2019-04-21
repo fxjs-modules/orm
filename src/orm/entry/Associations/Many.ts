@@ -488,10 +488,12 @@ function extendInstance(
 
 		return this;
 	});
-	
-	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.addSyncAccessor, function (this: typeof Instance) {
-		let args: any[]= Array.prototype.slice.apply(arguments);
 
+	const isExtraNonEmpty = function () {
+		return !!Object.keys(association.props).length;
+	}
+
+	const collectParamsForAdd = function (args: any[]) {
 		var Associations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
 		var add_opts: {[k: string]: any} = {};
 
@@ -512,6 +514,14 @@ function extendInstance(
 		if (Associations.length === 0) {
 			throw new ORMError("No associations defined", 'PARAM_MISMATCH', { model: Model.name });
 		}
+
+		return { Associations, add_opts }
+	}
+	
+	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.addSyncAccessor, function (this: typeof Instance) {
+		let args: any[]= Array.prototype.slice.apply(arguments);
+
+		const { Associations, add_opts } = collectParamsForAdd(args);
 
 		const savedAssociations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
 
@@ -542,7 +552,7 @@ function extendInstance(
 					savedAssociations.push(Association);
 				};
 				
-				if (Object.keys(association.props).length) {
+				if (isExtraNonEmpty()) {
 					Hook.wait(Association, association.hooks.beforeSave, saveAssociation, add_opts);
 				} else {
 					Hook.wait(Association, association.hooks.beforeSave, saveAssociation);
@@ -559,7 +569,8 @@ function extendInstance(
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.addAccessor, function (this: typeof Instance) {
 		let args: any[] = Array.prototype.slice.apply(arguments);
 
-		let cb = noOperation;
+		const withExtraProps = isExtraNonEmpty();
+		let cb: FxOrmNS.ExecutionCallback<any> = null;
 		Helpers.selectArgs(args, (arg_type, arg) => {
 			switch (arg_type) {
 				case "function":
@@ -568,11 +579,21 @@ function extendInstance(
 			}
 		});
 		args = args.filter(x => x !== cb);
+		collectParamsForAdd(args);
+
+		const errWaitor = Utilities.getErrWaitor(!cb);
 
 		process.nextTick(() => {
 			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<void>(Instance[association.addSyncAccessor], args);
-			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
+			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: !withExtraProps, callback: cb });
+
+			errWaitor.err = syncResponse.error;
+			if (errWaitor.evt) errWaitor.evt.set();
 		});
+
+		if (errWaitor.evt) errWaitor.evt.wait();
+		
+		if (errWaitor.err) throw errWaitor.err;
 
 		return this;
 	});

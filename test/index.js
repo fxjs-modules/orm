@@ -7,9 +7,16 @@ function t() {
     run('./integration/orm-exports.js');
 
     run('./integration/association-extend.js');
+
     run('./integration/association-hasmany-extra.js');
+    run('./integration/association-hasmany-extra.callback.js');
     run('./integration/association-hasmany-hooks.js');
+    run('./integration/association-hasmany-hooks.callback.js');
     run('./integration/association-hasmany.js');
+    run('./integration/association-hasmany.callback.js');
+    run('./integration/association-hasmany-mapsto.js');
+    run('./integration/association-hasmany-mapsto.calback.js');
+    
     run('./integration/association-hasone.js');
     run('./integration/association-hasone.callback.js');
     run('./integration/association-hasone-required.js');

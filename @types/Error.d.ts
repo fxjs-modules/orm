@@ -18,6 +18,11 @@ declare namespace FxOrmError {
         [ext: string]: any
     }
 
+    interface ErrorWaitor {
+        evt?: Class_Event,
+        err: FxOrmError.ExtendedError
+    }
+
     interface BatchOperationInstanceErrorItem extends ExtendedError {
         index: number
         instance: FxOrmInstance.Instance

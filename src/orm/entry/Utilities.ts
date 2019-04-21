@@ -623,6 +623,32 @@ export function throwErrOrCallabckErrResult<RESULT_T = any> (
 			callback(input.error, input.result);
 }
 
+export function doWhenErrIs (
+	compare: {
+		message?: string,
+		literalCode?: string
+	},
+	callback: Function,
+	err?: FxOrmError.ExtendedError,
+) {
+	if (!err || util.isEmpty(compare)) return ;
+	
+	if (!(err instanceof Error)) return ;
+
+	if (compare.hasOwnProperty('message') && err.message !== compare.message) return ;
+
+	if (compare.hasOwnProperty('literalCode') && err.literalCode !== compare.literalCode) return ;
+
+	callback(err)
+}
+
+export function getErrWaitor (shouldWait: boolean = false): FxOrmError.ErrorWaitor {
+	return {
+		evt: shouldWait ? new coroutine.Event : null,
+		err: null as FxOrmError.ExtendedError,
+	}
+}
+
 export function parallelQueryIfPossible<T = any, RESP = any> (
 	can_parallel: boolean,
 	iteratee: T[],

@@ -95,6 +95,43 @@ describe("hasMany extra properties", function () {
         });
     });
 
+    describe("if passed to addSyncAccessor", function () {
+        before(setup());
+
+        it("should be added to association", function () {
+            var people = Person.createSync([{
+                name: "John"
+            }]);
+
+            var pets = Pet.createSync([{
+                name: "Deco"
+            }, {
+                name: "Mutt"
+            }]);
+
+            var data = { adopted: true };
+
+            people[0].addPetsSync(pets, { since: new Date(), data: data })
+            var John = Person.find({ name: "John" }, { autoFetch: true }).firstSync();
+
+            assert.property(John, "pets");
+            assert.ok(Array.isArray(pets));
+
+            assert.equal(John.pets.length, 2);
+
+            assert.property(John.pets[0], "name");
+            assert.property(John.pets[0], "extra");
+            assert.isObject(John.pets[0].extra);
+            assert.property(John.pets[0].extra, "since");
+            assert.ok(John.pets[0].extra.since instanceof Date);
+
+            assert.equal(typeof John.pets[0].extra.data, 'object');
+            assert.equal(JSON.stringify(data), JSON.stringify(John.pets[0].extra.data));
+
+            return people;
+        });
+    });
+
     describe("getAccessor with join_where", function () {
        const bt = cutOffMilliSecond(new Date());
         const since_list = Array.apply(null, {length: 2}).fill(undefined).map((_, idx) => {
