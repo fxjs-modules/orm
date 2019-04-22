@@ -2,6 +2,7 @@
 /// <reference types="@fibjs/enforce" />
 /// <reference types="@fxjs/sql-query" />
 /// <reference types="@fxjs/sql-ddl-sync" />
+/// <reference types="fib-pool" />
 
 /// <reference path="3rd.d.ts" />
 
