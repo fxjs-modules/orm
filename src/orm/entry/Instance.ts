@@ -1,4 +1,4 @@
-/// <reference types="fibjs" />
+/// <reference types="@fibjs/types" />
 
 import util 	 = require('util');
 import coroutine 	 = require('coroutine');

@@ -32,7 +32,7 @@ declare namespace FxOrmNS {
     }
     
     interface IConnectionCallback {
-        (err: Error, orm?: FxOrmNS.ORMLike): void
+        (err: Error, orm?: FibORM): void
     }
 
     // just for compatible

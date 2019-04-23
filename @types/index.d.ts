@@ -1,3 +1,4 @@
+/// <reference types="@fibjs/types" />
 /// <reference path="ORM.d.ts" />
 
 import FibOrmNS = FxOrmNS

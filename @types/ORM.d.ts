@@ -1,4 +1,4 @@
-/// <reference types="fibjs" />
+/// <reference types="@fibjs/types" />
 /// <reference types="@fibjs/enforce" />
 /// <reference types="@fxjs/sql-query" />
 /// <reference types="@fxjs/sql-ddl-sync" />

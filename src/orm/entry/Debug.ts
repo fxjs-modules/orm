@@ -4,7 +4,7 @@ import tty  = require("tty");
 export function sql (driver: FxOrmDMLDriver.DMLDriver, sql: string) {
 	var fmt: string;
 
-	if (tty.isatty(process.stdout as any)) {
+	if (tty.isatty(process.stdout.fd)) {
 		fmt = "\033[32;1m(orm/%s) \033[34m%s\033[0m\n";
 		sql = sql.replace(/`(.+?)`/g, function (m) { return "\033[31m" + m + "\033[34m"; });
 	} else {

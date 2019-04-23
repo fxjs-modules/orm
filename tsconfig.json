@@ -9,6 +9,12 @@
             "es6",
             "es2015",
             "es2016"            
+        ],
+        "types": [
+            "@fibjs/types"
+        ],
+        "typeRoots": [
+            "@types/index.d.ts"
         ]
     }
 }
