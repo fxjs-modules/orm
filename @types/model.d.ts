@@ -27,6 +27,8 @@ declare namespace FxOrmModel {
         /* @nonenum */
         uid: string;
 
+        caches: Class_LruCache;
+
         keys: string[];
 
         allProperties: FxOrmProperty.NormalizedPropertyHash
@@ -203,7 +205,10 @@ declare namespace FxOrmModel {
         properties: FxOrmProperty.NormalizedPropertyHash
         extension: boolean
         indexes: string[]
+        
         identityCache: boolean
+        instanceCacheSize: number
+        
         keys: string[]
         autoSave: boolean
         autoFetch: boolean

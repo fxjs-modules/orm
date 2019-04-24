@@ -236,14 +236,25 @@ declare namespace FxOrmNS {
     }
 
     interface SingletonModule {
+        modelClear: {
+            (model: FxOrmModel.Model, key?: string): SingletonModule
+        }
         clear: {
             (key?: string): SingletonModule
+        };
+        modelGet: {
+            <T = any>(
+                model: FxOrmModel.Model,
+                key: string,
+                opts: SingletonOptions,
+                reFetchSync: () => FxOrmInstance.Instance
+            ): FxOrmInstance.Instance
         };
         get: {
             <T = any>(
                 key: string,
                 opts: SingletonOptions,
-                createProcess: () => FxOrmInstance.Instance
+                reFetchSync: () => FxOrmInstance.Instance
             ): FxOrmInstance.Instance
         };
     }

@@ -222,6 +222,11 @@ export const Model = function (
 	model.settings      = m_opts.settings;
 	model.keys          = m_opts.keys;
 
+	model.caches		= new util.LruCache(
+		m_opts.instanceCacheSize > 0 && Number.isInteger(m_opts.instanceCacheSize) ? m_opts.instanceCacheSize : m_opts.settings.get('instance.defaultCacheSize'),
+		(typeof m_opts.identityCache === 'number' ? m_opts.identityCache : 1) * 1000
+	)
+
 	model.dropSync = function (
 		this:FxOrmModel.Model,
 	) {
@@ -341,7 +346,8 @@ export const Model = function (
 		}
 
 		const uid = Utilities.generateUID4SoloGet(m_opts, ids);
-		return Singleton.get(
+		return Singleton.modelGet(
+			model,
 			uid,
 			{
 				identityCache : (options.hasOwnProperty("identityCache") ? options.identityCache : m_opts.identityCache),
@@ -384,7 +390,7 @@ export const Model = function (
 		return this;
 	};
 
-	const chainOrRun = function (
+	const chainOrRunSync = function (
 		this: FxOrmModel.Model
 	) {
 		var conditions: FxSqlQuerySubQuery.SubQueryConditions = null;
@@ -501,20 +507,25 @@ export const Model = function (
 				const uid = Utilities.generateUID4ChainFind(m_opts, merges, data);
 
 				// Now we can do the cache lookup
-				return Singleton.get(uid, {
-					identityCache : options.identityCache,
-					saveCheck     : m_opts.settings.get("instance.identityCacheSaveCheck")
-				}, function () {
-					return createInstanceSync(data, {
-						uid            : uid,
-						autoSave       : m_opts.autoSave,
-						autoFetch      : (options.autoFetchLimit === 0 ? false : (options.autoFetch || m_opts.autoFetch)),
-						autoFetchLimit : options.autoFetchLimit,
-						cascadeRemove  : options.cascadeRemove,
-						extra          : options.extra,
-						extra_info     : options.extra_info
-					});
-				});
+				return Singleton.modelGet(
+					model,
+					uid,
+					{
+						identityCache : options.identityCache,
+						saveCheck     : m_opts.settings.get("instance.identityCacheSaveCheck")
+					},
+					function () {
+						return createInstanceSync(data, {
+							uid            : uid,
+							autoSave       : m_opts.autoSave,
+							autoFetch      : (options.autoFetchLimit === 0 ? false : (options.autoFetch || m_opts.autoFetch)),
+							autoFetchLimit : options.autoFetchLimit,
+							cascadeRemove  : options.cascadeRemove,
+							extra          : options.extra,
+							extra_info     : options.extra_info
+						});
+					}
+				);
 			}
 		});
 
@@ -525,7 +536,7 @@ export const Model = function (
 		this:FxOrmModel.Model,
 		...args: any[]
 	) {
-		const chain: FxOrmQuery.IChainFind = chainOrRun.apply(model, args);
+		const chain: FxOrmQuery.IChainFind = chainOrRunSync.apply(model, args);
 
 		return chain.runSync()
 	};
@@ -538,7 +549,7 @@ export const Model = function (
 		if (typeof util.last(args) === 'function')
 			cb = args.pop();
 
-		const chain = chainOrRun.apply(model, args);
+		const chain = chainOrRunSync.apply(model, args);
 
 		if (cb)
 			chain.run(cb);
@@ -904,7 +915,7 @@ export const Model = function (
 		enumerable: false
 	});
 	Object.defineProperty(model, "uid", {
-	    value: m_opts.driver.uid + "/" + m_opts.table + "/" + m_opts.keys.join("/"),
+	    value: Utilities.generateUID4Model(m_opts),
         enumerable: false
 	});
 

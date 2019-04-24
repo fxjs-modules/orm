@@ -268,3 +268,17 @@ export const selectArgs: FxOrmHelper.HelperModules['selectArgs'] = function (arg
     }
 }
 /* arguments input :end */
+
+/* singleton helpers: start */
+export function parseDriverUidAndTableNameFromUID (uid: string) {
+	uid = uid || ''
+	
+	const arr = uid.split('/');
+	
+	return {
+		driver_uid: arr[0],
+		table: arr[1],
+		driver_table_uid: Utilities.makeIdForDriverTable(arr[0], arr[1])
+	}
+}
+/* singleton helpers: end */

@@ -39,4 +39,9 @@ declare namespace FxOrmNS {
         callback?: FxOrmNS.ExecutionCallback<T>,
         is_sync?: boolean
     }
+
+    interface ValueWaitor<T = any> {
+        evt?: Class_Event,
+        value: T
+    }
 }

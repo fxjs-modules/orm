@@ -649,6 +649,13 @@ export function getErrWaitor (shouldWait: boolean = false): FxOrmError.ErrorWait
 	}
 }
 
+export function getValueWaitor <T = any>(shouldWait: boolean = false): FxOrmNS.ValueWaitor<T> {
+	return {
+		evt: shouldWait ? new coroutine.Event : null,
+		value: null as T,
+	}
+}
+
 export function parallelQueryIfPossible<T = any, RESP = any> (
 	can_parallel: boolean,
 	iteratee: T[],
@@ -810,4 +817,14 @@ export function generateUID4ChainFind (
 	}
 
 	return uid;
+}
+
+export function generateUID4Model (
+	m_opts: FxOrmModel.ModelConstructorOptions
+) {
+	return m_opts.driver.uid + "/" + m_opts.table + "/" + m_opts.keys.join("/")
+}
+
+export function makeIdForDriverTable (driver_uid: string, table: string) {
+	return `${driver_uid}/${table}`
 }

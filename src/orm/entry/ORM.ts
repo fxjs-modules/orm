@@ -1,5 +1,4 @@
 import util           = require("util");
-import coroutine           = require("coroutine");
 import events         = require("events");
 import uuid			  = require('uuid')
 
@@ -248,7 +247,9 @@ ORM.prototype.define = function (
 		cascadeRemove  : opts.hasOwnProperty("cascadeRemove") ? opts.cascadeRemove : this.settings.get("instance.cascadeRemove"),
 		hooks          : opts.hooks || {},
 		methods        : opts.methods || {},
-		validations    : opts.validations || {}
+		validations    : opts.validations || {},
+
+		instanceCacheSize : opts.hasOwnProperty("instanceCacheSize") ? opts.instanceCacheSize : this.settings.get("instance.cacheSize"),
 	});
 
 	for (let i = 0; i < this.plugins.length; i++) {
