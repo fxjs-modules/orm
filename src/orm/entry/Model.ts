@@ -318,9 +318,6 @@ export const Model = function (
 		let founditems: FxOrmDMLDriver.QueryDataPayload[],
 			err: FxOrmError.ExtendedError
 
-		let found_instance: FxOrmInstance.Instance;
-		const singleton_lock = new coroutine.Event();
-
 		function deferGet () {
 			try {
 				founditems = m_opts.driver.find(
@@ -343,35 +340,25 @@ export const Model = function (
 			Utilities.renameDatastoreFieldsToPropertyNames(founditems[0], fieldToPropertyMap);
 		}
 
-		const uid = m_opts.driver.uid + "/" + m_opts.table + "/" + ids.join("/");
-		Singleton.get(
+		const uid = Utilities.generateUID4SoloGet(m_opts, ids);
+		return Singleton.get(
 			uid,
 			{
 				identityCache : (options.hasOwnProperty("identityCache") ? options.identityCache : m_opts.identityCache),
 				saveCheck     : m_opts.settings.get("instance.identityCacheSaveCheck")
 			},
-			function (returnCb: FxOrmNS.GenericCallback<FxOrmInstance.Instance>) {
+			function () {
 				deferGet();
 
-				return createInstance(founditems[0], {
+				return createInstanceSync(founditems[0], {
 					uid            : uid,
 					autoSave       : options.autoSave,
 					autoFetch      : (options.autoFetchLimit === 0 ? false : options.autoFetch),
 					autoFetchLimit : options.autoFetchLimit,
 					cascadeRemove  : options.cascadeRemove
-				}, returnCb);
-			},
-			function (ex: FxOrmError.ExtendedError, instance: FxOrmInstance.Instance) {
-				err = ex;
-
-				found_instance = instance;
-				singleton_lock.set();
+				});
 			}
 		);
-
-		singleton_lock.wait();
-
-		return found_instance;
 	}
 
 	model.get = function (
@@ -511,20 +498,14 @@ export const Model = function (
 				Utilities.renameDatastoreFieldsToPropertyNames(data, fieldToPropertyMap);
 
 				// Construct UID
-				const merge_id = merges.map(merge => (merge ? merge.from.table : "")).join(',');
-				var uid = m_opts.driver.uid + "/" + m_opts.table + (merge_id ? `+${merge_id}` : "");
-				for (let i = 0; i < m_opts.keys.length; i++) {
-					uid += "/" + data[m_opts.keys[i]];
-				}
+				const uid = Utilities.generateUID4ChainFind(m_opts, merges, data);
 
-				const singleton_lock = new coroutine.Event();
-				let found_instance: FxOrmInstance.Instance = null;
 				// Now we can do the cache lookup
-				Singleton.get(uid, {
+				return Singleton.get(uid, {
 					identityCache : options.identityCache,
 					saveCheck     : m_opts.settings.get("instance.identityCacheSaveCheck")
-				}, function (cb: FxOrmNS.GenericCallback<FxOrmInstance.Instance>) {
-					return createInstance(data, {
+				}, function () {
+					return createInstanceSync(data, {
 						uid            : uid,
 						autoSave       : m_opts.autoSave,
 						autoFetch      : (options.autoFetchLimit === 0 ? false : (options.autoFetch || m_opts.autoFetch)),
@@ -532,18 +513,8 @@ export const Model = function (
 						cascadeRemove  : options.cascadeRemove,
 						extra          : options.extra,
 						extra_info     : options.extra_info
-					}, cb);
-				}, function (ex: FxOrmError.ExtendedError, instance: FxOrmInstance.Instance) {
-					found_instance = instance;
-
-					singleton_lock.set();
-					if (ex)
-						throw ex;
+					});
 				});
-
-				singleton_lock.wait();
-
-				return found_instance;
 			}
 		});
 

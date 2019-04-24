@@ -13,32 +13,31 @@ export const clear: FxOrmNS.SingletonModule['clear'] = function (key?: string) {
 	return this;
 };
 
-export const get: FxOrmNS.SingletonModule['get'] = function (key, opts, createProcess, returnCb) {
+// syncify
+export const get: FxOrmNS.SingletonModule['get'] = function (key, opts, reFetchSync) {
 	/**
-	 * @description when dont identity cache
+	 * @description when don't identity cache
 	 */
 	if (opts && opts.identityCache === false)
-		return createProcess(returnCb);
+		return reFetchSync();
 
 	if (map.hasOwnProperty(key)) {
-		if (opts && opts.saveCheck && typeof map[key].o.saved === "function" && !map[key].o.saved()) {
+		if (opts && opts.saveCheck && typeof map[key].o.saved === "function" && !map[key].o.saved())
 			// if not saved, don't return it, fetch original from db
-			return createProcess(returnCb);
-		} else if (map[key].t !== null && map[key].t <= Date.now()) {
+			return reFetchSync();
+		
+		if (map[key].t !== null && map[key].t <= Date.now()) {
 			delete map[key];
 		} else {
-			return returnCb(null, map[key].o);
+			return map[key].o;
 		}
 	}
 
-	createProcess(function (err: Error, value: any) {
-		if (err) return returnCb(err);
-
-		map[key] = {
-			// object , timeout
-			o : value,
-			t : (opts && typeof opts.identityCache === "number" ? Date.now() + (opts.identityCache * 1000) : null)
-		};
-		return returnCb(null, map[key].o);
-	});
+	map[key] = {
+		// object
+		o : reFetchSync(),
+		// timeout
+		t : (opts && typeof opts.identityCache === "number" ? Date.now() + (opts.identityCache * 1000) : null)
+	};
+	return map[key].o;
 };

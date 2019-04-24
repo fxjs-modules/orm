@@ -790,3 +790,24 @@ export function fillSyncVersionAccessorForAssociation (
 
 	return association;
 }
+
+export function generateUID4SoloGet (
+	m_opts: FxOrmModel.ModelConstructorOptions,
+	ids: (string | number)[]
+) {
+	return m_opts.driver.uid + "/" + m_opts.table + "/" + ids.join("/");
+}
+
+export function generateUID4ChainFind (
+	m_opts: FxOrmModel.ModelConstructorOptions,
+	merges: FxOrmQuery.ChainFindMergeInfo[] = [],
+	data: FxOrmInstance.InstanceDataPayload
+) {
+	const merge_id = merges.map(merge => (merge ? merge.from.table : "")).join(',');
+	let uid = m_opts.driver.uid + "/" + m_opts.table + (merge_id ? `+${merge_id}` : "");
+	for (let i = 0; i < m_opts.keys.length; i++) {
+		uid += "/" + data[m_opts.keys[i]];
+	}
+
+	return uid;
+}
