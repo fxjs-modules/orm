@@ -380,6 +380,20 @@ describe('ORM', function () {
       })
     })
 
+    it('E-A/S', function () {
+      const coroutine = require('coroutine');
+
+      var evt = new coroutine.Event();
+      var _conn = null;
+      var conn = ORM.connect(common.getConnectionString(), function (err, conn1) {
+          evt.set();
+
+          _conn = conn1;
+      });
+      evt.wait();
+      assert.equal(conn, _conn);
+    });
+
     describe('if no connection error', function () {
       var db = null
 

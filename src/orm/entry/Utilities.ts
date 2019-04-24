@@ -517,7 +517,7 @@ export function tableAliasCalculatorInOneQuery () {
 	}
 }
 
-export function ORM_Error(err: Error, cb: FibOrmNS.VoidCallback): FxOrmNS.ORMLike {
+export function ORM_Error(err: Error, cb?: FibOrmNS.VoidCallback): FxOrmNS.ORMLike {
 	var Emitter: any = new events.EventEmitter();
 
 	Emitter.use = Emitter.define = Emitter.sync = Emitter.load = function () {};

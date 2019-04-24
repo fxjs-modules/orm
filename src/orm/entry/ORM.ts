@@ -61,33 +61,38 @@ function isOrmLikeErrorEmitter (parsedDBConfig: FxOrmNS.IDBConnectionConfig | Fx
 	return !parsedDBConfig.hasOwnProperty('host') && parsedDBConfig instanceof events.EventEmitter
 }
 
-const connect: FxOrmNS.ExportModule['connect'] = function () {
-	let opts: FxOrmNS.IConnectionOptions,
-		cb: FxOrmNS.IConnectionCallback;
-
+const connectSync: FxOrmNS.ExportModule['connectSync'] = function (opts) {
 	Helpers.selectArgs(arguments, function (type, arg) {
 		switch (type) {
-			case 'function':
-				cb = arg;
-				break
 			default:
 				opts = arg;
 				break
 		}
 	});
 
-	const cfg = Helpers.parseDbConfig(opts, cb);
+	const cfg = Helpers.parseDbConfig(opts);
 
-	if (isOrmLikeErrorEmitter(cfg))
-		return cfg;
+	if (isOrmLikeErrorEmitter(cfg)) {
+        const errWaitor = Utilities.getErrWaitor(true);
+        cfg.on('connect', (err: FxOrmError.ExtendedError) => {
+            errWaitor.err = err;
+            errWaitor.evt.set();
+        });
+        errWaitor.evt.wait();
+        
+        if (errWaitor.err)
+            throw errWaitor.err;
+
+        return cfg;
+	}
 	
 	let proto  = cfg.protocol.replace(/:$/, '');
-	let orm: FxOrmNS.ORMLike;
+	let orm: FxOrmNS.ORM;
 	if (DriverAliases[proto]) {
 		proto = DriverAliases[proto];
 	}
 
-	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(() => {
+	const syncResult = Utilities.exposeErrAndResultFromSyncMethod(() => {
 		const Driver = adapters.get(proto);
 		const settings = Settings.Container(SettingsInstance.get('*'));
 		const driver   = new Driver(cfg, null, {
@@ -103,12 +108,35 @@ const connect: FxOrmNS.ExportModule['connect'] = function () {
 		return orm;
 	});
 
-	if (syncResponse.error && Utilities.isDriverNotSupportedError(syncResponse.error)) {
-		syncResponse.error = new ORMError("Connection protocol not supported - have you installed the database driver for " + proto + "?", 'NO_SUPPORT');
+	if (syncResult.error && Utilities.isDriverNotSupportedError(syncResult.error)) {
+		syncResult.error = new ORMError("Connection protocol not supported - have you installed the database driver for " + proto + "?", 'NO_SUPPORT');
 	}
 
+	Utilities.throwErrOrCallabckErrResult(syncResult, { no_throw: false });
+
+	return orm;
+}
+
+const connect: FxOrmNS.ExportModule['connect'] = function () {
+	let cb: FxOrmNS.IConnectionCallback;
+
+	let args = Array.prototype.slice.apply(arguments);
+	Helpers.selectArgs(args, function (type, arg) {
+		switch (type) {
+			case 'function':
+				cb = arg;
+				break
+		}
+	});
+	args = args.filter((x: any) => x !== cb);
+
+	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmNS.ORMLike>(connectSync, args);
+
+	let orm: FxOrmNS.ORMLike = null;
 	if (syncResponse.error)
 		orm = Utilities.ORM_Error(syncResponse.error, cb);
+	else
+		orm = syncResponse.result;
 
 	Utilities.throwErrOrCallabckErrResult(syncResponse, {
 		// no throw it, it could be processed with event handler
@@ -118,7 +146,7 @@ const connect: FxOrmNS.ExportModule['connect'] = function () {
 
 	process.nextTick(() => {
 		orm.emit("connect", syncResponse.error, !syncResponse.error ? orm : null);
-	})
+	});
 
 	return orm;
 };
@@ -411,7 +439,7 @@ const ORM_Module: FxOrmNS.ExportModule = {
 	addAdapter: adapters.add,
 	use,
 	connect,
-	connectSync: util.sync(connect) as FxOrmNS.ExportModule['connectSync']
-} as FxOrmNS.ExportModule
+	connectSync
+}
 
 export = ORM_Module

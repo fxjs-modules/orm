@@ -31,9 +31,7 @@ declare namespace FxOrmNS {
         [ext: string]: any;
     }
     
-    interface IConnectionCallback {
-        (err: Error, orm?: FibORM): void
-    }
+    type IConnectionCallback = FibOrmNS.ExecutionCallback<any, FxOrmNS.ORMLike>
 
     // just for compatible
     type IConnectFunction = FxOrmNS.ExportModule['connect'];
