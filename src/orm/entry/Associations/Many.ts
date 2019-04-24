@@ -175,11 +175,10 @@ export function extend(
 	Instance: FxOrmInstance.Instance,
 	Driver: FxOrmDMLDriver.DMLDriver,
 	associations: FxOrmAssociation.InstanceAssociationItem_HasMany[],
-	opts: FxOrmAssociation.AssociationDefinitionOptions_HasMany,
-	createInstance: Function
+	opts: FxOrmAssociation.AssociationDefinitionOptions_HasMany
 ) {
 	for (let i = 0; i < associations.length; i++) {
-		extendInstance(Model, Instance, Driver, associations[i], opts, createInstance);
+		extendInstance(Model, Instance, Driver, associations[i], opts);
 	}
 };
 
@@ -226,8 +225,7 @@ function extendInstance(
 	Instance: FxOrmInstance.Instance,
 	Driver: FxOrmDMLDriver.DMLDriver,
 	association: FxOrmAssociation.InstanceAssociationItem_HasMany,
-	opts: FxOrmAssociation.AssociationDefinitionOptions_HasMany,
-	createInstance: Function
+	opts: FxOrmAssociation.AssociationDefinitionOptions_HasMany
 ) {
 	if (Model.settings.get("instance.cascadeRemove")) {
 		Instance.on("beforeRemove", function () {

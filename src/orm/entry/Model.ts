@@ -98,7 +98,7 @@ export const Model = function (
 
 		const setupAssociations = function (instance: FxOrmInstance.Instance) {
 			OneAssociation.extend(model, instance, m_opts.driver, one_associations);
-			ManyAssociation.extend(model, instance, m_opts.driver, many_associations, assoc_opts, createInstance);
+			ManyAssociation.extend(model, instance, m_opts.driver, many_associations, assoc_opts);
 			ExtendAssociation.extend(model, instance, m_opts.driver, extend_associations, assoc_opts);
 		};
 
