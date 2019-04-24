@@ -4,7 +4,7 @@ import coroutine = require('coroutine')
 import Utilities = require("../Utilities");
 import ORMError = require("../Error");
 import { ACCESSOR_KEYS, addAssociationInfoToModel } from './_utils';
-import { ListFindByChainOrRunSync } from '../Model';
+import { listFindByChainOrRunSync } from '../Model';
 import * as Helpers from '../Helpers';
 
 function noOperation (...args: any[]) {};
@@ -110,7 +110,7 @@ export function prepare (
 					throw new ORMError(`.${association.modelFindByAccessor}() is missing a conditions object`, 'PARAM_MISMATCH');
 				}
 
-				return ListFindByChainOrRunSync(Model, 
+				return listFindByChainOrRunSync(Model, 
 					{},
 					[
 						{
@@ -119,8 +119,7 @@ export function prepare (
 						},
 					],
 					options,
-					cb,
-					is_sync
+					{ callback: cb, is_sync }
 				);
 			};
 		}

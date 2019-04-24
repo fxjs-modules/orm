@@ -8,7 +8,7 @@ import ORMError   = require("../Error");
 import Singleton  = require("../Singleton");
 import Utilities  = require("../Utilities");
 import Helpers  = require("../Helpers");
-import { ListFindByChainOrRunSync } from '../Model';
+import { listFindByChainOrRunSync } from '../Model';
 
 function noOperation (...args: any[]) {};
 
@@ -100,7 +100,7 @@ export function prepare (db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associati
 					throw new ORMError(`.${association.modelFindByAccessor}() is missing a conditions object`, 'PARAM_MISMATCH');
 				}
 
-				return ListFindByChainOrRunSync(Model, 
+				return listFindByChainOrRunSync(Model, 
 					{},
 					[
 						{
@@ -109,8 +109,7 @@ export function prepare (db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associati
 						},
 					],
 					options,
-					cb,
-					is_sync
+					{ callback: cb, is_sync }
 				);
 			}
 		};

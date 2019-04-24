@@ -854,25 +854,23 @@ export const Model = function (
 
 	model.findBy = function <T = any> (...args: any[]): FxOrmQuery.IChainFind {
 		if (Array.isArray(args[0])) {
-			const [by_list, self_conditions = {}, self_options, cb] = args as [
-				FxOrmModel.ModelFindByDescriptorItem[],
-				FxOrmModel.ModelQueryConditions__Find,
-				FxOrmModel.ModelOptions__Find,
-				FxOrmNS.ExecutionCallback<T>
-			]
-			return ListFindByChainOrRunSync(model, self_conditions, by_list, self_options, cb) as FxOrmQuery.IChainFind;
+			const [by_list, self_conditions = {}, self_options, cb] = args as FxOrmModel.FindByListStyleFunctionArgs
+			return listFindByChainOrRunSync(model, self_conditions, by_list, self_options, { callback: cb }) as FxOrmQuery.IChainFind;
 		}
 		
-		const [association_name, self_conditions, findby_options, cb] = args as [
-			FxOrmModel.ModelFindByDescriptorItem['association_name'],
-			FxOrmModel.ModelFindByDescriptorItem['conditions'],
-			FxOrmModel.ModelFindByDescriptorItem['options'],
-			FxOrmNS.ExecutionCallback<T>
-		]
-		return findBySolo(model, association_name, self_conditions, findby_options, cb)
+		const [association_name, self_conditions, findby_options, cb] = args as FxOrmModel.FindByItemStyleFunctionArgs
+		return soloFindByChainOrRunSync(model, association_name, self_conditions, findby_options, { callback: cb, is_sync: false }) as FxOrmQuery.IChainFind;
 	}
 
-	model.findBySync = util.sync(model.findBy) as FxOrmModel.Model['findBySync']
+	model.findBySync = function <T = any> (...args: any[]): FxOrmInstance.Instance[] {
+		if (Array.isArray(args[0])) {
+			const [by_list, self_conditions = {}, self_options] = args as FxOrmModel.FindByListStyleFunctionArgs
+			return listFindByChainOrRunSync(model, self_conditions, by_list, self_options, { is_sync: true }) as FxOrmInstance.Instance[];
+		}
+		
+		const [association_name, self_conditions, findby_options] = args as FxOrmModel.FindByItemStyleFunctionArgs
+		return soloFindByChainOrRunSync(model, association_name, self_conditions, findby_options, { is_sync: true }) as FxOrmInstance.Instance[];
+	}
 
 	model.addProperty = function (propIn, options) {
 		var cType: FxOrmProperty.CustomPropertyType;
@@ -976,15 +974,24 @@ export const Model = function (
 	return model;
 } as any as FxOrmModel.ModelConstructor;
 
-export function findBySolo <T = any>(
+function soloFindByChainOrRunSync <T = any>(
 	model: FxOrmModel.Model,
 	association_name: FxOrmModel.ModelFindByDescriptorItem['association_name'],
 	conditions: FxOrmModel.ModelFindByDescriptorItem['conditions'],
 	findby_options: FxOrmModel.ModelFindByDescriptorItem['options'],
-	cb: FxOrmNS.ExecutionCallback<T>
-): FxOrmQuery.IChainFind {
+	opts: FxOrmNS.SyncCallbackInputArags
+): FxOrmQuery.IChainFind | FxOrmInstance.Instance[] {
+	const { callback: cb, is_sync = false } = opts
+
+	if (is_sync) {
+		const modelFindBySyncAccessor = model.associations[association_name].association.modelFindBySyncAccessor
+		if (!modelFindBySyncAccessor || typeof model[modelFindBySyncAccessor] !== 'function')
+			throw `invalid association name ${association_name} provided!`
+				
+		return model[modelFindBySyncAccessor](conditions, findby_options)
+	}
+
 	const findByAccessor = model.associations[association_name].association.modelFindByAccessor
-	
 	if (!findByAccessor || typeof model[findByAccessor] !== 'function')
 		throw `invalid association name ${association_name} provided!`
 
@@ -994,14 +1001,15 @@ export function findBySolo <T = any>(
 	return model[findByAccessor](conditions, findby_options)
 }
 
-export function ListFindByChainOrRunSync <T = any> (
+export function listFindByChainOrRunSync <T = any> (
 	model: FxOrmModel.Model,
 	self_conditions: FxOrmModel.ModelQueryConditions__Find,
 	by_list: FxOrmModel.ModelFindByDescriptorItem[],
 	self_options: FxOrmModel.ModelOptions__Find,
-	cb: FxOrmNS.ExecutionCallback<T>,
-	is_sync: boolean = false
-): FxOrmQuery.IChainFind | (FxOrmInstance.Instance | FxOrmInstance.Instance[]) {
+	opts: FxOrmNS.SyncCallbackInputArags
+): FxOrmQuery.IChainFind | (FxOrmInstance.Instance[]) {
+	const { callback: cb, is_sync = false } = opts
+	
 	self_options = self_options || {};
 	const merges = Utilities.combineMergeInfoToArray(self_options.__merge);
 

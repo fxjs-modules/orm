@@ -160,6 +160,20 @@ declare namespace FxOrmModel {
         [property: string]: any;
     }
 
+    type FindByListStyleFunctionArgs<T = any> = [
+        FxOrmModel.ModelFindByDescriptorItem[],
+        FxOrmModel.ModelQueryConditions__Find,
+        FxOrmModel.ModelOptions__Find,
+        FxOrmNS.ExecutionCallback<T>
+    ]
+
+    type FindByItemStyleFunctionArgs<T = any> = [
+        FxOrmModel.ModelFindByDescriptorItem['association_name'],
+        FxOrmModel.ModelFindByDescriptorItem['conditions'],
+        FxOrmModel.ModelFindByDescriptorItem['options'],
+        FxOrmNS.ExecutionCallback<T>
+    ]
+
     type ModelConstructor = new (opts: ModelConstructorOptions) => Model
     // interface ModelConstructor {
     //     (opts: ModelConstructorOptions): void

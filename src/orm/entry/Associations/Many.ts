@@ -11,7 +11,7 @@ import Property = require("../Property");
 import ORMError = require("../Error");
 import Utilities = require("../Utilities");
 import { ACCESSOR_KEYS, addAssociationInfoToModel } from './_utils';
-import { ListFindByChainOrRunSync } from '../Model';
+import { listFindByChainOrRunSync } from '../Model';
 import * as Helpers from '../Helpers';
 
 function noOperation (...args: any[]) {};
@@ -144,7 +144,7 @@ export function prepare(db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associatio
 
 				right_find_opts = right_find_opts || {};
 
-				return ListFindByChainOrRunSync(Model, 
+				return listFindByChainOrRunSync(Model, 
 					{},
 					[
 						{
@@ -153,8 +153,7 @@ export function prepare(db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associatio
 						},
 					],
 					right_find_opts,
-					cb,
-					is_sync
+					{ callback: cb, is_sync }
 				);
 			}
 		}

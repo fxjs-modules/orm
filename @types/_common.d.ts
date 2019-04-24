@@ -34,4 +34,9 @@ declare namespace FxOrmNS {
         error: FxOrmError.ExtendedError,
         result?: T
     }
+
+    interface SyncCallbackInputArags<T = any> {
+        callback?: FxOrmNS.ExecutionCallback<T>,
+        is_sync?: boolean
+    }
 }
