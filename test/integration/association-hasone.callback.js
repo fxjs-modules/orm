@@ -3,7 +3,7 @@ var helper   = require('../support/spec_helper');
 var common   = require('../common');
 var protocol = common.protocol();
 
-describe("hasOne", function() {
+describe("hasOne - callback", function() {
   var db    = null;
   var Tree  = null;
   var Stalk = null;

@@ -344,7 +344,7 @@ ORM.prototype.sync = function (
 	cb?
 ) {
 	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(this.syncSync, [], { thisArg: this })
-	Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb })
+	Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: !!cb, callback: cb })
 
 	return this;
 };
@@ -366,8 +366,7 @@ ORM.prototype.drop = function (
 	cb?
 ) {
 	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(this.dropSync, [], { thisArg: this })
-	Utilities.throwErrOrCallabckErrResult(syncResponse, { callback: cb })
-
+	Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: !!cb, callback: cb })
 
 	return this;
 };

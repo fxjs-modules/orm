@@ -175,7 +175,7 @@ function extendInstance(
 		if (!Utilities.hasValues(Instance, Object.keys(association.field)))
 			return false;
 		
-		const instance = association.model.get(
+		const instance = association.model.getSync(
 			Utilities.values(Instance, Object.keys(association.field)),
 			_has_opts
 		);

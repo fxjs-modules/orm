@@ -283,15 +283,10 @@ export const Model = function (
 		return this;
 	};
 
-	model.getSync = function (
-		this: FxOrmModel.Model,
-		...ids
-	) {
-		
-		const conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
+	const collectParamsForGet = function (ids: any[]) {
 		let options    = <FxOrmModel.ModelOptions__Get>{};
-		let prop: FxOrmProperty.NormalizedProperty;
 
+		ids = ids.filter(x => x !== undefined && x !== null)
 		if (typeof ids[ids.length - 1] === "object" && !Array.isArray(ids[ids.length - 1])) {
 			options = ids.pop();
 		}
@@ -303,6 +298,19 @@ export const Model = function (
 		if (ids.length !== m_opts.keys.length) {
 		    throw new ORMError("Model.get() IDs number mismatch (" + m_opts.keys.length + " needed, " + ids.length + " passed)", 'PARAM_MISMATCH', { model: m_opts.table });
 		}
+
+		return { options, ids }
+	}
+
+	model.getSync = function (
+		this: FxOrmModel.Model,
+		...args
+	) {
+		
+		const conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
+		let prop: FxOrmProperty.NormalizedProperty;
+
+		const { options, ids } = collectParamsForGet(args);
 
 		for (let i = 0; i < keyProperties.length; i++) {
 			prop = keyProperties[i];
@@ -368,24 +376,29 @@ export const Model = function (
 	}
 
 	model.get = function (
-		this:FxOrmModel.Model,
+		this: FxOrmModel.Model,
 		...args: any[]
 	) {
-		const cb: FxOrmModel.ModelMethodCallback__Get = util.last(args);
-		const with_callback = typeof cb === 'function';
+		let cb: FxOrmModel.ModelMethodCallback__Get = null;
 
-		if (with_callback)
-			args.pop();
+		Helpers.selectArgs(args, function (arg_type, arg) {
+			switch (arg_type) {
+				case 'function':
+					cb = arg;
+					break;
+			}
+		});
+		args = args.filter(x => x !== cb);
 
-		const errWaitor = Utilities.getErrWaitor(with_callback);
+		if (typeof cb !== "function")
+			throw new ORMError("Missing Model.get() callback", 'MISSING_CALLBACK', { model: m_opts.table });
+		
+		collectParamsForGet(args);
 
 		process.nextTick(() => {
 			const syncReponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance>(model.getSync, args, { thisArg: model });
 			Utilities.throwErrOrCallabckErrResult(syncReponse, { no_throw: true, callback: cb });
-
-			if (errWaitor.evt) errWaitor.evt.set();
 		});
-		if (errWaitor.evt) errWaitor.evt.wait();
 
 		return this;
 	};
