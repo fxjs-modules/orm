@@ -46,6 +46,7 @@ function t() {
     run('./integration/model-one.js');
     run('./integration/model-one.callback.js');
     run('./integration/model-save.js');
+    run('./integration/model-save.callback.js');
     run('./integration/model-sync.js');
 
     run('./integration/predefined-validators.js');

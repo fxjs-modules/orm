@@ -594,12 +594,13 @@ export const Instance = function (
 		return this;
 	});
 
-	Utilities.addHiddenUnwritableMethodToInstance(instance, "saveSync", function (this: typeof instance) {
+
+	const collectParamsForSave = function (args: any[]) {
 		var objCount = 0;
 		var data: FxOrmInstance.InstanceDataPayload = {},
 				saveOptions = {};
 
-		Helpers.selectArgs(arguments, function (arg_type, arg) {
+		Helpers.selectArgs(args, function (arg_type, arg) {
 			switch (arg_type) {
 				case 'object':
 					switch (objCount) {
@@ -618,6 +619,13 @@ export const Instance = function (
 						throw err;
 			}
 		});
+
+		return { saveOptions, data }
+	}
+
+	Utilities.addHiddenUnwritableMethodToInstance(instance, "saveSync", function (this: typeof instance) {
+		const args = Array.prototype.slice.apply(arguments);
+		const { saveOptions, data } = collectParamsForSave(args);
 
 		for (let k in data) {
 			if (data.hasOwnProperty(k)) {
@@ -642,6 +650,7 @@ export const Instance = function (
 			}
 		});
 		args = args.filter(x => x !== cb);
+		collectParamsForSave(args);
 
 		process.nextTick(() => {
 			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(instance.saveSync, args);
