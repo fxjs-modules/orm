@@ -94,9 +94,10 @@ function addLazyLoadProperty(
 		return item.saveSync();
 	});
 
-	Utilities.addHiddenPropertyToInstance(Instance, propertyAccessors.setAccessor, function <T>(cb?: FxOrmNS.ExecutionCallback<FxOrmNS.Nilable<T>>) {
+	Utilities.addHiddenPropertyToInstance(Instance, propertyAccessors.setAccessor, function <T>(content: FxOrmInstance.InstanceDataPayload[any], cb?: FxOrmNS.ExecutionCallback<FxOrmNS.Nilable<T>>) {
 		process.nextTick(() => {
-			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance | FxOrmInstance.Instance[]>(Instance[propertyAccessors.setSyncAccessor]);
+			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<FxOrmInstance.Instance | FxOrmInstance.Instance[]>(Instance[propertyAccessors.setSyncAccessor], [content]);
+
 			Utilities.throwErrOrCallabckErrResult(syncResponse, { no_throw: true, callback: cb })
 		});
 		

@@ -55,6 +55,7 @@ function t() {
 
     run('./integration/property-custom.js');
     run('./integration/property-lazyload.js');
+    run('./integration/property-lazyload.callback.js');
     run('./integration/property-maps-to.js');
     run('./integration/property.js');
 
