@@ -801,7 +801,9 @@ export const Instance = function (
 	});
 
 	Hook.wait(instance, opts.hooks.afterLoad, function (err: Error) {
-		emitEvent("ready", err, instance);
+		process.nextTick(() => {
+			emitEvent("ready", err, instance);
+		});
 	});
 
 	return instance;

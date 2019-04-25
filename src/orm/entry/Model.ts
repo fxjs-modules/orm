@@ -53,7 +53,7 @@ export const Model = function (
 			return this;
 		};
 	};
-	var createInstance = function (
+	const createInstanceSync = function (
 		data: FxOrmInstance.InstanceDataPayload,
 		inst_opts: FxOrmInstance.CreateOptions,
 		cb?: FxOrmNS.GenericCallback<FxOrmInstance.Instance>
@@ -102,19 +102,6 @@ export const Model = function (
 			ExtendAssociation.extend(model, instance, m_opts.driver, extend_associations, assoc_opts);
 		};
 
-		let pending = 2, create_err: FxOrmError.ExtendedError = null;
-
-		const create_instance_evt_lock = new coroutine.Event();
-
-		const readyTrigger = function (err?: Error, instance_item?: FxOrmInstance.Instance) {
-			if (err)
-				create_err = err;
-
-			// TODO: add timeout for callback
-			if (--pending === 0 || create_err) {
-				create_instance_evt_lock.set();
-			}
-		}
 		const instance = new Instance(model, {
 			uid                    : inst_opts.uid, // singleton unique id
 			keys                   : m_opts.keys,
@@ -136,11 +123,7 @@ export const Model = function (
 			setupAssociations      : setupAssociations,
 			fieldToPropertyMap     : fieldToPropertyMap,
 			keyProperties          : keyProperties,
-			events				   : {
-				'ready': function (err, instance) {
-					readyTrigger(err, instance);
-				}
-			}
+			events				   : {}
 		});
 		
 		if (model_fields !== null) {
@@ -152,21 +135,12 @@ export const Model = function (
 		ExtendAssociation.autoFetch(instance, extend_associations, assoc_opts, m_opts.driver.isPool);
 
 		Hook.wait(instance, m_opts.hooks.afterAutoFetch, function (err: Error) {
-			readyTrigger(err, instance);
+			if (err)
+				throw err
 		});
-
-		if (typeof cb === "function") {
-			cb(create_err, instance);
-		} else {
-			create_instance_evt_lock.set();
-		}
-
-		create_instance_evt_lock.wait();
 
 		return instance;
 	};
-
-	const createInstanceSync = util.sync(createInstance);
 
 	const model = function (
 		..._data: FxOrmModel.ModelInstanceConstructorOptions
@@ -180,7 +154,7 @@ export const Model = function (
 	                data2[m_opts.keys[i]] = data[i++];
 	            }
 
-	            return createInstance(data2, { isShell: true });
+	            return createInstanceSync(data2, { isShell: true });
 	        }
 	        else {
 	            const err: FibOrmNS.ExtensibleError = new Error('Model requires ' + m_opts.keys.length + ' keys, only ' + data.length + ' were provided');
@@ -192,7 +166,7 @@ export const Model = function (
 	        var data2: FxOrmModel.ModelInstanceConstructorOptions[0] = {};
 	        data2[m_opts.keys[0]] = data;
 
-	        return createInstance(data2, { isShell: true });
+	        return createInstanceSync(data2, { isShell: true });
 	    } else if (typeof data === "undefined") {
 	        data = {};
 	    }
@@ -210,7 +184,7 @@ export const Model = function (
 			isNew = true;
 		}
 
-	    return createInstance(data, {
+	    return createInstanceSync(data, {
 	        is_new: isNew,
 	        autoSave: m_opts.autoSave,
 	        cascadeRemove: m_opts.cascadeRemove

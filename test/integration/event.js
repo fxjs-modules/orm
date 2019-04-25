@@ -36,6 +36,44 @@ describe("Event", function () {
         return db.closeSync();
     });
 
+    describe("ready", function () {
+        before(setup());
+
+        it("should trigger after instance ready - pointless", function () {
+            var triggered = false;
+            var John = new Person({
+                name: "John Doe"
+            });
+
+            var coroutine = require('coroutine');
+            const evt = new coroutine.Event();
+            John.on("ready", function () {
+                triggered = true;
+                evt.set();
+            });
+            assert.isFalse(triggered);
+
+            evt.wait();
+            assert.isTrue(triggered);
+        });
+
+        it("should trigger after instance ready - pointless", function () {
+            var triggered = false;
+            var John = new Person({
+                name: "John Doe"
+            });
+
+            John.on("ready", function () {
+                triggered = true;
+            });
+            assert.isFalse(triggered);
+
+            process.nextTick(() => {
+                assert.isTrue(triggered);
+            });
+        });
+    });
+
     describe("save", function () {
         before(setup());
 
