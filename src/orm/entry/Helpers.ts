@@ -2,6 +2,7 @@ import url 	  = require('url');
 
 import _cloneDeep 	  = require('lodash.clonedeep');
 
+import Hook           = require('./Hook');
 import Utilities      = require("./Utilities");
 import ORMError       = require("./Error");
 
@@ -197,7 +198,6 @@ export const tryGetAssociationItemFromModel: FxOrmHelper.HelperModules['tryGetAs
     return getManyAssociationItemFromModel(extend_name, _model) || getOneAssociationItemFromModel(extend_name, _model) || getExtendsToAssociationItemFromModel(extend_name, _model)
 }
 /* by ext_name x assoc_model :end */
-/* by ext_name x assoc_model :end */
 
 /* hooks :start */
 export const prependHook: FxOrmHelper.HelperModules['prependHook'] = function (hooks, hookName, preLogic) {
@@ -228,7 +228,7 @@ export const prependHook: FxOrmHelper.HelperModules['prependHook'] = function (h
 			callOldHook.call(this, next)
 		};
 	} else {
-		hooks[hookName] = preLogic;
+		hooks[hookName] = preLogic as any;
 	}
 }
 
@@ -240,21 +240,23 @@ export const preReplaceHook: FxOrmHelper.HelperModules['preReplaceHook'] = funct
     m[hookName](function (this: FxOrmInstance.Instance, next: boolean | FxOrmHook.HookActionNextFunction) {
         cb.call(this, this);
 
-        _oldHook = _oldHook.bind(this)
         if (_oldHook) {
             if (_oldHook.length > 0) {
                 if (typeof next === 'boolean')
-                    return (_oldHook as FxOrmHook.HookResultCallback)(next);
+                    return (_oldHook as FxOrmHook.HookResultCallback).call(this, next);
                 else
-                    return (_oldHook as FxOrmHook.HookActionCallback)(next);
+                    return (_oldHook as FxOrmHook.HookActionCallback).call(this, next);
             }
-            _oldHook();
+            _oldHook.call(this);
         }
 
         if (typeof next === 'function')
-            next();
+            next.call(this);
     });
 }
+
+export const hookTrigger: FxOrmHook.HookTrigger = Hook.trigger
+export const hookWait: FxOrmHook.HookWait = Hook.wait
 /* hooks: end */
 
 /* arguments input :start */

@@ -296,7 +296,7 @@ declare namespace FxOrmNS {
         connect: {
             (uri?: string | FxOrmNS.IConnectionOptions, callback?: IConnectionCallback): FxOrmNS.ORMLike;
         };
-        connectSync(uriOrOpts?: FibORMIConnectionOptions | string): FxOrmNS.ORMLike;
+        connectSync(uriOrOpts?: string | FxOrmNS.IConnectionOptions): FxOrmNS.ORMLike;
 
         [extra: string]: any
     }

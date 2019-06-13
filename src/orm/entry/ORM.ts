@@ -441,6 +441,6 @@ const ORM_Module: FxOrmNS.ExportModule = {
 	use,
 	connect,
 	connectSync
-}
+} as any
 
 export = ORM_Module
