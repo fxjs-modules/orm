@@ -255,8 +255,8 @@ export const preReplaceHook: FxOrmHelper.HelperModules['preReplaceHook'] = funct
     });
 }
 
-export const hookTrigger: FxOrmHook.HookTrigger = Hook.trigger
-export const hookWait: FxOrmHook.HookWait = Hook.wait
+export const hookTrigger: FxOrmHelper.HelperModules['hookTrigger'] = Hook.trigger
+export const hookWait: FxOrmHelper.HelperModules['hookWait'] = Hook.wait
 /* hooks: end */
 
 /* arguments input :start */

@@ -1,6 +1,8 @@
 /// <reference path="hook.d.ts" />
 
 declare namespace FxOrmHelper {
+   // type HookTrigger<TTHIS = any> = FxOrmHook.HookTrigger<TTHIS>
+   // type HookWait<TTHIS = any, TNEXT = any> = FxOrmHook.HookWait<TTHIS, TNEXT>
    interface HelperModules {
       parseDbConfig (config: string | FxOrmNS.IConnectionOptions, cb?: FxOrmNS.IConnectionCallback): FxOrmNS.IDBConnectionConfig | FxOrmNS.ORMLike
 
@@ -26,8 +28,8 @@ declare namespace FxOrmHelper {
 
       prependHook (hooks: FxOrmModel.Hooks, hookName: FxOrmModel.keyofHooks, preLogic: FxOrmModel.Hooks[FxOrmModel.keyofHooks]): void
       preReplaceHook (m: FxOrmModel.Model, opts: FxOrmModel.ModelOptions, hookName: FxOrmModel.keyofHooks, cb: (this: FxOrmInstance.Instance, inst: FxOrmInstance.Instance) => void): void
-      hookTrigger: FxOrmHook.HookTrigger
-      hookWait: FxOrmHook.HookWait
+      hookTrigger: FxOrmHook.HookTrigger<any>
+      hookWait: FxOrmHook.HookWait<any, any>
 
       selectArgs (
          args: ArrayLike<any>,
