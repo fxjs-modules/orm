@@ -152,7 +152,7 @@ declare namespace FxOrmNS {
         new (orm?: ORM, opts?: PluginOptions): Plugin
         prototype: Plugin
     }
-    type PluginConstructCallback = (orm: ORM, opts: PluginOptions) => Plugin
+    type PluginConstructCallback<T1 = ORM, T2 = PluginOptions> = (orm: T1, opts: T2) => Plugin
     interface Plugin {
         beforeDefine?: {
             (name?: string, properties?: FxOrmModel.ModelPropertyDefinitionHash, opts?: FxOrmModel.ModelOptions): void

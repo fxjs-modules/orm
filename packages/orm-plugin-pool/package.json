@@ -1,0 +1,24 @@
+{
+  "name": "@fxjs/orm-plugin-pool",
+  "version": "1.0.0",
+  "description": "pool plugin for orm",
+  "main": "lib",
+  "types": "typings.d.ts",
+  "scripts": {
+    "build": "fib-typify ./index.ts -o ./lib/index.js",
+    "test": "fibjs test",
+    "ci": "npm run build && npm run test"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "fib-pool": "^1.5.3"
+  },
+  "devDependencies": {
+    "@fxjs/orm": "^1.10.x",
+    "fib-typify": "^0.6.0"
+  },
+  "peerDependencies": {
+    "@fxjs/orm": ">= 1.10.1 <= 2.0"
+  }
+}
