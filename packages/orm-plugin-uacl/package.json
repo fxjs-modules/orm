@@ -1,0 +1,23 @@
+{
+  "name": "@fxjs/orm-plugin-uacl",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib",
+  "types": "typings.d.ts",
+  "scripts": {
+    "build": "fib-typify ./index.ts -o ./lib/index.js",
+    "test": "fibjs test",
+    "ci": "npm run build && npm run test"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fxjs/orm": "file:../..",
+    "fib-kv": "^1.3.1",
+    "fib-pool": "^1.5.3",
+    "rxjs": "^6.5.2"
+  },
+  "devDependencies": {
+    "fib-typify": "^0.6.0"
+  }
+}
