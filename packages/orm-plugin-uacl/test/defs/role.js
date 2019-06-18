@@ -15,6 +15,7 @@ module.exports = (orm) => {
         }
     })
 
+    // internal code
     ;[
         orm.models.user,
         orm.models.role,
