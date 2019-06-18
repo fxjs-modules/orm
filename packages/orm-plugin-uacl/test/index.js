@@ -8,6 +8,8 @@ const ORMPluginUACL = require('../');
 
 const TreeAbout = require('../lib/tree');
 
+const ormDefs = require('./defs')
+
 describe('orm-plugin-uacl', () => {
     describe('TreeAbout', () => {
         let project$1 = null
@@ -179,6 +181,7 @@ describe('orm-plugin-uacl', () => {
         before(() => {
             orm = ORM.connectSync('sqlite:uacl-test.db')
             orm.use(ORMPluginUACL)
+            ormDefs(orm)
         });
 
         after(() => {
@@ -186,16 +189,83 @@ describe('orm-plugin-uacl', () => {
         });
 
         beforeEach(() => {
-            project$1 = new orm.ACLNode({ id: 1, data: { type: 'project' } })
-            project$2 = new orm.ACLNode({ id: 2, data: { type: 'project' } })
+            project$1 = new orm.ACLNode({
+                id: `project-1`,
+                data: {
+                    type: 'project',
+                    instance: {}
+                }
+            })
+            project$2 = new orm.ACLNode({
+                id: `project-2`,
+                data: {
+                    type: 'project',
+                    instance: {}
+                }
+            })
 
-            task$1 = new orm.ACLNode({ id: 1, data: { type: 'task' } })
-            task$2 = new orm.ACLNode({ id: 2, data: { type: 'task' } })
+            task$1 = new orm.ACLNode({
+                id: `task-1`,
+                data: {
+                    type: 'task',
+                    instance: {}
+                }
+            })
+            task$2 = new orm.ACLNode({
+                id: `task-2`,
+                data: {
+                    type: 'task',
+                    instance: {}
+                }
+            })
 
-            task$2owner = new orm.ACLNode({ id: 1, data: { type: 'user' } })
+            task$2owner = new orm.ACLNode({
+                id: `user-1`,
+                data: {
+                    type: 'user',
+                    instance: {}
+                }
+            })
             task$2member1 = task$2owner
-            task$2member2 = new orm.ACLNode({ id: 2, data: { type: 'user' } })
+            task$2member2 = new orm.ACLNode({
+                id: `user-2`,
+                data: {
+                    type: 'user',
+                    instance: {}
+                }
+            })
         });
+
+        it('$?', () => {
+            const [
+                project$1,
+                project$2,
+            ] = [
+                new orm.models.project(1),
+                new orm.models.project(2)
+            ]
+
+            const [
+                stage$1,
+                stage$2,
+            ] = [
+                new orm.models.stage(1),
+                new orm.models.stage(2)
+            ]
+
+            const [
+                user$1,
+                user$2,
+            ] = [
+                new orm.models.user(1),
+                new orm.models.user(2)
+            ]
+
+            /**
+             * this would grant some accesses to user$1, user$2;
+             */
+            project$1.addMembers([user$1, user$2])
+        })
     })
 })
 

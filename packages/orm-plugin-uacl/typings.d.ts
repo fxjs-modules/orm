@@ -69,6 +69,18 @@ declare namespace FxORMPluginUACL {
     class ACLNode extends Node {
         constructor (cfg: ACLNodeConstructorOptions);
         data: FxOrmNS.Instance | FxOrmNS.InstanceDataPayload
+
+        acl: {
+            create?: boolean | string[]
+            clear?: boolean | string[]
+        }
+
+        oacl: {
+            find?: boolean | string[]
+            write?: boolean | string[]
+            read?: boolean | string[]
+            remove?: boolean | string[]
+        }
     }
 }
 
