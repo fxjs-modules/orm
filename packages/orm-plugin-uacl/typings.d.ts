@@ -77,7 +77,13 @@ declare namespace FxORMPluginUACL {
         toJSON: RootNode['toJSON'];
     }
 
-    type ACLTree = Tree<ACLNode | RootNode>
+    interface ACLTree extends Tree<ACLNode | RootNode> {
+        model: FxOrmModel.Model;
+        _tree_stores: {
+            [k: string]: ACLTree
+        };
+        association_info: FxOrmModel.Model['associations'][any]
+    }
     // interface ACLTree extends Tree {
     // }
 
@@ -90,9 +96,11 @@ declare namespace FxORMPluginUACL {
     class ACLNode extends Node {
         constructor (cfg: ACLNodeConstructorOptions);
         data: {
-            instance: FxOrmNS.Instance
-            acl: ACLNode['acl']
-            oacl: ACLNode['oacl']
+            id: string | number
+            roles: string[]
+            // instance: FxOrmNS.Instance
+            // acl: ACLNode['acl']
+            // oacl: ACLNode['oacl']
         }
 
         acl: {

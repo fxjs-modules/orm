@@ -280,7 +280,6 @@ describe('orm-plugin-uacl', () => {
         it('oacl: read/write/remove', () => {
             const [
                 project$1,
-                project$2,
             ] = coroutine.parallel([
                 new orm.models.project(),
                 new orm.models.project(),
@@ -297,8 +296,11 @@ describe('orm-plugin-uacl', () => {
             const [
                 user$1,
                 user$2,
-                user$3
+                user$3,
+                user$memberof$stage1,
+                user$memberof$stage2,
             ] = coroutine.parallel([
+                new orm.models.user(),
                 new orm.models.user(),
                 new orm.models.user(),
                 new orm.models.user(),
@@ -340,6 +342,8 @@ describe('orm-plugin-uacl', () => {
                 [ [user$3, 'write' ], true ],
                 [ [user$3, 'read' ], true ],
             ].forEach(check_handler)
+
+            project$1.addStages([stage$1])
         })
     })
 })

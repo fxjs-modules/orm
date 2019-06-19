@@ -14,24 +14,37 @@ module.exports = orm => {
     }, {
         ievents: {
             'after:add:members': function (members) {
+                /**
+                 * 在 project/1/members 为 ID 的树形结构中, 为这些 members 赋予读写权限
+                 */
                 this.$uacl('members')
-                    /**
-                     * grant(aclKv)
-                     * 
-                     * equals to
-                     * `project1$GrantTree.addChildNode({ id: projectMembers$uaci, instance: member$1, acl: { write: true, ... } })`
-                     * 
-                     */
                     .grant(members, {
                         write: true,
                         read: ['name', 'description']
                     })
             },
             'after:del:members': function (members = []) {
-                console.log('members', members)
                 if (!members.length)
                     this.$uacl('members')
                         .clear()
+            },
+
+            'after:add:stages': function (stages) {
+                /**
+                 * 为所有的该 project 下的 stages 的 members 赋予对 project 的
+                 * 字段读取权限
+                 */
+                const project = this
+                stages.forEach((stage) => {
+                    stage.members.forEach(member => {
+                        project.$uacl('stages')
+                            .$uacl('members', stage)
+                            .grant(member, {
+                                write: false,
+                                read: ['name', 'description']
+                            })
+                    })
+                })
             }
         }
     })
@@ -39,6 +52,23 @@ module.exports = orm => {
     const Stage = orm.define('stage', {
         name: String
     }, {
+        ievents: {
+            'after:add:members': function (members) {
+                this.getOfProjectsSync()
+                    .forEach(project => {
+                        /**
+                         * 在 project/xxx/stages/xx/members 为 ID 的树形结构中, 为这些 members 赋予读取 projects 权限
+                         */
+                        project
+                            .$uacl('stages')
+                            .$uacl('members')
+                            .grant(members, {
+                                write: true,
+                                read: ['name', 'description']
+                            })
+                    })
+            }
+        }
     })
 
     const Task = orm.define('task', {
@@ -46,7 +76,7 @@ module.exports = orm => {
     }, {
     })
 
-    Project.hasMany('stages', Stage, {}, {})
+    Project.hasMany('stages', Stage, {}, { reverse: 'ofProjects' })
     Stage.hasMany('tasks', Task, {}, {})
 
     Project.hasMany('members', User, {}, {})
@@ -99,14 +129,14 @@ module.exports = orm => {
             /**
              * `revoke(action)`
              * equals to
-             * `project1$GrantTree.getChildNodeById(member.$getUaci()).removeACLByKey('write')`
+             * `project1$GrantTree.getChildNodeById(member.$getUacis()).removeACLByKey('write')`
              */
             .revoke('write')
             /**
              * `revoke(action)`
              * 
              * equals to
-             * `project1$GrantTree.removeChildNodeById(member.$getUaci())`
+             * `project1$GrantTree.removeChildNodeById(member.$getUacis())`
              */
 
         this.$uacl('members')

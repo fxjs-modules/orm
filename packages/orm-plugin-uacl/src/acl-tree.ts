@@ -4,16 +4,12 @@ import { Tree, Node } from './tree'
 function findNodeByInstance (aclTree: ACLTree, instance: FxOrmInstance.Instance) {
     let node = null
 
+    const uaci = instance.$getUacis().object
     for (let x of aclTree.nodeSet) {
         if (x.isRoot)
             continue ;
-
-        if (x.data.instance === instance) {
-            node = x
-            break
-        }
             
-        if (x.data.instance.id === instance.id)
+        if (x.data.id === uaci)
             node = x
     }
 
@@ -26,6 +22,9 @@ export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACL.ACLTree {
      */
     prefix: string = '';
     readonly model: FxOrmModel.Model;
+
+    readonly _tree_stores: FxORMPluginUACL.ACLTree['_tree_stores'];
+    readonly association_info: FxOrmModel.Model['associations'][any]
 
     constructor ({ prefix, model, association_name }: {
         prefix: string,
@@ -40,18 +39,35 @@ export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACL.ACLTree {
 
         if (!prefix)
             throw `[Tree] prefix is required!`
+
         if (!model || typeof model !== 'function')
             throw `[Tree] model is required!`
+
+        const _treeStores = {}
+        Object.defineProperty(this, '_tree_stores', { get () { return _treeStores }, enumerable: false });
 
         Object.defineProperty(this, 'prefix', { get () { return prefix } });
         Object.defineProperty(this, 'model', { get () { return model }, enumerable: false });
         if (association_name)
             Object.defineProperty(this, 'association_name', { get () { return association_name }, enumerable: false });
-            Object.defineProperty(this, 'association', { get () { return model.associations[association_name] }, enumerable: false });
+            Object.defineProperty(this, 'association_info', { get () { return model.associations[association_name] }, enumerable: false });
     }
 
-    uacl () {
-        return this;
+    $uacl (next_assoc_name: string, instance?: FxOrmInstance.Instance) {
+        const association_info = this.association_info
+        const next_model = association_info.association.model;
+
+        const prefix = `${this.prefix}/${next_assoc_name}/${instance ? instance.$getUacis().id : 0}`
+        const key = `$uaclGrantTrees$${prefix}`
+
+        if (this._tree_stores[key])
+            return new ACLTree({
+                prefix,
+                model: next_model,
+                association_name: next_assoc_name
+            });
+
+        return this._tree_stores[key];
     }
 
     grant (
@@ -71,10 +87,15 @@ export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACL.ACLTree {
             target = [];
 
         target.forEach((data: FxOrmInstance.Instance) => {
-            const node = this.root.addChildNode(
+            const uaci = data.$getUacis()
+
+            this.root.addChildNode(
                 new ACLNode({
-                    id: data.id,
-                    data: data,
+                    id: uaci.object,
+                    data: {
+                        id: uaci.object,
+                        roles: data.roles || []
+                    },
                     oacl
                 })
             )
@@ -133,8 +154,11 @@ export class ACLNode extends Node<FxORMPluginUACL.ACLNode['data']> implements Fx
     oacl: FxORMPluginUACL.ACLNode['oacl']
     
     constructor (cfg: FxORMPluginUACL.ACLNodeConstructorOptions) {
-        if (!cfg.data || !cfg.data.isInstance)
-            throw `[ACLNode] instance type 'data' is missing in config!`
+        if (!cfg.data || !cfg.data.hasOwnProperty('id') || !cfg.data.hasOwnProperty('roles'))
+            throw `[ACLNode] valid 'data' is missing in config!`
+
+        if (!Array.isArray(cfg.data.roles))
+            throw `[ACLNode] array-type 'roles' is missing in config.data!`
 
         const acl: ACLNode['acl'] = {
             create: undefined,
@@ -153,7 +177,10 @@ export class ACLNode extends Node<FxORMPluginUACL.ACLNode['data']> implements Fx
             id: cfg.id,
             parent: cfg.parent,
             children: cfg.children,
-            data: { instance: cfg.data, acl, oacl }
+            data: {
+                id: cfg.data.id,
+                roles: cfg.data.roles
+            }
         })
 
         this.acl = acl

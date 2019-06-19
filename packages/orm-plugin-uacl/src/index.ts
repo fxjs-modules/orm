@@ -2,29 +2,29 @@ import { ACLNode, ACLTree } from './acl-tree';
 
 /**
  * @chainapi
- * @purpose record the relations, and provide the `uaci` computation by getUaci
+ * @purpose record the relations, and provide the `uaci` computation by getUacis
  * 
  */
-function modelUacl (
-    this: FxOrmModel.Model,
-    association_name: string
-): ACLTree {
-    if (!this.$uaclGrantTree) {
-        const model = this;
-        this.$uaclGrantTree = new ACLTree({
-            model: model,
-            prefix: `${model.table}`,
-            association_name,
-        })
-    }
+// function modelUacl (
+//     this: FxOrmModel.Model,
+//     association_name: string
+// ): ACLTree {
+//     if (!this.$uaclGrantTree) {
+//         const model = this;
+//         this.$uaclGrantTree = new ACLTree({
+//             model: model,
+//             prefix: `${model.table}`,
+//             association_name,
+//         })
+//     }
 
-    return this.$uaclGrantTree
-}
+//     return this.$uaclGrantTree
+// }
 
 
 /**
  * @chainapi
- * @purpose record the relations, and provide the `uaci` computation by getUaci
+ * @purpose record the relations, and provide the `uaci` computation by getUacis
  * 
  */
 function instanceUacl (
@@ -37,9 +37,10 @@ function instanceUacl (
 
     const treeKey = `$uaclGrantTrees$${association_name}`
     if (!this[treeKey]) {
+        const uacis = this.$getUacis()
         this[treeKey] = new ACLTree({
             model: model,
-            prefix: `${model.table}`,
+            prefix: `${uacis.object}`,
             association_name: association_name
         })
     }
@@ -58,16 +59,17 @@ const Plugin: FxOrmPluginUACL = function (orm, opts) {
             opts.ievents = opts.ievents || {};
 
             opts.methods = opts.methods || {};
-            if (typeof opts.methods.$getUaci !== 'function')
-                opts.methods.$getUaci = function () {
+            if (typeof opts.methods.$getUacis !== 'function')
+                opts.methods.$getUacis = function () {
                     return {
                         objectless: `${this.model().table}/0`,
-                        object: `${this.model().table}/${this.id}`
+                        object: `${this.model().table}/${this.id}`,
+                        id: this.id
                     }
                 }
         },
         define (model) {
-            model.uacl = modelUacl.bind(model)
+            // model.uacl = modelUacl.bind(model)
 
             model.afterLoad(function () {
                 Object.defineProperty(this, '$uacl', {
