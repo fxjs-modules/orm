@@ -641,9 +641,9 @@ export const Instance = function (
 					objCount++;
 					break;
 				default:
-						const err: FibOrmNS.ExtensibleError = new Error("Unknown parameter type '" + (typeof arg) + "' in Instance.save()");
-						err.model = Model.table;
-						throw err;
+					const err: FibOrmNS.ExtensibleError = new Error("Unknown parameter type '" + (typeof arg) + "' in Instance.save()");
+					err.model = Model.table;
+					throw err;
 			}
 		});
 

@@ -395,7 +395,7 @@ function extendInstance(
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setSyncAccessor, function (this: typeof Instance) {
 		var items = _flatten(arguments);
 
-		Instance.$emit(`before:${association.setAccessor}`, items)
+		Instance.$emit(`before:set:${association.name}`)
 
 		Instance.$emit(`before-del-extension:${association.setAccessor}`, items)
 		Instance[association.delSyncAccessor]();
@@ -408,7 +408,7 @@ function extendInstance(
 		const results = Instance[association.addSyncAccessor](items);
 		Instance.$emit(`after-add-extension:${association.setAccessor}`, items)
 		
-		Instance.$emit(`after:${association.setAccessor}`, items)
+		Instance.$emit(`after:set:${association.name}`)
 
 		return results;
 	});
@@ -468,7 +468,7 @@ function extendInstance(
 		if (!this.saved())
 			this.saveSync();
 
-		Instance.$emit(`before:${association.delAccessor}`, Associations)
+		Instance.$emit(`before:del:${association.name}`)
 		if (Driver.hasMany) {
 			return Driver.hasMany(Model, association).del(Instance, Associations);
 		}
@@ -482,7 +482,7 @@ function extendInstance(
 		}
 
 		Driver.remove(association.mergeTable, conditions);
-		Instance.$emit(`after:${association.delAccessor}`)
+		Instance.$emit(`after:del:${association.name}`)
 
 		return this;
 	});
@@ -523,8 +523,7 @@ function extendInstance(
 
 		const savedAssociations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
 
-		Instance.$emit(`before:add:${association.name}`)
-		Instance.$emit(`before:${association.addAccessor}`)
+		Instance.$emit(`before:add:${association.name}`, Associations);
 		Utilities.parallelQueryIfPossible(
 			Driver.isPool,
 			Associations,
@@ -565,8 +564,7 @@ function extendInstance(
 		if (!this.saved())
 			this.saveSync();
 
-		Instance.$emit(`after:${association.addAccessor}`)
-		Instance.$emit(`after:add:${association.name}`)
+		Instance.$emit(`after:add:${association.name}`, savedAssociations)
 		return savedAssociations;
 	});
 

@@ -32,92 +32,92 @@ module.exports = orm => {
     Task.hasOne('owner', User, {}, {})
     Task.hasMany('members', User, {}, {})
 
-    User.uacl({
-        getUaci ({ instance }) {
-            return {
-                // common one
-                objectless: `user/0`,
-                // object one
-                object: `user/${instance.id}`,
-            }
-        }
-    })
+    // User.uacl({
+    //     getUaci ({ instance }) {
+    //         return {
+    //             // common one
+    //             objectless: `user/0`,
+    //             // object one
+    //             object: `user/${instance.id}`,
+    //         }
+    //     }
+    // })
 
-    Project.uacl({
-        getUaci ({ instance }) {
-            return {
-                // common one
-                objectless: `project/0`,
-                // object one
-                object: `project/${instance.id}`,
-            }
-        }
-    })
+    // Project.uacl({
+    //     getUaci ({ instance }) {
+    //         return {
+    //             // common one
+    //             objectless: `project/0`,
+    //             // object one
+    //             object: `project/${instance.id}`,
+    //         }
+    //     }
+    // })
 
-    Stage.uacl({
-        getUaci ({ instance }) {
-            return {
-                // common one
-                objectless: `stage/0`,
-                // object one
-                object: `stage/${instance.id}`,
-            }
-        }
-    })
+    // Stage.uacl({
+    //     getUaci ({ instance }) {
+    //         return {
+    //             // common one
+    //             objectless: `stage/0`,
+    //             // object one
+    //             object: `stage/${instance.id}`,
+    //         }
+    //     }
+    // })
 
-    Project
-        // find associations by assoc_name, generate one UACL object
-        .uacl('members', {
-            /**
-             * get uaci
-             * 
-             * parent and child is not orm instance, it's ACLTreeNode
-             * parent_instance is project instance
-             * child_instance is stage instance
-             * 
-             * parent.id is from project::getUaci['object']
-             * 
-             */
-            getUaci ({parent, parent_instance, child, child_instance}) {
-                return {
-                    // common one
-                    objectless: `${parent.id}-members-0`,
-                    // object one
-                    object: `${parent.id}-members-${child_instance.id}`,
-                }
-            },
-        })
+    // Project
+    //     // find associations by assoc_name, generate one UACL object
+    //     .uacl('members', {
+    //         /**
+    //          * get uaci
+    //          * 
+    //          * parent and child is not orm instance, it's ACLTreeNode
+    //          * parent_instance is project instance
+    //          * child_instance is stage instance
+    //          * 
+    //          * parent.id is from project::getUaci['object']
+    //          * 
+    //          */
+    //         getUaci ({parent, parent_instance, child, child_instance}) {
+    //             return {
+    //                 // common one
+    //                 objectless: `${parent.id}-members-0`,
+    //                 // object one
+    //                 object: `${parent.id}-members-${child_instance.id}`,
+    //             }
+    //         },
+    //     })
     
-    Project
-        .uacl('stages', {
-            getUaci ({parent, child_instance: stage_instance}) {
-                return {
-                    // common one
-                    objectless: `${parent.id}/stages/0`,
-                    // object one
-                    object: `${parent.id}/stages/${stage_instance.id}`,
-                }
-            }
-        })
-        .uacl('members', {
-            getUaci ({parent, child: member_instance}) {
-                return {
-                    // common one
-                    objectless: `${parent.id}/members/0`,
-                    // object one
-                    object: `${parent.id}/members/${member_instance.id}`,
-                }
-            }
-        })
-        .grant('write', false)
-        .grant('read', true)
+    // Project
+    //     .uacl('stages', {
+    //         getUaci ({parent, child_instance: stage_instance}) {
+    //             return {
+    //                 // common one
+    //                 objectless: `${parent.id}/stages/0`,
+    //                 // object one
+    //                 object: `${parent.id}/stages/${stage_instance.id}`,
+    //             }
+    //         }
+    //     })
+    //     .uacl('members', {
+    //         getUaci ({parent, child: member_instance}) {
+    //             return {
+    //                 // common one
+    //                 objectless: `${parent.id}/members/0`,
+    //                 // object one
+    //                 object: `${parent.id}/members/${member_instance.id}`,
+    //             }
+    //         }
+    //     })
+    //     .grant('write', false)
+    //     .grant('read', true)
     
     Project.afterLoad(function () {
-        this.$on('after:add:members', function () {
+        this.$on('after:add:members', function (members) {
             console.log(
                 '????',
-                this.members,
-                this.getMembersSync(),
+                members,
+                this.$uacl('members')
             );
             
             this.$uacl('members')
@@ -128,7 +128,7 @@ module.exports = orm => {
                  * `project1$GrantTree.addChildNode({ id: projectMembers$uaci, instance: member$1, acl: { write: true, ... } })`
                  * 
                  */
-                .grant(this.getMembersSync(), {
+                .grant(members, {
                     write: true,
                     read: ['name', 'description']
                 })

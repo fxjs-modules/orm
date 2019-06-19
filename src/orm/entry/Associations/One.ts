@@ -289,13 +289,13 @@ function extendInstance(
 			Instance.saveSync();
 
 			const runReversed = function (other: FxOrmInstance.Instance) {
-				Instance.$emit(`before:${association.setAccessor}`, other);
+				Instance.$emit(`before:set:${association.name}`, other)
 
 				Utilities.populateModelIdKeysConditions(Model, Object.keys(association.field), Instance, other, true);
 				// link
 				other.saveSync({}, { saveAssociations: false });
 				
-				Instance.$emit(`after:${association.setAccessor}`, other);
+				Instance.$emit(`after:set:${association.name}`, other)
 
 				return other;
 			};
@@ -308,14 +308,14 @@ function extendInstance(
 		}
 
 		const runNonReversed = function (oinst: FxOrmInstance.Instance) {
-			Instance.$emit(`before:${association.setAccessor}`, oinst);
+			Instance.$emit(`before:set:${association.name}`, oinst)
 
 			oinst.saveSync({}, { saveAssociations: false });
 
 			Instance[association.name] = oinst;
 			Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.field), oinst, Instance);
 
-			Instance.$emit(`after:${association.setAccessor}`, oinst);
+			Instance.$emit(`after:set:${association.name}`, oinst)
 
 			return oinst;
 		}
@@ -348,7 +348,7 @@ function extendInstance(
 	if (!association.reversed) {
 		Utilities.addHiddenUnwritableMethodToInstance(Instance, association.delSyncAccessor, function (
 		) {
-			Instance.$emit(`before:${association.delAccessor}`);
+			Instance.$emit(`before:del:${association.name}`);
 			for (let k in association.field) {
 				if (association.field.hasOwnProperty(k)) {
 					Instance[k] = null;
@@ -357,7 +357,7 @@ function extendInstance(
 
 			Instance.saveSync({}, { saveAssociations: false });
 			delete Instance[association.name];
-			Instance.$emit(`after:${association.delAccessor}`);
+			Instance.$emit(`after:del:${association.name}`)
 
 			return this;
 		});

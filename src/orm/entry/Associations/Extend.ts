@@ -213,7 +213,7 @@ function extendInstance(
 	Utilities.addHiddenPropertyToInstance(Instance, association.setSyncAccessor, function (
 		Extension: FxOrmInstance.Instance | FxOrmInstance.InstanceDataPayload
 	) {
-		Instance.$emit(`before:${association.setAccessor}`, Extension);
+		Instance.$emit(`before:set:${association.name}`, Extension);
 
 		Instance.saveSync();
 		
@@ -235,7 +235,7 @@ function extendInstance(
 		Extension.saveSync();
 		Instance.$emit(`after-save-extension:${association.setAccessor}`, Extension);
 		
-		Instance.$emit(`after:${association.setAccessor}`, Extension);
+		Instance.$emit(`after:set:${association.name}`, Extension);
 
 		return Extension;
 	});
@@ -265,12 +265,12 @@ function extendInstance(
 
 		const extensions = association.model.findSync(conditions)
 
-		Instance.$emit(`before:${association.delAccessor}`, extensions);
+		Instance.$emit(`before:del:${association.name}`, extensions);
 		for (let i = 0; i < extensions.length; i++) {
 			Singleton.clear(extensions[i].__singleton_uid() + '');
 			extensions[i].removeSync();
 		}
-		Instance.$emit(`after:${association.delAccessor}`, extensions);
+		Instance.$emit(`after:del:${association.name}`, extensions);
 
 		return ;
 	});

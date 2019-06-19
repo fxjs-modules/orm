@@ -30,9 +30,6 @@ function reCountEdgeAfterSetParent (nodeToAdd: Node, tree: Tree) {
 }
 
 function reCountEdgeAfterOffParent (removedNode: Node, tree: Tree) {
-    if (tree.hasNode(removedNode))
-        unrecordNode.call(tree, removedNode);
-
     const leftEdge = removedNode.leftEdge
     const rightEdge = removedNode.rightEdge
 
@@ -57,14 +54,19 @@ function reAssignRoot (node: Node) {
     node.root = isRoot(_root) ? _root : null
 }
 
-interface JsonifiedNode {
-    id: Node['id']
-    leftEdge: Node['id']
-    rightEdge: Node['id']
-    children: JsonifiedNode[]
+function setParent (self: Node, parentNode: FxORMPluginUACL.Node) {
+    parentNode = parentNode || null;
+
+    self.parent = parentNode;
+    reAssignRoot(self);
 }
 
-function jsonifyNodeInfo (node: FxORMPluginUACL.Node): JsonifiedNode {
+function removeFromParent (self: Node) {
+    self.parent = null;
+    reAssignRoot(self);
+}
+
+function jsonifyNodeInfo (node: FxORMPluginUACL.Node): FxORMPluginUACL.JsonifiedNode {
     return {
         id: node.id,
         leftEdge: node.leftEdge,
@@ -150,31 +152,24 @@ export class Node implements FxORMPluginUACL.Node {
             throw `[Node] id is required!`
 
         this.id = id
-        this.setParent(parent);
+        setParent(this, parent);
+
+        Object.defineProperties(this, {
+            leftEdge: { enumerable: false, value: -Infinity, configurable: false },
+            rightEdge: { enumerable: false, value: +Infinity, configurable: false },
+        })
         
         const _children: Node['children'] = Array.from(children);
         Object.defineProperty(this, 'children', { get () { return _children } });
     }
 
-    setParent (parentNode: FxORMPluginUACL.Node) {
-        parentNode = parentNode || null;
-
-        this.parent = parentNode;
-        reAssignRoot(this);
-    }
-
-    removeParent () {
-        this.parent = null;
-        reAssignRoot(this);
-    }
-
     addChildNode (node: Node) {
         this.children.push(node);
+
         const tree = this.root.tree;
-        node.setParent(this);
-
+        
+        setParent(node, this);
         reCountEdgeAfterSetParent(node, tree);
-
         recordNode.call(tree, node);
     }
 
@@ -186,22 +181,23 @@ export class Node implements FxORMPluginUACL.Node {
 
         if (idx === -1)
             return ;
+            
+        if (node.children.length) {
+            Array.from(node.children).forEach((childNode) => {
+                node.removeChildNode(childNode as Node)
+            });
+        }
 
         this.children.splice(idx, 1);
-        const tree = node.root.tree;
-        node.removeParent();
         
-        reCountEdgeAfterOffParent(node, tree);
-
+        const tree = this.root.tree;
+        
         unrecordNode.call(tree, node);
+        reCountEdgeAfterOffParent(node, tree);
+        removeFromParent(node);
     }
 
-    // destroy () {
-    //     this.root = null
-    //     initializeDataOfNode.call(this)
-    // }
-
-    toJSON () {
+    toJSON (): FxORMPluginUACL.JsonifiedNode {
         return jsonifyNodeInfo(this)
     }
 }
@@ -268,5 +264,12 @@ export class Tree<NTYPE extends Node = Node> implements FxORMPluginUACL.Tree {
 
     hasNode (node: NTYPE) {
         return this.nodeSet.has(node);
+    }
+
+    toJSON () {
+        if (!this.root)
+            return null
+            
+        return this.root.toJSON()
     }
 }

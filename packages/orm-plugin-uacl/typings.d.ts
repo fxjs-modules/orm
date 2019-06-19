@@ -2,6 +2,13 @@
 /// <reference types="fib-kv" />
 
 declare namespace FxORMPluginUACL {
+    interface JsonifiedNode {
+        id: Node['id']
+        leftEdge: Node['id']
+        rightEdge: Node['id']
+        children: JsonifiedNode[]
+    }
+
     interface NodeConstructorOptions<NTYPE = Node> {
         id: string | number
         parent?: NTYPE,
@@ -39,6 +46,8 @@ declare namespace FxORMPluginUACL {
          * @description pedigree of a clan from rootNode
          */
         readonly breadCrumbs: Node[];
+
+        toJSON (): JsonifiedNode;
     }
 
     interface RootNode extends Node {
@@ -56,6 +65,8 @@ declare namespace FxORMPluginUACL {
 
         readonly nodeCount: number
         readonly nodes: NTYPE[]
+
+        toJSON: RootNode['toJSON'];
     }
 
     type ACLTree = Tree<ACLNode | RootNode>
