@@ -11,22 +11,25 @@ declare namespace FxORMPluginUACL {
         isRoot?: boolean
     }
 
-    interface NodeConstructorOptions<NTYPE = Node> {
+    interface NodeConstructorOptions<NTYPE = Node, DTYPE = any> {
         id: string | number
         parent?: NTYPE,
         children?: NTYPE[]
+        data?: DTYPE
     }
 
-    class Node {
+    class Node<DTYPE = any> {
         constructor (cfg: NodeConstructorOptions);
 
         id: string | number
         parent: Node | null
-        root: Node
+        root: RootNode | null
         children: Node[]
 
         leftEdge: number;
         rightEdge: number;
+
+        data?: DTYPE
 
         /**
          * @description count of descendant from this Node

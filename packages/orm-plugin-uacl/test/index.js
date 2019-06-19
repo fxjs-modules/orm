@@ -247,7 +247,7 @@ describe('orm-plugin-uacl', () => {
         });
     })
 
-    xdescribe('orm.ACL*', () => {
+    describe('orm.ACL*', () => {
         let orm = null
         let project$1 = null
         let project$2 = null
@@ -255,6 +255,8 @@ describe('orm-plugin-uacl', () => {
         let task$2 = null
         let task$2$owner = null
         let task$2$member = null
+
+        const coroutine = require('coroutine')
 
         before(() => {
             orm = ORM.connectSync('sqlite:uacl-test.db')
@@ -320,26 +322,26 @@ describe('orm-plugin-uacl', () => {
             const [
                 project$1,
                 project$2,
-            ] = [
-                (new orm.models.project()).saveSync(),
-                (new orm.models.project()).saveSync()
-            ]
+            ] = coroutine.parallel([
+                new orm.models.project(),
+                new orm.models.project(),
+            ], (instance) => instance.saveSync())
 
             const [
                 stage$1,
                 stage$2,
-            ] = [
-                (new orm.models.stage()).saveSync(),
-                (new orm.models.stage()).saveSync()
-            ]
+            ] = coroutine.parallel([
+                new orm.models.stage(),
+                new orm.models.stage(),
+            ], (instance) => instance.saveSync())
 
             const [
                 user$1,
                 user$2,
-            ] = [
-                (new orm.models.user()).saveSync(),
-                (new orm.models.user()).saveSync()
-            ]
+            ] = coroutine.parallel([
+                new orm.models.user(),
+                new orm.models.user(),
+            ], (instance) => instance.saveSync())
 
             /**
              * this would grant some accesses to user$1, user$2;

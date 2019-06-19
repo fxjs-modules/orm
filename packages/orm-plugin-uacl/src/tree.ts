@@ -1,4 +1,4 @@
-function nodeEdgeAdd (node: Node, side: 'left' | 'right', count = 2) {
+function nodeEdgeAdd (node: FxORMPluginUACL.Node, side: 'left' | 'right', count = 2) {
     switch (side) {
         case 'left':
             node.leftEdge += count;
@@ -9,7 +9,7 @@ function nodeEdgeAdd (node: Node, side: 'left' | 'right', count = 2) {
     }
 }
 
-function reCountEdgeAfterSetParent (nodeToAdd: Node, tree: Tree) {
+function reCountEdgeAfterSetParent (nodeToAdd: FxORMPluginUACL.Node, tree: FxORMPluginUACL.Tree) {
     if (!nodeToAdd.parent)
         return ;
 
@@ -29,7 +29,7 @@ function reCountEdgeAfterSetParent (nodeToAdd: Node, tree: Tree) {
     })
 }
 
-function reCountEdgeAfterOffParent (removedNode: Node, tree: Tree) {
+function reCountEdgeAfterOffParent (removedNode: FxORMPluginUACL.Node, tree: FxORMPluginUACL.Tree) {
     const leftEdge = removedNode.leftEdge
     const rightEdge = removedNode.rightEdge
 
@@ -76,7 +76,7 @@ function jsonifyNodeInfo (node: FxORMPluginUACL.Node): FxORMPluginUACL.Jsonified
     }
 }
 
-function isRoot (node: RootNode | Node): node is RootNode {
+function isRoot (node: Node['root'] | Node): node is RootNode {
     return node instanceof RootNode
 }
 
@@ -86,13 +86,15 @@ function initializeDataOfNode (this: Node) {
 }
 
 export class Node implements FxORMPluginUACL.Node {
-    id: string | number
-    parent: FxORMPluginUACL.Node | null
-    root: RootNode
-    children: FxORMPluginUACL.Node[]
+    id: FxORMPluginUACL.Node['id']
+    parent: FxORMPluginUACL.Node['parent']
+    root: FxORMPluginUACL.Node['root']
+    children: FxORMPluginUACL.Node['children']
 
-    leftEdge: number = -Infinity;
-    rightEdge: number = +Infinity;
+    leftEdge: FxORMPluginUACL.Node['leftEdge'] = -Infinity;
+    rightEdge: FxORMPluginUACL.Node['rightEdge'] = +Infinity;
+
+    data?: FxORMPluginUACL.Node['data']
 
     get descendantCount () {
         return Math.floor(
@@ -120,12 +122,12 @@ export class Node implements FxORMPluginUACL.Node {
         return isRoot(this)
     }
 
-    get hasRoot () {
+    get hasRoot (): boolean {
         return !isRoot(this) && this.root && isRoot(this.root)
     }
 
     get breadCrumbs () {
-        let nodes: Node[] = [];
+        let nodes: FxORMPluginUACL.Node[] = [];
 
         const lft = this.leftEdge
         const rgt = this.rightEdge
@@ -145,7 +147,8 @@ export class Node implements FxORMPluginUACL.Node {
     constructor ({
         id = null,
         parent = null,
-        children = []
+        children = [],
+        data = undefined
     }: FxORMPluginUACL.NodeConstructorOptions = {
         id: null
     }) {
@@ -162,6 +165,9 @@ export class Node implements FxORMPluginUACL.Node {
         
         const _children: Node['children'] = Array.from(children);
         Object.defineProperty(this, 'children', { get () { return _children } });
+
+        if (data !== undefined)
+            this.data = data
     }
 
     addChildNode (node: Node) {

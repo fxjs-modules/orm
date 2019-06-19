@@ -51,7 +51,7 @@ class ACLTree extends Tree<ACLNode> implements FxORMPluginUACL.ACLTree {
             target = [];
 
         target.forEach((data: FxOrmInstance.InstanceDataPayload) => {
-            console.log('this.prefix', this.prefix)
+            // console.log('this.prefix', this.prefix)
             this.root.addChildNode(
                 new ACLNode({
                     id: data.id,
@@ -59,7 +59,7 @@ class ACLTree extends Tree<ACLNode> implements FxORMPluginUACL.ACLTree {
                 })
             )
         });
-        console.log('this.toJSON()', this.toJSON())
+        // console.log('this.toJSON()', this.toJSON())
 
         return this;
     }
@@ -109,27 +109,14 @@ class ACLNode extends Node implements FxORMPluginUACL.ACLNode {
  */
 function modelUacl (
     this: FxOrmModel.Model,
-    {
-        getUaci = function (
-            {parent, child_instance: stage_instance}: {
-                parent: ACLNode,
-                child_instance: FxORMPluginUACL.ACLNode['data']
-            }
-        ) {
-            return {
-                // common one
-                objectless: `${parent.id}/stages/0`,
-                // object one
-                object: `${parent.id}/stages/${stage_instance.id}`,
-            }
-        }
-    }
+    association_name: string
 ): ACLTree {
     if (!this.$uaclGrantTree) {
         const model = this;
         this.$uaclGrantTree = new ACLTree({
             model: model,
-            prefix: `${model.table}`
+            prefix: `${model.table}`,
+            association_name,
         })
     }
 
