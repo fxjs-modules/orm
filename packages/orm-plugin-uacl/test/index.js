@@ -182,6 +182,8 @@ describe('orm-plugin-uacl', () => {
             orm = ORM.connectSync('sqlite:uacl-test.db')
             orm.use(ORMPluginUACL)
             ormDefs(orm)
+
+            orm.syncSync()
         });
 
         after(() => {
@@ -265,6 +267,17 @@ describe('orm-plugin-uacl', () => {
              * this would grant some accesses to user$1, user$2;
              */
             project$1.addMembers([user$1, user$2])
+
+            /**
+             * when `.can` called, only local data would be used to judge if child could access host
+             */
+            project$1.$uacl('members')
+                // check if user$1 is member of this project, and if user$1 could `write`
+                .can(user$1, 'write')
+
+            project$1.$uacl('members')
+                // check if user$1 is member of this project, and if user$1 could `read` some fields
+                .can(user$1, 'read', ['name', 'description'])
         })
     })
 })

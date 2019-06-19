@@ -727,7 +727,7 @@ describe("Hook", function () {
 
             Person.createSync([{ name: -1 }]);
             assert.equal(count, 3)
-            assert.equal(str, '0210');
+            assert.equal(str, '0012');
         });
 
         it('default: append', () => {
@@ -735,7 +735,7 @@ describe("Hook", function () {
 
             Person.createSync([{ name: -1 }]);
             assert.equal(count, 3)
-            assert.equal(str, '0012');
+            assert.equal(str, '0210');
         });
 
         it('default: initial', () => {

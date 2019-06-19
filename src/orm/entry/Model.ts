@@ -65,12 +65,12 @@ export const Model = function (
 				case undefined:
 					m_opts.hooks[hook] = cb;
 					break
-				case 'append':
+				case 'prepend':
 					const old_cb = m_opts.hooks[hook] || function () {};
 					m_opts.hooks[hook] = cb;
 					Helpers.prependHook(m_opts.hooks, hook, old_cb);
 					break
-				case 'prepend':
+				case 'append':
 					Helpers.prependHook(m_opts.hooks, hook, cb);
 					break
 			}

@@ -82,6 +82,9 @@ declare namespace FxORMPluginUACL {
             remove?: boolean | string[]
         }
     }
+
+    type ACLType = keyof ACLNode['acl'] | keyof ACLNode['oacl']
+    type ACLDescriptor = boolean | string[]
 }
 
 declare namespace FxOrmNS {

@@ -2,31 +2,26 @@ module.exports = orm => {
     const User = orm.define('user', {
         name: String
     }, {
-
     })
 
     const Role = orm.define('role', {
         name: String
     }, {
-        
     })
 
     const Project = orm.define('project', {
         name: String
     }, {
-        
     })
 
     const Stage = orm.define('stage', {
         name: String
     }, {
-        
     })
 
     const Task = orm.define('task', {
         name: String
     }, {
-        
     })
 
     Project.hasMany('stages', Stage, {}, {})
@@ -178,17 +173,6 @@ module.exports = orm => {
         this.$uacl('members')
             // save grant for members from built ACLNodes
             .push()
-
-        /**
-         * when `.can` called, only local data would be used to judge if child could access host
-         */
-        this.$uacl('members')
-            // check if user$1 is member of this project, and if user$1 could `write`
-            .can(user$1, 'write')
-
-        this.$uacl('members')
-            // check if user$1 is member of this project, and if user$1 could `read` some fields
-            .can(user$1, 'read', ['name', 'description'])
     }, {
         oldhook: 'prepend'
     })

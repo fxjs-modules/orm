@@ -17,9 +17,21 @@ class ACLTree extends Tree<ACLNode> implements FxORMPluginUACL.ACLTree {
             throw `[Tree] type is required!`
     }
 
-    grant () {
-
+    uacl () {
+        return this;
     }
+
+    grant (action: FxORMPluginUACL.ACLType, descriptor: FxORMPluginUACL.ACLDescriptor) {
+        return this;
+    }
+
+    pull () {}
+
+    push () {}
+
+    revoke () {}
+
+    can () {}
 }
 
 class ACLNode extends Node implements FxORMPluginUACL.ACLNode {
@@ -51,6 +63,54 @@ class ACLNode extends Node implements FxORMPluginUACL.ACLNode {
     }
 }
 
+/**
+ * @chainapi
+ * @purpose record the relations, and provide the `uaci` computation by getUaci
+ * 
+ */
+function modelUacl (
+    this: FxOrmModel.Model,
+    {
+        getUaci = function (
+            {parent, child_instance: stage_instance}: {
+                parent: ACLNode,
+                child_instance: FxORMPluginUACL.ACLNode['data']
+            }
+        ) {
+            return {
+                // common one
+                objectless: `${parent.id}/stages/0`,
+                // object one
+                object: `${parent.id}/stages/${stage_instance.id}`,
+            }
+        }
+    }
+): ACLTree {
+    if (!this.$uaclGrantTree) {
+        this.$uaclGrantTree = new ACLTree({ type: `${this.table}` })
+    }
+
+    return this.$uaclGrantTree
+}
+
+
+/**
+ * @chainapi
+ * @purpose record the relations, and provide the `uaci` computation by getUaci
+ * 
+ */
+function instanceUacl (
+    this: FxOrmInstance.Instance,
+    {
+    }
+): ACLTree {
+    if (!this.$uaclGrantTree) {
+        this.$uaclGrantTree = new ACLTree({ type: `${this.table}` })
+    }
+
+    return this.$uaclGrantTree
+}
+
 const Plugin: FxOrmPluginUACL = function (orm, opts) {
     opts = opts || {};
 
@@ -58,7 +118,15 @@ const Plugin: FxOrmPluginUACL = function (orm, opts) {
     orm.ACLNode = ACLNode;
 
     return {
+        beforeDefine (name, props, opts) {
+            opts.ievents = opts.ievents || {};
+        },
         define (model) {
+            model.uacl = modelUacl.bind(model)
+
+            model.afterLoad(function () {
+                this.$uacl = instanceUacl.bind(model)
+            }, { oldhook: 'prepend' })
         }
     }
 };
