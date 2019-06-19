@@ -12,6 +12,28 @@ module.exports = orm => {
     const Project = orm.define('project', {
         name: String
     }, {
+        ievents: {
+            'after:add:members': function (members) {
+                this.$uacl('members')
+                    /**
+                     * grant(aclKv)
+                     * 
+                     * equals to
+                     * `project1$GrantTree.addChildNode({ id: projectMembers$uaci, instance: member$1, acl: { write: true, ... } })`
+                     * 
+                     */
+                    .grant(members, {
+                        write: true,
+                        read: ['name', 'description']
+                    })
+            },
+            'after:del:members': function (members = []) {
+                console.log('members', members)
+                if (!members.length)
+                    this.$uacl('members')
+                        .clear()
+            }
+        }
     })
 
     const Stage = orm.define('stage', {
@@ -32,107 +54,7 @@ module.exports = orm => {
     Task.hasOne('owner', User, {}, {})
     Task.hasMany('members', User, {}, {})
 
-    // User.uacl({
-    //     getUaci ({ instance }) {
-    //         return {
-    //             // common one
-    //             objectless: `user/0`,
-    //             // object one
-    //             object: `user/${instance.id}`,
-    //         }
-    //     }
-    // })
-
-    // Project.uacl({
-    //     getUaci ({ instance }) {
-    //         return {
-    //             // common one
-    //             objectless: `project/0`,
-    //             // object one
-    //             object: `project/${instance.id}`,
-    //         }
-    //     }
-    // })
-
-    // Stage.uacl({
-    //     getUaci ({ instance }) {
-    //         return {
-    //             // common one
-    //             objectless: `stage/0`,
-    //             // object one
-    //             object: `stage/${instance.id}`,
-    //         }
-    //     }
-    // })
-
-    // Project
-    //     // find associations by assoc_name, generate one UACL object
-    //     .uacl('members', {
-    //         /**
-    //          * get uaci
-    //          * 
-    //          * parent and child is not orm instance, it's ACLTreeNode
-    //          * parent_instance is project instance
-    //          * child_instance is stage instance
-    //          * 
-    //          * parent.id is from project::getUaci['object']
-    //          * 
-    //          */
-    //         getUaci ({parent, parent_instance, child, child_instance}) {
-    //             return {
-    //                 // common one
-    //                 objectless: `${parent.id}-members-0`,
-    //                 // object one
-    //                 object: `${parent.id}-members-${child_instance.id}`,
-    //             }
-    //         },
-    //     })
-    
-    // Project
-    //     .uacl('stages', {
-    //         getUaci ({parent, child_instance: stage_instance}) {
-    //             return {
-    //                 // common one
-    //                 objectless: `${parent.id}/stages/0`,
-    //                 // object one
-    //                 object: `${parent.id}/stages/${stage_instance.id}`,
-    //             }
-    //         }
-    //     })
-    //     .uacl('members', {
-    //         getUaci ({parent, child: member_instance}) {
-    //             return {
-    //                 // common one
-    //                 objectless: `${parent.id}/members/0`,
-    //                 // object one
-    //                 object: `${parent.id}/members/${member_instance.id}`,
-    //             }
-    //         }
-    //     })
-    //     .grant('write', false)
-    //     .grant('read', true)
-    
     Project.afterLoad(function () {
-        this.$on('after:add:members', function (members) {
-            console.log(
-                '????',
-                members,
-                this.$uacl('members')
-            );
-            
-            this.$uacl('members')
-                /**
-                 * grant(aclKv)
-                 * 
-                 * equals to
-                 * `project1$GrantTree.addChildNode({ id: projectMembers$uaci, instance: member$1, acl: { write: true, ... } })`
-                 * 
-                 */
-                .grant(members, {
-                    write: true,
-                    read: ['name', 'description']
-                })
-        })
         /**
          * once called, `this.$uacl('members')`
          * 1. start one interval to pull all members of this `project` asynchronously,

@@ -70,6 +70,7 @@ function jsonifyNodeInfo (node: FxORMPluginUACL.Node): FxORMPluginUACL.Jsonified
     return {
         id: node.id,
         ...node.isRoot && { isRoot: node.isRoot },
+        ...node.data !== undefined && { data: node.data },
         leftEdge: node.leftEdge,
         rightEdge: node.rightEdge,
         children: node.children.map(node => jsonifyNodeInfo(node))
@@ -85,7 +86,7 @@ function initializeDataOfNode (this: Node) {
     this.rightEdge = +Infinity
 }
 
-export class Node implements FxORMPluginUACL.Node {
+export class Node<DTYPE = any> implements FxORMPluginUACL.Node<DTYPE> {
     id: FxORMPluginUACL.Node['id']
     parent: FxORMPluginUACL.Node['parent']
     root: FxORMPluginUACL.Node['root']
@@ -118,7 +119,7 @@ export class Node implements FxORMPluginUACL.Node {
         return layer
     }
 
-    get isRoot () {
+    get isRoot (): boolean {
         return isRoot(this)
     }
 
@@ -178,6 +179,8 @@ export class Node implements FxORMPluginUACL.Node {
         setParent(node, this);
         reCountEdgeAfterSetParent(node, tree);
         recordNode.call(tree, node);
+
+        return node;
     }
 
     removeChildNode (node: Node) {
@@ -218,6 +221,17 @@ class RootNode extends Node implements FxORMPluginUACL.RootNode {
     parent: null
     tree: Tree
     isRoot: true
+
+    clear (): number {
+        const count = this.descendantCount;
+
+        this.children.splice(0);
+
+        this.leftEdge = 1;
+        this.rightEdge = 2;
+
+        return count;
+    };
 
     constructor (opts?: FxORMPluginUACL.NodeConstructorOptions) {
         super({...opts, parent: null, id: 0})
@@ -271,6 +285,17 @@ export class Tree<NTYPE extends Node = Node> implements FxORMPluginUACL.Tree {
 
     hasNode (node: NTYPE) {
         return this.nodeSet.has(node);
+    }
+
+    clear (): number {
+        const count = this.nodeCount - 1;
+
+        this.nodeSet.clear();
+        this.root.clear();
+
+        recordNode.call(this, this.root);
+
+        return count;
     }
 
     toJSON () {

@@ -244,6 +244,10 @@ describe('orm-plugin-uacl', () => {
             assert.equal($tree.nodeCount, 3)
 
             console.dir($tree.root.toJSON())
+
+            $tree.clear();
+            assert.equal($tree.root.descendantCount, 0);
+            assert.equal($tree.nodeCount, 1);
         });
     })
 
@@ -271,54 +275,9 @@ describe('orm-plugin-uacl', () => {
         });
 
         beforeEach(() => {
-            project$1 = new orm.ACLNode({
-                id: `project-1`,
-                data: {
-                    type: 'project',
-                    instance: {}
-                }
-            })
-            project$2 = new orm.ACLNode({
-                id: `project-2`,
-                data: {
-                    type: 'project',
-                    instance: {}
-                }
-            })
-
-            task$1 = new orm.ACLNode({
-                id: `task-1`,
-                data: {
-                    type: 'task',
-                    instance: {}
-                }
-            })
-            task$2 = new orm.ACLNode({
-                id: `task-2`,
-                data: {
-                    type: 'task',
-                    instance: {}
-                }
-            })
-
-            task$2owner = new orm.ACLNode({
-                id: `user-1`,
-                data: {
-                    type: 'user',
-                    instance: {}
-                }
-            })
-            task$2member1 = task$2owner
-            task$2member2 = new orm.ACLNode({
-                id: `user-2`,
-                data: {
-                    type: 'user',
-                    instance: {}
-                }
-            })
         });
 
-        it('$?', () => {
+        it('oacl: read/write/remove', () => {
             const [
                 project$1,
                 project$2,
@@ -338,28 +297,49 @@ describe('orm-plugin-uacl', () => {
             const [
                 user$1,
                 user$2,
+                user$3
             ] = coroutine.parallel([
                 new orm.models.user(),
                 new orm.models.user(),
+                new orm.models.user(),
             ], (instance) => instance.saveSync())
+
+            const check_handler = ([ [guest, action, fields], result ]) => {
+                /**
+                 * when `.can` called, only local data would be used to judge if child could access host
+                 */
+                assert.equal(
+                    project$1.$uacl('members')
+                        .can(guest, action, fields),
+                    result
+                )
+            }
 
             /**
              * this would grant some accesses to user$1, user$2;
              */
             project$1.addMembersSync([user$1, user$2])
-
-            /**
-             * when `.can` called, only local data would be used to judge if child could access host
-             */
-            assert.equal(
-                project$1.$uacl('members')
-                    // check if user$1 is member of this project, and if user$1 could `write`
-                    .can(user$1, 'write')
-            )
-
-            project$1.$uacl('members')
+            
+            ;[
+                // check if user$1 is member of this project, and if user$1 could `write`
+                [ [user$1, 'write' ], true ],
+                // check if user$1 is member of this project, and if user$1 could `write`
+                [ [user$2, 'write' ], true ],
                 // check if user$1 is member of this project, and if user$1 could `read` some fields
-                .can(user$1, 'read', ['name', 'description'])
+                [ [user$1, 'read', ['name', 'description'] ], true ],
+                // mixed unknown field name
+                [ [user$1, 'read', ['name', 'description', 'unknown'] ] , false ],
+                [ [user$1, 'read', ['lalala'] ] , false ],
+            ].forEach(check_handler)
+
+            project$1.setMembersSync([user$3])
+
+            ;[
+                [ [user$1, 'write' ], false ],
+                [ [user$2, 'read' ], false ],
+                [ [user$3, 'write' ], true ],
+                [ [user$3, 'read' ], true ],
+            ].forEach(check_handler)
         })
     })
 })

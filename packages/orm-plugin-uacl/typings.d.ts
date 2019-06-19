@@ -60,6 +60,8 @@ declare namespace FxORMPluginUACL {
         parent: null
         tree: Tree
         isRoot: true
+
+        clear (): number;
     }
 
     interface Tree<NTYPE = Node> {
@@ -67,6 +69,7 @@ declare namespace FxORMPluginUACL {
         // TODO: try to forbid add/remove node by this field
         nodeSet: Set<NTYPE>
         hasNode (node: NTYPE): boolean
+        clear (): number
 
         readonly nodeCount: number
         readonly nodes: NTYPE[]
@@ -79,20 +82,26 @@ declare namespace FxORMPluginUACL {
     // }
 
     interface ACLNodeConstructorOptions extends NodeConstructorOptions<ACLNode> {
-        data: ACLNode['data']
+        data: FxOrmNS.InstanceDataPayload
+        acl?: ACLNode['acl']
+        oacl?: ACLNode['oacl']
     }
 
     class ACLNode extends Node {
         constructor (cfg: ACLNodeConstructorOptions);
-        data: FxOrmNS.Instance | FxOrmNS.InstanceDataPayload
+        data: {
+            instance: FxOrmNS.Instance
+            acl: ACLNode['acl']
+            oacl: ACLNode['oacl']
+        }
 
         acl: {
             create?: boolean | string[]
+            find?: boolean | string[]
             clear?: boolean | string[]
         }
 
         oacl: {
-            find?: boolean | string[]
             write?: boolean | string[]
             read?: boolean | string[]
             remove?: boolean | string[]

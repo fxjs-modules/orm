@@ -395,11 +395,11 @@ function extendInstance(
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setSyncAccessor, function (this: typeof Instance) {
 		var items = _flatten(arguments);
 
-		Instance.$emit(`before:set:${association.name}`)
+		Instance.$emit(`before:set:${association.name}`, items)
 
-		Instance.$emit(`before-del-extension:${association.setAccessor}`, items)
+		Instance.$emit(`before-del-extension:${association.setAccessor}`)
 		Instance[association.delSyncAccessor]();
-		Instance.$emit(`after-del-extension:${association.setAccessor}`, items)
+		Instance.$emit(`after-del-extension:${association.setAccessor}`)
 
 		if (!items.length)
 			return ;
@@ -408,7 +408,7 @@ function extendInstance(
 		const results = Instance[association.addSyncAccessor](items);
 		Instance.$emit(`after-add-extension:${association.setAccessor}`, items)
 		
-		Instance.$emit(`after:set:${association.name}`)
+		Instance.$emit(`after:set:${association.name}`, items)
 
 		return results;
 	});
@@ -470,11 +470,17 @@ function extendInstance(
 
 		Instance.$emit(`before:del:${association.name}`)
 		if (Driver.hasMany) {
-			return Driver.hasMany(Model, association).del(Instance, Associations);
+			return [
+				Driver.hasMany(Model, association).del(Instance, Associations),
+				Instance.$emit(`after:del:${association.name}`)
+			][0];
 		}
 
 		if (Associations.length === 0) {
-			return Driver.remove(association.mergeTable, conditions);
+			return [
+				Driver.remove(association.mergeTable, conditions),
+				Instance.$emit(`after:del:${association.name}`)
+			][0];
 		}
 
 		for (let i = 0; i < Associations.length; i++) {
