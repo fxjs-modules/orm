@@ -21,7 +21,15 @@ class ACLTree extends Tree<ACLNode> implements FxORMPluginUACL.ACLTree {
         return this;
     }
 
-    grant (action: FxORMPluginUACL.ACLType, descriptor: FxORMPluginUACL.ACLDescriptor) {
+    grant (
+        target: FxOrmInstance.InstanceDataPayload,
+        acl: FxORMPluginUACL.OACLStruct
+    ) {
+        if (acl === undefined) {
+            acl = target
+            target = null
+        }
+
         return this;
     }
 

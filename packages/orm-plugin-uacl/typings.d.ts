@@ -85,6 +85,18 @@ declare namespace FxORMPluginUACL {
 
     type ACLType = keyof ACLNode['acl'] | keyof ACLNode['oacl']
     type ACLDescriptor = boolean | string[]
+
+    interface ACLStruct {
+        create?: boolean | string[]
+        clear?: boolean | string[]
+    }
+    
+    interface OACLStruct {
+        find?: boolean | string[]
+        write?: boolean | string[]
+        read?: boolean | string[]
+        remove?: boolean | string[]
+    }
 }
 
 declare namespace FxOrmNS {

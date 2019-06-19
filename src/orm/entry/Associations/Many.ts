@@ -523,6 +523,7 @@ function extendInstance(
 
 		const savedAssociations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
 
+		Instance.$emit(`before:add:${association.name}`)
 		Instance.$emit(`before:${association.addAccessor}`)
 		Utilities.parallelQueryIfPossible(
 			Driver.isPool,
@@ -565,6 +566,7 @@ function extendInstance(
 			this.saveSync();
 
 		Instance.$emit(`after:${association.addAccessor}`)
+		Instance.$emit(`after:add:${association.name}`)
 		return savedAssociations;
 	});
 

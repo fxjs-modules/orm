@@ -111,8 +111,28 @@ module.exports = orm => {
         })
         .grant('write', false)
         .grant('read', true)
-
+    
     Project.afterLoad(function () {
+        this.$on('after:add:members', function () {
+            console.log(
+                '????',
+                this.members,
+                this.getMembersSync(),
+            );
+            
+            this.$uacl('members')
+                /**
+                 * grant(aclKv)
+                 * 
+                 * equals to
+                 * `project1$GrantTree.addChildNode({ id: projectMembers$uaci, instance: member$1, acl: { write: true, ... } })`
+                 * 
+                 */
+                .grant(this.getMembersSync(), {
+                    write: true,
+                    read: ['name', 'description']
+                })
+        })
         /**
          * once called, `this.$uacl('members')`
          * 1. start one interval to pull all members of this `project` asynchronously,
@@ -145,7 +165,7 @@ module.exports = orm => {
              * grant(aclKv)
              * 
              * equals to
-             * `project1$GrantTree.addChildNode({ id: projectMembers$uaci, instance: member1, acl: { write: true, ... } })`
+             * `project1$GrantTree.addChildNode({ id: 0, acl: { write: true, ... } })`
              * 
              */
             .grant({

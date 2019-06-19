@@ -243,37 +243,39 @@ describe('orm-plugin-uacl', () => {
                 project$1,
                 project$2,
             ] = [
-                new orm.models.project(1),
-                new orm.models.project(2)
+                (new orm.models.project()).saveSync(),
+                (new orm.models.project()).saveSync()
             ]
 
             const [
                 stage$1,
                 stage$2,
             ] = [
-                new orm.models.stage(1),
-                new orm.models.stage(2)
+                (new orm.models.stage()).saveSync(),
+                (new orm.models.stage()).saveSync()
             ]
 
             const [
                 user$1,
                 user$2,
             ] = [
-                new orm.models.user(1),
-                new orm.models.user(2)
+                (new orm.models.user()).saveSync(),
+                (new orm.models.user()).saveSync()
             ]
 
             /**
              * this would grant some accesses to user$1, user$2;
              */
-            project$1.addMembers([user$1, user$2])
+            project$1.addMembersSync([user$1, user$2])
 
             /**
              * when `.can` called, only local data would be used to judge if child could access host
              */
-            project$1.$uacl('members')
-                // check if user$1 is member of this project, and if user$1 could `write`
-                .can(user$1, 'write')
+            assert.equal(
+                project$1.$uacl('members')
+                    // check if user$1 is member of this project, and if user$1 could `write`
+                    .can(user$1, 'write')
+            )
 
             project$1.$uacl('members')
                 // check if user$1 is member of this project, and if user$1 could `read` some fields
