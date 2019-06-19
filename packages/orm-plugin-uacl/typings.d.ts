@@ -7,6 +7,8 @@ declare namespace FxORMPluginUACL {
         leftEdge: Node['id']
         rightEdge: Node['id']
         children: JsonifiedNode[]
+
+        isRoot?: boolean
     }
 
     interface NodeConstructorOptions<NTYPE = Node> {

@@ -50,6 +50,7 @@ describe('orm-plugin-uacl', () => {
 
             assert.deepEqual($tree.root.toJSON(), {
                 "id": 0,
+                "isRoot": true,
                 "leftEdge": 1,
                 "rightEdge": 4,
                 "children": [
@@ -71,6 +72,7 @@ describe('orm-plugin-uacl', () => {
 
             assert.deepEqual($tree.root.toJSON(), {
                 "id": 0,
+                "isRoot": true,
                 "leftEdge": 1,
                 "rightEdge": 6,
                 "children": [
@@ -98,6 +100,7 @@ describe('orm-plugin-uacl', () => {
 
             assert.deepEqual($tree.root.toJSON(), {
                 "id": 0,
+                "isRoot": true,
                 "leftEdge": 1,
                 "rightEdge": 4,
                 "children": [
@@ -114,6 +117,7 @@ describe('orm-plugin-uacl', () => {
             assert.deepEqual([$tree.root, project$2], task$1.breadCrumbs)
             assert.deepEqual($tree.root.toJSON(), {
                 "id": 0,
+                "isRoot": true,
                 "leftEdge": 1,
                 "rightEdge": 6,
                 "children": [
@@ -138,6 +142,7 @@ describe('orm-plugin-uacl', () => {
             assert.deepEqual([$tree.root, project$2], task$2.breadCrumbs)
             assert.deepEqual($tree.root.toJSON(), {
                 "id": 0,
+                "isRoot": true,
                 "leftEdge": 1,
                 "rightEdge": 8,
                 "children": [
@@ -174,6 +179,7 @@ describe('orm-plugin-uacl', () => {
             assert.equal($tree.nodeCount, 6)
             assert.deepEqual($tree.root.toJSON(), {
                 "id": 0,
+                "isRoot": true,
                 "leftEdge": 1,
                 "rightEdge": 12,
                 "children": [
@@ -215,6 +221,7 @@ describe('orm-plugin-uacl', () => {
             project$2.removeChildNode(task$2)
             assert.deepEqual($tree.root.toJSON(), {
                 "id": 0,
+                "isRoot": true,
                 "leftEdge": 1,
                 "rightEdge": 6,
                 "children": [

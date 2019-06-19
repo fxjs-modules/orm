@@ -69,6 +69,7 @@ function removeFromParent (self: Node) {
 function jsonifyNodeInfo (node: FxORMPluginUACL.Node): FxORMPluginUACL.JsonifiedNode {
     return {
         id: node.id,
+        ...node.isRoot && { isRoot: node.isRoot },
         leftEdge: node.leftEdge,
         rightEdge: node.rightEdge,
         children: node.children.map(node => jsonifyNodeInfo(node))
