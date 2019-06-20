@@ -230,10 +230,14 @@ function extendInstance(
 	Utilities.addHiddenPropertyToInstance(Instance, association.setSyncAccessor, function (
 		Extension: FxOrmInstance.Instance | FxOrmInstance.InstanceDataPayload
 	) {
+		const $ref = <Fibjs.AnyObject>{
+			association: Extension
+		};
 		Hook.wait(
 			Instance,
 			association.hooks[`beforeSet`],
 			genHookHandlerForInstance(() => {
+				let Extension = $ref.association
 				Instance.$emit(`before:set:${association.name}`, Extension);
 
 				Instance.saveSync();
@@ -258,7 +262,7 @@ function extendInstance(
 				
 				Instance.$emit(`after:set:${association.name}`, Extension);
 			}),
-			Utilities.buildAssociationActionHooksPayload('beforeSet', { associations: [Extension] })
+			Utilities.buildAssociationActionHooksPayload('beforeSet', { $ref })
 		);
 		
 		Hook.trigger(Instance, association.hooks['afterSet']);
@@ -289,12 +293,15 @@ function extendInstance(
 			conditions[fields[i]] = Instance[Model.id[i]];
 		}
 
-		const extensions = association.model.findSync(conditions)
-
+		const $ref = <Fibjs.AnyObject>{
+			removeConditions: conditions
+		};
 		Hook.wait(
 			Instance,
 			association.hooks[`beforeRemove`],
 			genHookHandlerForInstance(() => {
+				const extensions = association.model.findSync($ref.removeConditions)
+
 				Instance.$emit(`before:del:${association.name}`, extensions);
 				for (let i = 0; i < extensions.length; i++) {
 					Singleton.clear(extensions[i].__singleton_uid() + '');
@@ -302,7 +309,7 @@ function extendInstance(
 				}
 				Instance.$emit(`after:del:${association.name}`, extensions);
 			}),
-			Utilities.buildAssociationActionHooksPayload('beforeRemove', { removeConditions: conditions })
+			Utilities.buildAssociationActionHooksPayload('beforeRemove', { $ref })
 		);
 
 		Hook.trigger(Instance, association.hooks['afterRemove']);

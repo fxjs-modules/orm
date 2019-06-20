@@ -836,30 +836,65 @@ export function bindInstance (instance: FxOrmInstance.Instance, fn: Function) {
 export function buildAssociationActionHooksPayload (
 	hookName: keyof FxOrmAssociation.InstanceAssociationItem['hooks'],
 	payload: {
+		association?: FxOrmInstance.InstanceDataPayload,
 		associations?: FxOrmInstance.InstanceDataPayload[],
-		removeConditions?: Fibjs.AnyObject
-	} = {}
-) {
+		removeConditions?: Fibjs.AnyObject,
+		$ref: Fibjs.AnyObject
+	}
+): Fibjs.AnyObject {
+	const {
+		$ref = {},
+	} = payload;
+
+	const {
+		association = $ref.association || null,
+		associations = $ref.associations || [],
+		removeConditions = $ref.removeConditions || {},
+	} = payload;
+
+	if (!$ref || typeof $ref !== 'object')
+		throw `$ref must be valid Object`
+
+	const self = $ref;
+	Object.defineProperty(self, '$ref', { get () { return self }, configurable: false, enumerable: true})
+
+	self.association = association
+	self.associations = associations
+
 	switch (hookName) {
 		case 'beforeSet':
-			return { associations: payload.associations }
+			break
 		case 'beforeAdd':
-			return { associations: payload.associations }
+			break
 		case 'beforeRemove':
-			return { removeConditions: payload.removeConditions }
+			self.removeConditions = removeConditions
+			break
 	}
+
+	return self
 }
 
 export function hookHandlerDecorator (
 	{
-		thisArg = null
+		thisArg = null,
+		onlyOnce = true
 	}:
 	{
 		thisArg?: any
+		onlyOnce?: boolean
 	} = {}
 ) {
 	return (hdlr: Function): any => {
+		let notFinished = onlyOnce === true
+
 		return (err: any) => {
+			if (!notFinished) {
+				console.warn(`[hookHandlerDecorator] this function was finished`)
+				return ;
+			}
+
+			notFinished = false;
+
 			if (err)
 				throw err;
 

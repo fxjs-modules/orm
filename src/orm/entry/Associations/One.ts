@@ -298,11 +298,16 @@ function extendInstance(
 
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setSyncAccessor, function (
 		OtherInstance: FxOrmInstance.Instance | FxOrmInstance.Instance[]
-	) {
+	): FxOrmInstance.Instance | FxOrmInstance.Instance[] {
 		const inst_arr = Array.isArray(OtherInstance) ? Array.from(OtherInstance) : [ OtherInstance ];
 
-		let results = [] as FxOrmInstance.Instance[];
+		let results = [] as FxOrmInstance.Instance[] | FxOrmInstance.Instance;
 		let hookHandlr = null;
+
+		const $ref = <Fibjs.AnyObject>{
+			association: association.reversed ? null : OtherInstance,
+			associations: association.reversed ? inst_arr : null,
+		};
 
 		if (association.reversed) {
 			hookHandlr = genHookHandlerForInstance(() => {
@@ -321,7 +326,7 @@ function extendInstance(
 				};
 				results = Utilities.parallelQueryIfPossible(
 					Driver.isPool,
-					inst_arr,
+					$ref.associations,
 					runReversed
 				);
 			})
@@ -340,18 +345,20 @@ function extendInstance(
 
 					return oinst;
 				}
-				results = Utilities.parallelQueryIfPossible(
-					Driver.isPool,
-					inst_arr,
-					runNonReversed
-				);
+				
+				results = runNonReversed($ref.association)
 				
 				// link
 				Instance.saveSync({}, { saveAssociations: false });
 			})
 		}
 
-		Hook.wait(Instance, association.hooks[`beforeSet`], hookHandlr, Utilities.buildAssociationActionHooksPayload('beforeSet', { associations: inst_arr }));
+		Hook.wait(
+			Instance,
+			association.hooks[`beforeSet`],
+			hookHandlr,
+			Utilities.buildAssociationActionHooksPayload('beforeSet', { $ref })
+		);
 		Hook.trigger(Instance, association.hooks['afterSet']);
 		
 		return results;
@@ -373,6 +380,7 @@ function extendInstance(
 	if (!association.reversed) {
 		Utilities.addHiddenUnwritableMethodToInstance(Instance, association.delSyncAccessor, function (
 		) {
+			const $ref = <Fibjs.AnyObject>{};
 			Hook.wait(
 				Instance,
 				association.hooks[`beforeRemove`],
@@ -388,7 +396,7 @@ function extendInstance(
 					delete Instance[association.name];
 					Instance.$emit(`after:del:${association.name}`)
 				}),
-				Utilities.buildAssociationActionHooksPayload('beforeRemove', { removeConditions: null })
+				Utilities.buildAssociationActionHooksPayload('beforeRemove', { $ref })
 			);
 			Hook.trigger(Instance, association.hooks['afterRemove']);
 

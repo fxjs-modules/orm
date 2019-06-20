@@ -1,6 +1,6 @@
 var helper = require('../support/spec_helper');
 
-odescribe("Association Hook", function () {
+describe("Association Hook", function () {
     var db = null;
     var Person = null;
 
@@ -42,8 +42,6 @@ odescribe("Association Hook", function () {
         return db.closeSync();
     });
 
-    // there are a lot of timeouts in this suite and Travis or other test runners can
-    // have hickups that could force this suite to timeout to the default value (2 secs)
     function getTrigged () {
         return {
             beforeSet: false,
@@ -56,7 +54,7 @@ odescribe("Association Hook", function () {
         };
     }
 
-    describe("hasOne", function () {
+    describe("hasOne - trigger", function () {
         var triggered = null;
         const resetTriggered = () => triggered = getTrigged()
         beforeEach(() => resetTriggered())
@@ -118,18 +116,18 @@ odescribe("Association Hook", function () {
         });
     });
 
-    describe("hasOne - stopped", function () {
+    describe("hasOne - application", function () {
         var triggered = null;
         const resetTriggered = () => triggered = getTrigged()
         beforeEach(() => resetTriggered())
 
         before(setup({
             hasOneHooks: {
-                beforeSet ({ associations }, next) {
-                    if (associations[0].name === 'test/beforeSet')
+                beforeSet ({ association }, next) {
+                    if (association.name === 'test/beforeSet')
                         return next(false)
                         
-                    if (associations[0].name === 'test/throwError')
+                    if (association.name === 'test/throwError')
                         return next('error')
 
                     next()
@@ -181,7 +179,7 @@ odescribe("Association Hook", function () {
         });
     });
 
-    describe("hasMany", function () {
+    describe("hasMany - trigger", function () {
         var triggered = null;
         const resetTriggered = () => triggered = getTrigged()
         beforeEach(() => resetTriggered())
@@ -272,7 +270,153 @@ odescribe("Association Hook", function () {
         });
     });
 
-    describe("extendsTo", function () {
+    describe("hasMany - application", function () {
+        var triggered = null;
+        const resetTriggered = () => triggered = getTrigged()
+        beforeEach(() => resetTriggered())
+
+        before(setup({
+            hasManyHooks: {
+                beforeAdd ({ associations, $ref }) {
+                    $ref.associations = associations.filter(x => x.name !== 'test/exclude')
+                },
+                beforeSet ({ associations }, next) {
+                    if (associations[0].name === 'test/beforeSet')
+                        return next(false)
+                        
+                    if (associations[0].name === 'test/throwError')
+                        return next('error')
+
+                    next()
+                },
+                beforeRemove ({ associations }, next) {
+                    if (!associations.length)
+                        return next(false)
+
+                    next()
+                }
+            }
+        }));
+
+        it("beforeAdd", function () {
+            const John = Person
+                .createSync({
+                    name: "John Doe"
+                })
+
+            John.addFriendsSync([
+                Person.createSync({
+                    name: "test/exclude"
+                }),
+                Person.createSync({
+                    name: "Friend of John"
+                })
+            ])
+
+            assert.equal(John.getFriendsSync().length, 1)
+            assert.equal(John.getFriendsSync()[0].name, 'Friend of John')
+        });
+
+        it("beforeSet", function () {
+            const John = Person
+                .createSync({
+                    name: "John Doe"
+                })
+
+            John.setFriendsSync(
+                Person.createSync({
+                    name: "test/beforeSet"
+                }),
+                Person.createSync({
+                    name: "Friend of John"
+                })
+            )
+
+            assert.ok(John.getFriendsSync().length === 0)
+
+            assert.throws(() => {
+                John.setFriendsSync(
+                    Person.createSync({
+                        name: "test/throwError"
+                    })
+                )
+            })
+        });
+
+        it("beforeRemove", function () {
+            const John = Person
+                .createSync({
+                    name: "John Doe"
+                })
+
+            John.setFriendsSync([
+                Person.createSync({
+                    name: "Friend1 of John"
+                }),
+                Person.createSync({
+                    name: "Friend2 of John"
+                }),
+            ])
+
+            assert.ok(John.getFriendsSync().length === 2)
+            // according to rules in `beforeRemove` hook, ONLY when passing specific `friends`, 'remove' action was being executed.
+            John.removeFriendsSync()
+            assert.ok(John.getFriendsSync().length === 2)
+
+            John.removeFriendsSync(
+                John.getFriends().where({ name: { like: '%Friend1%' } }).runSync()[0]
+            )
+            assert.ok(John.getFriendsSync().length === 1)
+            John.removeFriendsSync()
+            assert.ok(John.getFriendsSync().length === 1)
+            John.removeFriendsSync(
+                John.getFriends().where({ name: { like: '%Friend1%' } }).runSync()[0]
+            )
+            assert.ok(John.getFriendsSync().length === 1)
+            John.removeFriendsSync(
+                John.getFriends().where({ name: { like: '%Friend2%' } }).runSync()[0]
+            )
+            assert.ok(John.getFriendsSync().length === 0)
+        });
+    });
+
+    describe("extendsTo - next only once, warn on after", function () {
+        var triggered = null;
+        const resetTriggered = () => triggered = getTrigged()
+        beforeEach(() => resetTriggered())
+
+        before(setup({
+            extendsToHooks: {
+                beforeSet (_, next) {
+                    triggered.beforeSet = true
+
+                    next()
+                    next()
+                    next()
+                }
+            }
+        }));
+
+        it("beforeSet next only once", function () {
+            assert.isFalse(triggered.beforeSet);
+
+            const John = Person
+                .createSync({
+                    name: "John Doe"
+                })
+
+            assert.doesNotThrow(() => {
+                John.setProfileSync({
+                    ext_1: 1,
+                    ext_2: 1
+                })
+            })
+
+            assert.isTrue(triggered.beforeSet);
+        });
+    })
+
+    describe("extendsTo - trigger", function () {
         var triggered = null;
         const resetTriggered = () => triggered = getTrigged()
         beforeEach(() => resetTriggered())

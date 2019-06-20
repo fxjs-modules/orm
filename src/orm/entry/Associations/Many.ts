@@ -410,40 +410,43 @@ function extendInstance(
 	});
 
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setSyncAccessor, function (this: typeof Instance) {
-		var items = _flatten(arguments);
+		const $ref = <Fibjs.AnyObject>{
+			associations: _flatten(arguments)
+		};
 
 		let results: FxOrmInstance.Instance[] = [];
+
 		Hook.wait(
 			Instance,
 			association.hooks[`beforeSet`],
 			genHookHandlerForInstance(() => {
-				Instance.$emit(`before:set:${association.name}`, items)
+				Instance.$emit(`before:set:${association.name}`, $ref.associations)
 
 				Instance.$emit(`before-del-extension:${association.setAccessor}`)
 				Instance[association.delSyncAccessor]();
 				Instance.$emit(`after-del-extension:${association.setAccessor}`)
 
-				if (!items.length)
+				if (!$ref.associations.length)
 					return ;
 
-				Instance.$emit(`before-add-extension:${association.setAccessor}`, items)
-				results = Instance[association.addSyncAccessor](items);
-				Instance.$emit(`after-add-extension:${association.setAccessor}`, items)
+				Instance.$emit(`before-add-extension:${association.setAccessor}`, $ref.associations)
+				results = Instance[association.addSyncAccessor]($ref.associations);
+				Instance.$emit(`after-add-extension:${association.setAccessor}`, $ref.associations)
 				
-				Instance.$emit(`after:set:${association.name}`, items)
+				Instance.$emit(`after:set:${association.name}`, $ref.associations)
 			}),
-			Utilities.buildAssociationActionHooksPayload('beforeSet', { associations: items })
+			Utilities.buildAssociationActionHooksPayload('beforeSet', { $ref })
 		);
 
-		Hook.trigger(Instance, association.hooks[`afterSet`], items)
+		Hook.trigger(Instance, association.hooks[`afterSet`], $ref.associations)
 
 		return results;
 	});
 
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setAccessor, function (this: typeof Instance) {
 		// TODO: shold allow passing `extra` as 2nd argument
-		var items = _flatten(arguments);
-		var cb = typeof util.last(items) === 'function' ? items.pop() : noOperation;
+		const items = _flatten(arguments);
+		const cb = typeof util.last(items) === 'function' ? items.pop() : noOperation;
 
 		process.nextTick(() => {
 			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod<boolean>(Instance[association.setSyncAccessor], items);
@@ -495,10 +498,15 @@ function extendInstance(
 		if (!this.saved())
 			this.saveSync();
 
+		const $ref = <Fibjs.AnyObject>{
+			associations: Associations,
+			removeConditions: conditions
+		};
 		Hook.wait(
 			Instance,
 			association.hooks[`beforeRemove`],
 			genHookHandlerForInstance(() => {
+				const Associations = $ref.associations
 				Instance.$emit(`before:del:${association.name}`)
 				if (Driver.hasMany) {
 					return [
@@ -509,19 +517,19 @@ function extendInstance(
 
 				if (Associations.length === 0) {
 					return [
-						Driver.remove(association.mergeTable, conditions),
+						Driver.remove(association.mergeTable, $ref.removeConditions),
 						Instance.$emit(`after:del:${association.name}`)
 					][0];
 				}
 
 				for (let i = 0; i < Associations.length; i++) {
-					Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Associations[i], conditions, false);
+					Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Associations[i], $ref.removeConditions, false);
 				}
 
-				Driver.remove(association.mergeTable, conditions);
+				Driver.remove(association.mergeTable, $ref.removeConditions);
 				Instance.$emit(`after:del:${association.name}`)
 			}),
-			Utilities.buildAssociationActionHooksPayload('beforeRemove', { removeConditions: conditions })
+			Utilities.buildAssociationActionHooksPayload('beforeRemove', { $ref })
 		);
 		
 		Hook.trigger(Instance, association.hooks[`afterRemove`])
@@ -565,14 +573,17 @@ function extendInstance(
 
 		const savedAssociations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
 
+		const $ref = <Fibjs.AnyObject>{
+			associations: Associations
+		};
 		Hook.wait(
 			Instance,
 			association.hooks[`beforeAdd`],
 			genHookHandlerForInstance(() => {
-				Instance.$emit(`before:add:${association.name}`, Associations);
+				Instance.$emit(`before:add:${association.name}`, $ref.associations);
 				Utilities.parallelQueryIfPossible(
 					Driver.isPool,
-					Associations,
+					$ref.associations,
 					(Association) => {
 						const saveAssociation = function (err: FxOrmError.ExtendedError) {
 							if (err)
@@ -597,7 +608,7 @@ function extendInstance(
 							savedAssociations.push(Association);
 						};
 						
-						Instance.$emit(`before-association-save:${association.addAccessor}`, Associations)
+						Instance.$emit(`before-association-save:${association.addAccessor}`, $ref.associations)
 
 						// @deprecated
 						if (isExtraNonEmpty()) {
@@ -614,7 +625,7 @@ function extendInstance(
 
 				Instance.$emit(`after:add:${association.name}`, savedAssociations)
 			}),
-			Utilities.buildAssociationActionHooksPayload('beforeAdd', { associations: Associations })
+			Utilities.buildAssociationActionHooksPayload('beforeAdd', { $ref })
 		);
 
 		Hook.trigger(Instance, association.hooks[`afterAdd`], savedAssociations)
