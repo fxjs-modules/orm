@@ -1,14 +1,14 @@
 import util = require('util')
-import coroutine = require('coroutine')
 
-import { defineDefaultExtendsToTableName, defineAssociationAccessorMethodName, ACCESSOR_KEYS, addAssociationInfoToModel } from "./_utils";
-
+import Hook = require("../Hook");
 import _cloneDeep = require('lodash.clonedeep');
 import ORMError   = require("../Error");
 import Singleton  = require("../Singleton");
 import Utilities  = require("../Utilities");
 import Helpers  = require("../Helpers");
+
 import { listFindByChainOrRunSync } from '../Model';
+import { defineDefaultExtendsToTableName, defineAssociationAccessorMethodName, ACCESSOR_KEYS, addAssociationInfoToModel } from "./_utils";
 
 function noOperation (...args: any[]) {};
 
@@ -29,6 +29,7 @@ export function prepare (db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associati
 		const associationSemanticNameCore = assoc_options.name || Utilities.formatNameFor("assoc:extendsTo", name);
 		const association = <FxOrmAssociation.InstanceAssociationItem_ExtendTos>{
 			name           : name,
+			model		   : null,
 			table          : assoc_options.table || defineDefaultExtendsToTableName(Model.table, name),
 			reversed       : assoc_options.reversed,
 			autoFetch      : assoc_options.autoFetch || false,
@@ -50,7 +51,7 @@ export function prepare (db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associati
 			delAccessor    : assoc_options.delAccessor || defineAssociationAccessorMethodName(ACCESSOR_KEYS.del, associationSemanticNameCore),
 			modelFindByAccessor: assoc_options.modelFindByAccessor || defineAssociationAccessorMethodName(ACCESSOR_KEYS.modelFindBy, associationSemanticNameCore),
 
-			model: null
+			hooks: assoc_options.hooks || {}
 		};
 		Utilities.fillSyncVersionAccessorForAssociation(association);
 
@@ -213,29 +214,35 @@ function extendInstance(
 	Utilities.addHiddenPropertyToInstance(Instance, association.setSyncAccessor, function (
 		Extension: FxOrmInstance.Instance | FxOrmInstance.InstanceDataPayload
 	) {
-		Instance.$emit(`before:set:${association.name}`, Extension);
+		Hook.wait(Instance, association.hooks[`beforeSet`], (err) => {
+			if (err) throw err;
 
-		Instance.saveSync();
+			Instance.$emit(`before:set:${association.name}`, Extension);
+
+			Instance.saveSync();
+			
+			Instance.$emit(`before-del-extension:${association.setAccessor}`);
+			Instance[association.delSyncAccessor]();
+			Instance.$emit(`after-del-extension:${association.setAccessor}`);
+
+			const fields = Object.keys(association.field);
+
+			if (!Extension.isInstance) {
+				Extension = new association.model(Extension);
+			}
+
+			for (let i = 0; i < Model.id.length; i++) {
+				Extension[fields[i]] = Instance[Model.id[i]];
+			}
+
+			Instance.$emit(`before-save-extension:${association.setAccessor}`, Extension);
+			Extension.saveSync();
+			Instance.$emit(`after-save-extension:${association.setAccessor}`, Extension);
+			
+			Instance.$emit(`after:set:${association.name}`, Extension);
+		}, Utilities.buildAssociationActionHooksPayload('beforeSet', { associations: [Extension] }));
 		
-		Instance.$emit(`before-del-extension:${association.setAccessor}`);
-		Instance[association.delSyncAccessor]();
-		Instance.$emit(`after-del-extension:${association.setAccessor}`);
-
-		const fields = Object.keys(association.field);
-
-		if (!Extension.isInstance) {
-			Extension = new association.model(Extension);
-		}
-
-		for (let i = 0; i < Model.id.length; i++) {
-			Extension[fields[i]] = Instance[Model.id[i]];
-		}
-
-		Instance.$emit(`before-save-extension:${association.setAccessor}`, Extension);
-		Extension.saveSync();
-		Instance.$emit(`after-save-extension:${association.setAccessor}`, Extension);
-		
-		Instance.$emit(`after:set:${association.name}`, Extension);
+		Hook.trigger(Instance, association.hooks['afterSet']);
 
 		return Extension;
 	});
@@ -265,12 +272,18 @@ function extendInstance(
 
 		const extensions = association.model.findSync(conditions)
 
-		Instance.$emit(`before:del:${association.name}`, extensions);
-		for (let i = 0; i < extensions.length; i++) {
-			Singleton.clear(extensions[i].__singleton_uid() + '');
-			extensions[i].removeSync();
-		}
-		Instance.$emit(`after:del:${association.name}`, extensions);
+		Hook.wait(Instance, association.hooks[`beforeRemove`], (err) => {
+			if (err) throw err;
+
+			Instance.$emit(`before:del:${association.name}`, extensions);
+			for (let i = 0; i < extensions.length; i++) {
+				Singleton.clear(extensions[i].__singleton_uid() + '');
+				extensions[i].removeSync();
+			}
+			Instance.$emit(`after:del:${association.name}`, extensions);
+		}, Utilities.buildAssociationActionHooksPayload('beforeRemove', { removeConditions: conditions }));
+
+		Hook.trigger(Instance, association.hooks['afterRemove']);
 
 		return ;
 	});

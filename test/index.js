@@ -29,6 +29,7 @@ function t() {
     run('./integration/event.js');
 
     run('./integration/hook.js');
+    run('./integration/association-hook.js');
 
     run('./integration/instance.js');
     run('./integration/model-aggregate.js');

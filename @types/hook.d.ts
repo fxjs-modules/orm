@@ -7,14 +7,15 @@ declare namespace FxOrmHook {
 
     interface HookActionCallback<TTHIS = FxOrmInstance.Instance> {
         (this: TTHIS, next?: HookActionNextFunction): any
+        (this: TTHIS, arg1?: any, next?: HookActionNextFunction): any
     }
 
     interface HookResultCallback<TTHIS = FxOrmInstance.Instance> {
         (this: TTHIS, success?: boolean): any
     }
 
-    interface HookTrigger<CTX_SELF = FxOrmInstance.Instance>{
-        (self: CTX_SELF, cur: HookActionCallback | HookResultCallback, _: boolean): void
+    interface HookTrigger<CTX_SELF = FxOrmInstance.Instance, RESULT_TYPE = boolean>{
+        (self: CTX_SELF, cur: HookActionCallback | HookResultCallback, _?: RESULT_TYPE, ...args: any): void
     }
 
     interface HookWait<CTX_SELF = FxOrmInstance.Instance, TNEXT=any>{

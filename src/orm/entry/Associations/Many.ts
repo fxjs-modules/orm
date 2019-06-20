@@ -82,7 +82,6 @@ export function prepare(db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associatio
 			name: name,
 			model: OtherModel,
 			props: props,
-			hooks: assoc_options.hooks || {},
 			autoFetch: assoc_options.autoFetch || false,
 			autoFetchLimit: assoc_options.autoFetchLimit || 2,
 			// I'm not sure the next key is used..
@@ -97,6 +96,8 @@ export function prepare(db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associatio
 			addAccessor: assoc_options.addAccessor || (ACCESSOR_KEYS.add + associationSemanticNameCore),
 
 			modelFindByAccessor: assoc_options.modelFindByAccessor || (ACCESSOR_KEYS.modelFindBy + associationSemanticNameCore),
+
+			hooks: assoc_options.hooks || {},
 		};
 		Utilities.fillSyncVersionAccessorForAssociation(association);
 
@@ -395,20 +396,27 @@ function extendInstance(
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setSyncAccessor, function (this: typeof Instance) {
 		var items = _flatten(arguments);
 
-		Instance.$emit(`before:set:${association.name}`, items)
+		let results: FxOrmInstance.Instance[] = [];
+		Hook.wait(Instance, association.hooks[`beforeSet`], (err) => {
+			if (err) throw err ;
+			
+			Instance.$emit(`before:set:${association.name}`, items)
 
-		Instance.$emit(`before-del-extension:${association.setAccessor}`)
-		Instance[association.delSyncAccessor]();
-		Instance.$emit(`after-del-extension:${association.setAccessor}`)
+			Instance.$emit(`before-del-extension:${association.setAccessor}`)
+			Instance[association.delSyncAccessor]();
+			Instance.$emit(`after-del-extension:${association.setAccessor}`)
 
-		if (!items.length)
-			return ;
+			if (!items.length)
+				return ;
 
-		Instance.$emit(`before-add-extension:${association.setAccessor}`, items)
-		const results = Instance[association.addSyncAccessor](items);
-		Instance.$emit(`after-add-extension:${association.setAccessor}`, items)
-		
-		Instance.$emit(`after:set:${association.name}`, items)
+			Instance.$emit(`before-add-extension:${association.setAccessor}`, items)
+			results = Instance[association.addSyncAccessor](items);
+			Instance.$emit(`after-add-extension:${association.setAccessor}`, items)
+			
+			Instance.$emit(`after:set:${association.name}`, items)
+		}, Utilities.buildAssociationActionHooksPayload('beforeSet', { associations: items }));
+
+		Hook.trigger(Instance, association.hooks[`afterSet`], items)
 
 		return results;
 	});
@@ -468,27 +476,33 @@ function extendInstance(
 		if (!this.saved())
 			this.saveSync();
 
-		Instance.$emit(`before:del:${association.name}`)
-		if (Driver.hasMany) {
-			return [
-				Driver.hasMany(Model, association).del(Instance, Associations),
-				Instance.$emit(`after:del:${association.name}`)
-			][0];
-		}
+		Hook.wait(Instance, association.hooks[`beforeRemove`], (err) => {
+			if (err) throw err ;
+			
+			Instance.$emit(`before:del:${association.name}`)
+			if (Driver.hasMany) {
+				return [
+					Driver.hasMany(Model, association).del(Instance, Associations),
+					Instance.$emit(`after:del:${association.name}`)
+				][0];
+			}
 
-		if (Associations.length === 0) {
-			return [
-				Driver.remove(association.mergeTable, conditions),
-				Instance.$emit(`after:del:${association.name}`)
-			][0];
-		}
+			if (Associations.length === 0) {
+				return [
+					Driver.remove(association.mergeTable, conditions),
+					Instance.$emit(`after:del:${association.name}`)
+				][0];
+			}
 
-		for (let i = 0; i < Associations.length; i++) {
-			Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Associations[i], conditions, false);
-		}
+			for (let i = 0; i < Associations.length; i++) {
+				Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Associations[i], conditions, false);
+			}
 
-		Driver.remove(association.mergeTable, conditions);
-		Instance.$emit(`after:del:${association.name}`)
+			Driver.remove(association.mergeTable, conditions);
+			Instance.$emit(`after:del:${association.name}`)
+		}, Utilities.buildAssociationActionHooksPayload('beforeRemove', { removeConditions: conditions }));
+		
+		Hook.trigger(Instance, association.hooks[`afterRemove`])
 
 		return this;
 	});
@@ -529,48 +543,57 @@ function extendInstance(
 
 		const savedAssociations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
 
-		Instance.$emit(`before:add:${association.name}`, Associations);
-		Utilities.parallelQueryIfPossible(
-			Driver.isPool,
-			Associations,
-			(Association) => {
-				const saveAssociation = function (err: FxOrmError.ExtendedError) {
-					if (err)
-						throw err;
+		Hook.wait(Instance, association.hooks[`beforeAdd`], (err) => {
+			if (err) throw err ;
+			
+			Instance.$emit(`before:add:${association.name}`, Associations);
+			Utilities.parallelQueryIfPossible(
+				Driver.isPool,
+				Associations,
+				(Association) => {
+					const saveAssociation = function (err: FxOrmError.ExtendedError) {
+						if (err)
+							throw err;
 
-					Association.saveSync();
+						Association.saveSync();
 
-					const data: {[k: string]: any} = {};
+						const data: {[k: string]: any} = {};
 
-					for (let k in add_opts) {
-						if (k in association.props && Driver.propertyToValue) {
-							data[k] = Driver.propertyToValue(add_opts[k], association.props[k]);
-						} else {
-							data[k] = add_opts[k];
+						for (let k in add_opts) {
+							if (k in association.props && Driver.propertyToValue) {
+								data[k] = Driver.propertyToValue(add_opts[k], association.props[k]);
+							} else {
+								data[k] = add_opts[k];
+							}
 						}
+
+						Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, data);
+						Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Association, data);
+
+						Driver.insert(association.mergeTable, data, null);
+						savedAssociations.push(Association);
+					};
+					
+					Instance.$emit(`before-association-save:${association.addAccessor}`, Associations)
+
+					// @deprecated
+					if (isExtraNonEmpty()) {
+						Hook.wait(Association, association.hooks.beforeSave, saveAssociation, add_opts);
+					} else {
+						Hook.wait(Association, association.hooks.beforeSave, saveAssociation);
 					}
-
-					Utilities.populateModelIdKeysConditions(Model, Object.keys(association.mergeId), Instance, data);
-					Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.mergeAssocId), Association, data);
-
-					Driver.insert(association.mergeTable, data, null);
-					savedAssociations.push(Association);
-				};
-				
-				Instance.$emit(`before-association-save:${association.addAccessor}`, Associations)
-				if (isExtraNonEmpty()) {
-					Hook.wait(Association, association.hooks.beforeSave, saveAssociation, add_opts);
-				} else {
-					Hook.wait(Association, association.hooks.beforeSave, saveAssociation);
+					Instance.$emit(`after-association-save:${association.addAccessor}`, savedAssociations)
 				}
-				Instance.$emit(`after-association-save:${association.addAccessor}`, savedAssociations)
-			}
-		)
+			)
 
-		if (!this.saved())
-			this.saveSync();
+			if (!this.saved())
+				this.saveSync();
 
-		Instance.$emit(`after:add:${association.name}`, savedAssociations)
+			Instance.$emit(`after:add:${association.name}`, savedAssociations)
+		}, Utilities.buildAssociationActionHooksPayload('beforeAdd', { associations: Associations }));
+
+		Hook.trigger(Instance, association.hooks[`afterAdd`], savedAssociations)
+
 		return savedAssociations;
 	});
 

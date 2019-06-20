@@ -1,6 +1,6 @@
 import util = require('util')
-import coroutine = require('coroutine')
 
+import Hook = require("../Hook");
 import Utilities = require("../Utilities");
 import ORMError = require("../Error");
 import { ACCESSOR_KEYS, addAssociationInfoToModel } from './_utils';
@@ -40,6 +40,8 @@ export function prepare (
 			delAccessor    : null,
 			
 			modelFindByAccessor : assoc_options.modelFindByAccessor || (ACCESSOR_KEYS.modelFindBy + associationSemanticNameCore),
+
+			hooks: assoc_options.hooks || {},
 		};
 
 		if (!association.reversed)
@@ -285,51 +287,64 @@ function extendInstance(
 	) {
 		const inst_arr = Array.isArray(OtherInstance) ? Array.from(OtherInstance) : [ OtherInstance ];
 
+		let results = [] as FxOrmInstance.Instance[];
+		let hookHandlr = null;
+
 		if (association.reversed) {
-			Instance.saveSync();
+			hookHandlr = (err: FxOrmError.ExtendedError) => {
+				if (err) throw err ;
 
-			const runReversed = function (other: FxOrmInstance.Instance) {
-				Instance.$emit(`before:set:${association.name}`, other)
+				Instance.saveSync();
 
-				Utilities.populateModelIdKeysConditions(Model, Object.keys(association.field), Instance, other, true);
-				// link
-				other.saveSync({}, { saveAssociations: false });
+				const runReversed = function (other: FxOrmInstance.Instance) {
+					Instance.$emit(`before:set:${association.name}`, other)
+
+					Utilities.populateModelIdKeysConditions(Model, Object.keys(association.field), Instance, other, true);
+					// link
+					other.saveSync({}, { saveAssociations: false });
+					
+					Instance.$emit(`after:set:${association.name}`, other)
+
+					return other;
+				};
+				results = Utilities.parallelQueryIfPossible(
+					Driver.isPool,
+					inst_arr,
+					runReversed
+				);
+			}
+
+		} else {
+			hookHandlr = (err: FxOrmError.ExtendedError) => {
+				if (err) throw err ;
+
+				const runNonReversed = function (oinst: FxOrmInstance.Instance) {
+					Instance.$emit(`before:set:${association.name}`, oinst)
+
+					oinst.saveSync({}, { saveAssociations: false });
+
+					Instance[association.name] = oinst;
+					Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.field), oinst, Instance);
+
+					Instance.$emit(`after:set:${association.name}`, oinst)
+
+					return oinst;
+				}
+				results = Utilities.parallelQueryIfPossible(
+					Driver.isPool,
+					inst_arr,
+					runNonReversed
+				);
 				
-				Instance.$emit(`after:set:${association.name}`, other)
-
-				return other;
-			};
-
-			return Utilities.parallelQueryIfPossible(
-				Driver.isPool,
-				inst_arr,
-				runReversed
-			);
+				// link
+				Instance.saveSync({}, { saveAssociations: false });
+			}
 		}
 
-		const runNonReversed = function (oinst: FxOrmInstance.Instance) {
-			Instance.$emit(`before:set:${association.name}`, oinst)
-
-			oinst.saveSync({}, { saveAssociations: false });
-
-			Instance[association.name] = oinst;
-			Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.field), oinst, Instance);
-
-			Instance.$emit(`after:set:${association.name}`, oinst)
-
-			return oinst;
-		}
-
-		const reults = Utilities.parallelQueryIfPossible(
-			Driver.isPool,
-			inst_arr,
-			runNonReversed
-		);
-
-		// link
-		Instance.saveSync({}, { saveAssociations: false });
+		Hook.wait(Instance, association.hooks[`beforeSet`], hookHandlr, Utilities.buildAssociationActionHooksPayload('beforeSet', { associations: inst_arr }));
+		Hook.trigger(Instance, association.hooks['afterSet']);
 		
-		return reults;
+		return results;
 	});
 
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setAccessor, function (
@@ -348,19 +363,24 @@ function extendInstance(
 	if (!association.reversed) {
 		Utilities.addHiddenUnwritableMethodToInstance(Instance, association.delSyncAccessor, function (
 		) {
-			Instance.$emit(`before:del:${association.name}`);
-			for (let k in association.field) {
-				if (association.field.hasOwnProperty(k)) {
-					Instance[k] = null;
+			Hook.wait(Instance, association.hooks[`beforeRemove`], (err) => {
+				if (err) throw err;
+				
+				Instance.$emit(`before:del:${association.name}`);
+				for (let k in association.field) {
+					if (association.field.hasOwnProperty(k)) {
+						Instance[k] = null;
+					}
 				}
-			}
 
-			Instance.saveSync({}, { saveAssociations: false });
-			delete Instance[association.name];
-			Instance.$emit(`after:del:${association.name}`)
+				Instance.saveSync({}, { saveAssociations: false });
+				delete Instance[association.name];
+				Instance.$emit(`after:del:${association.name}`)
+			}, Utilities.buildAssociationActionHooksPayload('beforeRemove', { removeConditions: null }));
+			Hook.trigger(Instance, association.hooks['afterRemove']);
 
 			return this;
-		});
+		}, {});
 
 		Utilities.addHiddenUnwritableMethodToInstance(Instance, association.delAccessor, function (
 			cb?: FxOrmNS.GenericCallback<void>

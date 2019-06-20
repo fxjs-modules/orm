@@ -2,11 +2,11 @@ import util = require('util');
 import coroutine = require('coroutine');
 
 import * as Utilities from './Utilities';
-
-export const trigger: FxOrmHook.HookTrigger = function () {
+// FxOrmHook.HookTrigger<any, any>
+export const trigger: FxOrmHook.HookTrigger<any, any> = function () {
 	const restArgs = Array.prototype.slice.apply(arguments);
 	const instance = restArgs.shift();
-	const hookHandlr   = restArgs.shift();
+	const hookHandlr = restArgs.shift();
 
 	if (typeof hookHandlr === "function")
 		hookHandlr.apply(instance, restArgs);

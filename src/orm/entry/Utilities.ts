@@ -832,3 +832,20 @@ export function makeIdForDriverTable (driver_uid: string, table: string) {
 export function bindInstance (instance: FxOrmInstance.Instance, fn: Function) {
 	return fn.bind(instance)
 }
+
+export function buildAssociationActionHooksPayload (
+	hookName: keyof FxOrmAssociation.InstanceAssociationItem['hooks'],
+	payload: {
+		associations?: FxOrmInstance.InstanceDataPayload[],
+		removeConditions?: Fibjs.AnyObject
+	} = {}
+) {
+	switch (hookName) {
+		case 'beforeSet':
+			return { associations: payload.associations }
+		case 'beforeAdd':
+			return { associations: payload.associations }
+		case 'beforeRemove':
+			return { removeConditions: payload.removeConditions }
+	}
+}

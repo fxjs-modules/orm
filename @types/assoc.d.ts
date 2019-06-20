@@ -36,6 +36,8 @@ declare namespace FxOrmAssociation {
         addAccessor?: string;
 
         modelFindByAccessor?: string;
+
+        hooks?: InstanceAssociationItem['hooks']
     }
 
     interface AssociationDefinitionOptions_ExtendsTo extends AssociationDefinitionOptions {
@@ -52,7 +54,18 @@ declare namespace FxOrmAssociation {
         mergeAssocId?: string | FxOrmModel.DetailedPropertyDefinitionHash
         reverseAssociation?: string
 
-        hooks?: HasManyHooks
+        hooks?: InstanceAssociationItem['hooks'] & {
+            /**
+             * @_1st_arg { associations: [] }
+             */
+            beforeAdd?: FxOrmHook.HookActionCallback
+            afterAdd?: FxOrmHook.HookResultCallback
+            // @deprecated
+            beforeSave?: {
+                (next?: Function): void;
+                (extra: any, next?: Function): void;
+            }
+        }
         mergeTable?: string
 
         association?: string
@@ -68,6 +81,26 @@ declare namespace FxOrmAssociation {
         name: string
         model: FxOrmModel.Model
         field: string | string[] | FxOrmProperty.NormalizedPropertyHash
+        act_hooks: {
+            [k: string]: FxOrmHook.HookActionCallback
+        }
+        result_hooks: {
+            [k: string]: FxOrmHook.HookResultCallback
+        }
+        hooks: {
+            /**
+             * @_1st_arg { associations: [] }
+             */
+            beforeSet?: FxOrmHook.HookActionCallback
+            afterSet?: FxOrmHook.HookResultCallback
+            /**
+             * @_1st_arg { associations: [] }
+             */
+            beforeRemove?: FxOrmHook.HookActionCallback
+            afterRemove?: FxOrmHook.HookResultCallback
+
+            [k: string]: FxOrmHook.HookActionCallback | FxOrmHook.HookResultCallback
+        }
         
         // is the association is extendsTo
         extension?: boolean
@@ -123,7 +156,7 @@ declare namespace FxOrmAssociation {
 
     interface InstanceAssociationItem_HasMany extends InstanceAssociationItem {
         props: FxOrmProperty.NormalizedPropertyHash
-        hooks: HasManyHooks
+        // hooks: HasManyHooks
 
         mergeTable: string
         mergeId: FxOrmProperty.NormalizedPropertyHash
@@ -136,6 +169,8 @@ declare namespace FxOrmAssociation {
         addAccessor: string
 
         modelFindByAccessor?: string
+
+        hooks: AssociationDefinitionOptions_HasMany['hooks']
     }
 
     interface InstanceAssociationItemInformation {
@@ -166,13 +201,6 @@ declare namespace FxOrmAssociation {
     }
 
     interface ModelAssociationMethod__FindByOptions extends FxOrmModel.ModelOptions__Findby, ModelAssociationMethod__Options {
-    }
-
-    interface HasManyHooks {
-        beforeSave?: {
-            (next?: Function): void;
-            (extra: any, next?: Function): void;
-        }
     }
 
     interface AccessorOptions_has {
