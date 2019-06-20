@@ -1,6 +1,6 @@
 var helper = require('../support/spec_helper');
 
-describe("Association Hook", function () {
+odescribe("Association Hook", function () {
     var db = null;
     var Person = null;
 
@@ -100,21 +100,84 @@ describe("Association Hook", function () {
             assert.isFalse(triggered.beforeRemove);
             assert.isFalse(triggered.afterRemove);
 
-            const person = Person
+            const John = Person
                 .createSync({
                     name: "John Doe"
                 })
 
-            person.setFatherSync(
+            John.setFatherSync(
                 Person.createSync({
                     name: "Father of John"
                 })
             )
 
-            person.removeFatherSync()
+            John.removeFatherSync()
 
             assert.isTrue(triggered.beforeRemove);
             assert.isTrue(triggered.afterRemove);
+        });
+    });
+
+    describe("hasOne - stopped", function () {
+        var triggered = null;
+        const resetTriggered = () => triggered = getTrigged()
+        beforeEach(() => resetTriggered())
+
+        before(setup({
+            hasOneHooks: {
+                beforeSet ({ associations }, next) {
+                    if (associations[0].name === 'test/beforeSet')
+                        return next(false)
+                        
+                    if (associations[0].name === 'test/throwError')
+                        return next('error')
+
+                    next()
+                },
+                beforeRemove (_, next) {
+                    next(false)
+                }
+            }
+        }));
+
+        it("beforeSet", function () {
+            const John = Person
+                .createSync({
+                    name: "John Doe"
+                })
+
+            John.setFatherSync(
+                Person.createSync({
+                    name: "test/beforeSet"
+                })
+            )
+
+            assert.ok(John.getFather() === undefined)
+
+            assert.throws(() => {
+                John.setFatherSync(
+                    Person.createSync({
+                        name: "test/throwError"
+                    })
+                )
+            })
+        });
+
+        it("beforeRemove", function () {
+            const John = Person
+                .createSync({
+                    name: "John Doe"
+                })
+
+            John.setFatherSync(
+                Person.createSync({
+                    name: "Father of John"
+                })
+            )
+
+            assert.ok(John.getFatherSync().name === 'Father of John')
+            John.removeFatherSync()
+            assert.ok(John.getFatherSync().name === 'Father of John')
         });
     });
 
@@ -125,22 +188,22 @@ describe("Association Hook", function () {
 
         before(setup({
             hasManyHooks: {
-                beforeAdd () {
+                beforeAdd (_) {
                     triggered.beforeAdd = true
                 },
-                afterAdd () {
+                afterAdd (_) {
                     triggered.afterAdd = true
                 },
-                beforeSet () {
+                beforeSet (_) {
                     triggered.beforeSet = true
                 },
-                afterSet () {
+                afterSet (_) {
                     triggered.afterSet = true
                 },
-                beforeRemove () {
+                beforeRemove (_) {
                     triggered.beforeRemove = true
                 },
-                afterRemove () {
+                afterRemove (_) {
                     triggered.afterRemove = true
                 },
             }
@@ -186,12 +249,12 @@ describe("Association Hook", function () {
             assert.isFalse(triggered.beforeRemove);
             assert.isFalse(triggered.afterRemove);
 
-            const person = Person
+            const John = Person
                 .createSync({
                     name: "John Doe"
                 })
 
-            person.setFriendsSync(
+            John.setFriendsSync(
                 Person.createSync({
                     name: "Father1 of John"
                 }),
@@ -202,7 +265,7 @@ describe("Association Hook", function () {
 
             resetTriggered();
 
-            person.removeFriendsSync()
+            John.removeFriendsSync()
 
             assert.isTrue(triggered.beforeRemove);
             assert.isTrue(triggered.afterRemove);
@@ -252,12 +315,12 @@ describe("Association Hook", function () {
             assert.isFalse(triggered.beforeRemove);
             assert.isFalse(triggered.afterRemove);
 
-            const person = Person
+            const John = Person
                 .createSync({
                     name: "John Doe"
                 })
 
-            person
+            John
                 .setProfileSync({
                     ext_1: 1,
                     ext_2: 1
@@ -265,7 +328,7 @@ describe("Association Hook", function () {
 
             resetTriggered();
 
-            person.removeProfileSync()
+            John.removeProfileSync()
 
             assert.isTrue(triggered.beforeRemove);
             assert.isTrue(triggered.afterRemove);

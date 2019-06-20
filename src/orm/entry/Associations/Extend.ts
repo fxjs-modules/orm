@@ -18,7 +18,15 @@ function noOperation (...args: any[]) {};
  * @param Model model
  * @param associations association definitions
  */
-export function prepare (db: FibOrmNS.FibORM, Model: FxOrmModel.Model, associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[]) {
+export function prepare (
+	Model: FxOrmModel.Model,
+	associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[],
+	opts: {
+		db: FibOrmNS.FibORM
+	}
+) {
+	const { db } = opts
+
 	Model.extendsTo = function (
 		name: string,
 		properties: FxOrmModel.DetailedPropertyDefinitionHash,
@@ -132,10 +140,13 @@ export function extend (
 	Instance: FxOrmInstance.Instance,
 	Driver: FxOrmDMLDriver.DMLDriver,
 	associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[],
-	opts: FibOrmNS.ModelExtendOptions
+	cfg: {
+		assoc_opts: FxOrmAssociation.AssociationDefinitionOptions_HasOne,
+		genHookHandlerForInstance: Function
+	}
 ) {
 	for (let i = 0; i < associations.length; i++) {
-		extendInstance(Model, Instance, Driver, associations[i], opts);
+		extendInstance(Model, Instance, Driver, associations[i], cfg);
 	}
 };
 
@@ -161,8 +172,13 @@ function extendInstance(
 	Instance: FxOrmInstance.Instance,
 	Driver: FxOrmDMLDriver.DMLDriver,
 	association: FxOrmAssociation.InstanceAssociationItem_ExtendTos,
-	opts: FibOrmNS.InstanceExtendOptions
+	cfg: {
+		assoc_opts: FxOrmAssociation.AssociationDefinitionOptions_HasOne,
+		genHookHandlerForInstance: Function
+	}
 ) {
+	const { genHookHandlerForInstance } = cfg
+
 	Utilities.addHiddenPropertyToInstance(Instance, association.hasSyncAccessor, function () {
 		if (!Instance[Model.id + ''])
 			throw new ORMError("Instance not saved, cannot get extension", 'NOT_DEFINED', { model: Model.table });
@@ -214,33 +230,36 @@ function extendInstance(
 	Utilities.addHiddenPropertyToInstance(Instance, association.setSyncAccessor, function (
 		Extension: FxOrmInstance.Instance | FxOrmInstance.InstanceDataPayload
 	) {
-		Hook.wait(Instance, association.hooks[`beforeSet`], (err) => {
-			if (err) throw err;
+		Hook.wait(
+			Instance,
+			association.hooks[`beforeSet`],
+			genHookHandlerForInstance(() => {
+				Instance.$emit(`before:set:${association.name}`, Extension);
 
-			Instance.$emit(`before:set:${association.name}`, Extension);
+				Instance.saveSync();
+				
+				Instance.$emit(`before-del-extension:${association.setAccessor}`);
+				Instance[association.delSyncAccessor]();
+				Instance.$emit(`after-del-extension:${association.setAccessor}`);
 
-			Instance.saveSync();
-			
-			Instance.$emit(`before-del-extension:${association.setAccessor}`);
-			Instance[association.delSyncAccessor]();
-			Instance.$emit(`after-del-extension:${association.setAccessor}`);
+				const fields = Object.keys(association.field);
 
-			const fields = Object.keys(association.field);
+				if (!Extension.isInstance) {
+					Extension = new association.model(Extension);
+				}
 
-			if (!Extension.isInstance) {
-				Extension = new association.model(Extension);
-			}
+				for (let i = 0; i < Model.id.length; i++) {
+					Extension[fields[i]] = Instance[Model.id[i]];
+				}
 
-			for (let i = 0; i < Model.id.length; i++) {
-				Extension[fields[i]] = Instance[Model.id[i]];
-			}
-
-			Instance.$emit(`before-save-extension:${association.setAccessor}`, Extension);
-			Extension.saveSync();
-			Instance.$emit(`after-save-extension:${association.setAccessor}`, Extension);
-			
-			Instance.$emit(`after:set:${association.name}`, Extension);
-		}, Utilities.buildAssociationActionHooksPayload('beforeSet', { associations: [Extension] }));
+				Instance.$emit(`before-save-extension:${association.setAccessor}`, Extension);
+				Extension.saveSync();
+				Instance.$emit(`after-save-extension:${association.setAccessor}`, Extension);
+				
+				Instance.$emit(`after:set:${association.name}`, Extension);
+			}),
+			Utilities.buildAssociationActionHooksPayload('beforeSet', { associations: [Extension] })
+		);
 		
 		Hook.trigger(Instance, association.hooks['afterSet']);
 
@@ -272,16 +291,19 @@ function extendInstance(
 
 		const extensions = association.model.findSync(conditions)
 
-		Hook.wait(Instance, association.hooks[`beforeRemove`], (err) => {
-			if (err) throw err;
-
-			Instance.$emit(`before:del:${association.name}`, extensions);
-			for (let i = 0; i < extensions.length; i++) {
-				Singleton.clear(extensions[i].__singleton_uid() + '');
-				extensions[i].removeSync();
-			}
-			Instance.$emit(`after:del:${association.name}`, extensions);
-		}, Utilities.buildAssociationActionHooksPayload('beforeRemove', { removeConditions: conditions }));
+		Hook.wait(
+			Instance,
+			association.hooks[`beforeRemove`],
+			genHookHandlerForInstance(() => {
+				Instance.$emit(`before:del:${association.name}`, extensions);
+				for (let i = 0; i < extensions.length; i++) {
+					Singleton.clear(extensions[i].__singleton_uid() + '');
+					extensions[i].removeSync();
+				}
+				Instance.$emit(`after:del:${association.name}`, extensions);
+			}),
+			Utilities.buildAssociationActionHooksPayload('beforeRemove', { removeConditions: conditions })
+		);
 
 		Hook.trigger(Instance, association.hooks['afterRemove']);
 

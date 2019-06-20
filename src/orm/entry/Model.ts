@@ -59,15 +59,15 @@ export const Model = function (
 			switch (oldhook) {
 				default:
 				case 'initial':
-					m_opts.hooks[hook] = initialHooks[hook];
+					m_opts.hooks[hook] = initialHooks[hook] as any;
 					break
 				case 'overwrite':
 				case undefined:
-					m_opts.hooks[hook] = cb;
+					m_opts.hooks[hook] = cb as any;
 					break
 				case 'prepend':
 					const old_cb = m_opts.hooks[hook] || function () {};
-					m_opts.hooks[hook] = cb;
+					m_opts.hooks[hook] = cb as any;
 					Helpers.prependHook(m_opts.hooks, hook, old_cb);
 					break
 				case 'append':
@@ -121,9 +121,11 @@ export const Model = function (
 		};
 
 		const setupAssociations = function (instance: FxOrmInstance.Instance) {
-			OneAssociation.extend(model, instance, m_opts.driver, one_associations);
-			ManyAssociation.extend(model, instance, m_opts.driver, many_associations, assoc_opts);
-			ExtendAssociation.extend(model, instance, m_opts.driver, extend_associations, assoc_opts);
+			const genHookHandlerForInstance = Utilities.hookHandlerDecorator({ thisArg: instance })
+
+			OneAssociation.extend(model, instance, m_opts.driver, one_associations, { assoc_opts, genHookHandlerForInstance });
+			ManyAssociation.extend(model, instance, m_opts.driver, many_associations, { assoc_opts, genHookHandlerForInstance });
+			ExtendAssociation.extend(model, instance, m_opts.driver, extend_associations, { assoc_opts, genHookHandlerForInstance });
 		};
 
 		const instance = new Instance(model, {
@@ -960,9 +962,10 @@ export const Model = function (
 	}
 
 	model.associations = {};
-	OneAssociation.prepare(model, one_associations);
-	ManyAssociation.prepare(m_opts.db, model, many_associations);
-	ExtendAssociation.prepare(m_opts.db, model, extend_associations);
+	
+	OneAssociation.prepare(model, one_associations, { db: m_opts.db });
+	ManyAssociation.prepare(model, many_associations, { db: m_opts.db });
+	ExtendAssociation.prepare(model, extend_associations, { db: m_opts.db });
 
 	return model;
 } as any as FxOrmModel.ModelConstructor;

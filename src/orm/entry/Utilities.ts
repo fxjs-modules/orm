@@ -849,3 +849,23 @@ export function buildAssociationActionHooksPayload (
 			return { removeConditions: payload.removeConditions }
 	}
 }
+
+export function hookHandlerDecorator (
+	{
+		thisArg = null
+	}:
+	{
+		thisArg?: any
+	} = {}
+) {
+	return (hdlr: Function): any => {
+		return (err: any) => {
+			if (err)
+				throw err;
+
+			if (err === false) return ;
+			
+			return hdlr.call(thisArg)
+		}
+	}
+}

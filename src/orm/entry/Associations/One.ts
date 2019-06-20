@@ -10,7 +10,11 @@ import * as Helpers from '../Helpers';
 function noOperation (...args: any[]) {};
 
 export function prepare (
-	Model: FxOrmModel.Model, associations: FxOrmAssociation.InstanceAssociationItem_HasOne[]
+	Model: FxOrmModel.Model,
+	associations: FxOrmAssociation.InstanceAssociationItem_HasOne[],
+	opts: {
+		db: FibOrmNS.FibORM
+	}
 ) {
 	Model.hasOne = function (assoc_name, ext_model, assoc_options) {
 		if (arguments[1] && !arguments[1].table) {
@@ -143,10 +147,14 @@ export function extend (
 	Instance: FxOrmInstance.Instance,
 	Driver: FxOrmDMLDriver.DMLDriver,
 	// extend target
-	associations: FxOrmAssociation.InstanceAssociationItem_HasOne[]
+	associations: FxOrmAssociation.InstanceAssociationItem_HasOne[],
+	cfg: {
+		assoc_opts: any,
+		genHookHandlerForInstance: Function
+	}
 ) {
 	for (let i = 0; i < associations.length; i++) {
-		extendInstance(Model, Instance, Driver, associations[i]);
+		extendInstance(Model, Instance, Driver, associations[i], cfg);
 	}
 };
 
@@ -171,8 +179,14 @@ function extendInstance(
 	Instance: FxOrmInstance.Instance,
 	Driver: FxOrmDMLDriver.DMLDriver,
 	// extend target
-	association: FxOrmAssociation.InstanceAssociationItem_HasOne
+	association: FxOrmAssociation.InstanceAssociationItem_HasOne,
+	cfg: {
+		assoc_opts: FxOrmAssociation.AssociationDefinitionOptions_HasOne,
+		genHookHandlerForInstance: Function
+	}
 ) {
+	const { genHookHandlerForInstance } = cfg
+	
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.hasSyncAccessor, function (_has_opts?: FxOrmAssociation.AccessorOptions_has) {
 		if (!Utilities.hasValues(Instance, Object.keys(association.field)))
 			return false;
@@ -291,9 +305,7 @@ function extendInstance(
 		let hookHandlr = null;
 
 		if (association.reversed) {
-			hookHandlr = (err: FxOrmError.ExtendedError) => {
-				if (err) throw err ;
-
+			hookHandlr = genHookHandlerForInstance(() => {
 				Instance.saveSync();
 
 				const runReversed = function (other: FxOrmInstance.Instance) {
@@ -312,12 +324,10 @@ function extendInstance(
 					inst_arr,
 					runReversed
 				);
-			}
+			})
 
 		} else {
-			hookHandlr = (err: FxOrmError.ExtendedError) => {
-				if (err) throw err ;
-
+			hookHandlr = genHookHandlerForInstance(() => {
 				const runNonReversed = function (oinst: FxOrmInstance.Instance) {
 					Instance.$emit(`before:set:${association.name}`, oinst)
 
@@ -338,7 +348,7 @@ function extendInstance(
 				
 				// link
 				Instance.saveSync({}, { saveAssociations: false });
-			}
+			})
 		}
 
 		Hook.wait(Instance, association.hooks[`beforeSet`], hookHandlr, Utilities.buildAssociationActionHooksPayload('beforeSet', { associations: inst_arr }));
@@ -363,20 +373,23 @@ function extendInstance(
 	if (!association.reversed) {
 		Utilities.addHiddenUnwritableMethodToInstance(Instance, association.delSyncAccessor, function (
 		) {
-			Hook.wait(Instance, association.hooks[`beforeRemove`], (err) => {
-				if (err) throw err;
-				
-				Instance.$emit(`before:del:${association.name}`);
-				for (let k in association.field) {
-					if (association.field.hasOwnProperty(k)) {
-						Instance[k] = null;
+			Hook.wait(
+				Instance,
+				association.hooks[`beforeRemove`],
+				Utilities.hookHandlerDecorator({ thisArg: Instance })(() => {
+					Instance.$emit(`before:del:${association.name}`);
+					for (let k in association.field) {
+						if (association.field.hasOwnProperty(k)) {
+							Instance[k] = null;
+						}
 					}
-				}
 
-				Instance.saveSync({}, { saveAssociations: false });
-				delete Instance[association.name];
-				Instance.$emit(`after:del:${association.name}`)
-			}, Utilities.buildAssociationActionHooksPayload('beforeRemove', { removeConditions: null }));
+					Instance.saveSync({}, { saveAssociations: false });
+					delete Instance[association.name];
+					Instance.$emit(`after:del:${association.name}`)
+				}),
+				Utilities.buildAssociationActionHooksPayload('beforeRemove', { removeConditions: null })
+			);
 			Hook.trigger(Instance, association.hooks['afterRemove']);
 
 			return this;
