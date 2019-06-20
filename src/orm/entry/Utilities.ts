@@ -885,15 +885,15 @@ export function hookHandlerDecorator (
 	} = {}
 ) {
 	return (hdlr: Function): any => {
-		let notFinished = onlyOnce === true
+		let finishOnce = false
 
 		return (err: any) => {
-			if (!notFinished) {
-				console.warn(`[hookHandlerDecorator] this function was finished`)
+			if (onlyOnce && finishOnce) {
+				console.warn(`[hookHandlerDecorator] this function was once only`)
 				return ;
 			}
-
-			notFinished = false;
+			
+			finishOnce === true;
 
 			if (err)
 				throw err;
