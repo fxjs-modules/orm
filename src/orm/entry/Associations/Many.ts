@@ -452,7 +452,7 @@ function extendInstance(
 			Utilities.buildAssociationActionHooksPayload('beforeSet', { $ref })
 		);
 
-		Hook.trigger(Instance, association.hooks[`afterSet`], $ref.associations)
+		Hook.trigger(Instance, association.hooks[`afterSet`], $ref.associations, Utilities.buildAssociationActionHooksPayload('afterSet', { $ref }))
 
 		return results;
 	});
@@ -547,7 +547,7 @@ function extendInstance(
 			Utilities.buildAssociationActionHooksPayload('beforeRemove', { $ref })
 		);
 		
-		Hook.trigger(Instance, association.hooks[`afterRemove`])
+		Hook.trigger(Instance, association.hooks[`afterRemove`], Utilities.buildAssociationActionHooksPayload('afterRemove', { $ref }))
 
 		return this;
 	});
@@ -644,7 +644,7 @@ function extendInstance(
 			Utilities.buildAssociationActionHooksPayload('beforeAdd', { $ref })
 		);
 
-		Hook.trigger(Instance, association.hooks[`afterAdd`], savedAssociations)
+		Hook.trigger(Instance, association.hooks[`afterAdd`], savedAssociations, Utilities.buildAssociationActionHooksPayload('afterAdd', { $ref }))
 
 		return savedAssociations;
 	});

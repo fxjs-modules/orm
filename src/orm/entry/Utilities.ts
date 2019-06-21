@@ -877,17 +877,23 @@ export function buildAssociationActionHooksPayload (
 		throw `[buildAssociationActionHooksPayload]$ref must be valid Object`
 
 	const self = $ref;
-	Object.defineProperty(self, '$ref', { get () { return self }, configurable: false, enumerable: true})
+	if (!self.hasOwnProperty('$ref') || Object.getOwnPropertyDescriptor(self, '$ref').configurable)
+		Object.defineProperty(self, '$ref', { get () { return self }, configurable: false, enumerable: true})
 
 	self.association = association
 	self.associations = associations
 
 	switch (hookName) {
 		case 'beforeSet':
+		case 'afterSet':
 			break
 		case 'beforeAdd':
+		case 'afterAdd':
 			break
 		case 'beforeRemove':
+			self.removeConditions = removeConditions
+			break
+		case 'afterRemove':
 			self.removeConditions = removeConditions
 			break
 	}

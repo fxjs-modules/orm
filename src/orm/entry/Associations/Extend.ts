@@ -296,7 +296,7 @@ function extendInstance(
 			Utilities.buildAssociationActionHooksPayload('beforeSet', { $ref })
 		);
 		
-		Hook.trigger(Instance, association.hooks['afterSet']);
+		Hook.trigger(Instance, association.hooks['afterSet'], Utilities.buildAssociationActionHooksPayload('afterSet', { $ref }));
 
 		return $ref.association;
 	});
@@ -344,7 +344,7 @@ function extendInstance(
 			Utilities.buildAssociationActionHooksPayload('beforeRemove', { $ref })
 		);
 
-		Hook.trigger(Instance, association.hooks['afterRemove']);
+		Hook.trigger(Instance, association.hooks['afterRemove'], Utilities.buildAssociationActionHooksPayload('afterRemove', { $ref }));
 
 		return ;
 	});

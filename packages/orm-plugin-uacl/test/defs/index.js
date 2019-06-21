@@ -12,31 +12,29 @@ module.exports = orm => {
     const Project = orm.define('project', {
         name: String
     }, {
-        ievents: {
-            'after:add:members': function (members) {
-                /**
-                 * 在 project/1/members 为 ID 的树形结构中, 为这些 members 赋予读写权限
-                 */
-                this.$uacl('members')
-                    .grant(members, {
-                        write: true,
-                        read: ['name', 'description']
-                    })
-            },
-            'after:del:members': function (members = []) {
-                if (!members.length)
-                    this.$uacl('members')
-                        .clear()
-            },
+    })
 
-            'after:add:stages': function (stages) {
+    const Stage = orm.define('stage', {
+        name: String
+    }, {
+    })
+
+    const Task = orm.define('task', {
+        name: String
+    }, {
+    })
+
+    Project.hasMany('stages', Stage, {}, {
+        reverse: 'ofProjects',
+        hooks: {
+            afterAddStages (stages) {
                 /**
                  * 为所有的该 project 下的 stages 的 members 赋予对 project 的
                  * 字段读取权限
                  */
                 const project = this
                 stages.forEach((stage) => {
-                    stage.members.forEach(member => {
+                    stage.getMembersSync().forEach(member => {
                         project.$uacl('stages')
                             .$uacl('members', stage)
                             .grant(member, {
@@ -48,12 +46,33 @@ module.exports = orm => {
             }
         }
     })
+    Stage.hasMany('tasks', Task, {}, {})
 
-    const Stage = orm.define('stage', {
-        name: String
-    }, {
-        ievents: {
-            'after:add:members': function (members) {
+    Project.hasMany('members', User, {}, {
+        hooks: {
+            'beforeAdd': function ({associations: members}) {
+                /**
+                 * 在 project/1/members 为 ID 的树形结构中, 为这些 members 赋予读写权限
+                 */
+                this.$uacl('members')
+                    .grant(members, {
+                        write: true,
+                        read: ['name', 'description']
+                    })
+            },
+            'afterRemove': function ({associations: specificRemovedMembers = []}) {
+                /**
+                 * 如果删除了该 project 下所有的 members, 则清除这些用户对它的所有权限
+                 */
+                if (!specificRemovedMembers.length)
+                    this.$uacl('members')
+                        .clear()
+            }
+        }
+    })
+    Stage.hasMany('members', User, {}, {
+        hooks: {
+            'afterAdd': function ({associations: members}) {
                 this.getOfProjectsSync()
                     .forEach(project => {
                         /**
@@ -70,17 +89,6 @@ module.exports = orm => {
             }
         }
     })
-
-    const Task = orm.define('task', {
-        name: String
-    }, {
-    })
-
-    Project.hasMany('stages', Stage, {}, { reverse: 'ofProjects' })
-    Stage.hasMany('tasks', Task, {}, {})
-
-    Project.hasMany('members', User, {}, {})
-    Stage.hasMany('members', User, {}, {})
     Task.hasOne('owner', User, {}, {})
     Task.hasMany('members', User, {}, {})
 

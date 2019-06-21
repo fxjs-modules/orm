@@ -5,28 +5,6 @@ import { ACLNode, ACLTree } from './acl-tree';
  * @purpose record the relations, and provide the `uaci` computation by getUacis
  * 
  */
-// function modelUacl (
-//     this: FxOrmModel.Model,
-//     association_name: string
-// ): ACLTree {
-//     if (!this.$uaclGrantTree) {
-//         const model = this;
-//         this.$uaclGrantTree = new ACLTree({
-//             model: model,
-//             prefix: `${model.table}`,
-//             association_name,
-//         })
-//     }
-
-//     return this.$uaclGrantTree
-// }
-
-
-/**
- * @chainapi
- * @purpose record the relations, and provide the `uaci` computation by getUacis
- * 
- */
 function instanceUacl (
     this: FxOrmInstance.Instance,
     association_name: string
@@ -69,8 +47,6 @@ const Plugin: FxOrmPluginUACL = function (orm, opts) {
                 }
         },
         define (model) {
-            // model.uacl = modelUacl.bind(model)
-
             model.afterLoad(function () {
                 Object.defineProperty(this, '$uacl', {
                     value: instanceUacl.bind(this),
