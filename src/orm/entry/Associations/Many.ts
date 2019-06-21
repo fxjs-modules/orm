@@ -57,6 +57,12 @@ export function prepare(
 			}
 		}
 
+		for (let i = 0; i < db.plugins.length; i++) {
+			if (typeof db.plugins[i].beforeHasMany === "function") {
+				db.plugins[i].beforeHasMany(name, OtherModel, props, assoc_options);
+			}
+		}
+
 		if (props === null) {
 			props = {};
 		} else {

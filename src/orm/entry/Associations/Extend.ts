@@ -39,6 +39,12 @@ export function prepare (
 	) {
 		assoc_options = assoc_options || {};
 
+		for (let i = 0; i < db.plugins.length; i++) {
+			if (typeof db.plugins[i].beforeExtendsTo === "function") {
+				db.plugins[i].beforeExtendsTo(name, properties, assoc_options);
+			}
+		}
+
 		const associationSemanticNameCore = assoc_options.name || Utilities.formatNameFor("assoc:extendsTo", name);
 		const association = <FxOrmAssociation.InstanceAssociationItem_ExtendTos>{
 			name           : name,

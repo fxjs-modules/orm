@@ -1,6 +1,6 @@
 var helper = require('../support/spec_helper');
 
-odescribe("Association Hook", function () {
+describe("Association Hook", function () {
     var db = null;
     var Person = null;
 

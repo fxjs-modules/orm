@@ -21,6 +21,7 @@ export function prepare (
 	}
 ) {
 	const { one_associations } = assocs;
+	const { db } = opts;
 
 	Model.hasOne = function (assoc_name, ext_model, assoc_options) {
 		if (arguments[1] && !arguments[1].table) {
@@ -31,6 +32,13 @@ export function prepare (
 		ext_model = ext_model || Model;
 		assoc_name = assoc_name || ext_model.table;
 		assoc_options = {...assoc_options};
+
+		for (let i = 0; i < db.plugins.length; i++) {
+			if (typeof db.plugins[i].beforeHasOne === "function") {
+				db.plugins[i].beforeHasOne(assoc_name, ext_model, assoc_options);
+			}
+		}
+
 		const associationSemanticNameCore = Utilities.formatNameFor("assoc:hasOne", assoc_name);	
 		
 		const association = <FxOrmAssociation.InstanceAssociationItem_HasOne>{
