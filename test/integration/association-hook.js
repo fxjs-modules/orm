@@ -131,6 +131,53 @@ describe("Association Hook", function () {
         });
     });
 
+    describe("hasOne:hook list - trigger", function () {
+        var triggered = null;
+        const resetTriggered = () => triggered = getTrigged()
+        beforeEach(() => resetTriggered())
+
+        before(setup({
+            hasOneHooks: {
+                beforeSet: [
+                    function ({ $ref }) {
+                        assert.ok($ref.instance === this)
+                        triggered.beforeSet = false
+                    },
+                    function ({ $ref }) {
+                        assert.ok($ref.instance === this)
+                        triggered.beforeSet = true
+                    },
+                ],
+                afterSet: [
+                    function () {
+                        triggered.afterSet = false
+                    },
+                    function () {
+                        triggered.afterSet = true
+                    },
+                ],
+            }
+        }));
+
+        it("beforeSet/afterSet", function () {
+            assert.isFalse(triggered.beforeSet);
+            assert.isFalse(triggered.afterSet);
+
+            Person
+                .createSync({
+                    name: "John Doe"
+                })
+                .setFatherSync(
+                    Person.createSync({
+                        name: "Father of John"
+                    })
+                )
+
+            assert.isTrue(triggered.beforeSet);
+            assert.isTrue(triggered.afterSet);
+        });
+    });
+
     describe("hasOne:reverse - trigger", function () {
         var triggered = null;
         const resetTriggered = () => triggered = getTrigged()

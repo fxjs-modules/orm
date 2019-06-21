@@ -140,7 +140,7 @@ export const Instance = function (
 		}
 		
 		if (opts.is_new) {
-			waitHooks([ "beforeCreate", "beforeSave" ], function (err: FxOrmError.ExtendedError) {
+			Hook.wait(instance, [ opts.hooks['beforeCreate'], opts.hooks['beforeSave'] ], function (err: FxOrmError.ExtendedError) {
 				if (err) {
 					saveError(err);
 					throw err;
@@ -149,7 +149,7 @@ export const Instance = function (
 				saveNewSync(saveOptions, getInstanceData());
 			});
 		} else {
-			waitHooks([ "beforeSave" ], function (err: FxOrmError.ExtendedError) {
+			Hook.wait(instance, [ opts.hooks['beforeSave'] ], function (err: FxOrmError.ExtendedError) {
 				if (err) {
 					saveError(err);
 					throw err;
@@ -194,22 +194,6 @@ export const Instance = function (
 		}
 
 		return data;
-	};
-	const waitHooks = function (hooks: FxOrmModel.keyofHooks[], next: FxOrmHook.HookActionNextFunction) {
-		const nextHook = function () {
-			if (hooks.length === 0) {
-				return next();
-			}
-			Hook.wait(instance, opts.hooks[hooks.shift()], function (err: FxOrmError.ExtendedError) {
-				if (err) {
-					return next(err);
-				}
-
-				return nextHook();
-			});
-		};
-
-		return nextHook();
 	};
 
 	const resetChanges = function () {

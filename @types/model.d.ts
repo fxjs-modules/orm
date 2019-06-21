@@ -1,4 +1,5 @@
 /// <reference types="@fxjs/sql-query" />
+/// <reference path="_common.d.ts" />
 /// <reference path="Validators.d.ts" />
 /// <reference path="assoc.d.ts" />
 /// <reference path="patch.d.ts" />
@@ -229,7 +230,7 @@ declare namespace FxOrmModel {
 
         __for_extension?: ModelConstructorOptions['__for_extension']
         indexes?: ModelConstructorOptions['indexes']
-        // keys composition, it's array-liket
+        // keys composition, it's array-like
         id?: ModelConstructorOptions['keys']
         autoSave?: ModelConstructorOptions['autoSave']
         autoFetch?: ModelConstructorOptions['autoFetch']
@@ -246,15 +247,15 @@ declare namespace FxOrmModel {
     type ModelOptions = ModelDefineOptions
 
     interface Hooks {
-        beforeValidation?: FxOrmHook.HookActionCallback;
-        beforeCreate?: FxOrmHook.HookActionCallback;
-        afterCreate?: FxOrmHook.HookResultCallback;
-        beforeSave?: FxOrmHook.HookActionCallback;
-        afterSave?: FxOrmHook.HookResultCallback;
-        afterLoad?: FxOrmHook.HookActionCallback;
-        afterAutoFetch?: FxOrmHook.HookActionCallback;
-        beforeRemove?: FxOrmHook.HookActionCallback;
-        afterRemove?: FxOrmHook.HookResultCallback;
+        beforeValidation?: FxOrmNS.Arraible<FxOrmHook.HookActionCallback>;
+        beforeCreate?: FxOrmNS.Arraible<FxOrmHook.HookActionCallback>;
+        afterCreate?: FxOrmNS.Arraible<FxOrmHook.HookResultCallback>;
+        beforeSave?: FxOrmNS.Arraible<FxOrmHook.HookActionCallback>;
+        afterSave?: FxOrmNS.Arraible<FxOrmHook.HookResultCallback>;
+        afterLoad?: FxOrmNS.Arraible<FxOrmHook.HookActionCallback>;
+        afterAutoFetch?: FxOrmNS.Arraible<FxOrmHook.HookActionCallback>;
+        beforeRemove?: FxOrmNS.Arraible<FxOrmHook.HookActionCallback>;
+        afterRemove?: FxOrmNS.Arraible<FxOrmHook.HookResultCallback>;
     }
     type keyofHooks = keyof Hooks
 

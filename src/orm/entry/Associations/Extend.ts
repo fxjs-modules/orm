@@ -254,6 +254,7 @@ function extendInstance(
 		Extension: FxOrmInstance.Instance | FxOrmInstance.InstanceDataPayload
 	) {
 		const $ref = <Fibjs.AnyObject>{
+			instance: Instance,
 			association: Extension
 		};
 		Hook.wait(
@@ -317,6 +318,7 @@ function extendInstance(
 		}
 
 		const $ref = <Fibjs.AnyObject>{
+			instance: Instance,
 			removeConditions: conditions
 		};
 		Hook.wait(

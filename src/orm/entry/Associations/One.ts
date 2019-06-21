@@ -317,6 +317,7 @@ function extendInstance(
 		let hookHandlr = null;
 
 		const $ref = <Fibjs.AnyObject>{
+			instance: Instance,
 			association: association.reversed ? null : OtherInstance,
 			associations: association.reversed ? inst_arr : null,
 		};
@@ -342,7 +343,6 @@ function extendInstance(
 					runReversed
 				);
 			})
-
 		} else {
 			hookHandlr = genHookHandlerForInstance(() => {
 				const runNonReversed = function (oinst: FxOrmInstance.Instance) {
@@ -392,7 +392,9 @@ function extendInstance(
 	if (!association.reversed && !association.__for_extension) {
 		Utilities.addHiddenUnwritableMethodToInstance(Instance, association.delSyncAccessor, function (
 		) {
-			const $ref = <Fibjs.AnyObject>{};
+			const $ref = <Fibjs.AnyObject>{
+				instance: Instance,
+			};
 			Hook.wait(
 				Instance,
 				association.hooks[`beforeRemove`],

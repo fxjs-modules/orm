@@ -3,6 +3,7 @@
 
 declare namespace FxOrmNS {
     type IdType = string | number
+    type Arraible<T> = T | T[]
     
     interface VoidCallback<T_RESULT = any, T_THIS = any> {
         (this: T_THIS, err?: FxOrmError.ExtendedError | null): T_RESULT

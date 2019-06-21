@@ -836,6 +836,7 @@ export function bindInstance (instance: FxOrmInstance.Instance, fn: Function) {
 export function buildAssociationActionHooksPayload (
 	hookName: keyof FxOrmAssociation.InstanceAssociationItem['hooks'],
 	payload: {
+		instance?: FxOrmInstance.Instance,
 		association?: FxOrmInstance.InstanceDataPayload,
 		associations?: FxOrmInstance.InstanceDataPayload[],
 		removeConditions?: Fibjs.AnyObject,
@@ -847,13 +848,17 @@ export function buildAssociationActionHooksPayload (
 	} = payload;
 
 	const {
+		instance = $ref.instance || null,
 		association = $ref.association || null,
 		associations = $ref.associations || [],
 		removeConditions = $ref.removeConditions || {},
 	} = payload;
 
+	if (!instance)
+		throw `[buildAssociationActionHooksPayload] instance is required`
+
 	if (!$ref || typeof $ref !== 'object')
-		throw `$ref must be valid Object`
+		throw `[buildAssociationActionHooksPayload]$ref must be valid Object`
 
 	const self = $ref;
 	Object.defineProperty(self, '$ref', { get () { return self }, configurable: false, enumerable: true})
@@ -899,8 +904,12 @@ export function hookHandlerDecorator (
 				throw err;
 
 			if (err === false) return ;
-			
+
 			return hdlr.call(thisArg)
 		}
 	}
+}
+
+export function arraify<T = any> (item: T | T[]): T[] {
+	return Array.isArray(item) ? item : [item]
 }

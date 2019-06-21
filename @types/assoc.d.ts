@@ -1,3 +1,4 @@
+/// <reference path="_common.d.ts" />
 /// <reference path="model.d.ts" />
 
 declare namespace FxOrmAssociation {
@@ -87,18 +88,12 @@ declare namespace FxOrmAssociation {
         model: FxOrmModel.Model
         field: string | string[] | FxOrmProperty.NormalizedPropertyHash
         hooks: {
-            /**
-             * @_1st_arg { associations: [] }
-             */
-            beforeSet?: FxOrmHook.HookActionCallback
-            afterSet?: FxOrmHook.HookResultCallback
-            /**
-             * @_1st_arg { associations: [] }
-             */
-            beforeRemove?: FxOrmHook.HookActionCallback
-            afterRemove?: FxOrmHook.HookResultCallback
+            beforeSet?: FxOrmNS.Arraible<FxOrmHook.HookActionCallback>
+            afterSet?: FxOrmNS.Arraible<FxOrmHook.HookResultCallback>
+            beforeRemove?: FxOrmNS.Arraible<FxOrmHook.HookActionCallback>
+            afterRemove?: FxOrmNS.Arraible<FxOrmHook.HookResultCallback>
 
-            [k: string]: FxOrmHook.HookActionCallback | FxOrmHook.HookResultCallback
+            [k: string]: FxOrmNS.Arraible<FxOrmHook.HookActionCallback | FxOrmHook.HookResultCallback>
         }
         
         // is the association is extendsTo

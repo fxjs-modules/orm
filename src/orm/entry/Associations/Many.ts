@@ -417,6 +417,7 @@ function extendInstance(
 
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setSyncAccessor, function (this: typeof Instance) {
 		const $ref = <Fibjs.AnyObject>{
+			instance: Instance,
 			associations: _flatten(arguments)
 		};
 
@@ -505,6 +506,7 @@ function extendInstance(
 			this.saveSync();
 
 		const $ref = <Fibjs.AnyObject>{
+			instance: Instance,
 			associations: Associations,
 			removeConditions: conditions
 		};
@@ -580,6 +582,7 @@ function extendInstance(
 		const savedAssociations: FxOrmAssociation.InstanceAssociatedInstance[] = [];
 
 		const $ref = <Fibjs.AnyObject>{
+			instance: Instance,
 			associations: Associations
 		};
 		Hook.wait(

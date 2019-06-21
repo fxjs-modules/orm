@@ -2,37 +2,61 @@ import util = require('util');
 import coroutine = require('coroutine');
 
 import * as Utilities from './Utilities';
-// FxOrmHook.HookTrigger<any, any>
+
+/**
+ * support hook style function
+ * 
+ * function (success: boolean) {}
+ */
 export const trigger: FxOrmHook.HookTrigger<any, any> = function () {
 	const restArgs = Array.prototype.slice.apply(arguments);
 	const instance = restArgs.shift();
 	const hookHandlr = restArgs.shift();
 
-	if (typeof hookHandlr === "function")
-		hookHandlr.apply(instance, restArgs);
+	const arr = Utilities.arraify(hookHandlr)
+
+	arr.forEach(handler => {
+		if (typeof handler === "function")
+			handler.apply(instance, restArgs);
+	})
+};
+
+
+const waitHooks = function (self: any, hooksHandlers: FxOrmHook.HookActionCallback[], next: FxOrmHook.HookActionNextFunction, payload?: any) {
+	const list = payload ? [payload] : []
+	const nextHook = function (): any {
+		if (hooksHandlers.length === 0) {
+			return next.call(null);
+		}
+
+		const waitHandler = function (err: FxOrmError.ExtendedError) {
+			if (err)
+				return next.call(null, err);
+
+			return nextHook();
+		}
+		wait.apply(null, [self, hooksHandlers.shift(), waitHandler].concat(list));
+	};
+
+	return nextHook();
 };
 
 /**
  * support hook style function
  * 
- * 1. function (next: Function) {}
- * 2. function (success: boolean) {}
+ * function (next: Function) {}
  */
 export const wait: FxOrmHook.HookWait = function () {
 	const restArgs = Array.prototype.slice.apply(arguments);
 	const instance = restArgs.shift();
 	const hookHandlr = restArgs.shift();
 
+	if (Array.isArray(hookHandlr))
+		return waitHooks.apply(null, [instance, hookHandlr].concat(restArgs));
+
+	// put `next` callback after and other rest Aras
 	const next = restArgs.shift();
-	
 	restArgs.push(next);
-
-	if (Array.isArray(hookHandlr)) {
-		let result = null
-		hookHandlr.forEach(hookHandlrItem => result = wait.apply(null, [instance, hookHandlrItem].concat(restArgs)))
-
-		return result;
-	}
 
 	/**
 	 * undefined hook handler

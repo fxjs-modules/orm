@@ -42,7 +42,7 @@ export const Model = function (
 	const fieldToPropertyMap: FxOrmProperty.FieldToPropertyMapType = {};
 	const allProperties: FxOrmProperty.NormalizedPropertyHash = {};
 	const keyProperties: FxOrmProperty.NormalizedProperty[] = [];
-
+	
 	const initialHooks = Object.assign({}, m_opts.hooks)
 
 	var createHookHelper = function (hook: keyof FxOrmModel.Hooks) {
@@ -56,6 +56,7 @@ export const Model = function (
 			}
 			
 			const { oldhook = undefined } = opts || {}
+			let tmp = null as any
 			switch (oldhook) {
 				default:
 				case 'initial':
@@ -66,12 +67,14 @@ export const Model = function (
 					m_opts.hooks[hook] = cb as any;
 					break
 				case 'prepend':
-					const old_cb = m_opts.hooks[hook] || function () {};
-					m_opts.hooks[hook] = cb as any;
-					Helpers.prependHook(m_opts.hooks, hook, old_cb);
+					tmp = Utilities.arraify(m_opts.hooks[hook]);
+					tmp.push(cb)
+					m_opts.hooks[hook] = tmp;
 					break
 				case 'append':
-					Helpers.prependHook(m_opts.hooks, hook, cb);
+					tmp = Utilities.arraify(m_opts.hooks[hook]);
+					tmp.unshift(cb)
+					m_opts.hooks[hook] = tmp;
 					break
 			}
 			return this;
