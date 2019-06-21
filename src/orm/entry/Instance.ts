@@ -7,7 +7,7 @@ const EventEmitter = events.EventEmitter;
 
 import Utilities = require("./Utilities");
 import Hook      = require("./Hook");
-import ORMError       = require("./Error");
+import ORMError  = require("./Error");
 import enforce   = require("@fibjs/enforce");
 import * as Helpers from './Helpers';
 
@@ -307,13 +307,13 @@ export const Instance = function (
 				error_passed = false,
 				assocSaved: boolean;
 
-		const saveAssociationItemSync = function (callbackVersionAccessor: string, instances: FxOrmInstance.InstanceDataPayload) {
+		const saveAssociationItemSync = function (syncVersionAccessor: string, instances: FxOrmInstance.InstanceDataPayload) {
 			pending += 1;
 
 			let error: FxOrmError.ExtendedError = null;
 
 			const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(() => {
-				instance[callbackVersionAccessor + 'Sync'](instances);
+				instance[syncVersionAccessor](instances);
 			});
 			
 			error = syncResponse.error;
@@ -348,7 +348,7 @@ export const Instance = function (
 						if (!item.isInstance) {
 							item = new assoc.model(item);
 						}
-						saveAssociationItemSync(assoc.setAccessor, item);
+						saveAssociationItemSync(assoc.setSyncAccessor, item);
 					}
 				);
 				
@@ -359,7 +359,7 @@ export const Instance = function (
 			  instance[assoc.name] = new assoc.model(instance[assoc.name]);
 			}
 
-			saveAssociationItemSync(assoc.setAccessor, instance[assoc.name]);
+			saveAssociationItemSync(assoc.setSyncAccessor, instance[assoc.name]);
 		};
 
 		for (let i = 0; i < opts.one_associations.length; i++) {
@@ -378,7 +378,7 @@ export const Instance = function (
 				}
 			}
 
-			saveAssociationItemSync(assoc.setAccessor, assocVal);
+			saveAssociationItemSync(assoc.setSyncAccessor, assocVal);
 		};
 
 		for (let i = 0; i < opts.many_associations.length; i++) {
@@ -786,7 +786,7 @@ export const Instance = function (
 	for (let i = 0; i < opts.one_associations.length; i++) {
 		var asc = opts.one_associations[i];
 
-		if (!asc.reversed && !asc.extension) {
+		if (!asc.reversed && !asc.__for_extension) {
 			for (let k in asc.field as FxOrmProperty.NormalizedPropertyHash) {
 				if (!opts.data.hasOwnProperty(k)) {
 					addInstanceProperty(k);

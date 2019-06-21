@@ -237,7 +237,7 @@ ORM.prototype.define = function (
 		table          : opts.table || opts.collection || ((this.settings.get("model.namePrefix") || "") + name),
 		// not standard FxOrmProperty.NormalizedPropertyHash here, but we should pass it firstly
 		properties     : properties as FxOrmProperty.NormalizedPropertyHash,
-		extension      : opts.extension || false,
+		__for_extension: opts.__for_extension || false,
 		indexes        : opts.indexes || [],
 		identityCache  : opts.hasOwnProperty("identityCache") ? opts.identityCache : this.settings.get("instance.identityCache"),
 		keys           : opts.id,

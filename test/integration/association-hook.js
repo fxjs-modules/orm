@@ -6,10 +6,15 @@ describe("Association Hook", function () {
 
     var setup = function ({
         hasOneHooks = {},
+        hasOneReverseHooks = {},
         extendsToHooks = {},
-        hasManyHooks = {}
+        extendsToReverseHooks = {},
+        hasManyHooks = {},
+        hasManyReverseHooks = {}
     } = {}) {
         return function () {
+            db.settings.set("extendsTo.throwWhenNotFound", false);
+
             Person = db.define("person", {
                 name: String
             }, {
@@ -18,16 +23,26 @@ describe("Association Hook", function () {
             Person.settings.set("instance.returnAllErrors", false);
 
             Person.hasOne("father", Person, {
-                hooks: hasOneHooks
+                hooks: hasOneHooks,
+                
+                reverse: 'children',
+                reverseHooks: hasOneReverseHooks,
             })
+
             var PersonProfile = Person.extendsTo("profile", {
                 ext_1: String,
                 ext_2: String,
             }, {
-                hooks: extendsToHooks
+                hooks: extendsToHooks,
+                
+                reverse: 'owner',
+                reverseHooks: extendsToReverseHooks,
             })
             Person.hasMany("friends", Person, {}, {
-                hooks: hasManyHooks
+                hooks: hasManyHooks,
+                
+                reverse: 'itsFriends',
+                reverseHooks: hasManyReverseHooks,
             })
 
             return helper.dropSync([Person, PersonProfile]);
@@ -113,6 +128,70 @@ describe("Association Hook", function () {
 
             assert.isTrue(triggered.beforeRemove);
             assert.isTrue(triggered.afterRemove);
+        });
+    });
+
+    describe("hasOne:reverse - trigger", function () {
+        var triggered = null;
+        const resetTriggered = () => triggered = getTrigged()
+        beforeEach(() => resetTriggered())
+
+        before(setup({
+            hasOneReverseHooks: {
+                beforeSet () {
+                    triggered.beforeSet = true
+                },
+                afterSet () {
+                    triggered.afterSet = true
+                },
+                beforeRemove () {
+                    triggered.beforeRemove = true
+                },
+                afterRemove () {
+                    triggered.afterRemove = true
+                },
+            }
+        }));
+
+        it("beforeSet/afterSet", function () {
+            assert.isFalse(triggered.beforeSet);
+            assert.isFalse(triggered.afterSet);
+
+            const John = Person
+                .createSync({
+                    name: "John Doe"
+                })
+
+            John.setChildrenSync([
+                Person.createSync({
+                    name: "Child of John"
+                })
+            ])
+
+            assert.isTrue(triggered.beforeSet);
+            assert.isTrue(triggered.afterSet);
+        });
+
+        it("beforeRemove/afterRemove", function () {
+            assert.isFalse(triggered.beforeRemove);
+            assert.isFalse(triggered.afterRemove);
+
+            const John = Person
+                .createSync({
+                    name: "John Doe"
+                })
+
+            John.setChildrenSync(
+                Person.createSync({
+                    name: "Child of John"
+                })
+            )
+
+            assert.isNotFunction(John.removeChildrenSync)
+            assert.isNotFunction(John.removeChildren)
+
+            assert.isFalse(triggered.beforeRemove);
+            assert.isFalse(triggered.afterRemove);
         });
     });
 
@@ -270,6 +349,97 @@ describe("Association Hook", function () {
         });
     });
 
+    describe("hasMany:reverse - trigger", function () {
+        var triggered = null;
+        const resetTriggered = () => triggered = getTrigged()
+        beforeEach(() => resetTriggered())
+
+        before(setup({
+            hasManyReverseHooks: {
+                beforeAdd (_) {
+                    triggered.beforeAdd = true
+                },
+                afterAdd (_) {
+                    triggered.afterAdd = true
+                },
+                beforeSet (_) {
+                    triggered.beforeSet = true
+                },
+                afterSet (_) {
+                    triggered.afterSet = true
+                },
+                beforeRemove (_) {
+                    triggered.beforeRemove = true
+                },
+                afterRemove (_) {
+                    triggered.afterRemove = true
+                },
+            }
+        }));
+
+        it("beforeAdd/afterAdd", function () {
+            assert.isFalse(triggered.beforeAdd);
+            assert.isFalse(triggered.afterAdd);
+
+            Person
+                .createSync({
+                    name: "John Doe"
+                })
+                .addItsFriendsSync(
+                    Person.createSync({
+                        name: "Friend of John"
+                    })
+                )
+
+            assert.isTrue(triggered.beforeAdd);
+            assert.isTrue(triggered.afterAdd);
+        });
+
+        it("beforeSet/afterSet", function () {
+            assert.isFalse(triggered.beforeSet);
+            assert.isFalse(triggered.afterSet);
+
+            Person
+                .createSync({
+                    name: "John Doe"
+                })
+                .setItsFriendsSync([
+                    Person.createSync({
+                        name: "Friend of John"
+                    })
+                ])
+
+            assert.isTrue(triggered.beforeSet);
+            assert.isTrue(triggered.afterSet);
+        });
+
+        it("beforeRemove/afterRemove", function () {
+            assert.isFalse(triggered.beforeRemove);
+            assert.isFalse(triggered.afterRemove);
+
+            const John = Person
+                .createSync({
+                    name: "John Doe"
+                })
+
+            John.setItsFriendsSync(
+                Person.createSync({
+                    name: "Father1 of John"
+                }),
+                Person.createSync({
+                    name: "Father2 of John"
+                }),
+            )
+
+            resetTriggered();
+
+            John.removeItsFriendsSync()
+
+            assert.isTrue(triggered.beforeRemove);
+            assert.isTrue(triggered.afterRemove);
+        });
+    });
+
     describe("hasMany - application", function () {
         var triggered = null;
         const resetTriggered = () => triggered = getTrigged()
@@ -414,7 +584,7 @@ describe("Association Hook", function () {
 
             assert.isTrue(triggered.beforeSet);
         });
-    })
+    });
 
     describe("extendsTo - trigger", function () {
         var triggered = null;
@@ -476,6 +646,81 @@ describe("Association Hook", function () {
 
             assert.isTrue(triggered.beforeRemove);
             assert.isTrue(triggered.afterRemove);
+        });
+    });
+
+    describe("extendsTo:reverse - trigger", function () {
+        var triggered = null;
+        const resetTriggered = () => triggered = getTrigged()
+        beforeEach(() => resetTriggered())
+
+        before(setup({
+            extendsToReverseHooks: {
+                beforeSet () {
+                    triggered.beforeSet = true
+                },
+                afterSet () {
+                    triggered.afterSet = true
+                },
+                beforeRemove () {
+                    triggered.beforeRemove = true
+                },
+                afterRemove () {
+                    triggered.afterRemove = true
+                },
+            }
+        }));
+
+        it("beforeSet/afterSet", function () {
+            assert.isFalse(triggered.beforeSet);
+            assert.isFalse(triggered.afterSet);
+
+            const John = Person
+                .createSync({
+                    name: "John Doe"
+                })
+                
+            const Jane = Person
+                .createSync({
+                    name: "Jane Dan"
+                })
+
+            const JohnProfile = John
+                .setProfileSync({
+                    ext_1: 1,
+                    ext_2: 1
+                })
+
+            JohnProfile.setOwnerSync(Jane)
+
+            assert.isTrue(triggered.beforeSet);
+            assert.isTrue(triggered.afterSet);
+
+            assert.equal(John.getProfileSync(), null);
+        });
+
+        it("beforeRemove/afterRemove", function () {
+            assert.isFalse(triggered.beforeRemove);
+            assert.isFalse(triggered.afterRemove);
+
+            const John = Person
+                .createSync({
+                    name: "John Doe"
+                })
+
+            const JohnProfile = John
+                .setProfileSync({
+                    ext_1: 1,
+                    ext_2: 1
+                })
+
+            assert.isNotFunction(John.removeChildrenSync)
+
+            assert.isFalse(triggered.beforeRemove);
+            assert.isFalse(triggered.afterRemove);
+
+            assert.ok(John.getProfileSync());
+            assert.deepEqual(John.getProfileSync() + '', JohnProfile + '');
         });
     });
 });

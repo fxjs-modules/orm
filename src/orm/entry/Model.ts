@@ -254,7 +254,7 @@ export const Model = function (
 
 	model.syncSync = function () {
 		m_opts.driver.sync({
-			extension           : m_opts.extension,
+			extension           : m_opts.__for_extension,
 			id                  : m_opts.keys,
 			table               : m_opts.table,
 			properties          : m_opts.properties,
@@ -963,9 +963,12 @@ export const Model = function (
 
 	model.associations = {};
 	
-	OneAssociation.prepare(model, one_associations, { db: m_opts.db });
-	ManyAssociation.prepare(model, many_associations, { db: m_opts.db });
-	ExtendAssociation.prepare(model, extend_associations, { db: m_opts.db });
+	// OneAssociation.prepare(model, { one_associations, many_associations, extend_associations, db: m_opts.db });
+	// ManyAssociation.prepare(model, { one_associations, many_associations, extend_associations, db: m_opts.db });
+	// ExtendAssociation.prepare(model, { one_associations, many_associations, extend_associations, db: m_opts.db });
+	OneAssociation.prepare(model, { one_associations, many_associations, extend_associations }, { db: m_opts.db });
+	ManyAssociation.prepare(model, { one_associations, many_associations, extend_associations }, { db: m_opts.db });
+	ExtendAssociation.prepare(model, { one_associations, many_associations, extend_associations }, { db: m_opts.db });
 
 	return model;
 } as any as FxOrmModel.ModelConstructor;

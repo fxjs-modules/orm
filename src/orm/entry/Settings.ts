@@ -19,9 +19,16 @@ const default_settings = {
 		returnAllErrors           : false,
 		saveAssociationsByDefault : true
 	},
+	hasOne     : {
+		// allowRemoveReverse		  : false,
+	},
 	hasMany    : {
 		// Makes the foreign key fields a composite key
 		key                       : false
+	},
+	extendsTo  : {
+		// would default as false in the future
+		throwWhenNotFound		  : true,
 	},
 	connection : {
 		reconnect                 : true,

@@ -14,8 +14,8 @@ declare namespace FxOrmAssociation {
         model?: FxOrmModel.Model;
         field?: InstanceAssociationItem['field']
 
-        // is the association is extendsTo
-        extension?: boolean;
+        // is the association is for extendsTo
+        __for_extension?: boolean;
         required?: boolean;
         reversed?: boolean;
         /**
@@ -42,12 +42,17 @@ declare namespace FxOrmAssociation {
 
     interface AssociationDefinitionOptions_ExtendsTo extends AssociationDefinitionOptions {
         table?: string;
+
+        reverse?: string;
+        reverseHooks?: InstanceAssociationItem_HasOne['hooks'];
     }
     interface AssociationDefinitionOptions_HasOne extends AssociationDefinitionOptions {
         reverse?: string;
+        reverseHooks?: InstanceAssociationItem_HasOne['hooks'];
     }
     interface AssociationDefinitionOptions_HasMany extends AssociationDefinitionOptions {
         reverse?: string;
+        reverseHooks?: AssociationDefinitionOptions_HasMany['hooks']
         // is association property a primary key
         key?: boolean
         mergeId?: string | FxOrmModel.DetailedPropertyDefinitionHash
@@ -81,12 +86,6 @@ declare namespace FxOrmAssociation {
         name: string
         model: FxOrmModel.Model
         field: string | string[] | FxOrmProperty.NormalizedPropertyHash
-        act_hooks: {
-            [k: string]: FxOrmHook.HookActionCallback
-        }
-        result_hooks: {
-            [k: string]: FxOrmHook.HookResultCallback
-        }
         hooks: {
             /**
              * @_1st_arg { associations: [] }
@@ -103,7 +102,7 @@ declare namespace FxOrmAssociation {
         }
         
         // is the association is extendsTo
-        extension?: boolean
+        __for_extension?: boolean
 
         getAccessor: string
         getSyncAccessor: string
@@ -135,6 +134,7 @@ declare namespace FxOrmAssociation {
 
     interface InstanceAssociationItem_ExtendTos extends InstanceAssociationItem {
         table: string;
+        reverse?: string;
         modelFindByAccessor: string
     }
 
@@ -142,16 +142,17 @@ declare namespace FxOrmAssociation {
         field: FxOrmProperty.NormalizedPropertyHash
         
         reverse?: string;
+        reverseHooks?: InstanceAssociationItem_HasOne['hooks'];
         // template name
         accessor?: string;
         reverseAccessor?: string;
 
-        addAccessor?: string;
+        // addAccessor?: string;
 
         modelFindByAccessor: string
 
         required?: boolean;
-        extension?: boolean;
+        __for_extension?: boolean;
     }
 
     interface InstanceAssociationItem_HasMany extends InstanceAssociationItem {

@@ -11,29 +11,35 @@ function noOperation (...args: any[]) {};
 
 export function prepare (
 	Model: FxOrmModel.Model,
-	associations: FxOrmAssociation.InstanceAssociationItem_HasOne[],
+	assocs: {
+		one_associations: FxOrmAssociation.InstanceAssociationItem_HasOne[],
+		many_associations: FxOrmAssociation.InstanceAssociationItem_HasMany[],
+		extend_associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[],
+	},
 	opts: {
 		db: FibOrmNS.FibORM
 	}
 ) {
+	const { one_associations } = assocs;
+
 	Model.hasOne = function (assoc_name, ext_model, assoc_options) {
 		if (arguments[1] && !arguments[1].table) {
 			assoc_options = arguments[1] as FxOrmAssociation.AssociationDefinitionOptions_HasOne
 			ext_model = arguments[1] = null as FxOrmModel.Model
 		}
 
-		assoc_name = assoc_name || ext_model.table;
-		assoc_options = assoc_options || {};
-		const associationSemanticNameCore = Utilities.formatNameFor("assoc:hasOne", assoc_name);
 		ext_model = ext_model || Model;
+		assoc_name = assoc_name || ext_model.table;
+		assoc_options = {...assoc_options};
+		const associationSemanticNameCore = Utilities.formatNameFor("assoc:hasOne", assoc_name);	
 		
-		let association = <FxOrmAssociation.InstanceAssociationItem_HasOne>{
+		const association = <FxOrmAssociation.InstanceAssociationItem_HasOne>{
 			name           : assoc_name,
 			model          : ext_model,
 
 			field		   : null,
 			reversed       : false,
-			extension      : false,
+			__for_extension: false,
 			autoFetch      : false,
 			autoFetchLimit : 2,
 			required       : false,
@@ -45,18 +51,18 @@ export function prepare (
 			
 			modelFindByAccessor : assoc_options.modelFindByAccessor || (ACCESSOR_KEYS.modelFindBy + associationSemanticNameCore),
 
-			hooks: assoc_options.hooks || {},
+			...assoc_options,
+			hooks		   : {...assoc_options.hooks},
 		};
-
+		
 		if (!association.reversed)
 			association.delAccessor = ACCESSOR_KEYS['del'] + associationSemanticNameCore;
 		
-		association = util.extend(association, assoc_options);
 		Utilities.fillSyncVersionAccessorForAssociation(association);
 
 		if (!association.field) {
 			association.field = Utilities.formatField(association.model, association.name, association.required, association.reversed);
-		} else if(!association.extension) {
+		} else if (!association.__for_extension) {
 			association.field = Utilities.wrapFieldObject({
 				field: association.field, model: Model, altName: Model.table,
 				mapsTo: association.mapsTo
@@ -67,7 +73,7 @@ export function prepare (
 
 		Utilities.convertPropToJoinKeyProp(normalizedField, { makeKey: false, required: association.required });
 
-		associations.push(association);
+		one_associations.push(association);
 		for (let k in normalizedField) {
 			if (!normalizedField.hasOwnProperty(k)) {
 				continue;
@@ -87,7 +93,8 @@ export function prepare (
 				reverseAccessor: undefined,
 				field          : normalizedField,
 				autoFetch      : association.autoFetch,
-				autoFetchLimit : association.autoFetchLimit
+				autoFetchLimit : association.autoFetchLimit,
+				hooks		   : assoc_options.reverseHooks
 			});
 		}
 
@@ -191,12 +198,17 @@ function extendInstance(
 		if (!Utilities.hasValues(Instance, Object.keys(association.field)))
 			return false;
 		
-		const instance = association.model.getSync(
-			Utilities.values(Instance, Object.keys(association.field)),
-			_has_opts
-		);
+		try {
+			const instance = association.model.getSync(
+				Utilities.values(Instance, Object.keys(association.field)),
+				_has_opts
+			);
 
-		return !!instance;
+			return !!instance;
+		} catch (error) {
+			console.log('error', error)
+			return false
+		}
 	});
 
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.hasAccessor, function (_has_opts?: FxOrmAssociation.AccessorOptions_has, cb?: FxOrmNS.GenericCallback<boolean>) {
@@ -376,8 +388,8 @@ function extendInstance(
 		return this;
 	});
 	
-	// non-reversed could delete associated instance
-	if (!association.reversed) {
+	// only non-reversed could delete associated instance
+	if (!association.reversed && !association.__for_extension) {
 		Utilities.addHiddenUnwritableMethodToInstance(Instance, association.delSyncAccessor, function (
 		) {
 			const $ref = <Fibjs.AnyObject>{};

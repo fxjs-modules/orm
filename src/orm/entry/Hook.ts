@@ -27,6 +27,13 @@ export const wait: FxOrmHook.HookWait = function () {
 	
 	restArgs.push(next);
 
+	if (Array.isArray(hookHandlr)) {
+		let result = null
+		hookHandlr.forEach(hookHandlrItem => result = wait.apply(null, [instance, hookHandlrItem].concat(restArgs)))
+
+		return result;
+	}
+
 	/**
 	 * undefined hook handler
 	 */

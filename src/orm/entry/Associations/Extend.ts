@@ -20,11 +20,16 @@ function noOperation (...args: any[]) {};
  */
 export function prepare (
 	Model: FxOrmModel.Model,
-	associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[],
+	assocs: {
+		one_associations: FxOrmAssociation.InstanceAssociationItem_HasOne[],
+		many_associations: FxOrmAssociation.InstanceAssociationItem_HasMany[],
+		extend_associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[],
+	},
 	opts: {
 		db: FibOrmNS.FibORM
 	}
 ) {
+	const { extend_associations } = assocs;
 	const { db } = opts
 
 	Model.extendsTo = function (
@@ -39,7 +44,8 @@ export function prepare (
 			name           : name,
 			model		   : null,
 			table          : assoc_options.table || defineDefaultExtendsToTableName(Model.table, name),
-			reversed       : assoc_options.reversed,
+			reverse        : assoc_options.reverse,
+			// reversed       : assoc_options.reversed,
 			autoFetch      : assoc_options.autoFetch || false,
 			autoFetchLimit : assoc_options.autoFetchLimit || 2,
 			field          : Utilities.wrapFieldObject({
@@ -59,7 +65,7 @@ export function prepare (
 			delAccessor    : assoc_options.delAccessor || defineAssociationAccessorMethodName(ACCESSOR_KEYS.del, associationSemanticNameCore),
 			modelFindByAccessor: assoc_options.modelFindByAccessor || defineAssociationAccessorMethodName(ACCESSOR_KEYS.modelFindBy, associationSemanticNameCore),
 
-			hooks: assoc_options.hooks || {}
+			hooks: {...assoc_options.hooks},
 		};
 		Utilities.fillSyncVersionAccessorForAssociation(association);
 
@@ -74,14 +80,21 @@ export function prepare (
 			util.pick(assoc_options, 'identityCache', 'autoSave', 'cascadeRemove', 'hooks', 'methods', 'validations'),
 			{
 				id        : Object.keys(assoc_field),
-				extension : true,
+				__for_extension : true,
 			}
 		);
 
 		association.model = db.define(association.table, newProperties, modelOpts);
-		association.model.hasOne(Model.table, Model, { extension: true, field: assoc_field });
+		
+		association.model.hasOne(association.reverse || Model.table, Model, {
+			__for_extension: true,
+			field: assoc_field,
+			reverse: null,
+			reversed: false,
+			hooks: assoc_options.reverseHooks
+		});
 
-		associations.push(association);
+		extend_associations.push(association);
 
 		const findByAccessorChainOrRunSync = function (is_sync: boolean = false) {
 			return function () {
@@ -183,7 +196,12 @@ function extendInstance(
 		if (!Instance[Model.id + ''])
 			throw new ORMError("Instance not saved, cannot get extension", 'NOT_DEFINED', { model: Model.table });
 			
-		return !!association.model.getSync(Utilities.values(Instance, Model.id));
+		try {
+			return !!association.model.getSync(Utilities.values(Instance, Model.id));
+		} catch (error) {
+			if (!Model.settings.get('extendsTo.throwWhenNotFound') && error.literalCode === 'NOT_FOUND') return false
+			throw error
+		}
 	});
 
 	Utilities.addHiddenPropertyToInstance(Instance, association.hasAccessor, function (cb: FxOrmNS.GenericCallback<boolean>) {
@@ -200,7 +218,12 @@ function extendInstance(
 		if (!Instance[Model.id + ''])
 			throw new ORMError("Instance not saved, cannot get extension", 'NOT_DEFINED', { model: Model.table });
 		
-		return association.model.getSync(Utilities.values(Instance, Model.id), opts);
+		try {
+			return association.model.getSync(Utilities.values(Instance, Model.id), opts);
+		} catch (error) {
+			if (!Model.settings.get('extendsTo.throwWhenNotFound') && error.literalCode === 'NOT_FOUND') return null
+			throw error
+		}
 	});
 
 	Utilities.addHiddenPropertyToInstance(Instance, association.getAccessor, function () {
@@ -249,7 +272,7 @@ function extendInstance(
 				const fields = Object.keys(association.field);
 
 				if (!Extension.isInstance) {
-					Extension = new association.model(Extension);
+					$ref.association = Extension = new association.model(Extension);
 				}
 
 				for (let i = 0; i < Model.id.length; i++) {
@@ -267,7 +290,7 @@ function extendInstance(
 		
 		Hook.trigger(Instance, association.hooks['afterSet']);
 
-		return Extension;
+		return $ref.association;
 	});
 
 	Utilities.addHiddenPropertyToInstance(Instance, association.setAccessor, function (

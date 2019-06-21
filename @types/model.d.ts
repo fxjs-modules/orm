@@ -203,7 +203,7 @@ declare namespace FxOrmModel {
         driver: FxOrmDMLDriver.DMLDriver
         table: string
         properties: FxOrmProperty.NormalizedPropertyHash
-        extension: boolean
+        __for_extension: boolean
         indexes: string[]
         
         identityCache: boolean
@@ -227,7 +227,7 @@ declare namespace FxOrmModel {
         table?: ModelConstructorOptions['table']
         collection?: ModelConstructorOptions['table']
 
-        extension?: ModelConstructorOptions['extension']
+        __for_extension?: ModelConstructorOptions['__for_extension']
         indexes?: ModelConstructorOptions['indexes']
         // keys composition, it's array-liket
         id?: ModelConstructorOptions['keys']

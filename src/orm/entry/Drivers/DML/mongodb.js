@@ -28,7 +28,7 @@ Driver.prototype.sync = function (opts, cb) {
 		var indexes = [], pending;
 
 		for (let i = 0; i < opts.one_associations.length; i++) {
-			if (opts.one_associations[i].extension) continue;
+			if (opts.one_associations[i].__for_extension) continue;
 			if (opts.one_associations[i].reversed) continue;
 
 			for (let k in opts.one_associations[i].field) {

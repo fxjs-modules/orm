@@ -17,11 +17,16 @@ function noOperation (...args: any[]) {};
 
 export function prepare(
 	Model: FxOrmModel.Model,
-	associations: FxOrmAssociation.InstanceAssociationItem_HasMany[],
+	assocs: {
+		one_associations: FxOrmAssociation.InstanceAssociationItem_HasOne[],
+		many_associations: FxOrmAssociation.InstanceAssociationItem_HasMany[],
+		extend_associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[],
+	},
 	opts: {
 		db: FibOrmNS.FibORM,
 	}
 ) {
+	const { many_associations } = assocs;
 	const { db } = opts
 
 	Model.hasMany = function () {
@@ -105,11 +110,11 @@ export function prepare(
 
 			modelFindByAccessor: assoc_options.modelFindByAccessor || (ACCESSOR_KEYS.modelFindBy + associationSemanticNameCore),
 
-			hooks: assoc_options.hooks || {},
+			hooks: {...assoc_options.hooks},
 		};
 		Utilities.fillSyncVersionAccessorForAssociation(association);
 
-		associations.push(association);
+		many_associations.push(association);
 
 		if (assoc_options.reverse) {
 			OtherModel.hasMany(assoc_options.reverse, Model, association.props, {
@@ -120,7 +125,8 @@ export function prepare(
 				mergeAssocId: association.mergeId,
 				field: fieldhash,
 				autoFetch: association.autoFetch,
-				autoFetchLimit: association.autoFetchLimit
+				autoFetchLimit: association.autoFetchLimit,
+				hooks: assoc_options.reverseHooks
 			});
 		}
 
