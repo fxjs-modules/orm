@@ -83,7 +83,29 @@ declare namespace FxOrmAssociation {
         addAccessor?: string;
     }
 
-    interface InstanceAssociationItem {
+    interface InstanceAssociationItemHooks {
+        beforeSet?: {
+            (func: FxOrmHook.HookActionCallback, opts?: FxOrmHook.HookPatchOptions & Fibjs.AnyObject): any
+        }
+        afterSet?: {
+            (func: FxOrmHook.HookResultCallback, opts?: FxOrmHook.HookPatchOptions & Fibjs.AnyObject): any
+        }
+        beforeRemove?: {
+            (func: FxOrmHook.HookActionCallback, opts?: FxOrmHook.HookPatchOptions & Fibjs.AnyObject): any
+        }
+        afterRemove?: {
+            (func: FxOrmHook.HookResultCallback, opts?: FxOrmHook.HookPatchOptions & Fibjs.AnyObject): any
+        }
+
+        beforeAdd?: {
+            (func: FxOrmHook.HookActionCallback, opts?: FxOrmHook.HookPatchOptions & Fibjs.AnyObject): any
+        }
+        afterAdd?: {
+            (func: FxOrmHook.HookResultCallback, opts?: FxOrmHook.HookPatchOptions & Fibjs.AnyObject): any
+        }
+    }
+
+    interface InstanceAssociationItem extends InstanceAssociationItemHooks {
         name: string
         model: FxOrmModel.Model
         field: string | string[] | FxOrmProperty.NormalizedPropertyHash

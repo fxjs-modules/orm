@@ -88,10 +88,10 @@ export function prepare(
 			{ makeKey: makeKey, required: true }
 		)
 
-		var associationSemanticNameCore = assoc_options.name || Utilities.formatNameFor("assoc:hasMany", name);
+		const associationSemanticNameCore = assoc_options.name || Utilities.formatNameFor("assoc:hasMany", name);
 		
 		const fieldhash = Utilities.wrapFieldObject({ field: assoc_options.field, model: OtherModel, altName: Model.table }) || Utilities.formatField(Model, name, true, assoc_options.reversed)
-		var association = <FxOrmAssociation.InstanceAssociationItem_HasMany>{
+		const association = <FxOrmAssociation.InstanceAssociationItem_HasMany>{
 			name: name,
 			model: OtherModel,
 			props: props,
@@ -113,6 +113,7 @@ export function prepare(
 			hooks: {...assoc_options.hooks},
 		};
 		Utilities.fillSyncVersionAccessorForAssociation(association);
+		Utilities.addHookPatchHelperForAssociation(association);
 
 		many_associations.push(association);
 

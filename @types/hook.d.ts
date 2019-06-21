@@ -23,4 +23,14 @@ declare namespace FxOrmHook {
         (self: CTX_SELF, cur: FxOrmNS.Arraible<HookActionCallback | FxOrmNS.Arraible<HookActionCallback>>, saveAssociation: FxOrmNS.GenericCallback<void>, opts: object): void
         (self: CTX_SELF, cur: FxOrmNS.Arraible<HookActionCallback | FxOrmNS.Arraible<HookActionCallback>>, next: FxOrmNS.GenericCallback<TNEXT>): void
     }
+
+    interface HookPatchOptions {
+        /** 
+         * @default false
+         * 'prepend': prepend old oldhook to new hook
+         * 'append': append old oldhook to new hook
+         * undefined: overwrite oldhook
+         */
+        oldhook?: 'prepend' | 'append' | 'initial' | 'overwrite' | undefined
+    }
 }

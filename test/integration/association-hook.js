@@ -1,6 +1,6 @@
 var helper = require('../support/spec_helper');
 
-describe("Association Hook", function () {
+odescribe("Association Hook", function () {
     var db = null;
     var Person = null;
 
@@ -128,53 +128,6 @@ describe("Association Hook", function () {
 
             assert.isTrue(triggered.beforeRemove);
             assert.isTrue(triggered.afterRemove);
-        });
-    });
-
-    describe("hasOne:hook list - trigger", function () {
-        var triggered = null;
-        const resetTriggered = () => triggered = getTrigged()
-        beforeEach(() => resetTriggered())
-
-        before(setup({
-            hasOneHooks: {
-                beforeSet: [
-                    function ({ $ref }) {
-                        assert.ok($ref.instance === this)
-                        triggered.beforeSet = false
-                    },
-                    function ({ $ref }) {
-                        assert.ok($ref.instance === this)
-                        triggered.beforeSet = true
-                    },
-                ],
-                afterSet: [
-                    function () {
-                        triggered.afterSet = false
-                    },
-                    function () {
-                        triggered.afterSet = true
-                    },
-                ],
-            }
-        }));
-
-        it("beforeSet/afterSet", function () {
-            assert.isFalse(triggered.beforeSet);
-            assert.isFalse(triggered.afterSet);
-
-            Person
-                .createSync({
-                    name: "John Doe"
-                })
-                .setFatherSync(
-                    Person.createSync({
-                        name: "Father of John"
-                    })
-                )
-
-            assert.isTrue(triggered.beforeSet);
-            assert.isTrue(triggered.afterSet);
         });
     });
 
@@ -597,42 +550,6 @@ describe("Association Hook", function () {
         });
     });
 
-    describe("extendsTo - next only once, warn on after", function () {
-        var triggered = null;
-        const resetTriggered = () => triggered = getTrigged()
-        beforeEach(() => resetTriggered())
-
-        before(setup({
-            extendsToHooks: {
-                beforeSet (_, next) {
-                    triggered.beforeSet = true
-
-                    next()
-                    next()
-                    next()
-                }
-            }
-        }));
-
-        it("beforeSet next only once", function () {
-            assert.isFalse(triggered.beforeSet);
-
-            const John = Person
-                .createSync({
-                    name: "John Doe"
-                })
-
-            assert.doesNotThrow(() => {
-                John.setProfileSync({
-                    ext_1: 1,
-                    ext_2: 1
-                })
-            })
-
-            assert.isTrue(triggered.beforeSet);
-        });
-    });
-
     describe("extendsTo - trigger", function () {
         var triggered = null;
         const resetTriggered = () => triggered = getTrigged()
@@ -770,4 +687,182 @@ describe("Association Hook", function () {
             assert.deepEqual(John.getProfileSync() + '', JohnProfile + '');
         });
     });
+
+    /* operations :start */
+    describe("hasOne:hook list - trigger", function () {
+        var triggered = null;
+        const resetTriggered = () => triggered = getTrigged()
+        beforeEach(() => resetTriggered())
+
+        before(setup({
+            hasOneHooks: {
+                beforeSet: [
+                    function ({ $ref }) {
+                        assert.ok($ref.instance === this)
+                        triggered.beforeSet = false
+                    },
+                    function ({ $ref }) {
+                        assert.ok($ref.instance === this)
+                        triggered.beforeSet = true
+                    },
+                ],
+                afterSet: [
+                    function () {
+                        triggered.afterSet = false
+                    },
+                    function () {
+                        triggered.afterSet = true
+                    },
+                ],
+            }
+        }));
+
+        it("beforeSet/afterSet", function () {
+            assert.isFalse(triggered.beforeSet);
+            assert.isFalse(triggered.afterSet);
+
+            Person
+                .createSync({
+                    name: "John Doe"
+                })
+                .setFatherSync(
+                    Person.createSync({
+                        name: "Father of John"
+                    })
+                )
+
+            assert.isTrue(triggered.beforeSet);
+            assert.isTrue(triggered.afterSet);
+        });
+    });
+
+    describe("hasOne:hook patch - trigger", function () {
+        var triggered = null;
+        const resetTriggered = () => triggered = getTrigged()
+        beforeEach(() => resetTriggered())
+
+        before(setup({
+            hasOneHooks: {
+                beforeSet () {
+                    delete triggered.beforeSet
+                }
+            }
+        }));
+
+        it("beforeSet/afterSet - overwrite", function () {
+            Person.associations['father'].association.beforeSet(() => {
+                triggered.beforeSet = true
+            })
+            Person.associations['father'].association.afterSet(() => {
+                triggered.afterSet = true
+            })
+            assert.isFalse(triggered.beforeSet);
+            assert.isFalse(triggered.afterSet);
+
+            Person
+                .createSync({
+                    name: "John Doe"
+                })
+                .setFatherSync(
+                    Person.createSync({
+                        name: "Father of John"
+                    })
+                )
+
+            assert.isTrue(triggered.beforeSet);
+            assert.isTrue(triggered.afterSet);
+        });
+
+        it("beforeSet/afterSet - initial", function () {
+            Person.associations['father'].association.beforeSet(() => void 0, { oldhook: 'initial' })
+
+            Person
+                .createSync({
+                    name: "John Doe"
+                })
+                .setFatherSync(
+                    Person.createSync({
+                        name: "Father of John"
+                    })
+                )
+
+            assert.notProperty(triggered, 'beforeSet');
+            assert.propertyVal(triggered, 'afterSet', true);
+        });
+
+        it("beforeSet/afterSet - prepend", function () {
+            Person.associations['father'].association.beforeSet(() => void 0, { oldhook: 'initial' })
+            Person.associations['father'].association.beforeSet(() => {
+                triggered.beforeSet = 'afterOldHook'
+            }, { oldhook: 'prepend' })
+
+            Person
+                .createSync({
+                    name: "John Doe"
+                })
+                .setFatherSync(
+                    Person.createSync({
+                        name: "Father of John"
+                    })
+                )
+
+            assert.propertyVal(triggered, 'beforeSet', 'afterOldHook');
+        });
+
+        it("beforeSet/afterSet - after", function () {
+            Person.associations['father'].association.beforeSet(() => void 0, { oldhook: 'initial' })
+            Person.associations['father'].association.beforeSet(() => {
+                triggered.beforeSet = 'beforeOldHook'
+            }, { oldhook: 'append' })
+
+            Person
+                .createSync({
+                    name: "John Doe"
+                })
+                .setFatherSync(
+                    Person.createSync({
+                        name: "Father of John"
+                    })
+                )
+
+            assert.notProperty(triggered, 'beforeSet');
+        });
+    });
+
+    describe("extendsTo - next only once, warn on after", function () {
+        var triggered = null;
+        const resetTriggered = () => triggered = getTrigged()
+        beforeEach(() => resetTriggered())
+
+        before(setup({
+            extendsToHooks: {
+                beforeSet (_, next) {
+                    triggered.beforeSet = true
+
+                    next()
+                    next()
+                    next()
+                }
+            }
+        }));
+
+        it("beforeSet next only once", function () {
+            assert.isFalse(triggered.beforeSet);
+
+            const John = Person
+                .createSync({
+                    name: "John Doe"
+                })
+
+            assert.doesNotThrow(() => {
+                John.setProfileSync({
+                    ext_1: 1,
+                    ext_2: 1
+                })
+            })
+
+            assert.isTrue(triggered.beforeSet);
+        });
+    });
+    /* operations: end */
 });

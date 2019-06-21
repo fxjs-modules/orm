@@ -59,6 +59,7 @@ export function prepare (
 			association.delAccessor = ACCESSOR_KEYS['del'] + associationSemanticNameCore;
 		
 		Utilities.fillSyncVersionAccessorForAssociation(association);
+		Utilities.addHookPatchHelperForAssociation(association);
 
 		if (!association.field) {
 			association.field = Utilities.formatField(association.model, association.name, association.required, association.reversed);

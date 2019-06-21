@@ -44,42 +44,7 @@ export const Model = function (
 	const keyProperties: FxOrmProperty.NormalizedProperty[] = [];
 	
 	const initialHooks = Object.assign({}, m_opts.hooks)
-
-	var createHookHelper = function (hook: keyof FxOrmModel.Hooks) {
-		return function (
-			cb: FxOrmHook.HookActionCallback | FxOrmHook.HookResultCallback,
-			opts?: FxOrmModel.ModelHookPatchOptions
-		) {
-			if (typeof cb !== "function") {
-				delete m_opts.hooks[hook];
-				return this;
-			}
-			
-			const { oldhook = undefined } = opts || {}
-			let tmp = null as any
-			switch (oldhook) {
-				default:
-				case 'initial':
-					m_opts.hooks[hook] = initialHooks[hook] as any;
-					break
-				case 'overwrite':
-				case undefined:
-					m_opts.hooks[hook] = cb as any;
-					break
-				case 'prepend':
-					tmp = Utilities.arraify(m_opts.hooks[hook]);
-					tmp.push(cb)
-					m_opts.hooks[hook] = tmp;
-					break
-				case 'append':
-					tmp = Utilities.arraify(m_opts.hooks[hook]);
-					tmp.unshift(cb)
-					m_opts.hooks[hook] = tmp;
-					break
-			}
-			return this;
-		};
-	};
+	
 	const createInstanceSync = function (
 		data: FxOrmInstance.InstanceDataPayload,
 		inst_opts: FxOrmInstance.CreateOptions,
@@ -961,14 +926,11 @@ export const Model = function (
 
 	// setup hooks
 	for (let k in AvailableHooks) {
-		model[AvailableHooks[k]] = createHookHelper(AvailableHooks[k]);
+		model[AvailableHooks[k]] = Utilities.createHookHelper(m_opts.hooks, AvailableHooks[k], { initialHooks });
 	}
 
 	model.associations = {};
 	
-	// OneAssociation.prepare(model, { one_associations, many_associations, extend_associations, db: m_opts.db });
-	// ManyAssociation.prepare(model, { one_associations, many_associations, extend_associations, db: m_opts.db });
-	// ExtendAssociation.prepare(model, { one_associations, many_associations, extend_associations, db: m_opts.db });
 	OneAssociation.prepare(model, { one_associations, many_associations, extend_associations }, { db: m_opts.db });
 	ManyAssociation.prepare(model, { one_associations, many_associations, extend_associations }, { db: m_opts.db });
 	ExtendAssociation.prepare(model, { one_associations, many_associations, extend_associations }, { db: m_opts.db });

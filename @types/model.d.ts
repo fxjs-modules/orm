@@ -259,14 +259,7 @@ declare namespace FxOrmModel {
     }
     type keyofHooks = keyof Hooks
 
-    interface ModelHookPatchOptions {
-        /** 
-         * @default false
-         * 'prepend': prepend old oldhook to new hook
-         * 'append': append old oldhook to new hook
-         * undefined: overwrite oldhook
-         */
-        oldhook?: 'prepend' | 'append' | 'initial' | 'overwrite' | undefined
+    interface ModelHookPatchOptions extends FxOrmHook.HookPatchOptions {
     }
 
     interface ModelHooks {

@@ -68,7 +68,8 @@ export function prepare (
 			hooks: {...assoc_options.hooks},
 		};
 		Utilities.fillSyncVersionAccessorForAssociation(association);
-
+		Utilities.addHookPatchHelperForAssociation(association);
+		
 		const newProperties: FxOrmModel.DetailedPropertyDefinitionHash = _cloneDeep(properties);
 		const assoc_field = association.field as FxOrmProperty.NormalizedPropertyHash
 

@@ -798,6 +798,22 @@ export function fillSyncVersionAccessorForAssociation (
 	return association;
 }
 
+
+const AvailableHooks = [
+	'beforeSet', 'afterSet',
+	'beforeRemove', 'afterRemove',
+	'beforeAdd', 'afterAdd'
+]
+export function addHookPatchHelperForAssociation (
+	association: FxOrmAssociation.InstanceAssociationItem,
+	// { for = 'hasOne' }: Fibjs.AnyObject = {}
+) {
+	// setup hooks
+	for (let k in AvailableHooks) {
+		association[AvailableHooks[k]] = createHookHelper(association.hooks, AvailableHooks[k], { initialHooks: Object.assign({}, association.hooks) });
+	}
+}
+
 export function generateUID4SoloGet (
 	m_opts: FxOrmModel.ModelConstructorOptions,
 	ids: (string | number)[]
@@ -909,6 +925,46 @@ export function hookHandlerDecorator (
 		}
 	}
 }
+
+export const createHookHelper = function (
+	hooks: Fibjs.AnyObject,
+	hook: keyof FxOrmModel.Hooks | keyof FxOrmAssociation.InstanceAssociationItem['hooks'],
+	{ initialHooks = [] }: Fibjs.AnyObject = {}
+) {
+	return function (
+		cb: FxOrmHook.HookActionCallback | FxOrmHook.HookResultCallback,
+		opts?: FxOrmModel.ModelHookPatchOptions
+	) {
+		if (typeof cb !== "function") {
+			delete hooks[hook];
+			return this;
+		}
+		
+		const { oldhook = undefined } = opts || {}
+		let tmp = null as any
+		switch (oldhook) {
+			default:
+			case 'initial':
+				hooks[hook] = initialHooks[hook] as any;
+				break
+			case 'overwrite':
+			case undefined:
+				hooks[hook] = cb as any;
+				break
+			case 'prepend':
+				tmp = arraify(hooks[hook]);
+				tmp.push(cb)
+				hooks[hook] = tmp;
+				break
+			case 'append':
+				tmp = arraify(hooks[hook]);
+				tmp.unshift(cb)
+				hooks[hook] = tmp;
+				break
+		}
+		return this;
+	};
+};
 
 export function arraify<T = any> (item: T | T[]): T[] {
 	return Array.isArray(item) ? item : [item]
