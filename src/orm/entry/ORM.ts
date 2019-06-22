@@ -230,6 +230,7 @@ ORM.prototype.define = function (
 	}
 
 	this.models[name] = new Model({
+		name		   : name,
 		db             : this,
 		settings       : this.settings,
 		driver_name    : this.driver_name,

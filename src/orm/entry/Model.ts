@@ -185,15 +185,15 @@ export const Model = function (
 	    });
 	} as FxOrmModel.Model;
 
-	model.allProperties = allProperties;
-	model.properties    = m_opts.properties;
-	model.settings      = m_opts.settings;
-	model.keys          = m_opts.keys;
-
-	model.caches		= new util.LruCache(
+	Utilities.addUnwritableProperty(model, 'name', m_opts.name || m_opts.table, { configurable: false })
+	Utilities.addUnwritableProperty(model, 'allProperties', allProperties, { configurable: false })
+	Utilities.addUnwritableProperty(model, 'properties', m_opts.properties, { configurable: false })
+	Utilities.addUnwritableProperty(model, 'settings', m_opts.settings, { configurable: false })
+	Utilities.addUnwritableProperty(model, 'keys', m_opts.keys, { configurable: false })
+	Utilities.addUnwritableProperty(model, 'caches', new util.LruCache(
 		m_opts.instanceCacheSize > 0 && Number.isInteger(m_opts.instanceCacheSize) ? m_opts.instanceCacheSize : m_opts.settings.get('instance.defaultCacheSize'),
 		(typeof m_opts.identityCache === 'number' ? m_opts.identityCache : 1) * 1000
-	)
+	), { configurable: false })
 
 	model.dropSync = function (
 		this:FxOrmModel.Model,
@@ -929,7 +929,7 @@ export const Model = function (
 		model[AvailableHooks[k]] = Utilities.createHookHelper(m_opts.hooks, AvailableHooks[k], { initialHooks });
 	}
 
-	model.associations = {};
+	Utilities.addUnwritableProperty(model, 'associations', {}, { configurable: false })
 	
 	OneAssociation.prepare(model, { one_associations, many_associations, extend_associations }, { db: m_opts.db });
 	ManyAssociation.prepare(model, { one_associations, many_associations, extend_associations }, { db: m_opts.db });

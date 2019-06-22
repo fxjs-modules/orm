@@ -20,6 +20,7 @@ declare namespace FxOrmModel {
 
     type OrderListOrLimitOffer = number | string | string[]
     interface Model extends ModelInstanceConstructor, ModelHooks, FxOrmSynchronous.SynchronizedModel {
+        name: string;
         properties: FxOrmProperty.NormalizedPropertyHash;
         settings: FxOrmSettings.SettingInstance;
 
@@ -61,7 +62,7 @@ declare namespace FxOrmModel {
             (assoc_name: string, ext_model: Model, assoc_props: ModelPropertyDefinitionHash, assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_HasMany): FxOrmModel.Model
         }
         extendsTo: {
-            (name: string, properties: FxOrmModel.DetailedPropertyDefinitionHash, assoc_options: FxOrmAssociation.AssociationDefinitionOptions_ExtendsTo): Model
+            (name: string, properties: ModelPropertyDefinitionHash, assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_ExtendsTo): Model
         };
 
         associations: {
@@ -198,6 +199,7 @@ declare namespace FxOrmModel {
     }
 
     interface ModelConstructorOptions {
+        name: string
         db: FxOrmNS.ORM
         settings: FxOrmSettings.SettingInstance
         driver_name: string
@@ -305,14 +307,17 @@ declare namespace FxOrmModel {
     type OrigDetailedModelProperty = FxOrmProperty.NormalizedProperty
     type OrigDetailedModelPropertyHash = FxOrmProperty.NormalizedPropertyHash
 
-    type PrimitiveConstructor = String & Boolean & Number & Date & Class_Buffer & Object
-    interface PrimitiveConstructorModelPropertyDefinition extends PrimitiveConstructor {
-        name: string
-    }
-    type EumTypeValues = any[]
+    type PrimitiveConstructor = String | Boolean | Number | Date | Object | Class_Buffer
+    type EnumTypeValues = any[]
     type PropTypeStrPropertyDefinition = string
     
-    type ComplexModelPropertyDefinition = ModelPropertyDefinition | PrimitiveConstructorModelPropertyDefinition | EumTypeValues | PropTypeStrPropertyDefinition
+    type ComplexModelPropertyDefinition = 
+        ModelPropertyDefinition
+        | (PrimitiveConstructor & {
+            name: string
+        })
+        | EnumTypeValues
+        | PropTypeStrPropertyDefinition
 
     type ModelPropertyDefinitionHash = {
         [key: string]: ComplexModelPropertyDefinition

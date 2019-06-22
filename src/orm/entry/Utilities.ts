@@ -722,6 +722,23 @@ export function filterWhereConditionsInput (
 	return conditions;
 }
 
+export function addUnwritableProperty (
+	obj: any,
+	property: string,
+	value: any,
+	propertyConfiguration: PropertyDescriptor = {}
+) {
+	Object.defineProperty(
+		obj,
+		property,
+		{
+			value,
+			...propertyConfiguration,
+			writable: false
+		}
+	)
+}
+
 export function addHiddenUnwritableMethodToInstance (
 	instance: FxOrmInstance.Instance,
 	method_name: 'save' | 'saveSync' | string,

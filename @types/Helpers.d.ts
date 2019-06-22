@@ -26,7 +26,7 @@ declare namespace FxOrmHelper {
       getAssociationItemFromModel (reltype: string, extend_name: string, _model: FxOrmModel.Model): FxOrmAssociation.InstanceAssociationItem
       tryGetAssociationItemFromModel (extend_name: string, _model: FxOrmModel.Model): FxOrmAssociation.InstanceAssociationItem
 
-      prependHook (hooks: FxOrmModel.Hooks, hookName: FxOrmModel.keyofHooks, preLogic: FxOrmModel.Hooks[FxOrmModel.keyofHooks]): void
+      prependHook (hooks: FxOrmModel.Hooks, hookName: FxOrmModel.keyofHooks, preLogic: FxOrmHook.HookActionCallback | FxOrmHook.HookResultCallback): void
       preReplaceHook (m: FxOrmModel.Model, opts: FxOrmModel.ModelOptions, hookName: FxOrmModel.keyofHooks, cb: (this: FxOrmInstance.Instance, inst: FxOrmInstance.Instance) => void): void
       hookTrigger: FxOrmHook.HookTrigger<any>
       hookWait: FxOrmHook.HookWait<any, any>
@@ -41,5 +41,11 @@ declare namespace FxOrmHelper {
             ): void
          }
       ): void
+
+      valueOrComputeFunction <T = Exclude<any, Function>> (
+         input: T | ((...args: any[]) => T),
+         args?: any[],
+         thisArg?: any
+      ): T
    }
 }

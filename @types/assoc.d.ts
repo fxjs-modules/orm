@@ -13,7 +13,7 @@ declare namespace FxOrmAssociation {
          */
         name?: string;
         model?: FxOrmModel.Model;
-        field?: InstanceAssociationItem['field']
+        field?: string/*  | string[] */ | FxOrmProperty.NormalizedPropertyHash
 
         // is the association is for extendsTo
         __for_extension?: boolean;
@@ -108,7 +108,7 @@ declare namespace FxOrmAssociation {
     interface InstanceAssociationItem extends InstanceAssociationItemHooks {
         name: string
         model: FxOrmModel.Model
-        field: string | string[] | FxOrmProperty.NormalizedPropertyHash
+        field: string /* | string[] */ | FxOrmProperty.NormalizedPropertyHash
         hooks: {
             beforeSet?: FxOrmNS.Arraible<FxOrmHook.HookActionCallback>
             afterSet?: FxOrmNS.Arraible<FxOrmHook.HookResultCallback>

@@ -3,6 +3,9 @@
 import _cloneDeep = require('lodash.clonedeep');
 
 const default_settings = {
+	model      : {
+		namePrefix				  : '',
+	},
 	properties : {
 		primary_key               : "id",
 		association_key           : "{name}_{field}",

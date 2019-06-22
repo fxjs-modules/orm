@@ -233,9 +233,9 @@ export const prependHook: FxOrmHelper.HelperModules['prependHook'] = function (h
 }
 
 export const preReplaceHook: FxOrmHelper.HelperModules['preReplaceHook'] = function (m, opts, hookName, cb) {
-    var _oldHook: typeof opts.hooks[typeof hookName];
+    var _oldHook: FxOrmHook.HookActionCallback | FxOrmHook.HookResultCallback;
     if (opts !== undefined && opts.hooks)
-        _oldHook = opts.hooks[hookName];
+        _oldHook = opts.hooks[hookName] as typeof _oldHook;
 
     m[hookName](function (this: FxOrmInstance.Instance, next: boolean | FxOrmHook.HookActionNextFunction) {
         cb.call(this, this);
@@ -284,3 +284,13 @@ export function parseDriverUidAndTableNameFromUID (uid: string) {
 	}
 }
 /* singleton helpers: end */
+export const valueOrComputeFunction = function (
+    input,
+    args = [],
+    thisArg = null
+) {
+    if (typeof input === 'function')
+        input = input.apply(thisArg, args)
+
+    return input
+} as FxOrmHelper.HelperModules['valueOrComputeFunction']
