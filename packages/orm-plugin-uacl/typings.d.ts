@@ -68,11 +68,13 @@ declare namespace FxORMPluginUACL {
         root: NTYPE
         // TODO: try to forbid add/remove node by this field
         nodeSet: Set<NTYPE>
+
         hasNode (node: NTYPE): boolean
         clear (): number
 
         readonly nodeCount: number
         readonly nodes: NTYPE[]
+        readonly nonRootNodes: NTYPE[]
 
         toJSON: RootNode['toJSON'];
     }
@@ -82,10 +84,14 @@ declare namespace FxORMPluginUACL {
         _tree_stores: {
             [k: string]: ACLTree
         };
-        association_info: FxOrmModel.Model['associations'][any]
+        association_name?: string
+        association_info?: FxOrmModel.Model['associations'][any]
     }
-    // interface ACLTree extends Tree {
-    // }
+    interface InstanceUACLInfo {
+        objectless: string
+        object: string
+        id: string
+    }
 
     interface ACLNodeConstructorOptions extends NodeConstructorOptions<ACLNode> {
         data: FxOrmNS.InstanceDataPayload

@@ -41,7 +41,11 @@ export function prepare (
 
 		for (let i = 0; i < db.plugins.length; i++) {
 			if (typeof db.plugins[i].beforeExtendsTo === "function") {
-				db.plugins[i].beforeExtendsTo(name, properties, assoc_options);
+				db.plugins[i].beforeExtendsTo(Model, {
+					association_name: name,
+					properties: properties,
+					assoc_options
+				});
 			}
 		}
 

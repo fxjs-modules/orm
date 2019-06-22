@@ -4,41 +4,46 @@ import { Tree, Node } from './tree'
 function findNodeByInstance (aclTree: ACLTree, instance: FxOrmInstance.Instance) {
     let node = null
 
-    const uaci = instance.$getUacis().object
+    const uaci = instance.$getUacis()
     for (let x of aclTree.nodeSet) {
         if (x.isRoot)
             continue ;
             
-        if (x.data.id === uaci)
+        if (x.data.id === computeUaciId(aclTree, uaci))
             node = x
     }
 
     return node;
 }
 
+function computeUaciId (aclTree: ACLTree, uacl_info: FxORMPluginUACL.InstanceUACLInfo) {
+    return `${aclTree.namespace}/${aclTree.association_name ? `${aclTree.association_name}/${uacl_info.id}` : uacl_info.object}`
+}
+
 export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACL.ACLTree {
     /**
      * @sample `GRANT parent/1/children`
      */
-    prefix: string = '';
+    namespace: string = '';
     readonly model: FxOrmModel.Model;
 
     readonly _tree_stores: FxORMPluginUACL.ACLTree['_tree_stores'];
-    readonly association_info: FxOrmModel.Model['associations'][any]
+    readonly association_name?: string
+    readonly association_info?: FxOrmModel.Model['associations'][any]
 
-    constructor ({ prefix, model, association_name }: {
-        prefix: string,
+    constructor ({ namespace, model, association_name }: {
+        namespace: string,
         model: FxOrmModel.Model,
         association_name: string
     } = {
-        prefix: null,
+        namespace: null,
         model: null,
         association_name: null,
     }) {
         super();
 
-        if (!prefix)
-            throw `[Tree] prefix is required!`
+        if (!namespace)
+            throw `[Tree] namespace is required!`
 
         if (!model || typeof model !== 'function')
             throw `[Tree] model is required!`
@@ -46,7 +51,7 @@ export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACL.ACLTree {
         const _treeStores = {}
         Object.defineProperty(this, '_tree_stores', { get () { return _treeStores }, enumerable: false });
 
-        Object.defineProperty(this, 'prefix', { get () { return prefix } });
+        Object.defineProperty(this, 'namespace', { get () { return namespace } });
         Object.defineProperty(this, 'model', { get () { return model }, enumerable: false });
         if (association_name)
             Object.defineProperty(this, 'association_name', { get () { return association_name }, enumerable: false });
@@ -57,15 +62,20 @@ export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACL.ACLTree {
         const association_info = this.association_info
         const next_model = association_info.association.model;
 
-        const prefix = `${this.prefix}/${next_assoc_name}/${instance ? instance.$getUacis().id : 0}`
-        const key = `$uaclGrantTrees$${prefix}`
+        const namespace = `${this.namespace}/${next_assoc_name}/${instance ? instance.$getUacis().id : 0}`
+        const key = `$uaclGrantTrees$${namespace}`
 
         if (this._tree_stores[key])
-            return new ACLTree({
-                prefix,
-                model: next_model,
-                association_name: next_assoc_name
-            });
+            Object.defineProperty(this._tree_stores, key, {
+                value: new ACLTree({
+                    namespace,
+                    model: next_model,
+                    association_name: next_assoc_name
+                }),
+                configurable: false,
+                writable: false,
+                enumerable: false
+            })
 
         return this._tree_stores[key];
     }
@@ -88,12 +98,13 @@ export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACL.ACLTree {
 
         target.forEach((data: FxOrmInstance.Instance) => {
             const uaci = data.$getUacis()
+            const uaci_id = `${computeUaciId(this, uaci)}`
 
             this.root.addChildNode(
                 new ACLNode({
-                    id: uaci.object,
+                    id: uaci_id,
                     data: {
-                        id: uaci.object,
+                        id: uaci_id,
                         roles: data.roles || []
                     },
                     oacl
@@ -104,11 +115,26 @@ export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACL.ACLTree {
         return this;
     }
 
-    pull () {}
+    pull () {
+        console.log('[pull]I would pull')
+        return this;
+    }
 
-    push () {}
+    push () {
+        console.log('[push]I would push')
 
-    revoke () {}
+        console.log(
+            '[push] data structure',
+            // this.toJSON(),
+            this.nonRootNodes.map(node => node)
+        )
+        return this;
+    }
+
+    revoke () {
+        console.log('I would revoke')
+        return this;
+    }
 
     can (target: FxOrmInstance.Instance, action: FxORMPluginUACL.ACLType, askedFields: any[]) {
         const node = findNodeByInstance(this, target);

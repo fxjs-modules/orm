@@ -35,7 +35,11 @@ export function prepare (
 
 		for (let i = 0; i < db.plugins.length; i++) {
 			if (typeof db.plugins[i].beforeHasOne === "function") {
-				db.plugins[i].beforeHasOne(assoc_name, ext_model, assoc_options);
+				db.plugins[i].beforeHasOne(Model, {
+					association_name: assoc_name,
+					ext_model: ext_model,
+					assoc_options
+				})
 			}
 		}
 

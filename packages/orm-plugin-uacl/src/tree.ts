@@ -267,12 +267,17 @@ export class Tree<NTYPE extends Node = Node> implements FxORMPluginUACL.Tree {
 
     nodeSet: Set<NTYPE>;
 
+
     get nodeCount () {
         return this.root.descendantCount + 1;
     }
 
     get nodes () {
         return Array.from(this.nodeSet.values())
+    }
+
+    get nonRootNodes () {
+        return Array.from(this.nodeSet.values()).filter((x: any) => x !== this.root)
     }
 
     constructor ({}: any = {}) {

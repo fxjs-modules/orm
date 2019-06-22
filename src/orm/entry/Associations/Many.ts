@@ -59,7 +59,12 @@ export function prepare(
 
 		for (let i = 0; i < db.plugins.length; i++) {
 			if (typeof db.plugins[i].beforeHasMany === "function") {
-				db.plugins[i].beforeHasMany(name, OtherModel, props, assoc_options);
+				db.plugins[i].beforeHasMany(Model, {
+					association_name: name,
+					ext_model: OtherModel,
+					assoc_props: props,
+					assoc_options
+				});
 			}
 		}
 

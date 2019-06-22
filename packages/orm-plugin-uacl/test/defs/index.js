@@ -12,16 +12,19 @@ module.exports = orm => {
     const Project = orm.define('project', {
         name: String
     }, {
+        uacl: {}
     })
 
     const Stage = orm.define('stage', {
         name: String
     }, {
+        uacl: {}
     })
 
     const Task = orm.define('task', {
         name: String
     }, {
+        uacl: {}
     })
 
     Project.hasMany('stages', Stage, {}, {
@@ -92,7 +95,7 @@ module.exports = orm => {
     Task.hasOne('owner', User, {}, {})
     Task.hasMany('members', User, {}, {})
 
-    Project.afterLoad(function () {
+    false && Project.afterLoad(function () {
         /**
          * once called, `this.$uacl('members')`
          * 1. start one interval to pull all members of this `project` asynchronously,

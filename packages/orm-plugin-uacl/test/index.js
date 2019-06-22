@@ -264,17 +264,19 @@ describe('orm-plugin-uacl', () => {
 
         before(() => {
             orm = ORM.connectSync('sqlite:uacl-test.db')
-            orm.use(ORMPluginUACL)
+            orm.use(ORMPluginUACL, {
+            })
             ormDefs(orm)
 
             orm.syncSync()
         });
 
         after(() => {
-            Object.values(orm.models).forEach(model => model.dropSync())
+            orm.dropSync()
         });
 
         beforeEach(() => {
+            // orm.syncSync()
         });
 
         it('oacl: read/write/remove', () => {
@@ -304,6 +306,7 @@ describe('orm-plugin-uacl', () => {
                 new orm.models.user(),
                 new orm.models.user(),
                 new orm.models.user(),
+                new orm.models.user(),
             ], (instance) => instance.saveSync())
 
             const check_handler = ([ [guest, action, fields], result ]) => {
@@ -318,7 +321,7 @@ describe('orm-plugin-uacl', () => {
             }
 
             /**
-             * this would grant some accesses to user$1, user$2;
+             * this would grant some permissions to user$1, user$2;
              */
             project$1.addMembersSync([user$1, user$2])
             
@@ -334,6 +337,9 @@ describe('orm-plugin-uacl', () => {
                 [ [user$1, 'read', ['lalala'] ] , false ],
             ].forEach(check_handler)
 
+            /**
+             * this would revoke all permissions of user$1, user$2, and grant some permissions to user$3;
+             */
             project$1.setMembersSync([user$3])
 
             ;[
@@ -344,6 +350,15 @@ describe('orm-plugin-uacl', () => {
             ].forEach(check_handler)
 
             project$1.addStages([stage$1])
+
+            project$1.setMembersSync([user$1, user$2, user$3])
+
+            project$1.$uacl('members')
+                .push()
+        });
+
+        it('oacl: persist to db', () => {
+
         })
     })
 })
