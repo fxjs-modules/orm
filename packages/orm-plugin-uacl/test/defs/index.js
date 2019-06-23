@@ -35,19 +35,30 @@ module.exports = orm => {
     Project.hasMany('stages', Stage, {}, {
         reverse: 'ofProjects',
         hooks: {
-            afterAddStages (stages) {
+            afterAdd ({ associations: stages }) {
                 /**
                  * 为所有的该 project 下的 stages 的 members 赋予对 project 的
                  * 字段读取权限
                  */
                 const project = this
-                stages.forEach((stage) => {
-                    (stage.members || []).forEach(member => {
-                        project.$uacl()
-                            .grant(member, {
+                const proj_uaci = project.$getUacis().object
+                stages.forEach(stage => stage.$uaclPrefix(proj_uaci))
+
+                project.getMembersSync().forEach(proj_member => {
+                    const aclTree = project.$uacl({ uid: proj_member.id })
+
+                    stages.forEach(proj_stage => {
+                        proj_stage_uaci = proj_stage.$getUacis({ prefix: proj_uaci }).object
+                        aclTree.grant(
+                            proj_stage_uaci,
+                            {
                                 write: false,
                                 read: ['name', 'description']
-                            })
+                            },
+                            {
+                                puaci: proj_uaci
+                            }
+                        )
                     })
                 })
             }
@@ -57,46 +68,62 @@ module.exports = orm => {
 
     Project.hasMany('members', User, {}, {
         hooks: {
-            'beforeAdd': function ({associations: members}) {
-                /**
-                 * 在 project/1/members 为 ID 的树形结构中, 为这些 members 赋予读写权限
-                 */
-                this.$uacl()
-                    .grant(members, {
-                        write: true,
-                        read: ['name', 'description']
+            'beforeAdd': function ({associations: members, useChannel}) {
+                members.forEach(member => {
+                    this.$uacl({ uid: member.id })
+                        .grant(this.$getUacis().object, {
+                            write: true,
+                            read: ['name', 'description']
+                        })
+                })
+
+                const member_ids = members.map(x => x.id)
+
+                const project = this
+                const proj_uaci = project.$getUacis().object
+                useChannel('grantMemberAccessToStages', () => {
+                    const stages = project.getStagesSync()
+                        
+                    member_ids.forEach((member_id) => {
+                        const aclTree = project.$uacl({ uid: member_id })
+
+                        stages.forEach(proj_stage => {
+                            aclTree
+                                .grant(
+                                    proj_stage.$getUacis({ prefix: proj_uaci }).object,
+                                    {
+                                        write: false,
+                                        read: ['name', 'description']
+                                    },
+                                    {
+                                        puaci: proj_uaci
+                                    }
+                                )
+                        })
                     })
+                })
             },
-            'afterRemove': function ({associations: specificRemovedMembers = []}) {
+            'afterAdd': function ({ useChannel }) {
+                useChannel('grantMemberAccessToStages')[0].call()
+            },
+            'beforeRemove': function ({associations: specificRemovedMembers = []}) {
                 /**
                  * 如果删除了该 project 下所有的 members, 则清除这些用户对它的所有权限
                  */
-                if (!specificRemovedMembers.length)
-                    this.$uacl()
-                        .clear()
+                if (!specificRemovedMembers.length) {
+                    specificRemovedMembers = this.getMembersSync()
+                    specificRemovedMembers.forEach(member => {
+                        this.$uacl({ uid: member.id })
+                            .revoke(this.$getUacis().object)
+                    })
+                }
             }
         }
     })
+    
     Stage.hasMany('members', User, {}, {
         hooks: {
             'afterAdd': function ({associations: members}) {
-                this.getOfProjectsSync()
-                    .forEach(project => {
-                        /**
-                         * 在 project/xxx/stages/xx/members 为 ID 的树形结构中, 为这些 members 赋予读取 projects 权限
-                         */
-                        console.log(
-                            'project',
-                            project,
-                        );
-                        
-                        project
-                            .$uacl()
-                            .grant(members, {
-                                write: true,
-                                read: ['name', 'description']
-                            })
-                    })
             }
         }
     })

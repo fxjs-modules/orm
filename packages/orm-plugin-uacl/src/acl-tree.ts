@@ -1,177 +1,106 @@
 import util = require('util')
+import mq = require('mq')
+
 import { Tree, Node } from './tree'
-import { arraify } from './_utils';
+import { findACLNode, generateGrantMessage, generateLoadMessage, normalizeUaci } from './_utils';
 
-function getModelObjectLess (model: FxOrmModel.Model) {
-    return (new model()).$getUacis().objectless;
-}
+function nOop () { return null as any }
 
-function findNodeForUser (aclTree: ACLTree, uaci: string, uid: ACLNode['data']['uid']) {
-    let node = null
+/**
+ * @description retrievable-end/grant-end of uacl
+ */
+export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACLNS.ACLTree {
+    // namespace: string = '';
 
-    for (let x of aclTree.nodeSet) {
-        if (x.isRoot)
-            continue ;
+    name: string
+    type: 'user' | 'role'
 
-        if (x.id === uaci && x.data.uid === uid) {
-            node = x;            
-            break ;
-        }
-    }
+    readonly _tree_stores: FxORMPluginUACLNS.ACLTree['_tree_stores'];
+    readonly routing: FxORMPluginUACLNS.ACLTree['routing'];
 
-    return node;
-}
-
-function computeUaciId (aclTree: ACLTree, uacl_info?: FxORMPluginUACL.InstanceUACLInfo) {
-    if (!uacl_info)
-        return `${aclTree.namespace}`
-
-    return `${aclTree.namespace}/${aclTree.association_name ? `${aclTree.association_name}/${uacl_info.id}` : uacl_info.object}`
-}
-
-export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACL.ACLTree {
-    /**
-     * @sample `GRANT parent/1/children`
-     */
-    namespace: string = '';
-    readonly model: FxOrmModel.Model;
-    readonly instance: FxOrmInstance.Instance;
-
-    readonly _tree_stores: FxORMPluginUACL.ACLTree['_tree_stores'];
-    readonly association_name?: string
-    readonly association_info?: FxOrmModel.Model['associations'][any]
-    get _ref_association () {
-        return !!this.association_name
-    }
-
-    constructor ({ namespace, instance, association_name }: {
-        namespace: string,
-        instance: FxOrmInstance.Instance,
-        association_name?: string
+    constructor ({ name, type = 'user', configRouting = nOop }: {
+        name: FxORMPluginUACLNS.ACLTree['name'],
+        type: FxORMPluginUACLNS.ACLTree['type'],
+        configRouting?: (
+            cfg?: {
+                tree: FxORMPluginUACLNS.ACLTree,
+            }
+        ) => Class_Routing | Fibjs.AnyObject
     } = {
-        namespace: null,
-        instance: null,
-        association_name: null,
+        name: null, type: null, configRouting: null
     }) {
         super();
 
-        if (!namespace)
-            throw `[Tree] namespace is required!`
-
-        if (!instance)
-        throw `[Tree] instance is required!`
-
-        const model = instance.model()
+        if (!type || !['user', 'role'].includes(type))
+            throw `[ACLTree] valid type is required, but '${type}' provided`
 
         const _treeStores = {}
         Object.defineProperty(this, '_tree_stores', { get () { return _treeStores }, enumerable: false });
 
-        Object.defineProperty(this, 'namespace', { get () { return namespace } });
-        Object.defineProperty(this, 'instance', { get () { return instance }, enumerable: false });
-        Object.defineProperty(this, 'model', { get () { return model }, enumerable: false });
-        if (association_name)
-            Object.defineProperty(this, 'association_name', { get () { return association_name }, enumerable: false });
-            Object.defineProperty(this, 'association_info', { get () { return model.associations[association_name] }, enumerable: false });
+        Object.defineProperty(this, 'name', { get () { return name }, configurable: false });
+        Object.defineProperty(this, 'type', { get () { return type }, configurable: false });
+
+        /* after basic info :start */
+        let routing = configRouting({ tree: this })
+        if (!(routing instanceof mq.Routing))  {
+            routing = routing || {}
+            routing = new mq.Routing(routing)
+        }
+        Object.defineProperty(this, 'routing', { get () { return routing }, configurable: false });
+        /* after basic info :end */
     }
 
-    $uacl (
-        next_assoc_name: string,
-        next_instance?: FxOrmInstance.Instance
-    ): FxORMPluginUACL.ACLTree {
-        const next_assoc_info = this.instance.model().associations[next_assoc_name]
-        const next_model = next_assoc_info.association.model;
-
-        if (next_instance && next_model !== next_instance.model())
-            throw `[ACLTree::$uacl] invalid instance for association '${next_assoc_info.association.name}'`
-
-        const namespace = `${this.namespace}/${next_assoc_name}/${next_instance ? next_instance.$getUacis().id : 0}`
-        const key = `$uaclGrantTrees$${namespace}`
-
-        if (!this._tree_stores[key])
-            Object.defineProperty(this._tree_stores, key, {
-                value: new ACLTree({
-                    namespace,
-                    instance: this.instance,
-                    association_name: next_assoc_name
-                }),
-                configurable: false,
-                writable: false,
-                enumerable: false
-            })
-
-        return this._tree_stores[key];
-    }
-
-    grant (
-        users: FxOrmInstance.Instance | FxOrmInstance.Instance[],
-        oacl: FxORMPluginUACL.OACLStruct
-    ) {
-        if (oacl === undefined) {
-            oacl = users as any
-            users = null
+    /**
+     * @description
+     *  load resource's information of specific uaci if provided,
+     *  if no uaci specified, load all uacis from ALL childNodes in this tree
+     */
+    load (uaci?: string): void {
+        if (!uaci) {
+            // const uacis = this.nonRootNodes.map(x => x.id)
+            // const msg = generateBatchPullMessage(uacis, { uids: this. })
+            this.nonRootNodes.forEach(node => node.pull())
+            return ;
         }
 
-        users = arraify(users).filter(x => x)
+        uaci = normalizeUaci(uaci)
 
-        users.forEach((data: FxOrmInstance.Instance) => {
-            const uaci_id = `${computeUaciId(this, !this._ref_association ? null : getModelObjectLess(this.association_info.association.model) )}`
-            // const uaci_id = `${computeUaciId(this)}`
+        const node = findACLNode(this, uaci)
+        if (!node)
+            return ;
 
-            this.root.addChildNode(
-                new ACLNode({
-                    id: uaci_id,
-                    data: {
-                        instance: data,
-                        id: data.id,
-                        roles: data.roles || []
-                    },
-                    oacl
-                })
-            )
-        });
-
-        console.log(
-            'granted',
-            this.toJSON()
-        )
-
-        return this;
+        node.pull()
     }
 
-    pull () {
-        console.log('[pull]I would pull')
-        return this;
-    }
+    /**
+     * @description
+     *  save resource's information of specific uaci if provided,
+     *  if no uaci specified, save all uacis from ALL childNodes in this tree
+     */
+    persist(uaci?: string): void {
+        if (!uaci) {
+            // const uacis = this.nonRootNodes.map(x => x.id)
+            // const msg = generateBatchPullMessage(uacis, { uids: this. })
+            this.nonRootNodes.forEach(node => node.push(this.type, this.name))
+            return ;
+        }
 
-    push () {
-        console.log('[push]I would push')
+        uaci = normalizeUaci(uaci)
 
-        console.log(
-            '[push] data structure',
-            // this.toJSON(),
-            // this.nonRootNodes.map(node => node)
-        )
-        return this;
-    }
+        const node = findACLNode(this, uaci)
+        if (!node)
+            return ;
 
-    revoke () {
-        console.log('I would revoke')
-        return this;
-    }
+        node.push(this.type, this.name)
+    } 
 
-    can (user: FxOrmInstance.Instance, action: FxORMPluginUACL.ACLType, askedFields: any[]) {
-        // const node = findNode(this);
-        const uaci = computeUaciId(this, !this._ref_association ? null : getModelObjectLess(this.association_info.association.model))
-        console.log('uaci', uaci);
-        
-        const node = findNodeForUser(
-            this,
-            uaci,
-            user.id
-        )
-
-        console.log('node', node);
-        console.log('this.toJSON()', this.toJSON());
+    /**
+     * check if `user` with (this.id) can DO `action` TO uaci('s askedFields if provided)
+     * 
+     * verb: CAN
+     */
+    can (action: FxORMPluginUACLNS.ACLType, uaci: string, askedFields: any[]) {
+        const node = findACLNode(this, uaci)
 
         if (!node)
             return false;
@@ -206,19 +135,70 @@ export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACL.ACLTree {
         
         return false;
     }
+
+    grant (
+        uaci: string,
+        oacl: FxORMPluginUACLNS.OACLStruct,
+        opts?: {
+            puaci?: string
+        }
+    ) {
+        const { puaci = null } = opts || {}
+
+        let pnode: FxORMPluginUACLNS.Node
+        if (puaci && (pnode = findACLNode(this, puaci))) {}
+        else
+            pnode = this.root
+            
+        uaci = normalizeUaci(uaci)
+        
+        ;[null].forEach(() => {
+            let node = findACLNode(this, uaci)
+            if (!node)
+                node = pnode.addChildNode(
+                    new ACLNode({
+                        id: uaci,
+                        data: {
+                            id: this.type === 'user' ? this.name : null,
+                            role: this.type === 'role' ? this.name : null
+                        },
+                        oacl
+                    })
+                ) as ACLNode;
+
+            node.oacl = oacl
+        });
+    }
+
+    revoke (uaci: string) {
+        uaci = normalizeUaci(uaci)
+        
+        ;[null].forEach(() => {
+            let node = findACLNode(this, uaci)
+            if (!node)
+                return ;
+
+            node.remove()
+        });
+
+        return this;
+    }
+
+    reset (): void {
+        super.clear()
+    }
 }
 
-export class ACLNode extends Node<FxORMPluginUACL.ACLNode['data']> implements FxORMPluginUACL.ACLNode {
-    data: FxORMPluginUACL.ACLNode['data']
-    acl: FxORMPluginUACL.ACLNode['acl']
-    oacl: FxORMPluginUACL.ACLNode['oacl']
-    
-    constructor (cfg: FxORMPluginUACL.ACLNodeConstructorOptions) {
-        if (!cfg.data || !cfg.data.hasOwnProperty('id') || !cfg.data.hasOwnProperty('roles'))
-            throw `[ACLNode] valid 'data' is missing in config!`
+export class ACLNode extends Node<FxORMPluginUACLNS.ACLNode['data']> implements FxORMPluginUACLNS.ACLNode {
+    data: FxORMPluginUACLNS.ACLNode['data']
+    acl: FxORMPluginUACLNS.ACLNode['acl']
+    oacl: FxORMPluginUACLNS.ACLNode['oacl']
 
-        if (!Array.isArray(cfg.data.roles))
-            throw `[ACLNode] array-type 'roles' is missing in config.data!`
+    root: FxORMPluginUACLNS.Node<any, FxORMPluginUACLNS.ACLTree>['root']
+    
+    constructor (cfg: FxORMPluginUACLNS.ACLNodeConstructorOptions) {
+        if (!cfg.data /* || !cfg.data.hasOwnProperty('id') || !cfg.data.hasOwnProperty('roles') */)
+            throw `[ACLNode] valid 'data' is missing in config!`
 
         const acl: ACLNode['acl'] = {
             create: undefined,
@@ -237,14 +217,53 @@ export class ACLNode extends Node<FxORMPluginUACL.ACLNode['data']> implements Fx
             id: cfg.id,
             parent: cfg.parent,
             children: cfg.children,
-            data: {
-                user: cfg.data.instance,
-                uid: cfg.data.id,
-                uroles: cfg.data.roles
-            }
+            data: cfg.data
         })
 
         this.acl = acl
         this.oacl = oacl
+    }
+
+    /**
+     * @description update local acl information
+     */
+    updateAcl () {
+    }
+
+    /**
+     * @description data to storage
+     */
+    push (
+        type: FxORMPluginUACLNS.ACLTree['type'],
+        target_id: string
+    ) {
+        const data = {
+            id: type === 'user' ? target_id : null,
+            roles: type === 'role' ? [target_id] : []
+        }
+
+        const msg = generateGrantMessage(this, {
+            uid: data.id,
+            type: this.root.tree.type
+        })
+        console.log('[ACLNode/push]this.oacl', this.oacl)
+        console.log('[ACLNode/push]msg.value', msg.value)
+        console.log('[ACLNode/push]msg.json()', msg.json())
+
+        mq.invoke(this.root.tree.routing, msg);
+    }
+
+    /**
+     * @description pull data about uaci(this.id)
+     * 
+     * if no data corresponding in persist-end, remove this node in tree
+     */
+    pull () {
+        const msg = generateLoadMessage(this.id, {
+            uid: this.root.tree.name,
+            type: this.root.tree.type
+        })
+        console.log('[ACLNode/pull]msg.value', msg.value)
+        console.log('[ACLNode/pull]msg.json()', msg.json())
     }
 }

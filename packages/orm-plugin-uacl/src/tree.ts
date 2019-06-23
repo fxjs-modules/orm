@@ -1,4 +1,4 @@
-function nodeEdgeAdd (node: FxORMPluginUACL.Node, side: 'left' | 'right', count = 2) {
+function nodeEdgeAdd (node: FxORMPluginUACLNS.Node, side: 'left' | 'right', count = 2) {
     switch (side) {
         case 'left':
             node.leftEdge += count;
@@ -9,7 +9,7 @@ function nodeEdgeAdd (node: FxORMPluginUACL.Node, side: 'left' | 'right', count 
     }
 }
 
-function reCountEdgeAfterSetParent (nodeToAdd: FxORMPluginUACL.Node, tree: FxORMPluginUACL.Tree) {
+function reCountEdgeAfterSetParent (nodeToAdd: FxORMPluginUACLNS.Node, tree: FxORMPluginUACLNS.Tree) {
     if (!nodeToAdd.parent)
         return ;
 
@@ -29,7 +29,7 @@ function reCountEdgeAfterSetParent (nodeToAdd: FxORMPluginUACL.Node, tree: FxORM
     })
 }
 
-function reCountEdgeAfterOffParent (removedNode: FxORMPluginUACL.Node, tree: FxORMPluginUACL.Tree) {
+function reCountEdgeAfterOffParent (removedNode: FxORMPluginUACLNS.Node, tree: FxORMPluginUACLNS.Tree) {
     const leftEdge = removedNode.leftEdge
     const rightEdge = removedNode.rightEdge
 
@@ -54,7 +54,7 @@ function reAssignRoot (node: Node) {
     node.root = isRoot(_root) ? _root : null
 }
 
-function setParent (self: Node, parentNode: FxORMPluginUACL.Node) {
+function setParent (self: Node, parentNode: FxORMPluginUACLNS.Node) {
     parentNode = parentNode || null;
 
     self.parent = parentNode;
@@ -66,7 +66,7 @@ function removeFromParent (self: Node) {
     reAssignRoot(self);
 }
 
-function jsonifyNodeInfo (node: FxORMPluginUACL.Node): FxORMPluginUACL.JsonifiedNode {
+function jsonifyNodeInfo (node: FxORMPluginUACLNS.Node): FxORMPluginUACLNS.JsonifiedNode {
     return {
         id: node.id,
         ...node.isRoot && { isRoot: node.isRoot },
@@ -86,16 +86,16 @@ function initializeDataOfNode (this: Node) {
     this.rightEdge = +Infinity
 }
 
-export class Node<DTYPE = any> implements FxORMPluginUACL.Node<DTYPE> {
-    id: FxORMPluginUACL.Node['id']
-    parent: FxORMPluginUACL.Node['parent']
-    root: FxORMPluginUACL.Node['root']
-    children: FxORMPluginUACL.Node['children']
+export class Node<DTYPE = any> implements FxORMPluginUACLNS.Node<DTYPE> {
+    id: FxORMPluginUACLNS.Node['id']
+    parent: FxORMPluginUACLNS.Node['parent']
+    root: FxORMPluginUACLNS.RootNode
+    children: FxORMPluginUACLNS.Node['children']
 
-    leftEdge: FxORMPluginUACL.Node['leftEdge'] = -Infinity;
-    rightEdge: FxORMPluginUACL.Node['rightEdge'] = +Infinity;
+    leftEdge: FxORMPluginUACLNS.Node['leftEdge'] = -Infinity;
+    rightEdge: FxORMPluginUACLNS.Node['rightEdge'] = +Infinity;
 
-    data?: FxORMPluginUACL.Node['data']
+    data?: FxORMPluginUACLNS.Node['data']
 
     get descendantCount () {
         return Math.floor(
@@ -128,7 +128,7 @@ export class Node<DTYPE = any> implements FxORMPluginUACL.Node<DTYPE> {
     }
 
     get breadCrumbs () {
-        let nodes: FxORMPluginUACL.Node[] = [];
+        let nodes: FxORMPluginUACLNS.Node[] = [];
 
         const lft = this.leftEdge
         const rgt = this.rightEdge
@@ -150,7 +150,7 @@ export class Node<DTYPE = any> implements FxORMPluginUACL.Node<DTYPE> {
         parent = null,
         children = [],
         data = undefined
-    }: FxORMPluginUACL.NodeConstructorOptions = {
+    }: FxORMPluginUACLNS.NodeConstructorOptions = {
         id: null
     }) {
         if (typeof id !== 'string' && typeof id !== 'number' && id < 0)
@@ -207,7 +207,14 @@ export class Node<DTYPE = any> implements FxORMPluginUACL.Node<DTYPE> {
         removeFromParent(node);
     }
 
-    toJSON (): FxORMPluginUACL.JsonifiedNode {
+    remove () {
+        if (!this.parent)
+            return ;
+
+        this.parent.removeChildNode(this);
+    }
+
+    toJSON (): FxORMPluginUACLNS.JsonifiedNode {
         return jsonifyNodeInfo(this)
     }
 }
@@ -216,8 +223,8 @@ function setTree (this: RootNode, tree: Tree) {
     Object.defineProperty(this, 'tree', { get () { return tree } })
 }
 
-class RootNode extends Node implements FxORMPluginUACL.RootNode {
-    id: 0
+class RootNode extends Node implements FxORMPluginUACLNS.RootNode {
+    id: null
     parent: null
     tree: Tree
     isRoot: true
@@ -233,8 +240,8 @@ class RootNode extends Node implements FxORMPluginUACL.RootNode {
         return count;
     };
 
-    constructor (opts?: FxORMPluginUACL.NodeConstructorOptions) {
-        super({...opts, parent: null, id: 0})
+    constructor (opts?: FxORMPluginUACLNS.NodeConstructorOptions) {
+        super({...opts, parent: null, id: null})
 
         this.leftEdge = 1;
         this.rightEdge = 2;
@@ -262,7 +269,7 @@ function unrecordNode (this: Tree, node: Node) {
     this.nodeSet.delete(node);
 }
 
-export class Tree<NTYPE extends Node = Node> implements FxORMPluginUACL.Tree {
+export class Tree<NTYPE extends Node = Node> implements FxORMPluginUACLNS.Tree {
     root: RootNode;
 
     nodeSet: Set<NTYPE>;

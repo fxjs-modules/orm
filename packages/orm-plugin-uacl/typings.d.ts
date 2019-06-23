@@ -1,29 +1,29 @@
 /// <reference types="@fxjs/orm" />
 /// <reference types="fib-kv" />
 
-declare namespace FxORMPluginUACL {
+declare namespace FxORMPluginUACLNS {
     interface JsonifiedNode {
         id: Node['id']
-        leftEdge: Node['id']
-        rightEdge: Node['id']
+        leftEdge: number
+        rightEdge: number
         children: JsonifiedNode[]
 
         isRoot?: boolean
     }
 
     interface NodeConstructorOptions<NTYPE = Node, DTYPE = any> {
-        id: string | number
+        id: string
         parent?: NTYPE,
         children?: NTYPE[]
         data?: DTYPE
     }
 
-    class Node<DTYPE = any> {
+    class Node<DTYPE = any, TTREE = any> {
         constructor (cfg: NodeConstructorOptions);
 
-        id: string | number
+        id: string
         parent: Node | null
-        root: RootNode | null
+        root: RootNode<TTREE> | null
         children: Node[]
 
         leftEdge: number;
@@ -52,13 +52,17 @@ declare namespace FxORMPluginUACL {
          */
         readonly breadCrumbs: Node[];
 
+        addChildNode (node: Node): Node;
+        removeChildNode (node: Node): void;
+        remove (): void;
+
         toJSON (): JsonifiedNode;
     }
 
-    interface RootNode extends Node {
-        id: 0
+    interface RootNode<TTREE = Tree> extends Node {
+        id: null
         parent: null
-        tree: Tree
+        tree: TTREE
         isRoot: true
 
         clear (): number;
@@ -80,13 +84,28 @@ declare namespace FxORMPluginUACL {
     }
 
     interface ACLTree extends Tree<ACLNode | RootNode> {
-        // model: FxOrmModel.Model;
-        instance: FxOrmInstance.Instance;
-        _tree_stores: {
+        // user id or role name
+        readonly name: string
+        readonly type: 'user' | 'role'
+        readonly _tree_stores: {
             [k: string]: ACLTree
         };
-        association_name?: string
-        association_info?: FxOrmModel.Model['associations'][any]
+        /**
+         * @internal
+         * @description routing for invoking message from ACLNode
+         */
+        readonly routing: Class_Routing
+        // readonly readORM: FxOrmNS.ORM;
+        // readonly saveORM: FxOrmNS.ORM;
+        // association_name?: string
+        // association_info?: FxOrmModel.Model['associations'][any]
+
+        load (uaci?: string): void
+        persist(uaci?: string): void
+
+        can (action: FxORMPluginUACLNS.ACLType, uaci: string, askedFields?: string[]): boolean
+        grant (uaci: string, oacl: FxORMPluginUACLNS.OACLStruct): void
+        reset(): void
     }
     interface InstanceUACLInfo {
         objectless: string
@@ -102,10 +121,10 @@ declare namespace FxORMPluginUACL {
 
     class ACLNode extends Node {
         constructor (cfg: ACLNodeConstructorOptions);
-        data: {
-            uid: string | number
-            uroles: string[]
-        }
+        // data: {
+        //     uid: string | number
+        //     uroles: string[]
+        // }
 
         acl: {
             create?: boolean | string[]
@@ -118,6 +137,10 @@ declare namespace FxORMPluginUACL {
             read?: boolean | string[]
             remove?: boolean | string[]
         }
+
+        push (type: 'user' | 'role', target_id: string): void;
+
+        pull (): void;
     }
 
     type ACLType = keyof ACLNode['acl'] | keyof ACLNode['oacl']
@@ -145,6 +168,7 @@ declare namespace FxOrmNS {
 }
 
 interface FxOrmPluginUACLOptions {
+    orm?: FxOrmNS.ORM
 }
 interface FxOrmPluginUACL extends FxOrmNS.PluginConstructCallback<
     FxOrmNS.ORM, FxOrmNS.PluginOptions & FxOrmPluginUACLOptions
