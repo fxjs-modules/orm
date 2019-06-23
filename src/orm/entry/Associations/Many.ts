@@ -449,7 +449,7 @@ function extendInstance(
 					return ;
 
 				Instance.$emit(`before-add-extension:${association.setAccessor}`, $ref.associations)
-				$ref.associations = results = Instance[association.addSyncAccessor]($ref.associations);
+				results = Instance[association.addSyncAccessor]($ref.associations);
 				Instance.$emit(`after-add-extension:${association.setAccessor}`, $ref.associations)
 				
 				Instance.$emit(`after:set:${association.name}`, $ref.associations)
