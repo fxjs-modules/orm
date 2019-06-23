@@ -866,5 +866,111 @@ describe("Association Hook", function () {
             assert.isTrue(triggered.beforeSet);
         });
     });
+
+    describe("hasMany - hooks useChannel", function () {
+        var triggered = null;
+        const resetTriggered = () => triggered = getTrigged()
+        beforeEach(() => resetTriggered())
+
+        before(setup({
+            hasManyHooks: {
+                beforeAdd ({ associations, useChannel }, next) {
+                    useChannel('testForAdd', () => {
+                        triggered.beforeAdd = true
+                        triggered.afterAdd = true
+                    })
+
+                    next()
+                },
+                afterAdd ({ associations, useChannel }) {
+                    useChannel('testForAdd')[0].apply(null)
+                },
+                beforeSet ({ associations, useChannel }, next) {
+                    useChannel(() => {
+                        triggered.beforeSet = true
+                        triggered.afterSet = true
+                    })
+
+                    next()
+                },
+                afterSet ({ associations, useChannel }) {
+                    useChannel()[0].apply(null)
+                },
+                beforeRemove ({ associations, useChannel }, next) {
+                    useChannel('testForRemove', () => {
+                        triggered.beforeRemove = true
+                        triggered.afterRemove = true
+                    })
+
+                    next()
+                },
+                afterRemove ({ associations, useChannel }) {
+                    assert.throws(() => {
+                        useChannel()[0].apply(null)
+                    })
+                },
+            }
+        }));
+
+        it("beforeAdd/afterAdd - triggered by DEFAULT", function () {
+            assert.isFalse(triggered.beforeAdd);
+            assert.isFalse(triggered.afterAdd);
+
+            Person
+                .createSync({
+                    name: "John Doe"
+                })
+                .addFriendsSync([
+                    Person.createSync({
+                        name: "Friend of John"
+                    })
+                ])
+
+            assert.isTrue(triggered.beforeAdd)
+            assert.isTrue(triggered.afterAdd)
+        });
+
+        it("beforeSet/afterSet - triggered by name", function () {
+            assert.isFalse(triggered.beforeSet);
+            assert.isFalse(triggered.afterSet);
+
+            Person
+                .createSync({
+                    name: "John Doe"
+                })
+                .setFriendsSync([
+                    Person.createSync({
+                        name: "Friend of John"
+                    })
+                ])
+
+            assert.isTrue(triggered.beforeSet)
+            assert.isTrue(triggered.afterSet)
+        });
+
+        it("beforeRemove/afterRemove - not triggered", function () {
+            assert.isFalse(triggered.beforeRemove);
+            assert.isFalse(triggered.afterRemove);
+
+            const John = Person
+                .createSync({
+                    name: "John Doe"
+                })
+
+            John.setFriendsSync(
+                Person.createSync({
+                    name: "Friend1 of John"
+                }),
+                Person.createSync({
+                    name: "Friend2 of John"
+                }),
+            )
+
+            John.removeFriendsSync()
+
+            assert.isFalse(triggered.beforeRemove)
+            assert.isFalse(triggered.afterRemove)
+        });
+    });
     /* operations: end */
 });

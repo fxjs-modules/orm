@@ -430,7 +430,8 @@ function extendInstance(
 	Utilities.addHiddenUnwritableMethodToInstance(Instance, association.setSyncAccessor, function (this: typeof Instance) {
 		const $ref = <Fibjs.AnyObject>{
 			instance: Instance,
-			associations: _flatten(arguments)
+			associations: _flatten(arguments),
+			useChannel: Utilities.reusableChannelGenerator()
 		};
 
 		let results: FxOrmInstance.Instance[] = [];
@@ -453,6 +454,11 @@ function extendInstance(
 				Instance.$emit(`after-add-extension:${association.setAccessor}`, $ref.associations)
 				
 				Instance.$emit(`after:set:${association.name}`, $ref.associations)
+
+				if (Instance.__opts.keys.length === 1) {
+					const [key] = Instance.__opts.keys
+					$ref.association_ids = $ref.associations.map((x: FxOrmInstance.InstanceDataPayload) => x[key])
+				}
 			}),
 			Utilities.buildAssociationActionHooksPayload('beforeSet', { $ref })
 		);
@@ -595,7 +601,8 @@ function extendInstance(
 
 		const $ref = <Fibjs.AnyObject>{
 			instance: Instance,
-			associations: Associations
+			associations: Associations,
+			useChannel: Utilities.reusableChannelGenerator()
 		};
 		Hook.wait(
 			Instance,

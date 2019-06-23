@@ -1,10 +1,14 @@
 import util = require('util')
+import uuid = require('uuid')
 import coroutine = require('coroutine')
 import events         = require("events");
 
 import _cloneDeep = require('lodash.clonedeep')
 
 import { Helpers as QueryHelpers } from '@fxjs/sql-query';
+import { selectArgs } from './Helpers';
+
+function noOperation () {};
 
 /**
  * Order should be a String (with the property name assumed ascending)
@@ -872,8 +876,11 @@ export function buildAssociationActionHooksPayload (
 		instance?: FxOrmInstance.Instance,
 		association?: FxOrmInstance.InstanceDataPayload,
 		associations?: FxOrmInstance.InstanceDataPayload[],
+		association_ids?: any[],
 		removeConditions?: Fibjs.AnyObject,
-		$ref: Fibjs.AnyObject
+		$ref: Fibjs.AnyObject,
+
+		useChannel?: Function
 	}
 ): Fibjs.AnyObject {
 	const {
@@ -884,7 +891,9 @@ export function buildAssociationActionHooksPayload (
 		instance = $ref.instance || null,
 		association = $ref.association || null,
 		associations = $ref.associations || [],
+		association_ids = $ref.associations || [],
 		removeConditions = $ref.removeConditions || {},
+		useChannel = $ref.useChannel || reusableChannelGenerator()
 	} = payload;
 
 	if (!instance)
@@ -899,6 +908,9 @@ export function buildAssociationActionHooksPayload (
 
 	self.association = association
 	self.associations = associations
+	self.association_ids = association_ids
+
+	self.useChannel = useChannel
 
 	switch (hookName) {
 		case 'beforeSet':
@@ -946,6 +958,70 @@ export function hookHandlerDecorator (
 
 			return hdlr.call(thisArg)
 		}
+	}
+}
+
+function getChannelInfo () {
+	return {
+		id: uuid.snowflake().hex(),
+		executed: false,
+		fn: null as Function
+	}
+}
+
+export function reusableChannelGenerator () {
+	const DEFAULT_KEY = `$$default`
+	const channelInfos: {[k: string]: Fibjs.AnyObject } = {
+		[DEFAULT_KEY]: getChannelInfo()
+	}
+
+	return function useChannel () {
+		let name: string, _channel: Function
+
+		selectArgs(Array.prototype.slice.apply(arguments), (arg_type, arg) => {
+			switch (arg_type) {
+				case 'string':
+					name = arg
+					break
+				case 'function':
+					_channel = arg
+					break
+			}
+		})
+		if (!name)
+			name = DEFAULT_KEY
+		
+		if (!channelInfos.hasOwnProperty(name))
+			channelInfos[name] = getChannelInfo()
+
+		const channelInfo = channelInfos[name]
+
+		_channel = _channel || channelInfo.fn
+		if (!_channel)
+			throw `[useChannel] channel is required and must be function type`
+			
+		if (!channelInfo.fn && _channel)
+			channelInfo.fn = _channel
+
+		return [
+			function (...args: any) {
+				if (channelInfo.executed)
+					return ;
+
+				channelInfo.executed = true;
+
+				if (typeof channelInfo.fn !== 'function')
+					throw `[reusableChannelGenerator/useChannel] channel with name ${name} haven't been set 'fn'!`
+
+				channelInfo.fn.apply(null, args)
+			},
+			function (fn: Function) {
+				if (typeof fn !== 'function')
+					throw `[reusableChannelGenerator/useChannel::setChannel] new channel must be function!`
+
+				channelInfo.fn = fn
+			}
+		]
 	}
 }
 

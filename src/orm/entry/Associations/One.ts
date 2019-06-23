@@ -333,6 +333,7 @@ function extendInstance(
 			instance: Instance,
 			association: association.reversed ? null : OtherInstance,
 			associations: association.reversed ? inst_arr : null,
+			useChannel: Utilities.reusableChannelGenerator()
 		};
 
 		if (association.reversed) {
@@ -407,6 +408,7 @@ function extendInstance(
 		) {
 			const $ref = <Fibjs.AnyObject>{
 				instance: Instance,
+				useChannel: Utilities.reusableChannelGenerator()
 			};
 			Hook.wait(
 				Instance,

@@ -266,7 +266,8 @@ function extendInstance(
 	) {
 		const $ref = <Fibjs.AnyObject>{
 			instance: Instance,
-			association: Extension
+			association: Extension,
+			useChannel: Utilities.reusableChannelGenerator()
 		};
 		Hook.wait(
 			Instance,
@@ -330,7 +331,8 @@ function extendInstance(
 
 		const $ref = <Fibjs.AnyObject>{
 			instance: Instance,
-			removeConditions: conditions
+			removeConditions: conditions,
+			useChannel: Utilities.reusableChannelGenerator()
 		};
 		Hook.wait(
 			Instance,
