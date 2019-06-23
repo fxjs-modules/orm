@@ -24,6 +24,8 @@ export const trigger: FxOrmHook.HookTrigger<any, any> = function () {
 
 const waitHooks = function (self: any, hooksHandlers: FxOrmHook.HookActionCallback[], next: FxOrmHook.HookActionNextFunction, payload?: any) {
 	const list = payload ? [payload] : []
+	hooksHandlers = Array.from(hooksHandlers);
+	
 	const nextHook = function (): any {
 		if (hooksHandlers.length === 0) {
 			return next.call(null);
