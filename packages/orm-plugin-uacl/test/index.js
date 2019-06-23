@@ -3,13 +3,18 @@
 var test = require("test");
 test.setup();
 
+const coroutine = require('coroutine')
+
 const ORM = require('@fxjs/orm');
 const ORMPluginUACL = require('../');
 
 const TreeAbout = require('../lib/tree');
 const ACLTreeAbout = require('../lib/acl-tree');
 
-const ormDefs = require('./defs')
+const ormDefs = {
+    basicAllSyncMode: require('./defs/basic-allsync-mode'),
+    basicElegantMode: require('./defs/basic-elegant-mode')
+}
 
 describe('orm-plugin-uacl', () => {
     describe('TreeAbout', () => {
@@ -252,19 +257,15 @@ describe('orm-plugin-uacl', () => {
         });
     })
 
-    describe('orm.ACL*', () => {
+    describe('Basic local only', () => {
         let orm = null
 
-        const coroutine = require('coroutine')
-
-        const prepare = () => {
-            orm = ORM.connectSync('sqlite:uacl-test.db')
-            orm.use(ORMPluginUACL, {})
-            ormDefs(orm)
-        }
 
         before(() => {
-            prepare()
+            orm = ORM.connectSync('sqlite:uacl-test.db')
+            orm.use(ORMPluginUACL, {})
+            ormDefs.basicAllSyncMode(orm)
+
             orm.syncSync()
         });
 
@@ -464,10 +465,6 @@ describe('orm-plugin-uacl', () => {
                 )
             })
         });
-
-        xit('oacl: persist to db', () => {
-
-        })
     })
 })
 

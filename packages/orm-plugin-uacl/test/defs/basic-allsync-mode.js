@@ -1,36 +1,5 @@
 module.exports = orm => {
-    const User = orm.define('user', {
-        name: String
-    }, {
-    })
-
-    const Role = orm.define('role', {
-        name: String
-    }, {
-    })
-
-    const Project = orm.define('project', {
-        name: String
-    }, {
-        uacl: {},
-        hooks: {
-            // afterLoad () {
-            //     console.log('project afterLoad')
-            // }
-        }
-    })
-
-    const Stage = orm.define('stage', {
-        name: String
-    }, {
-        uacl: {}
-    })
-
-    const Task = orm.define('task', {
-        name: String
-    }, {
-        uacl: {}
-    })
+    const { User, Project, Stage, Task } = require('./common')(orm)
 
     Project.hasMany('stages', Stage, {}, {
         reverse: 'ofProjects',
@@ -83,7 +52,6 @@ module.exports = orm => {
                 const proj_uaci = project.$getUacis().object
                 useChannel('grantMemberAccessToStages', () => {
                     const stages = project.getStagesSync()
-                        
                     member_ids.forEach((member_id) => {
                         const aclTree = project.$uacl({ uid: member_id })
 
@@ -106,17 +74,34 @@ module.exports = orm => {
             'afterAdd': function ({ useChannel }) {
                 useChannel('grantMemberAccessToStages')[0].call()
             },
-            'beforeRemove': function ({associations: specificRemovedMembers = []}) {
+            'beforeRemove': function ({associations: membersToRemove = [], useChannel}) {
+                const proj_uaci = this.$getUacis().object
                 /**
-                 * 如果删除了该 project 下所有的 members, 则清除这些用户对它的所有权限
+                 * revoke all members' permissions about object
                  */
-                if (!specificRemovedMembers.length) {
-                    specificRemovedMembers = this.getMembersSync()
-                    specificRemovedMembers.forEach(member => {
-                        this.$uacl({ uid: member.id })
-                            .revoke(this.$getUacis().object)
-                    })
+                if (!membersToRemove.length) {
+                    membersToRemove = this.getMembersSync()
                 }
+
+                const member_ids = membersToRemove.map(x => x.id)
+                useChannel('revokeAllAssociatedPermissionsFromUser', () => {
+                    const stages = this.getStagesSync()
+
+                    member_ids.forEach(member_id => {
+                        this.$uacl({ uid: member_id })
+                            .revoke(proj_uaci)
+
+                        stages.forEach(proj_stage => {
+                            this.$uacl({ uid: member_id })
+                                .revoke(
+                                    proj_stage.$getUacis({ prefix: proj_uaci }).object
+                                )
+                        })
+                    })
+                })
+            },
+            'afterRemove': function ({ useChannel }) {
+                useChannel('revokeAllAssociatedPermissionsFromUser')[0].call()
             }
         }
     })
@@ -129,69 +114,4 @@ module.exports = orm => {
     })
     Task.hasOne('owner', User, {}, {})
     Task.hasMany('members', User, {}, {})
-
-    false && Project.afterLoad(function () {
-        /**
-         * once called, `this.$uacl('members')`
-         * 1. start one interval to pull all members of this `project` asynchronously,
-         * 2. initialize one ACLTree or access the generated one,
-         * 
-         * like this:
-         * ```javascript
-         *     const project1$GrantTree = new ACLTree({ type: 'project-1-members-grant' })
-         *     // or
-         *     const project1$GrantTree = this.generated$project1$GrantTree
-         * ```
-         * 
-         * project1$GrantTree is just result of `this.$uacl('members')`
-         * 
-         * after 1st time usage, project1$GrantTree would
-         * - addChildNode when add members to project
-         * - removeChildNode when member removed from project
-         * - update childNode' acl value if commanded
-         * 
-         * project1$GrantTree would be destroyed when instance is destroyed.
-         */
-        this.$uacl('members')
-
-        this.$uacl('members')
-            // pull members and build ACLNodes with thems
-            .pull()
-
-        this.$uacl('members')
-            /**
-             * grant(aclKv)
-             * 
-             * equals to
-             * `project1$GrantTree.addChildNode({ id: 0, acl: { write: true, ... } })`
-             * 
-             */
-            .grant({
-                write: true,
-                read: ['name', 'description']
-            })
-
-        this.$uacl('members')
-            /**
-             * `revoke(action)`
-             * equals to
-             * `project1$GrantTree.getChildNodeById(member.$getUacis()).removeACLByKey('write')`
-             */
-            .revoke('write')
-            /**
-             * `revoke(action)`
-             * 
-             * equals to
-             * `project1$GrantTree.removeChildNodeById(member.$getUacis())`
-             */
-
-        this.$uacl('members')
-            .revoke()
-
-        this.$uacl('members')
-            // save grant for members from built ACLNodes
-            .push()
-    }, {
-        oldhook: 'prepend'
-    })
 }
