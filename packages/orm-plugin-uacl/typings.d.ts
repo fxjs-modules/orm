@@ -80,7 +80,8 @@ declare namespace FxORMPluginUACL {
     }
 
     interface ACLTree extends Tree<ACLNode | RootNode> {
-        model: FxOrmModel.Model;
+        // model: FxOrmModel.Model;
+        instance: FxOrmInstance.Instance;
         _tree_stores: {
             [k: string]: ACLTree
         };
@@ -102,11 +103,8 @@ declare namespace FxORMPluginUACL {
     class ACLNode extends Node {
         constructor (cfg: ACLNodeConstructorOptions);
         data: {
-            id: string | number
-            roles: string[]
-            // instance: FxOrmNS.Instance
-            // acl: ACLNode['acl']
-            // oacl: ACLNode['oacl']
+            uid: string | number
+            uroles: string[]
         }
 
         acl: {

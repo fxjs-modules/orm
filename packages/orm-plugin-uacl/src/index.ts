@@ -1,6 +1,7 @@
 import { ACLNode, ACLTree } from './acl-tree';
 
 import { Helpers } from '@fxjs/orm'
+import { arraify } from './_utils';
 
 function attachMethodsToModel (m_opts: FxOrmModel.ModelDefineOptions) {
     m_opts.methods = m_opts.methods || {};
@@ -14,10 +15,6 @@ function attachMethodsToModel (m_opts: FxOrmModel.ModelDefineOptions) {
         }
 }
 
-function arraify<T = any> (item: T | T[]): T[] {
-	return Array.isArray(item) ? item : [item]
-}
-
 /**
  * @chainapi
  * @purpose record the relations, and provide the `uaci` computation by getUacis
@@ -25,10 +22,10 @@ function arraify<T = any> (item: T | T[]): T[] {
  */
 function instanceUacl (
     this: FxOrmInstance.Instance,
-    association_name: string
+    association_name?: string
 ): ACLTree {
     const model = this.model()
-    if (!model.associations.hasOwnProperty(association_name))
+    if (association_name && !model.associations.hasOwnProperty(association_name))
         throw `association name must be valid for model ${model.name}`
 
     const treeKey = `$uaclGrantTrees$${association_name}`
@@ -36,7 +33,7 @@ function instanceUacl (
         const uacis = this.$getUacis()
         Object.defineProperty(this, treeKey, {
             value: new ACLTree({
-                model: model,
+                instance: this,
                 namespace: `${uacis.object}`,
                 association_name: association_name
             }),
@@ -126,18 +123,18 @@ const Plugin: FxOrmPluginUACL = function (orm, plugin_opts) {
                 roleModel: Helpers.valueOrComputeFunction(m_opts.roleModel || defaultRoleModel),
             });
         },
-        beforeHasOne (model, {association_name, ext_model, assoc_options}) {
-            if (ext_model !== ModelUACL)
-                return ;
+        // beforeHasOne (model, {association_name, ext_model, assoc_options}) {
+        //     if (ext_model !== ModelUACL)
+        //         return ;
 
-            assoc_options.hooks = assoc_options.hooks || {};
-            assoc_options.hooks['beforeSet'] = arraify(assoc_options.hooks['beforeSet']).filter(x => x)
-            assoc_options.hooks['afterSet'] = arraify(assoc_options.hooks['afterSet']).filter(x => x)
+        //     assoc_options.hooks = assoc_options.hooks || {};
+        //     assoc_options.hooks['beforeSet'] = arraify(assoc_options.hooks['beforeSet']).filter(x => x)
+        //     assoc_options.hooks['afterSet'] = arraify(assoc_options.hooks['afterSet']).filter(x => x)
 
-            assoc_options.hooks['afterSet'].push(() => {
-                // console.log('I set?')
-            })
-        },
+        //     assoc_options.hooks['afterSet'].push(() => {
+        //         // console.log('I set?')
+        //     })
+        // },
         define (model) {
             if ([ModelUACL].includes(model))
                 return ;
@@ -146,25 +143,25 @@ const Plugin: FxOrmPluginUACL = function (orm, plugin_opts) {
                 return ;
 
             const config = uacl_models_config.get(model.name)
-            const { userModel, roleModel } = config
 
             model.afterLoad(function () {
-                Object.defineProperty(this, '$uacl', {
-                    value: instanceUacl.bind(this),
-                    writable: false,
-                    configurable: false,
-                    enumerable: false
-                })
+                if (!this.$uacl)
+                    Object.defineProperty(this, '$uacl', {
+                        value: instanceUacl.bind(this),
+                        writable: false,
+                        configurable: false,
+                        enumerable: false
+                    })
             }, { oldhook: 'prepend' })
 
-            model.hasOne('uacl', ModelUACL, {
-                field: 'uacl_id'
-            });
+            // model.hasOne('uacl', ModelUACL, {
+            //     field: 'uacl_id'
+            // });
 
-            model.afterSave(function (success) {
-                if (!success)
-                    return ;
-            }, { oldhook: 'append' })
+            // model.afterSave(function (success) {
+            //     if (!success)
+            //         return ;
+            // }, { oldhook: 'append' })
         }
     }
 };

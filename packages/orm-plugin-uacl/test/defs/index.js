@@ -12,7 +12,12 @@ module.exports = orm => {
     const Project = orm.define('project', {
         name: String
     }, {
-        uacl: {}
+        uacl: {},
+        hooks: {
+            // afterLoad () {
+            //     console.log('project afterLoad')
+            // }
+        }
     })
 
     const Stage = orm.define('stage', {
@@ -37,9 +42,8 @@ module.exports = orm => {
                  */
                 const project = this
                 stages.forEach((stage) => {
-                    stage.getMembersSync().forEach(member => {
-                        project.$uacl('stages')
-                            .$uacl('members', stage)
+                    (stage.members || []).forEach(member => {
+                        project.$uacl()
                             .grant(member, {
                                 write: false,
                                 read: ['name', 'description']
@@ -57,7 +61,7 @@ module.exports = orm => {
                 /**
                  * 在 project/1/members 为 ID 的树形结构中, 为这些 members 赋予读写权限
                  */
-                this.$uacl('members')
+                this.$uacl()
                     .grant(members, {
                         write: true,
                         read: ['name', 'description']
@@ -68,7 +72,7 @@ module.exports = orm => {
                  * 如果删除了该 project 下所有的 members, 则清除这些用户对它的所有权限
                  */
                 if (!specificRemovedMembers.length)
-                    this.$uacl('members')
+                    this.$uacl()
                         .clear()
             }
         }
@@ -81,9 +85,13 @@ module.exports = orm => {
                         /**
                          * 在 project/xxx/stages/xx/members 为 ID 的树形结构中, 为这些 members 赋予读取 projects 权限
                          */
+                        console.log(
+                            'project',
+                            project,
+                        );
+                        
                         project
-                            .$uacl('stages')
-                            .$uacl('members')
+                            .$uacl()
                             .grant(members, {
                                 write: true,
                                 read: ['name', 'description']

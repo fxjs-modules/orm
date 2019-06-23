@@ -253,21 +253,17 @@ describe('orm-plugin-uacl', () => {
 
     describe('orm.ACL*', () => {
         let orm = null
-        let project$1 = null
-        let project$2 = null
-        let task$1 = null
-        let task$2 = null
-        let task$2$owner = null
-        let task$2$member = null
 
         const coroutine = require('coroutine')
 
-        before(() => {
+        const prepare = () => {
             orm = ORM.connectSync('sqlite:uacl-test.db')
-            orm.use(ORMPluginUACL, {
-            })
+            orm.use(ORMPluginUACL, {})
             ormDefs(orm)
+        }
 
+        before(() => {
+            prepare()
             orm.syncSync()
         });
 
@@ -276,10 +272,12 @@ describe('orm-plugin-uacl', () => {
         });
 
         beforeEach(() => {
-            // orm.syncSync()
         });
 
-        it('oacl: read/write/remove', () => {
+        afterEach(() => {
+        })
+
+        it('oacl: read/write/remove self-level', () => {
             const [
                 project$1,
             ] = coroutine.parallel([
@@ -314,7 +312,7 @@ describe('orm-plugin-uacl', () => {
                  * when `.can` called, only local data would be used to judge if child could access host
                  */
                 assert.equal(
-                    project$1.$uacl('members')
+                    project$1.$uacl()
                         .can(guest, action, fields),
                     result
                 )
@@ -353,8 +351,80 @@ describe('orm-plugin-uacl', () => {
 
             project$1.setMembersSync([user$1, user$2, user$3])
 
-            project$1.$uacl('members')
+            project$1.$uacl()
                 .push()
+        });
+
+        oit('oacl: read/write/remove crossing 2-level', () => {
+            const [
+                project$1,
+            ] = coroutine.parallel([
+                new orm.models.project(),
+                new orm.models.project(),
+            ], (instance) => instance.saveSync())
+
+            const [
+                stage$1,
+                stage$2,
+            ] = coroutine.parallel([
+                new orm.models.stage(),
+                new orm.models.stage(),
+            ], (instance) => instance.saveSync())
+
+            const [
+                user1$memberof$stage1,
+                user2$memberof$stage1,
+                user1$memberof$stage2,
+                user2$memberof$stage2,
+            ] = coroutine.parallel([
+                new orm.models.user(),
+                new orm.models.user(),
+                new orm.models.user(),
+                new orm.models.user(),
+                new orm.models.user(),
+            ], (instance) => instance.saveSync())
+
+            const check_handler = ([ [guest, action, fields], result ]) => {
+                /**
+                 * when `.can` called, only local data would be used to judge if child could access host
+                 */
+                assert.equal(
+                    project$1.$uacl()
+                        .can(guest, action, fields),
+                    result
+                )
+            }
+
+            project$1.addStagesSync([stage$1, stage$2])
+            /**
+             * this would grant some permissions to user$1, user$2;
+             */
+            stage$1.addMembersSync([user1$memberof$stage1, user2$memberof$stage1])
+            
+            ;[
+                [ [user1$memberof$stage1, 'write' ], true ],
+                [ [user2$memberof$stage1, 'write' ], true ],
+                [ [user1$memberof$stage1, 'read', ['name', 'description'] ], true ],
+                [ [user1$memberof$stage1, 'read', ['name', 'description', 'unknown'] ] , false ],
+                [ [user1$memberof$stage1, 'read', ['lalala'] ] , false ],
+            ].forEach(check_handler)
+
+            /**
+             * this would revoke all permissions of user$1, user$2, and grant some permissions to user$3;
+             */
+            // stage$1.setMembersSync([user$3])
+
+            // ;[
+            //     [ [user$1, 'write' ], false ],
+            //     [ [user$2, 'read' ], false ],
+            //     [ [user$3, 'write' ], true ],
+            //     [ [user$3, 'read' ], true ],
+            // ].forEach(check_handler)
+
+            // stage$1.setMembersSync([user$1, user$2, user$3])
+
+            // stage$1.$uacl('members')
+            //     .push()
         });
 
         it('oacl: persist to db', () => {
