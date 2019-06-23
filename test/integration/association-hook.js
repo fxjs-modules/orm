@@ -269,6 +269,7 @@ describe("Association Hook", function () {
                     triggered.beforeAdd = true
                 },
                 afterAdd (_) {
+                    assert.isArray(_.associations)
                     triggered.afterAdd = true
                 },
                 beforeSet (_) {
@@ -360,6 +361,7 @@ describe("Association Hook", function () {
                     triggered.beforeAdd = true
                 },
                 afterAdd (_) {
+                    assert.isArray(_.associations)
                     triggered.afterAdd = true
                 },
                 beforeSet (_) {

@@ -13,9 +13,9 @@ export const trigger: FxOrmHook.HookTrigger<any, any> = function () {
 	const instance = restArgs.shift();
 	const hookHandlr = restArgs.shift();
 
-	const arr = Utilities.arraify(hookHandlr)
+	const handlers = Array.from(Utilities.arraify(hookHandlr))
 
-	arr.forEach(handler => {
+	handlers.forEach(handler => {
 		if (typeof handler === "function")
 			handler.apply(instance, restArgs);
 	})

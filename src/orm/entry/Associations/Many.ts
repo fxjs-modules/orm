@@ -449,7 +449,7 @@ function extendInstance(
 					return ;
 
 				Instance.$emit(`before-add-extension:${association.setAccessor}`, $ref.associations)
-				results = Instance[association.addSyncAccessor]($ref.associations);
+				$ref.associations = results = Instance[association.addSyncAccessor]($ref.associations);
 				Instance.$emit(`after-add-extension:${association.setAccessor}`, $ref.associations)
 				
 				Instance.$emit(`after:set:${association.name}`, $ref.associations)
@@ -457,7 +457,7 @@ function extendInstance(
 			Utilities.buildAssociationActionHooksPayload('beforeSet', { $ref })
 		);
 
-		Hook.trigger(Instance, association.hooks[`afterSet`], $ref.associations, Utilities.buildAssociationActionHooksPayload('afterSet', { $ref }))
+		Hook.trigger(Instance, association.hooks[`afterSet`], Utilities.buildAssociationActionHooksPayload('afterSet', { $ref }))
 
 		return results;
 	});
@@ -637,6 +637,8 @@ function extendInstance(
 						} else {
 							Hook.wait(Association, association.hooks.beforeSave, saveAssociation);
 						}
+
+						$ref.associations = savedAssociations;
 						Instance.$emit(`after-association-save:${association.addAccessor}`, savedAssociations)
 					}
 				)
@@ -649,7 +651,7 @@ function extendInstance(
 			Utilities.buildAssociationActionHooksPayload('beforeAdd', { $ref })
 		);
 
-		Hook.trigger(Instance, association.hooks[`afterAdd`], savedAssociations, Utilities.buildAssociationActionHooksPayload('afterAdd', { $ref }))
+		Hook.trigger(Instance, association.hooks[`afterAdd`], Utilities.buildAssociationActionHooksPayload('afterAdd', { $ref }))
 
 		return savedAssociations;
 	});
