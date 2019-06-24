@@ -250,15 +250,10 @@ const ChainFind = function (
 			return data[0].c
 		},
 
-		remove: function (cb) {
+		remove: function (cb?) {
 			process.nextTick(() => {
-				const {
-					error,
-					result
-				} = Utilities.exposeErrAndResultFromSyncMethod<FxOrmQuery.RemoveResult>(chain.removeSync)
-
-				if (typeof cb === 'function')
-					cb(error, result)
+				const syncResult = Utilities.exposeErrAndResultFromSyncMethod<FxOrmQuery.RemoveResult>(chain.removeSync)
+				Utilities.throwErrOrCallabckErrResult(syncResult, { callback: cb });
 			})
 			return this;
 		},

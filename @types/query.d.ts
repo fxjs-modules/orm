@@ -205,7 +205,7 @@ declare namespace FxOrmQuery {
     }
 
     interface IChainInstanceCallbackFn {
-		(...args: any[]): FxOrmQuery.IChainInstance
+		(...args: any[]): any | FxOrmQuery.IChainInstance
 	}
     interface IChainInstance {
         _each (cb: IChainInstanceCallbackFn): IChainInstance

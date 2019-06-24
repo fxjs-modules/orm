@@ -56,7 +56,7 @@ export class Database extends EventEmitter implements FxOrmDb.DatabaseBase_SQLit
         if (typeof cb !== 'function')
             return this.execute(sql);
             
-        this.execute(sql, cb);
+        return this.execute(sql, cb);
     }
 
     close<T=void>(cb?: FxOrmNS.GenericCallback<T>) {

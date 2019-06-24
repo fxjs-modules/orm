@@ -139,7 +139,7 @@ Driver.prototype.insert = function (
 	}
 
 	const syncResponse = Utilities.exposeErrAndResultFromSyncMethod(() => {
-		const info = this.db.all<FxOrmQuery.InsertResult>(q);
+		const info = this.execSimpleQuery<FxOrmQuery.InsertResult>(q);
 
         if (!keyProperties) return null;
 
@@ -175,7 +175,7 @@ Driver.prototype.update = function (
 	if (this.opts.debug) {
 		require("../../Debug").sql('sqlite', q);
 	}
-	return this.db.all(q, cb);
+	return this.execSimpleQuery(q, cb);
 };
 
 Driver.prototype.remove = function (
@@ -189,7 +189,7 @@ Driver.prototype.remove = function (
 	if (this.opts.debug) {
 		require("../../Debug").sql('sqlite', q);
 	}
-	return this.db.all(q, cb);
+	return this.execSimpleQuery(q, cb);
 };
 
 Driver.prototype.clear = function (
