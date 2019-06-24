@@ -1,4 +1,5 @@
 import mq = require('mq')
+import coroutine = require('coroutine')
 
 export function arraify<T = any> (item: T | T[]): T[] {
 	return Array.isArray(item) ? item : [item]
@@ -6,7 +7,7 @@ export function arraify<T = any> (item: T | T[]): T[] {
 
 export function normalizeUaci (uaci: string = '') {
     if (!uaci || typeof uaci !== 'string')
-        throw `[normalizeUaci] uaci must be non-empty string`
+        throw new Error(`[normalizeUaci] uaci must be non-empty string`)
 
     if (uaci[0] !== '/')
         uaci = '/' + uaci
@@ -54,16 +55,6 @@ export function findACLNode (
 }
 
 /* for acl-tree: start */
-export const GRANT_ERRCODE = {
-    4030001: {
-        literalCode: 'INVALID_VERB',
-        message: 'verb must in `GRANT`, `CAN`, `REVOKE`'
-    },
-    4030002: {
-        literalCode: 'INVALID_DEPTH',
-        message: 'depth could be only 1, 2'
-    },
-}
 /**
  * generate message for retrievable-end
  * 
@@ -83,10 +74,12 @@ export function generateGrantMessage (
     node: FxORMPluginUACLNS.ACLNode,
     {
         uid = null,
-        type = 'user'
+        type = 'user',
+        role = []
     }: {
-        uid: string | string[],
-        type: FxORMPluginUACLNS.ACLTree['type']
+        uid: FxOrmNS.Arraible<string>,
+        role: FxOrmNS.Arraible<string>,
+        type: FxORMPluginUACLInternal.GRANT_TYPE
     }
 ) {
     const msg = new mq.Message()
@@ -94,54 +87,62 @@ export function generateGrantMessage (
 
     msg.value = node.id
 
+    const uids = arraify(uid)
+    const roles = arraify(role)
+
     msg.json({
         verb: 'GRANT',
-        // grant depth
-        depth: node.layer,
         date: (new Date()).toUTCString(),
-        uid: uid,
-        acl: node.acl,
+        uids: uids,
+        roles: roles,
         oacl: node.oacl,
 
-        via: type,
-    })
+        // via: type,
+    } as FxORMPluginUACLInternal.ACLMessagePayloadGrant)
 
     return msg
 }
 
-export function generateBatchPullMessage (
-    uacis: string[],
+export function generateRevokeByUACIMessage (
+    node: FxORMPluginUACLNS.ACLNode,
     {
-        uid = null,
-        type = 'user'
+        // uid = null,
+        // role = []
     }: {
-        uid: string | string[],
-        type: FxORMPluginUACLNS.ACLTree['type']
-    }
+        // uid: FxOrmNS.Arraible<string>,
+        // role: FxOrmNS.Arraible<string>,
+    } = {}
 ) {
     const msg = new mq.Message()
     msg.type = 1
 
-    msg.value = uacis[0]
+    msg.value = node.id
 
     msg.json({
-        verb: 'BATCH_QUERY',
-        uid: uid,
-
-        via: type,
-    })
+        verb: 'REVOKE_BY_UACI',
+        date: (new Date()).toUTCString(),
+        uids: [],
+        roles: [],
+        oacl: null,
+    } as FxORMPluginUACLInternal.ACLMessagePayloadGrant)
 
     return msg
 }
 
+/**
+ * 
+ * @param uaci batch query when uaci is empty
+ */
 export function generateLoadMessage (
     uaci: string,
     {
         uid = null,
-        type = 'user'
+        role = [],
+        uacis = [],
     }: {
-        uid: string | string[],
-        type: FxORMPluginUACLNS.ACLTree['type']
+        uid: FxOrmNS.Arraible<string>,
+        role: FxOrmNS.Arraible<string>,
+        uacis: FxOrmNS.Arraible<string>,
     }
 ) {
     const msg = new mq.Message()
@@ -149,15 +150,76 @@ export function generateLoadMessage (
 
     msg.value = uaci
 
-    uid = arraify(uid).filter(x => x)
+    const uids = arraify(uid)
+    const roles = arraify(role)
+    
+    if (uaci)
+        uacis = []
+    else
+        uacis = arraify(uaci)
 
     msg.json({
         verb: 'QUERY',
-        uids: uid,
-
-        via: type,
+        date: (new Date()).toUTCString(),
+        uids: uids,
+        roles: roles,
+        uacis: uacis
     })
 
     return msg
 }
 /* for acl-tree: end */
+
+/* for acl-item: start */
+export function encodeGrantTareget (type: FxORMPluginUACLInternal.GRANT_TYPE, id = '0') {
+    return `${type}:${id}`
+}
+export function decodeGrantTareget (value: string): [string, string] {
+    const tuple = (value || '').split(':')
+    return [tuple[0], tuple[1]]
+}
+
+export function compuateUaciDepth (uaci: string = '') {
+    if (!uaci)
+        return 0
+
+    const list = uaci.split('/').filter(x => x !== undefined)
+    return Math.floor(list.length / 2)
+}
+
+export function isUaciWild (uaci: string = '') {
+    if (!uaci)
+        return false
+        
+    const list = uaci.split('/').filter(x => !!x)
+    const result = list.every((item, idx) => {
+        // even position
+        if (idx % 2 === 0) return true
+            
+        return item + '' === '0'
+    })
+
+    return result
+}
+/* for acl-item: end */
+
+/* for acl-message: start */
+export function waitUntil (timeout: number, ifTrue: () => boolean) {
+    if (ifTrue())
+        return 
+    
+    const tstart = process.hrtime()
+    const evt = new coroutine.Event()
+    
+    coroutine.start(() => {
+        const [t_offset_s] = process.hrtime(tstart)
+        while (t_offset_s && t_offset_s * 1000 <= timeout) {
+            if (ifTrue())
+                break
+        }
+        evt.set()
+    })
+
+    evt.wait()
+}
+/* for acl-message: end */

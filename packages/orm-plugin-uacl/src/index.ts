@@ -1,7 +1,7 @@
-import { ACLNode, ACLTree } from './acl-tree';
+import { ACLTree } from './acl-tree';
 
 import { Helpers } from '@fxjs/orm'
-import { findACLNode } from './_utils';
+import { configUACLOrm, getConfigStorageServiceRouting } from './config-acl-tree';
 
 function attachMethodsToModel (m_opts: FxOrmModel.ModelDefineOptions) {
     m_opts.methods = m_opts.methods || {};
@@ -78,7 +78,8 @@ function UACLTreeGenerator (
         Object.defineProperty(orm, key, {
             value: new ACLTree({
                 name: initialData.name,
-                type: initialData.type
+                type: initialData.type,
+                configStorageServiceRouting: getConfigStorageServiceRouting({ orm })
             }),
             configurable: false,
             writable: false,
@@ -88,10 +89,10 @@ function UACLTreeGenerator (
     return orm[key]
 }
 
-function UACLConstructorGenerator (orm: FxOrmNS.ORM) {
+function UACLConstructorGenerator (uaclORM: FxOrmNS.ORM) {
     return function (cfg: any) {
         cfg = {...cfg}
-        cfg.orm = orm
+        cfg.orm = uaclORM
         return UACLTreeGenerator(cfg)
     }
 }
@@ -101,56 +102,7 @@ const Plugin: FxOrmPluginUACL = function (orm, plugin_opts) {
 
     const { orm: UACLOrm = orm } = plugin_opts;
 
-    UACLOrm.defineType('uacl:field_array', {
-        datastoreType (prop) {
-            return 'text'
-        },
-        valueToProperty (value, prop) {
-            if (Array.isArray(value)) {
-                return value;
-            } else {
-                return value.split(',')
-            }
-        },
-        propertyToValue (value, prop) {
-            return value.join(',')
-        }
-    })
-
-    // enable connection pool for UACL's orm
-    UACLOrm.settings.set('connection.pool', true)
-
-    const ModelUACL = UACLOrm.define('uacl', {
-        uacl_id: {
-            type: 'text',
-            required: true,
-            key: true,
-            primary: false
-        },
-        action: {
-            type: 'text',
-            required: true,
-            key: false,
-            primary: false,
-            // @enum: ['read', 'write', 'delete']
-            defaultValue: 'read'
-        },
-        allowed: {
-            type: 'boolean',
-            required: true,
-            key: false,
-            primary: false
-        },
-        fields: {
-            type: 'uacl:field_array',
-            required: true,
-            key: false,
-            primary: false,
-            defaultValue: []
-        }
-    }, {
-        id: ['uacl_id']
-    })
+    configUACLOrm(UACLOrm)
 
     const uacl_models_config = new Map<FxOrmModel.Model['name'], {
         userModel: FxOrmModel.Model,
@@ -175,7 +127,7 @@ const Plugin: FxOrmPluginUACL = function (orm, plugin_opts) {
             });
         },
         define (model) {
-            if ([ModelUACL].includes(model))
+            if ([UACLOrm.models.uacl].includes(model))
                 return ;
 
             if (!uacl_models_config.has(model.name))
@@ -184,7 +136,7 @@ const Plugin: FxOrmPluginUACL = function (orm, plugin_opts) {
             model.afterLoad(function () {
                 if (!this.$uacl)
                     Object.defineProperty(this, '$uacl', {
-                        value: UACLConstructorGenerator(orm).bind(this),
+                        value: UACLConstructorGenerator(UACLOrm).bind(this),
                         writable: false,
                         configurable: false,
                         enumerable: false

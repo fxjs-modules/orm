@@ -1,6 +1,70 @@
 /// <reference types="@fxjs/orm" />
 /// <reference types="fib-kv" />
 
+declare namespace FxORMPluginUACLInternal {
+    type GRANT_TYPE = 'role' | 'user'
+    
+    type ACLMessagePayload = {
+        verb: 'GRANT' | 'QUERY' | 'REVOKE_BY_UACI' | 'REVOKE_BY_UID' | 'REVOKE_BY_ROLE' | 'REVOKE'
+
+        uids: string[]
+        roles: string[]
+        /**
+         * @date must be GMT string
+         */
+        date: string | Date
+
+        oacl: FxORMPluginUACLNS.ACLNode['oacl']
+
+        // via?: GRANT_TYPE
+    } & Fibjs.AnyObject
+
+    type ACLMessagePayloadGrant = ACLMessagePayload & {
+    }
+    type ACLMessagePayloadQuery = ACLMessagePayload & {
+        // uaci?: string
+    }
+    
+    type ACLMessage = Class_Message & {
+        /**
+         * @once
+         * @description parsed message payload
+         */
+        payload: ACLMessagePayload & Fibjs.AnyObject
+        // response: ACLMessageResponse
+    } & Fibjs.AnyObject
+
+    // interface ACLMessageResponse extends Class_Message {}
+
+    interface ACLMessageResult<TSUCCESS = any, TERROR = any> {
+        success: {
+            code: string,
+            data: TSUCCESS,
+            msg: string
+        },
+        error: {
+            code: string
+            data: TERROR
+            msg: string
+        }
+    }
+
+    interface ACLStorageItem {
+        uacl_id: string,
+        uaci: string,
+        target: {
+          type: GRANT_TYPE,
+          id: string
+        },
+        depth: 1 | 2
+        is_wild: boolean
+        read: FxORMPluginUACLNS.ACLNode['oacl']['read']
+        write: FxORMPluginUACLNS.ACLNode['oacl']['write']
+        delete: FxORMPluginUACLNS.ACLNode['oacl']['delete']
+        allowed_actions: string[]
+    }
+}
+
 declare namespace FxORMPluginUACLNS {
     interface JsonifiedNode {
         id: Node['id']
@@ -86,7 +150,7 @@ declare namespace FxORMPluginUACLNS {
     interface ACLTree extends Tree<ACLNode | RootNode> {
         // user id or role name
         readonly name: string
-        readonly type: 'user' | 'role'
+        readonly type: FxORMPluginUACLInternal.GRANT_TYPE
         readonly _tree_stores: {
             [k: string]: ACLTree
         };
@@ -95,18 +159,29 @@ declare namespace FxORMPluginUACLNS {
          * @description routing for invoking message from ACLNode
          */
         readonly routing: Class_Routing
-        // readonly readORM: FxOrmNS.ORM;
-        // readonly saveORM: FxOrmNS.ORM;
-        // association_name?: string
-        // association_info?: FxOrmModel.Model['associations'][any]
-
-        load (uaci?: string): void
-        persist(uaci?: string): void
 
         can (action: FxORMPluginUACLNS.ACLType, uaci: string, askedFields?: string[]): boolean
-        grant (uaci: string, oacl: FxORMPluginUACLNS.OACLStruct): void
-        reset(): void
+
+        load (opts?: ACLTreeLoadOptions): this
+        persist(opts?: ACLTreePersistOptions): this
+        revoke (opts?: FxORMPluginUACLNS.ACLTreeRevokeOptions): this
+        grant (uaci: string, oacl: FxORMPluginUACLNS.ACLNode['oacl']): this
+        reset(): this
     }
+
+    type ACLTreeLoadOptions = {
+        uaci?: ACLNode['id']   
+        sync?: ACLNodePushOpts['sync']
+    }
+    type ACLTreePersistOptions = {
+        sync?: ACLNodePushOpts['sync']
+        uaci?: ACLNode['id']   
+    }
+    type ACLTreeRevokeOptions = {
+        sync?: ACLNodePushOpts['sync']
+        uaci?: ACLNode['id']   
+    }
+
     interface InstanceUACLInfo {
         objectless: string
         object: string
@@ -119,12 +194,19 @@ declare namespace FxORMPluginUACLNS {
         oacl?: ACLNode['oacl']
     }
 
+    interface ACLNodePullOpts {
+        sync?: boolean
+    }
+    interface ACLNodePushOpts {
+        sync?: boolean
+    }
+    interface ACLNodeRevokeOpts {
+        sync?: boolean
+    }
     class ACLNode extends Node {
         constructor (cfg: ACLNodeConstructorOptions);
-        // data: {
-        //     uid: string | number
-        //     uroles: string[]
-        // }
+
+        static looseNodeOf (tree: ACLTree, cfg: ACLNodeConstructorOptions): ACLNode;
 
         acl: {
             create?: boolean | string[]
@@ -135,28 +217,29 @@ declare namespace FxORMPluginUACLNS {
         oacl: {
             write?: boolean | string[]
             read?: boolean | string[]
-            remove?: boolean | string[]
+            delete?: boolean | string[]
         }
 
-        push (type: 'user' | 'role', target_id: string): void;
+        push (
+            target: {
+                type: FxORMPluginUACLInternal.ACLStorageItem['target']['type'],
+                id: FxORMPluginUACLInternal.ACLStorageItem['target']['id']
+            },
+            opts?: ACLNodePushOpts
+        ): void;
+        revoke (opts?: ACLNodeRevokeOpts): void;
 
-        pull (): void;
+        pull (opts?: ACLNodePullOpts): void;
     }
 
     type ACLType = keyof ACLNode['acl'] | keyof ACLNode['oacl']
     type ACLDescriptor = boolean | string[]
 
-    interface ACLStruct {
-        create?: boolean | string[]
-        clear?: boolean | string[]
-    }
-    
-    interface OACLStruct {
-        find?: boolean | string[]
-        write?: boolean | string[]
-        read?: boolean | string[]
-        remove?: boolean | string[]
-    }
+    type ACLTreeStorageRoutingConfigurationGenerator = (
+        cfg?: {
+            tree: FxORMPluginUACLNS.ACLTree,
+        }
+    ) => Class_Routing | Fibjs.AnyObject
 }
 
 declare namespace FxOrmNS {

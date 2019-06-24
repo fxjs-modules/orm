@@ -1,8 +1,9 @@
+import coroutine = require('coroutine')
 import util = require('util')
 import mq = require('mq')
 
 import { Tree, Node } from './tree'
-import { findACLNode, generateGrantMessage, generateLoadMessage, normalizeUaci } from './_utils';
+import { findACLNode, generateGrantMessage, generateLoadMessage, normalizeUaci, generateRevokeByUACIMessage } from './_utils';
 
 function nOop () { return null as any }
 
@@ -10,24 +11,18 @@ function nOop () { return null as any }
  * @description retrievable-end/grant-end of uacl
  */
 export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACLNS.ACLTree {
-    // namespace: string = '';
-
     name: string
-    type: 'user' | 'role'
+    type: FxORMPluginUACLInternal.GRANT_TYPE
 
     readonly _tree_stores: FxORMPluginUACLNS.ACLTree['_tree_stores'];
     readonly routing: FxORMPluginUACLNS.ACLTree['routing'];
 
-    constructor ({ name, type = 'user', configRouting = nOop }: {
+    constructor ({ name, type = 'user', configStorageServiceRouting = nOop }: {
         name: FxORMPluginUACLNS.ACLTree['name'],
         type: FxORMPluginUACLNS.ACLTree['type'],
-        configRouting?: (
-            cfg?: {
-                tree: FxORMPluginUACLNS.ACLTree,
-            }
-        ) => Class_Routing | Fibjs.AnyObject
+        configStorageServiceRouting?: FxORMPluginUACLNS.ACLTreeStorageRoutingConfigurationGenerator
     } = {
-        name: null, type: null, configRouting: null
+        name: null, type: null, configStorageServiceRouting: null
     }) {
         super();
 
@@ -37,11 +32,15 @@ export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACLNS.ACLTree 
         const _treeStores = {}
         Object.defineProperty(this, '_tree_stores', { get () { return _treeStores }, enumerable: false });
 
+        if (typeof name === 'number') {
+            if (isNaN(name)) name = '0'
+            else name = name + ''
+        }
         Object.defineProperty(this, 'name', { get () { return name }, configurable: false });
         Object.defineProperty(this, 'type', { get () { return type }, configurable: false });
 
         /* after basic info :start */
-        let routing = configRouting({ tree: this })
+        let routing = configStorageServiceRouting({ tree: this })
         if (!(routing instanceof mq.Routing))  {
             routing = routing || {}
             routing = new mq.Routing(routing)
@@ -51,48 +50,95 @@ export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACLNS.ACLTree 
     }
 
     /**
+     * @default_sync
      * @description
      *  load resource's information of specific uaci if provided,
      *  if no uaci specified, load all uacis from ALL childNodes in this tree
      */
-    load (uaci?: string): void {
+    load (opts?: FxORMPluginUACLNS.ACLTreePersistOptions) {
+        let { uaci = null, sync: is_sync = true } = opts || {}
+
         if (!uaci) {
             // const uacis = this.nonRootNodes.map(x => x.id)
             // const msg = generateBatchPullMessage(uacis, { uids: this. })
-            this.nonRootNodes.forEach(node => node.pull())
-            return ;
+            this.nonRootNodes.forEach(node => node.pull({ sync: is_sync }))
+            return this;
         }
 
         uaci = normalizeUaci(uaci)
 
-        const node = findACLNode(this, uaci)
+        let node = findACLNode(this, uaci)
         if (!node)
-            return ;
+            node = ACLNode.looseNodeOf(this, {id: uaci, data: {}})
 
-        node.pull()
+        // use synchronous mode
+        node.pull({ sync: is_sync })
+
+        return this
     }
 
     /**
+     * @default_async
      * @description
      *  save resource's information of specific uaci if provided,
      *  if no uaci specified, save all uacis from ALL childNodes in this tree
      */
-    persist(uaci?: string): void {
+    persist(opts?: FxORMPluginUACLNS.ACLTreePersistOptions) {
+        let { uaci = null, sync: is_sync = false } = opts || {}
+
         if (!uaci) {
-            // const uacis = this.nonRootNodes.map(x => x.id)
-            // const msg = generateBatchPullMessage(uacis, { uids: this. })
-            this.nonRootNodes.forEach(node => node.push(this.type, this.name))
-            return ;
+            this.nonRootNodes.forEach(
+                node => node.push({
+                    type: this.type,
+                    id: this.name
+                }, {
+                    sync: is_sync
+                })
+            )
+            return this;
         }
 
         uaci = normalizeUaci(uaci)
 
         const node = findACLNode(this, uaci)
         if (!node)
-            return ;
+            return this;
 
-        node.push(this.type, this.name)
-    } 
+        node.push(
+            {
+                type: this.type,
+                id: this.name
+            },
+            { sync: is_sync }
+        )
+
+        return this
+    }
+
+    revoke (
+        opts?: FxORMPluginUACLNS.ACLTreeRevokeOptions
+    ) {
+        let { uaci = null, sync: is_sync = false } = opts || {}
+
+        if (!uaci) {
+            this.nonRootNodes.forEach(
+                node => node.revoke({
+                    sync: is_sync
+                })
+            )
+            return this;
+        }
+
+        uaci = normalizeUaci(uaci)
+
+        const node = findACLNode(this, uaci)
+        if (!node)
+            return this;
+
+        node.revoke({ sync: is_sync })
+
+        return this
+    }
 
     /**
      * check if `user` with (this.id) can DO `action` TO uaci('s askedFields if provided)
@@ -138,7 +184,7 @@ export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACLNS.ACLTree 
 
     grant (
         uaci: string,
-        oacl: FxORMPluginUACLNS.OACLStruct,
+        oacl: FxORMPluginUACLNS.ACLNode['oacl'],
         opts?: {
             puaci?: string
         }
@@ -168,24 +214,14 @@ export class ACLTree extends Tree<ACLNode> implements FxORMPluginUACLNS.ACLTree 
 
             node.oacl = oacl
         });
-    }
-
-    revoke (uaci: string) {
-        uaci = normalizeUaci(uaci)
-        
-        ;[null].forEach(() => {
-            let node = findACLNode(this, uaci)
-            if (!node)
-                return ;
-
-            node.remove()
-        });
 
         return this;
     }
 
-    reset (): void {
+    reset () {
         super.clear()
+
+        return this;
     }
 }
 
@@ -195,6 +231,13 @@ export class ACLNode extends Node<FxORMPluginUACLNS.ACLNode['data']> implements 
     oacl: FxORMPluginUACLNS.ACLNode['oacl']
 
     root: FxORMPluginUACLNS.Node<any, FxORMPluginUACLNS.ACLTree>['root']
+
+    static looseNodeOf (tree: FxORMPluginUACLNS.ACLTree, cfg: FxORMPluginUACLNS.ACLNodeConstructorOptions) {
+        const node = new ACLNode(cfg)
+        node.root = tree.root as ACLNode['root']
+
+        return node;
+    }
     
     constructor (cfg: FxORMPluginUACLNS.ACLNodeConstructorOptions) {
         if (!cfg.data /* || !cfg.data.hasOwnProperty('id') || !cfg.data.hasOwnProperty('roles') */)
@@ -209,7 +252,7 @@ export class ACLNode extends Node<FxORMPluginUACLNS.ACLNode['data']> implements 
         const oacl: ACLNode['oacl'] = {
             write: undefined,
             read: undefined,
-            remove: undefined,
+            delete: undefined,
             ...cfg.oacl
         }
 
@@ -231,39 +274,162 @@ export class ACLNode extends Node<FxORMPluginUACLNS.ACLNode['data']> implements 
     }
 
     /**
+     * @default_async
      * @description data to storage
      */
     push (
-        type: FxORMPluginUACLNS.ACLTree['type'],
-        target_id: string
+        {
+            type = null,
+            id = null
+        }: {
+            type: FxORMPluginUACLInternal.ACLStorageItem['target']['type'],
+            id: FxOrmNS.Arraible<FxORMPluginUACLInternal.ACLStorageItem['target']['id']>
+        },
+        opts?: FxORMPluginUACLNS.ACLNodePushOpts
     ) {
+        const { sync = false } = opts || {};
+
         const data = {
-            id: type === 'user' ? target_id : null,
-            roles: type === 'role' ? [target_id] : []
+            id: type === 'user' ? id : null,
+            role: type === 'role' ? id : []
         }
 
         const msg = generateGrantMessage(this, {
             uid: data.id,
-            type: this.root.tree.type
+            role: data.role,
+            type: this.root.tree.type,
         })
-        console.log('[ACLNode/push]this.oacl', this.oacl)
-        console.log('[ACLNode/push]msg.value', msg.value)
-        console.log('[ACLNode/push]msg.json()', msg.json())
 
-        mq.invoke(this.root.tree.routing, msg);
+        const evt = new coroutine.Event()
+
+        const handler = () => {
+            const { success, error } = msg.json() as FxORMPluginUACLInternal.ACLMessageResult<FxORMPluginUACLInternal.ACLStorageItem[]>
+
+            if (success && success.code === 'pending') {
+                return 
+            } else if (error) {
+                console.error('error', error);
+            }
+
+            evt.set()
+        }
+
+        coroutine.start(() => {
+            mq.invoke(this.root.tree.routing, msg);
+
+            handler()
+        })
+
+        if (sync) evt.wait()
     }
 
     /**
+     * @default_sync
      * @description pull data about uaci(this.id)
      * 
      * if no data corresponding in persist-end, remove this node in tree
      */
-    pull () {
+    pull (
+        opts?: FxORMPluginUACLNS.ACLNodePullOpts
+    ) {
+        const { sync = true } = opts || {};
+
         const msg = generateLoadMessage(this.id, {
             uid: this.root.tree.name,
-            type: this.root.tree.type
+            role: [],
+            uacis: []
         })
-        console.log('[ACLNode/pull]msg.value', msg.value)
-        console.log('[ACLNode/pull]msg.json()', msg.json())
+
+        const evt = new coroutine.Event()
+
+        const handler = () => {
+            const { success, error } = msg.json() as FxORMPluginUACLInternal.ACLMessageResult<FxORMPluginUACLInternal.ACLStorageItem[]>
+
+            if (success && success.code === 'pending') {
+                return 
+            } else if (error) {
+                console.error('error', error);
+                evt.set()
+                return 
+            }
+
+            const { data: aclInfos = [] } = success || {}
+            /**
+             * @TODO: update the whole tree for `root.tree.type+root.tree.name` once
+             */
+            const sync_lock = new coroutine.Lock()
+            sync_lock.acquire()
+            aclInfos.forEach((item) => {
+                if (item.target.type !== this.root.tree.type)
+                    return ;
+
+                if (item.target.id !== this.root.tree.name)
+                    return ;
+
+                this.root.tree.grant(item.uaci, {
+                    write: item.write,
+                    read: item.read,
+                    delete: item.delete
+                })
+            })
+            sync_lock.release()
+
+            evt.set()
+        }
+
+        coroutine.start(() => {
+            mq.invoke(this.root.tree.routing, msg, 
+            );
+
+            handler()
+        })
+
+        if (sync) evt.wait()
+    }
+
+    /**
+     * @default_sync
+     * @description pull data about uaci(this.id)
+     * 
+     * if no data corresponding in persist-end, remove this node in tree
+     */
+    revoke (
+        opts?: FxORMPluginUACLNS.ACLNodeRevokeOpts
+    ) {
+        const tree = this.root.tree;
+
+        // remove local data firstly
+        this.remove();
+        
+        const { sync = true } = opts || {};
+
+        const msg = generateRevokeByUACIMessage(this)
+
+        const evt = new coroutine.Event()
+
+        const handler = () => {
+            const { success, error } = msg.json() as FxORMPluginUACLInternal.ACLMessageResult<FxORMPluginUACLInternal.ACLStorageItem[]>
+
+            if (success && success.code === 'pending') {
+                return 
+            } else if (error) {
+                console.error('error', error);
+                evt.set()
+                return 
+            }
+
+            /**
+             * @TODO: update the whole tree for `root.tree.type+root.tree.name` once
+             */
+            evt.set()
+        }
+
+        coroutine.start(() => {
+            mq.invoke(tree.routing, msg);
+
+            handler()
+        })
+
+        if (sync) evt.wait()
     }
 }

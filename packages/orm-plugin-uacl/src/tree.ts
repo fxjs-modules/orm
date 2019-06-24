@@ -185,12 +185,12 @@ export class Node<DTYPE = any> implements FxORMPluginUACLNS.Node<DTYPE> {
 
     removeChildNode (node: Node) {
         if (node.parent !== this)
-            return ;
+            return false;
 
         const idx = this.children.findIndex(x => x === node);
 
         if (idx === -1)
-            return ;
+            return false;
             
         if (node.children.length) {
             Array.from(node.children).forEach((childNode) => {
@@ -205,13 +205,17 @@ export class Node<DTYPE = any> implements FxORMPluginUACLNS.Node<DTYPE> {
         unrecordNode.call(tree, node);
         reCountEdgeAfterOffParent(node, tree);
         removeFromParent(node);
+
+        return true;
     }
 
-    remove () {
+    remove (): boolean {
         if (!this.parent)
-            return ;
+            return false;
 
         this.parent.removeChildNode(this);
+
+        return true
     }
 
     toJSON (): FxORMPluginUACLNS.JsonifiedNode {

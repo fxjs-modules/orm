@@ -89,13 +89,13 @@ module.exports = orm => {
 
                     member_ids.forEach(member_id => {
                         this.$uacl({ uid: member_id })
-                            .revoke(proj_uaci)
+                            .revoke({ uaci: proj_uaci })
 
                         stages.forEach(proj_stage => {
                             this.$uacl({ uid: member_id })
-                                .revoke(
-                                    proj_stage.$getUacis({ prefix: proj_uaci }).object
-                                )
+                                .revoke({
+                                    uaci: proj_stage.$getUacis({ prefix: proj_uaci }).object
+                                })
                         })
                     })
                 })
