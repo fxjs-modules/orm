@@ -55,7 +55,7 @@ describe('Basic Persistence', () => {
         // Object.values(uaclORM.models).forEach(model => model.dropSync())
     })
 
-    oit('UACLModel', () => {
+    it('UACLModel', () => {
         const [
             project$1,
             project$readableonly,

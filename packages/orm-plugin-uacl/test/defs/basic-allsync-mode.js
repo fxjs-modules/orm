@@ -6,8 +6,7 @@ module.exports = orm => {
         hooks: {
             afterAdd ({ associations: stages }) {
                 /**
-                 * 为所有的该 project 下的 stages 的 members 赋予对 project 的
-                 * 字段读取权限
+                 * for all members of stages in the project, grant permission `read` to this project.
                  */
                 const project = this
                 const proj_uaci = project.$getUacis().object
