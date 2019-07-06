@@ -1,0 +1,21 @@
+{
+  "name": "@fxjs/orm-plugin-searchlite",
+  "version": "1.0.0",
+  "description": "lite search plugin for orm",
+  "main": "lib",
+  "types": "typings.d.ts",
+  "scripts": {
+    "build": "fib-typify ./index.ts -o ./lib/index.js",
+    "test": "fibjs test",
+    "ci": "npm run build && npm run test"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@fxjs/orm": "^1.10.x",
+    "fib-typify": "^0.6.0"
+  },
+  "peerDependencies": {
+    "@fxjs/orm": ">= 1.10.1 <= 2.0"
+  }
+}
