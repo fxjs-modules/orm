@@ -1,0 +1,21 @@
+{
+  "name": "@fxjs/orm-core",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib",
+  "types": "@types/index.d.ts",
+  "scripts": {
+    "build": "fib-typify ./src -o ./lib",
+    "test": "fibjs test",
+    "ci": "npm run build && npm run test",
+    "prepublishOnly": "npm run ci"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "@fibjs/types": "^0.27.1",
+    "fib-typify": "^0.6.0"
+  },
+  "peerDependencies": {}
+}
