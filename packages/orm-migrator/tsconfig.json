@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "noImplicitAny": true,
+        "noImplicitUseStrict": true,
+        "inlineSourceMap": false,
+        "lib": [
+            "es6",
+            "es2015",
+            "es2016"
+        ],
+        "types": [
+            "@fibjs/types"
+        ],
+        "typeRoots": [
+            "@types/index.d.ts"
+        ]
+    }
+}

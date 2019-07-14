@@ -1,0 +1,30 @@
+{
+  "name": "@fxjs/orm-migrator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib",
+  "types": "@types/index.d.ts",
+  "scripts": {
+    "build": "fib-typify ./src -o ./lib",
+    "test": "fibjs test",
+    "ci": "npm run build && npm run test",
+    "prepublishOnly": "npm run ci"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fibjs/mkdirp": "^1.0.1",
+    "@fxjs/cli": "0.0.2",
+    "@fxjs/db-driver": "0.0.2",
+    "@fxjs/sql-ddl-sync": "^0.5.1",
+    "@fxjs/sql-query": "^0.5.1"
+  },
+  "devDependencies": {
+    "fib-typify": "^0.6.0"
+  },
+  "peerDependencies": {
+    "@fxjs/db-driver": "*",
+    "@fxjs/sql-query": ">= 0.5.0",
+    "@fxjs/sql-ddl-sync": ">= 0.5.1"
+  }
+}
