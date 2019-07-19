@@ -1,0 +1,60 @@
+{
+	"name": "@fxjs/orm-ui",
+	"version": "0.0.1",
+	"description": "Fibjs Orm UI Manager",
+	"keywords": [
+		"mysql",
+		"redis",
+		"sqlite",
+		"adapater"
+	],
+	"author": "Richard <richardo2016@gmail.com>",
+	"license": "MIT",
+	"repository": "http://github.com/fxjs-modules/orm-ui.git",
+	"types": "@types/index.d.ts",
+	"main": "./lib",
+	"unpkg": "./lib/index.cjs.js",
+	"jsdelivr": "./lib/index.cjs.js",
+	"scripts": {
+		"start": "PORT=9090 fibjs ./server",
+		"build": "fibjs build.js",
+		"test": "fibjs test",
+		"ci": "npm run build && npm run test",
+		"prepublishOnly": "npm run build"
+	},
+	"engines": {
+		"fibjs": "*"
+	},
+	"analyse": false,
+	"dependencies": {
+		"@fxjs/handbag": "^0.3.0",
+		"parse-querystring-dotkey": "^1.0.3",
+		"rollup-plugin-commonjs": "^9.2.1",
+		"rollup-plugin-typescript": "^1.0.1",
+		"semantic-ui-css": "^2.4.1",
+		"semantic-ui-react": "^0.87.3",
+		"tslib": "^1.10.0"
+	},
+	"devDependencies": {
+		"@fibjs/types": "^0.27.1",
+		"@fxjs/knex": "^0.1.1",
+		"@fxjs/orm": "^1.11.0",
+		"cross-env": "^5.2.0",
+		"fib-rollup": "^0.4.0",
+		"fib-typify": "^0.6.0",
+		"knex": "^0.16.5",
+		"should": "^13.2.3"
+	},
+	"peerDependencies": {
+		"@fxjs/orm-core": "*",
+		"@fxjs/orm": "*"
+	},
+	"ci": {
+		"type": "travis, appveyor",
+		"version": [
+			"0.26.0",
+			"0.26.1",
+			"0.27.0"
+		]
+	}
+}
