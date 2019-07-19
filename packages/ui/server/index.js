@@ -3,113 +3,80 @@ const path = require('path');
 const http = require('http');
 const mq = require('mq');
 const vm = require('vm');
+const ws = require('ws');
+
 const fxHb = require('@fxjs/handbag');
+const rpc = require('fib-rpc')
 
 const detectPort = require('@fibjs/detect-port');
-const moduleList = require('@fibjs/builtin-modules')
+const getModuleDict = require('@fibjs/builtin-modules/lib/util/get-builtin-module-hash')
 
-const port = detectPort(process.env.PORT);
+const { registerAsJavascript } = require('./utils/register')
+const { setupVboxForFrontend, commonOptions: registerCommonOptions } = require('./utils/setup')
+const { safeRequireFEResources, pathDict: fePathDict, fHandlers } = require('./utils/fe')
+const { EXT_MIME_MAPPER } = require('./utils/mime')
 
-const vbox = new vm.SandBox({}, name => require(name));
-const commonOptions = {
-	burnout_timeout: -500,
+/* setup fe resource :start */
+const [
+	vboxFe,
+	vboxBk,
+] = [
+	new vm.SandBox({}, name => require(name)),
+	new vm.SandBox(getModuleDict(), name => require(name)),
+]
+setupVboxForFrontend({ vbox: vboxFe, project_root: fePathDict.root });
+/* setup fe resource :end */
+
+/* setup backend :start */
+registerAsJavascript(vboxBk, {
+	...registerCommonOptions,
 	hooks: {
 		'nirvana:mchanged' ({ info }) {
-			console.log('[react]mchanged', info)
+			console.log('[backends]mchanged', info)
+			process.nextTick(() => {
+				buildJsRpcServer()
+			})
 		}
 	}
-};
-
-;[
-	['system', ['.mjs', '.system.jsx', '.system.tsx']],
-	['umd', ['.jsx', '.tsx']],
-].forEach(([format, suffix]) => {
-	fxHb.registers.react.registerReactAsRollupedJavascript(vbox, {
-		...commonOptions,
-		suffix: suffix,
-		transpileLib: 'babel',
-		rollup: {
-			onGenerateUmdName: (_, info) => {
-				switch (format) {
-					case 'system':
-						return info.name
-					case 'umd':
-					case 'iife':
-						let rel = path.relative(
-							pathDict.root, info.filename
-						)
-						const ext = path.extname(rel)
-		
-						if (ext) {
-							rel = rel.slice(0, rel.lastIndexOf(ext))
-						}
-		
-						// return `_components_/${rel.replace(/\//g, '_')}`
-						return `_components_/${rel}`
-				}
-			},
-			bundleConfig: {
-				external: moduleList.concat(
-					['react', 'react-dom']
-				).concat(
-					['semantic-ui-react']
-				)
-			},
-			writeConfig: {
-				output: {
-					globals: {
-						'react': 'React',
-						'react-dom': 'ReactDOM',
-						'semantic-ui-react': 'semanticUIReact'
-					},
-					format: format
-				}
-			}
-		}
-	})
 });
 
-fxHb.registers.plain.registerAsPlain(vbox, {...commonOptions, suffix: ['.html']})
-fxHb.registers.pug.registerPugAsHtml(vbox, {...commonOptions, suffix: ['.pug'] })
-fxHb.registers.stylus.registerStylusAsCss(vbox, {...commonOptions, suffix: ['.styl', '.stylus']})
-
-const EXT_MIME_MAPPER = {
-	'.js': 'application/javascript; charset=utf-8',
-	'.jsx': 'application/javascript; charset=utf-8',
-	'.json': 'application/json; charset=utf-8',
-	'.styl': 'text/css; charset=utf-8',
-	'.stylus': 'text/css; charset=utf-8',
-	'.pug': 'text/html; charset=utf-8'
-}
-
-const pathDict = {
-	root: path.resolve(__dirname, '../'),
-	static: path.resolve(__dirname, '../static'),
-	node_modules: path.resolve(__dirname, '../node_modules'),
-}
-const fHandlers = {
-	root: http.fileHandler(pathDict.root),
-	static: http.fileHandler(pathDict.static),
-}
-
-function safeRequire (filename, dirname) {
-	try {
-		filename = vbox.resolve(filename, dirname)
-	} catch (error) {
-		return ;
+let [
+	jsBackends,
+	buildJsRpcServer,
+] = [
+	null,
+	function () {
+		return jsBackends = rpc.open_handler(
+			{
+				info: vboxBk.require('./backends/info.b.jsx', __dirname)
+			}
+		)
 	}
-	
-	if (
-		filename.endsWith('.js')
-		|| filename.endsWith('.json')
-	)
-		return fs.readFile(filename)
-	
-	return vbox.require(filename, dirname)
+]
+/* setup backend :end */
+
+/* setup server handler :start */
+function buildApiHandler () {
+	buildJsRpcServer()
+
+	const parseQueryStringDotkey = require('parse-querystring-dotkey')
+
+	return (req, method_name) => {
+		const query = parseQueryStringDotkey(req.queryString)
+
+		if (query._body) {
+			req.json(query._body)
+		}
+
+		jsBackends(req);
+	}
 }
 
 const routing = new mq.Routing({
-	'(.*).html$': (req, _path) => req.response.write(safeRequire(`../views/${_path}`, __dirname)),
+	'/api/:method_name': buildApiHandler(),
+	'(.*).html$': (req, _path) => req.response.write(
+		safeRequireFEResources(vboxFe, `../views/${_path}`, __dirname)
+	),
 	// '(.*).jsx$': jsHandler,
 	'*': (req) => {
 		const req_value = req.value
@@ -117,7 +84,7 @@ const routing = new mq.Routing({
 			case '':
 			case '/':
 				req.response.write(
-					vbox.require(`../views/index.pug`, __dirname)
+					vboxFe.require(`../views/index.pug`, __dirname)
 				)
 				break
 			default:
@@ -128,12 +95,12 @@ const routing = new mq.Routing({
 					let existed_path = null, content = null
 
 					const checkors = [
-						() => existed_path = vbox.resolve(path.join(`../views/pages`, req_value), __dirname),
-						() => existed_path = vbox.resolve(path.join(`../views/pages`, req_value, './index.html'), __dirname),
-						() => existed_path = vbox.resolve(path.join(`../views`, req_value), __dirname),
+						() => existed_path = vboxFe.resolve(path.join(`../views/pages`, req_value), __dirname),
+						() => existed_path = vboxFe.resolve(path.join(`../views/pages`, req_value, './index.html'), __dirname),
+						() => existed_path = vboxFe.resolve(path.join(`../views`, req_value), __dirname),
 						() => {
 							const relpath = `./${path.join('./', req_value)}`
-							existed_path = vbox.resolve(relpath, pathDict.node_modules)
+							existed_path = vboxFe.resolve(relpath, fePathDict.node_modules)
 						},
 					];
 					
@@ -147,7 +114,7 @@ const routing = new mq.Routing({
 							break ;
 					}
 
-					if (existed_path && (content = safeRequire(existed_path, __dirname))) {
+					if (existed_path && (content = safeRequireFEResources(vboxFe, existed_path, __dirname))) {
 						req.response.write(content)
 
 						const ext = path.extname(existed_path)
@@ -163,7 +130,9 @@ const routing = new mq.Routing({
 		
 	}
 })
+/* setup server handler :end */
 
+const port = detectPort(process.env.PORT);
 const server = new http.Server(port, routing)
 
 server.run(() => void 0);
