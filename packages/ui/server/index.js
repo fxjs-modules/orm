@@ -21,6 +21,7 @@ const commonOptions = {
 };
 
 ;[
+	['system', ['.mjs', '.system.jsx', '.system.tsx']],
 	['umd', ['.jsx', '.tsx']],
 ].forEach(([format, suffix]) => {
 	fxHb.registers.react.registerReactAsRollupedJavascript(vbox, {
@@ -29,17 +30,23 @@ const commonOptions = {
 		transpileLib: 'babel',
 		rollup: {
 			onGenerateUmdName: (_, info) => {
-				let rel = path.relative(
-					pathDict.root, info.filename
-				)
-				const ext = path.extname(rel)
-
-				if (ext) {
-					rel = rel.slice(0, rel.lastIndexOf(ext))
+				switch (format) {
+					case 'system':
+						return info.name
+					case 'umd':
+					case 'iife':
+						let rel = path.relative(
+							pathDict.root, info.filename
+						)
+						const ext = path.extname(rel)
+		
+						if (ext) {
+							rel = rel.slice(0, rel.lastIndexOf(ext))
+						}
+		
+						// return `_components_/${rel.replace(/\//g, '_')}`
+						return `_components_/${rel}`
 				}
-
-				// return `_components_/${rel.replace(/\//g, '_')}`
-				return `_components_/${rel}`
 			},
 			bundleConfig: {
 				external: moduleList.concat(
@@ -63,6 +70,7 @@ const commonOptions = {
 });
 
 fxHb.registers.plain.registerAsPlain(vbox, {...commonOptions, suffix: ['.html']})
+fxHb.registers.pug.registerPugAsHtml(vbox, {...commonOptions, suffix: ['.pug'] })
 fxHb.registers.stylus.registerStylusAsCss(vbox, {...commonOptions, suffix: ['.styl', '.stylus']})
 
 const EXT_MIME_MAPPER = {
@@ -70,7 +78,8 @@ const EXT_MIME_MAPPER = {
 	'.jsx': 'application/javascript; charset=utf-8',
 	'.json': 'application/json; charset=utf-8',
 	'.styl': 'text/css; charset=utf-8',
-	'.stylus': 'text/css; charset=utf-8'
+	'.stylus': 'text/css; charset=utf-8',
+	'.pug': 'text/html; charset=utf-8'
 }
 
 const pathDict = {
@@ -108,7 +117,7 @@ const routing = new mq.Routing({
 			case '':
 			case '/':
 				req.response.write(
-					vbox.require(`../views/index.html`, __dirname)
+					vbox.require(`../views/index.pug`, __dirname)
 				)
 				break
 			default:

@@ -35,8 +35,23 @@ export function App () {
   const [visible, setVisible] = React.useState(true)
   const [activeMenuItem, setActiveMenuItem] = React.useState('dashboard')
 
+  const [
+    [com1, setCom1]
+  ] = [
+    React.useState(null)
+  ]
+
+  React.useEffect(() => {
+    System.import('/modules/test-mod/index.system.jsx')
+      .then((mod) => {
+        console.log('mod', mod)
+        setCom1(mod.default)
+      })
+  }, [])
+
   return (
     <>
+      {com1 && <com1 />}
       <Sidebar.Pushable
         as={Segment}
         style={{
