@@ -31,12 +31,18 @@ registerAsJavascript(vboxBk, {
 	hooks: {
 		'nirvana:mchanged' ({ info }) {
 			console.log('[backends]mchanged', info)
+			if (info.filename !== bkEntryPath) {
+				vboxBk.remove(bkEntryPath)
+				vboxBk.require(bkEntryPath, __dirname)
+			}
+			
 			process.nextTick(() => {
 				buildJsRpcServer()
-			})
+			});
 		}
 	}
 });
+const bkEntryPath = vboxBk.resolve('./backends', __dirname)
 
 let [
 	jsBackends,
@@ -44,11 +50,7 @@ let [
 ] = [
 	null,
 	function () {
-		const methods = vboxBk.require('./backends', __dirname);
-		console.log(
-			'Object.keys(methods)',
-			Object.keys(methods)
-		)
+		const methods = vboxBk.require(bkEntryPath, __dirname);
 		return jsBackends = rpc.open_handler(
 			{
 				...methods
