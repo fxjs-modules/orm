@@ -3,9 +3,7 @@ const path = require('path');
 const http = require('http');
 const mq = require('mq');
 const vm = require('vm');
-const ws = require('ws');
 
-const fxHb = require('@fxjs/handbag');
 const rpc = require('fib-rpc')
 
 const detectPort = require('@fibjs/detect-port');
@@ -46,9 +44,14 @@ let [
 ] = [
 	null,
 	function () {
+		const methods = vboxBk.require('./backends', __dirname);
+		console.log(
+			'Object.keys(methods)',
+			Object.keys(methods)
+		)
 		return jsBackends = rpc.open_handler(
 			{
-				info: vboxBk.require('./backends/info.b.jsx', __dirname)
+				...methods
 			}
 		)
 	}

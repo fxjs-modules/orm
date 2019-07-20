@@ -7,11 +7,6 @@ exports.registerAsJavascript = (vbox, options) => {
     const emitter = new events.EventEmitter();
     if (restOptions.hooks) {
         Object.keys(restOptions.hooks).forEach(hookName => {
-            // console.log(
-            //     'hookName',
-            //     hookName,
-            //     restOptions.hooks[hookName]
-            // );
             emitter.on(hookName, restOptions.hooks[hookName])
         })
 
@@ -22,6 +17,15 @@ exports.registerAsJavascript = (vbox, options) => {
         ...restOptions,
         emitter,
         suffix,
-        compiler: (buf, info) => buf
+        compile_to_iife_script: false,
+        compiler: (buf, info) => {
+            buf = (buf ? buf + '' : '').trimLeft()
+            const EXPORT_STR = 'module.exports =';
+            if (!buf.startsWith(EXPORT_STR)) {
+                buf = "module.exports = exports = {};" + buf;
+            }
+
+            return buf;
+        }
     })
 }
