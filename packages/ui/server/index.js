@@ -61,7 +61,7 @@ function buildApiHandler () {
 
 	const parseQueryStringDotkey = require('parse-querystring-dotkey')
 
-	return (req, method_name) => {
+	return (req) => {
 		const query = parseQueryStringDotkey(req.queryString)
 
 		if (query._body) {
@@ -73,7 +73,7 @@ function buildApiHandler () {
 }
 
 const routing = new mq.Routing({
-	'/api/:method_name': buildApiHandler(),
+	'/rpc/': buildApiHandler(),
 	'(.*).html$': (req, _path) => req.response.write(
 		safeRequireFEResources(vboxFe, `../views/${_path}`, __dirname)
 	),

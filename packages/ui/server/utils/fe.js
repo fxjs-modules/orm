@@ -1,9 +1,10 @@
+const fs = require('fs');
 const http = require('http');
 const path = require('path');
 
 exports.safeRequireFEResources = (vbox, filename, dirname) => {
 	try {
-		filename = vboxFe.resolve(filename, dirname)
+		filename = vbox.resolve(filename, dirname)
 	} catch (error) {
 		return ;
 	}
@@ -14,7 +15,7 @@ exports.safeRequireFEResources = (vbox, filename, dirname) => {
 	)
 		return fs.readFile(filename)
 	
-	return vboxFe.require(filename, dirname)
+	return vbox.require(filename, dirname)
 }
 
 const pathDict = exports.pathDict = {
