@@ -12,6 +12,7 @@ const getModuleDict = require('@fibjs/builtin-modules/lib/util/get-builtin-modul
 const { registerAsJavascript } = require('./utils/register')
 const { setupVboxForFrontend, commonOptions: registerCommonOptions } = require('./utils/setup')
 const { safeRequireFEResources, pathDict: fePathDict, fHandlers } = require('./utils/fe')
+const { setupDevEnv: setupBackendDevEnv } = require('./utils/bk')
 const { EXT_MIME_MAPPER } = require('./utils/mime')
 
 /* setup fe resource :start */
@@ -26,19 +27,20 @@ setupVboxForFrontend({ vbox: vboxFe, project_root: fePathDict.root });
 /* setup fe resource :end */
 
 /* setup backend :start */
+setupBackendDevEnv();
 registerAsJavascript(vboxBk, {
 	...registerCommonOptions,
 	hooks: {
 		'nirvana:mchanged' ({ info }) {
 			console.log('[backends]mchanged', info)
 			if (info.filename !== bkEntryPath) {
-				vboxBk.remove(bkEntryPath)
-				vboxBk.require(bkEntryPath, __dirname)
+				// vboxBk.remove(bkEntryPath)
+				// vboxBk.require(bkEntryPath, __dirname)
+			} else {
+				process.nextTick(() => {
+					buildJsRpcServer()
+				});
 			}
-			
-			process.nextTick(() => {
-				buildJsRpcServer()
-			});
 		}
 	}
 });

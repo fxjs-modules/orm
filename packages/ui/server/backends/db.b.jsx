@@ -36,6 +36,43 @@ exports.isTableExisted = (args) => {
     )
 }
 
+exports.getTableNames = (args) => {
+    const {
+        connection = 'mysql://root:@localhost:3306/mysql',
+    } = args
+
+    const orm = ORM.connectSync(connection)
+    let rows = [];
+
+    // PostgreSQL: SELECT tablename FROM pg_tables WHERE schemaname='public'
+    // MySQL: SELECT * FROM information_schema.tables
+    // SQLite3: SELECT name FROM sqlite_master WHERE type='table';
+    switch (orm.driver.config.protocol) {
+        case 'mysql:':
+            // rows = orm.driver.execQuerySync(
+            //     'SELECT TABLE_NAME as name FROM information_schema.tables',
+            //     []
+            // ).map(x => x.name);
+
+            const database = orm.driver.config.database
+            rows = orm.driver.execQuerySync(
+                'SHOW TABLES from ??;',
+                [database]
+            ).map(x => Object.values(x)[0]);
+                
+            break
+        case 'sqlite:':
+            rows = orm.driver.execQuerySync(
+                `SELECT name FROM sqlite_master WHERE type='table';`,
+                []
+            ).map(x => x.name);
+
+            break
+    }
+    
+    return rows;
+}
+
 exports.getTableColumns = (args) => {
     const {
         connection = 'mysql://root:@localhost:3306/mysql',
