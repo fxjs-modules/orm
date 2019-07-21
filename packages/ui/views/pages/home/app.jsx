@@ -4,6 +4,14 @@ import { Grid, Button, Header, Icon, Image, Menu, Segment, Sidebar } from 'seman
 
 const imageLink = `https://react.semantic-ui.com/images/wireframe/paragraph.png`
 
+;[
+  ['react', window.React],
+  ['react-dom', window.ReactDOM],
+  ['semantic-ui-react', window.semanticUIReact]
+].forEach(([dep, depModule]) => {
+  System.set(dep, depModule);
+});
+
 const menuCfgs = [
   [
     {
@@ -34,25 +42,24 @@ const menuCfgs = [
 export function App () {
   const [visible, setVisible] = React.useState(true)
   const [activeMenuItem, setActiveMenuItem] = React.useState('dashboard')
-
+  
   const [
-    [com1, setCom1]
+    [com1, setCom1],
+    [Main, setMain]
   ] = [
-    React.useState(null)
+    React.useState(null),
+    React.useState(null),
   ]
 
   React.useEffect(() => {
-    System.import('/modules/test-mod/index.system.jsx')
-      .then((mod) => {
-        console.log('mod', mod)
-        setCom1(mod.default)
-      })
+    System.import('/modules/db-table-list/index.jsx')
+      .then((mod) => setMain(() => mod.default))
   }, [])
 
   return (
     <>
-      {com1 && <com1 />}
       <Sidebar.Pushable
+        className="pushable-app"
         as={Segment}
         style={{
           height: '100%',
@@ -61,8 +68,10 @@ export function App () {
         }}
         >
         <Sidebar
+          className="sidebar-left"
           as={Menu}
-          animation={'push'}
+          // animation={'push'}
+          animation={'overlay'}
           direction={'left'}
           icon='labeled'
           // inverted
@@ -99,8 +108,14 @@ export function App () {
         </Sidebar>
 
         <Sidebar.Pusher>
-          <Segment basic>
+          <Segment
+            basic
+            style={{
+              paddingRight: '12px'
+            }}
+          >
             <Header as='h3'>ORM 状态</Header>
+            {Main && <Main />}
           </Segment>
         </Sidebar.Pusher>
       </Sidebar.Pushable>

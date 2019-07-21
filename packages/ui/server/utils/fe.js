@@ -1,6 +1,11 @@
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
+const fxHb = require('@fxjs/handbag');
+
+const moduleList = require('@fibjs/builtin-modules')
+
+const { commonOptions } = require('./setup')
 
 exports.safeRequireFEResources = (vbox, filename, dirname) => {
 	try {
@@ -11,6 +16,7 @@ exports.safeRequireFEResources = (vbox, filename, dirname) => {
 	
 	if (
 		filename.endsWith('.js')
+		|| filename.endsWith('.map')
 		|| filename.endsWith('.json')
 	)
 		return fs.readFile(filename)
@@ -27,4 +33,62 @@ const pathDict = exports.pathDict = {
 exports.fHandlers = {
 	root: http.fileHandler(pathDict.root),
 	static: http.fileHandler(pathDict.static),
+}
+
+exports.setupVboxForFrontend = ({
+    vbox
+}) => {
+    const globals = {
+        'react': 'React',
+        'react-dom': 'ReactDOM',
+        'semantic-ui-react': 'semanticUIReact',
+        'axios': 'axios',
+    };
+
+    ;[
+        ['system', ['.m.jsx', '.mjs', '.system.jsx', '.system.tsx']],
+        ['umd', ['.jsx', '.tsx']],
+    ].forEach(([format, suffix]) => {
+        fxHb.registers.react.registerReactAsRollupedJavascript(vbox, {
+            ...commonOptions,
+            suffix: suffix,
+            transpileLib: 'babel',
+            rollup: {
+                onGenerateUmdName: (_, info) => {
+                    switch (format) {
+                        case 'system':
+                            return info.name
+                        case 'umd':
+                        case 'iife':
+                            let rel = path.relative(
+                                pathDict.root, info.filename
+                            )
+                            const ext = path.extname(rel)
+            
+                            if (ext) {
+                                rel = rel.slice(0, rel.lastIndexOf(ext))
+                            }
+            
+                            // return `_components_/${rel.replace(/\//g, '_')}`
+                            return `_components_/${rel}`
+                    }
+                },
+                bundleConfig: {
+                    external: moduleList.concat(
+                        Object.keys(globals)
+                    )
+                },
+                writeConfig: {
+                    output: {
+                        globals: globals,
+                        format: format
+                    }
+                }
+            }
+        })
+    });
+
+    fxHb.registers.plain.registerAsPlain(vbox, {...commonOptions, suffix: ['.html']})
+    fxHb.registers.pug.registerPugAsHtml(vbox, {...commonOptions, suffix: ['.pug'] })
+    fxHb.registers.stylus.registerStylusAsCss(vbox, {...commonOptions, suffix: ['.styl', '.stylus']})
 }

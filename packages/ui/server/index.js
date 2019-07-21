@@ -10,8 +10,8 @@ const detectPort = require('@fibjs/detect-port');
 const getModuleDict = require('@fibjs/builtin-modules/lib/util/get-builtin-module-hash')
 
 const { registerAsJavascript } = require('./utils/register')
-const { setupVboxForFrontend, commonOptions: registerCommonOptions } = require('./utils/setup')
-const { safeRequireFEResources, pathDict: fePathDict, fHandlers } = require('./utils/fe')
+const { commonOptions: registerCommonOptions } = require('./utils/setup')
+const { setupVboxForFrontend, safeRequireFEResources, pathDict: fePathDict, fHandlers } = require('./utils/fe')
 const { setupDevEnv: setupBackendDevEnv } = require('./utils/bk')
 const { EXT_MIME_MAPPER } = require('./utils/mime')
 
@@ -23,7 +23,7 @@ const [
 	new vm.SandBox({}, name => require(name)),
 	new vm.SandBox(getModuleDict(), name => require(name)),
 ]
-setupVboxForFrontend({ vbox: vboxFe, project_root: fePathDict.root });
+setupVboxForFrontend({ vbox: vboxFe });
 /* setup fe resource :end */
 
 /* setup backend :start */

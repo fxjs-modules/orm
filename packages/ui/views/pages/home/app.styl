@@ -3,3 +3,13 @@
 
 #app
     min-height: 100vh;
+
+#app .pushable-app
+    $sidebar-w = 15em;
+    > .sidebar:first-child
+        width: $sidebar-w;
+
+    > .pusher
+        padding-left: 1.2em;
+        padding-right: 1.2em;
+        margin-left: $sidebar-w;
