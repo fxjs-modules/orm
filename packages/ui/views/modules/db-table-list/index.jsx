@@ -1,7 +1,7 @@
 import React from 'react'
 import Axios from 'axios'
 
-import { List, Form } from 'semantic-ui-react'
+import { List, Form, Grid } from 'semantic-ui-react'
 // import { useDispatch, useGlobalState, Provider } from './state';
 
 import * as Reqs from '../../deps/requests'
@@ -82,7 +82,7 @@ function Table ({
       connection: dbInfo.href,
       table: table.name
     })
-  }, []);
+  }, [dbInfo.database, table.name]);
   
   return (
     <List.Item>
@@ -164,6 +164,7 @@ export default () => {
 
   return (
     <>
+      <link rel="stylesheet" href="/modules/db-table-list/index.styl" />
       <>
         <DbSetupForm
           onEvent={(evt_type, payload) => {
@@ -213,25 +214,41 @@ export default () => {
             }
           }}
         />
-        <List>
-          <List.Item>
-            <List.Icon name='database' />
-            <List.Content>
-              <List.Header>{dbTableList.name}</List.Header>
-              <List.Description>Current Database</List.Description>
-              <List.List>
-                {dbInfo && dbTableList.tables.map(table => {
-                  return (
-                    <Table
-                      table={table}
-                      dbInfo={dbInfo}
-                    />
-                  );
-                })}
-              </List.List>
-            </List.Content>
-          </List.Item>
-        </List>
+        <Grid celled>
+          <Grid.Row
+            className="table-mnger-row"
+          >
+            <Grid.Column width={5}>
+              <List>
+                <List.Item>
+                  <List.Icon name='database' />
+                  <List.Content>
+                    <List.Header>{dbTableList.name}</List.Header>
+                    <List.Description>Current Database</List.Description>
+                    <List.List>
+                      {dbInfo && dbTableList.tables.map(table => {
+                        return (
+                          <Table
+                            table={table}
+                            dbInfo={dbInfo}
+                          />
+                        );
+                      })}
+                    </List.List>
+                  </List.Content>
+                </List.Item>
+              </List>
+            </Grid.Column>
+            <Grid.Column
+              className="table-details"
+              width={11}
+            >
+              <div
+              >
+              </div>
+            </Grid.Column>
+          </Grid.Row>
+        </Grid>
       </>
     </>
   )
