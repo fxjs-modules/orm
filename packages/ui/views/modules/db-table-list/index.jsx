@@ -1,26 +1,63 @@
 import React from 'react'
-import Axios from 'axios'
 
-import { List, Form, Grid } from 'semantic-ui-react'
-// import { useDispatch, useGlobalState, Provider } from './state';
+import { List, Form, Grid, Button } from 'semantic-ui-react'
 
 import * as Reqs from '../../deps/requests'
+import { StateProvider, useCtxState } from '../../deps/context-reducer'
 
 function noOp () {}
 
 const DbSetupForm = ({
-  onEvent = noOp,
   form
 }) => {
-  const options = [
-    { key: 'm', text: 'Male', value: 'male' },
-    { key: 'f', text: 'Female', value: 'female' },
-    { key: 'o', text: 'Other', value: 'other' },
-  ]
+  const [{connection, dbTableList}, dispatch] = useCtxState();
 
-  const [dbConnection, setDbConnection] = React.useState(
-    window.localStorage.getItem('orm-ui/test-dbconnection') || 'mysql://root@localhost:3306/mysql'
-  )
+  const pullData = () => {
+    Reqs.rpc('connect', { connection })
+    .then(res => {
+      if (!res)
+        throw new Error('connnection error')
+
+      return res
+    })
+    .then(dbInfo => {
+      dispatch({
+        type: 'update:dbInfo',
+        dbInfo
+      })
+      
+      dispatch({
+        type: 'update:dbTableList',
+        dbTableList: {
+          ...dbTableList,
+          name: dbInfo.database,
+        }
+      });
+
+      return Reqs.rpc('getTableNames', {
+        connection: dbInfo.href,
+      }).then(tables => {
+        dispatch({
+          type: 'update:dbTableList',
+          dbTableList: {
+            ...dbTableList,
+            tables: tables.map(tableName => ({
+              name: tableName,
+              columns: []
+            }))
+          }
+        })
+      })
+    })
+    .catch(error => {
+      console.error(error)
+      alert(error.message)
+    })
+  }
+
+  React.useEffect(() => {
+    pullData();
+  }, [])
   
   return (
     <Form>
@@ -29,42 +66,19 @@ const DbSetupForm = ({
           fluid
           label='DB 连接'
           placeholder='mysql://[user[:pwd]@]host[:port][/schema]'
-          onChange={(evt) => setDbConnection(evt.target.value)}
-          value={dbConnection}
+          onChange={(evt) => {
+            dispatch({
+              type: 'update:connection',
+              connection: evt.target.value
+            })
+          }}
+          value={connection}
         />
-        {/* <Form.Input fluid label='First name' placeholder='First name' />
-        <Form.Input fluid label='Last name' placeholder='Last name' />
-        <Form.Select fluid label='Gender' options={options} placeholder='Gender' /> */}
       </Form.Group>
-      {/* <Form.Group inline>
-        <label>Size</label>
-        <Form.Radio
-          label='Small'
-          value='sm'
-          checked={value === 'sm'}
-          onChange={() => setValue('sm')}
-        />
-        <Form.Radio
-          label='Medium'
-          value='md'
-          checked={value === 'md'}
-          onChange={() => setValue('md')}
-        />
-        <Form.Radio
-          label='Large'
-          value='lg'
-          checked={value === 'lg'}
-          onChange={() => setValue('lg')}
-        />
-      </Form.Group> */}
-      {/* <Form.TextArea label='About' placeholder='Tell us more about you...' />
-      <Form.Checkbox label='I agree to the Terms and Conditions' /> */}
 
       <Form.Button
         onClick={() => {
-          onEvent('click:connect', {
-            form: { dbConnection }
-          })
+          pullData();
         }}
       >
         连接
@@ -73,183 +87,216 @@ const DbSetupForm = ({
   )
 }
 
-function Table ({
+function TableItem ({
   dbInfo,
-  table
+  table,
+  onUpdateTable = noOp
 }) {
-  React.useEffect(() => {
-    Reqs.rpc('getTableSemanticColumns', {
-      connection: dbInfo.href,
-      table: table.name
-    })
-  }, [dbInfo.database, table.name]);
+  const thisRef = React.useRef(null)
   
   return (
-    <List.Item>
-      <List.Icon name={table.icon || 'columns'} />
+    <List.Item
+      ref={thisRef}
+      className="table-item-treenode"
+      onClick={(evt) => {
+        const el = evt.target;
+
+        if (!el.getAttribute('data-click-proxy')) {
+          return
+        }
+
+        table.$toggled = !table.$toggled;
+
+        if (!table.$toggled)
+          onUpdateTable(table)
+        else
+          Reqs.rpc('getTableSemanticColumns', {
+            connection: dbInfo.href,
+            table: table.name
+          }).then(columnsSemanticInfos => {
+            table.$columns = columnsSemanticInfos
+            table.columns = Object.keys(columnsSemanticInfos).map((colName, colIdx) => {
+              return {
+                name: colName,
+                meta: columnsSemanticInfos[colName],
+                $table: table,
+                $idx_in_table: colIdx,
+              }
+            })
+            
+            onUpdateTable(table);
+          })
+      }}
+    >
+      <List.Icon data-click-proxy name={'table'} />
       <List.Content>
-        <List.Header>{table.name}</List.Header>
-        <List.Description>{table.description}</List.Description>
+        <List.Header data-click-proxy>{table.name}</List.Header>
+        <List.Description data-click-proxy>@${dbInfo.database}</List.Description>
+        {!table.$toggled || !table.columns || !table.columns.length ? null : (
+          <List.List>
+            {table.columns.map(column => {
+              return (
+                <ColumnItem
+                  key={`table-${table.name}-column-${column.name}`}
+                  dbInfo={dbInfo}
+                  table={table}
+                  column={column}
+                />
+              )
+            })}
+          </List.List>
+        )}
       </List.Content>
-      {!table.columns || !table.columns.length ? null : (
-        <List.List>
-          {table.columns.map(column => {
-            return (
-              <Column column={column} />
-            )
-          })}
-        </List.List>
-      )}
     </List.Item>
   );
 }
 
-function Column ({
+function ColumnItem ({
   dbInfo,
-  column
+  table,
+  column,
 }) {
+  const [_, dispatch] = useCtxState();
     
   return (
-    <List.Item>
-      <List.Icon name={column.icon || 'columns'} />
+    <List.Item
+      onClick={() => {
+        dispatch({
+          type: 'set:focusingColumn',
+          column
+        });
+        
+        dispatch({
+          type: 'set:focusingTable',
+          table
+        });
+      }}
+    >
+      <List.Icon name={'columns'} />
       <List.Content>
         <List.Header>{column.name}</List.Header>
-        <List.Description>{column.description}</List.Description>
+        <List.Description>
+          @{dbInfo.database}.{table.name}
+        </List.Description>
       </List.Content>
     </List.Item>
   );
 }
 
-export default () => {
-  const [dbInfo, setDbInfo] = React.useState(null)
+const DbTableManger = () => {
+  const [ {dbInfo, dbTableList, focusingColumn, focusingTable}, dispatch ] = useCtxState()
+
+  if (!dbInfo)
+    return null;
   
-  /**
-   * 
-   * @sample
-   * [
-   *    {
-          name: 'a1',
-          // icon: 'folder',
-          description: 'one table named a1',
-          columns: [
-            {
-              name: 'a1c1',
-              description: 'a1c1',
-              properties: [
+  return (
+    <Grid celled>
+      <Grid.Row
+        className="table-mnger-row"
+      >
+        <Grid.Column width={5}>
+          <List
+            // divided
+            // horizontal
+            size={'large'}
+            >
+            <List.Item>
+              <List.Icon name='database' />
+              <List.Content>
+                <List.Header>{dbInfo.database}</List.Header>
+                <List.Description>Current Database</List.Description>
+                <List.List>
+                  {dbInfo && dbTableList.tables.map((table, table_idx) => {
+                    return (
+                      <TableItem
+                        key={`db-${dbInfo.database}-table-${table.name}`}
+                        table={table}
+                        dbInfo={dbInfo}
+                        onUpdateTable={(newtable) => {
+                          dbTableList[table_idx] = newtable;
 
-              ]
-            }
-          ]
-        },
-        {
-          name: 'a1',
-          // icon: 'folder',
-          description: 'one table named a1',
-          columns: [
-            {
-              name: 'a1c1',
-              description: 'a1c1',
-              properties: [
+                          dispatch({
+                            type: 'update:dbTableList', dbTableList: { ...dbTableList }
+                          })
+                        }}
+                      />
+                    );
+                  })}
+                </List.List>
+              </List.Content>
+            </List.Item>
+          </List>
+        </Grid.Column>
+        <Grid.Column
+          className="table-details"
+          width={11}
+        >
+          {focusingColumn && (
+            <Form>
+              <Form.Field>
+                <label>表</label>
+                {focusingTable.name}
+              </Form.Field>
+              <Form.Field>
+                <label>字段名</label>
+                <b>{focusingColumn.name}</b>
+              </Form.Field>
+              <Form.Field>
+                <label>描述</label>
+                {focusingColumn.description || '-'}
+                {/* <input placeholder='Last Name' /> */}
+              </Form.Field>
 
-              ]
-            }
-          ]
-        }
-      ]
-   */
-  const [dbTableList, setDbTableList] = React.useState({
-    name: 'test-ui',
-    tables: []
-  })
+              <hr />
+              <Form.Field>
+                <label>size</label>
+                {focusingColumn.meta.size || '-'}
+              </Form.Field>
+              <Form.Field>
+                <label>type</label>
+                {focusingColumn.meta.type || '-'}
+              </Form.Field>
+              {/* <Form.Field>
+                <Checkbox label='I agree to the Terms and Conditions' />
+              </Form.Field> */}
+              <Form.Field>
+                <label>默认值</label>
+                <input
+                  placeholder='请填写合适的默认值'
+                  value={focusingColumn.meta.defaultValue}
+                  onChange={evt => {
+                    focusingColumn.meta = focusingColumn.meta || {};
+                    focusingColumn.meta.defaultValue = evt.target.value;
 
+                    dispatch({
+                      type: 'set:focusingColumn',
+                      column: {
+                        ...focusingColumn,
+                      }
+                    })
+                  }}
+                />
+              </Form.Field>
+              <Button secondary>生成更新 SQL</Button>
+              <Button /* primary */ color='red'>更新字段属性</Button>
+            </Form>
+          )}
+        </Grid.Column>
+      </Grid.Row>
+    </Grid>
+  )
+}
+
+import { initialState, reducer } from './ctx-state';
+
+export default function App () {  
   return (
     <>
       <link rel="stylesheet" href="/modules/db-table-list/index.styl" />
-      <>
-        <DbSetupForm
-          onEvent={(evt_type, payload) => {
-            switch (evt_type) {
-              case 'click:connect':
-                Reqs.rpc('connect', {
-                  connection: payload.form.dbConnection
-                })
-                .then(res => {
-                  if (!res)
-                    throw new Error('connnection error')
-
-                  return res
-                })
-                .then(dbInfo => {
-                  setDbInfo(dbInfo)
-                  setDbTableList({
-                    ...dbTableList,
-                    name: dbInfo.database
-                  });
-
-                  return Reqs.rpc('getTableNames', {
-                    connection: dbInfo.href,
-                  }).then(tables => ({
-                    dbInfo,
-                    tables
-                  }))
-                })
-                .then(({dbInfo, tables}) => {
-                  setDbTableList({
-                    ...dbTableList,
-                    tables: tables.map(tableName => ({
-                      name: tableName,
-                      description: `${tableName}@${dbInfo.database}`,
-                      columns: []
-                    }))
-                  });
-                })
-                .catch(error => {
-                  console.error(error)
-                  alert(error.message)
-                })
-                break;
-            
-              default:
-                break;
-            }
-          }}
-        />
-        <Grid celled>
-          <Grid.Row
-            className="table-mnger-row"
-          >
-            <Grid.Column width={5}>
-              <List>
-                <List.Item>
-                  <List.Icon name='database' />
-                  <List.Content>
-                    <List.Header>{dbTableList.name}</List.Header>
-                    <List.Description>Current Database</List.Description>
-                    <List.List>
-                      {dbInfo && dbTableList.tables.map(table => {
-                        return (
-                          <Table
-                            table={table}
-                            dbInfo={dbInfo}
-                          />
-                        );
-                      })}
-                    </List.List>
-                  </List.Content>
-                </List.Item>
-              </List>
-            </Grid.Column>
-            <Grid.Column
-              className="table-details"
-              width={11}
-            >
-              <div
-              >
-              </div>
-            </Grid.Column>
-          </Grid.Row>
-        </Grid>
-      </>
+      <StateProvider initialState={initialState} reducer={reducer}>
+        <DbSetupForm />
+        <DbTableManger />
+      </StateProvider>
     </>
   )
 }
