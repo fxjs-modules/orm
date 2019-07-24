@@ -14,6 +14,7 @@ const imageLink = `https://react.semantic-ui.com/images/wireframe/paragraph.png`
 
 const menuCfgs = [
   [
+    // group info
     {
 
     },
@@ -25,26 +26,33 @@ const menuCfgs = [
         color: undefined,
       },
       {
-        name: 'playground',
-        label: 'Playground',
-        icon: 'gamepad',
+        name: 'RDM',
+        label: 'RDM',
+        icon: 'database',
         color: undefined,
       },
-      {
-        name: 'snapshot',
-        label: '快照',
-        icon: 'camera',
-        color: 'purple',
-      }
+      // {
+      //   name: 'playground',
+      //   label: 'Playground',
+      //   icon: 'gamepad',
+      //   color: undefined,
+      // },
+      // {
+      //   name: 'snapshot',
+      //   label: '快照',
+      //   icon: 'camera',
+      //   color: 'purple',
+      // }
     ]
   ]
 ]
 export function App () {
   const [visible, setVisible] = React.useState(true)
-  const [activeMenuItem, setActiveMenuItem] = React.useState('dashboard')
+  const [activeMenuItem, setActiveMenuItem] = React.useState('RDM')
+
+  const [timer, setTimer] = React.useState(new Date())
   
   const [
-    [com1, setCom1],
     [Main, setMain]
   ] = [
     React.useState(null),
@@ -55,6 +63,10 @@ export function App () {
     System.import('/modules/db-table-list/index.jsx')
       .then((mod) => setMain(() => mod.default))
   }, [])
+
+  setInterval(() => {
+    setTimer(new Date())
+  }, 1000)
 
   return (
     <>
@@ -105,6 +117,12 @@ export function App () {
               )
             })
           }
+          <Menu.Item
+            className="bottom-info"
+          >
+            <Icon name={'clock'} />
+            {timer.toUTCString()}
+          </Menu.Item>
         </Sidebar>
 
         <Sidebar.Pusher>
