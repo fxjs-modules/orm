@@ -62,11 +62,11 @@ export function App () {
   React.useEffect(() => {
     System.import('/modules/db-table-list/index.jsx')
       .then((mod) => setMain(() => mod.default))
-  }, [])
 
-  setInterval(() => {
-    setTimer(new Date())
-  }, 1000)
+    setInterval(() => {
+      setTimer(new Date())
+    }, 1000)
+  }, [])
 
   return (
     <>
