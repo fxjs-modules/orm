@@ -1,72 +1,72 @@
 {
-    "name": "@fxjs/orm",
-    "version": "1.11.3",
-    "description": "Object Relational Mapping for fibjs",
-    "main": "lib",
-    "types": "@types/index.d.ts",
-    "repository": "git://github.com/fxjs-modules/orm.git",
-    "author": "Liu Hu <lion@9465.net>",
-    "contributors": [
-        {
-            "email": "richardo2016@gmail.com",
-            "name": "Richard"
-        }
-    ],
-    "homepage": "https://github.com/fxjs-modules/orm",
-    "license": "MIT",
-    "keywords": [
-        "orm",
-        "database",
-        "fibjs"
-    ],
-    "scripts": {
-        "build": "fib-typify src -o lib",
-        "test": "fibjs test",
-        "ci": "npm run build && npm run test",
-        "ci-mysql": "npm run build && cross-env ORM_PROTOCOL=mysql npm run test",
-        "ci-sqlite": "npm run build && cross-env ORM_PROTOCOL=sqlite npm run test",
-        "prepublishOnly": "npm run build"
-    },
-    "ci": {
-        "type": "travis, appveyor",
-        "version": [
-            "0.26.0",
-            "0.26.1",
-            "0.27.0"
-        ],
-        "travis_services": [
-            "mysql"
-        ]
-    },
-    "dependencies": {
-        "@fibjs/enforce": "^0.1.1",
-        "@fxjs/db-driver": "^0.0.3",
-        "@fxjs/knex": "^0.1.1",
-        "@fxjs/orm-core": "^0.0.1",
-        "@fxjs/sql-ddl-sync": "^0.6.2",
-        "@fxjs/sql-query": "^0.5.1",
-        "fib-pool": "^1.5.3",
-        "knex": "^0.16.3",
-        "lodash.clonedeep": "^4.5.0",
-        "lodash.flatten": "^4.4.0",
-        "lodash.merge": "^4.6.1"
-    },
-    "devDependencies": {
-        "@fibjs/ci": "^2.2.0",
-        "@fibjs/types": "^0.27.1",
-        "@types/lodash.clonedeep": "^4.5.6",
-        "@types/lodash.flatten": "^4.4.6",
-        "@types/lodash.merge": "^4.6.6",
-        "async": "^2.6.2",
-        "cross-env": "^5.2.0",
-        "fib-typify": "^0.6.0",
-        "lodash": "^4.17.11",
-        "semver": "^5.6.0"
-    },
-    "peerDependencies": {
-        "@fxjs/sql-ddl-sync": ">= 0.6 < 7",
-        "@fxjs/sql-query": ">= 0.5 < 0.6",
-        "@fibjs/enforce": ">= 0.1.1 < 0.2",
-        "@fxjs/knex": ">= 0.1.1 < 0.2"
+  "name": "@fxjs/orm",
+  "version": "1.11.3",
+  "description": "Object Relational Mapping for fibjs",
+  "main": "lib",
+  "types": "@types/index.d.ts",
+  "repository": "git://github.com/fxjs-modules/orm.git",
+  "author": "Liu Hu <lion@9465.net>",
+  "contributors": [
+    {
+      "email": "richardo2016@gmail.com",
+      "name": "Richard"
     }
+  ],
+  "homepage": "https://github.com/fxjs-modules/orm",
+  "license": "MIT",
+  "keywords": [
+    "orm",
+    "database",
+    "fibjs"
+  ],
+  "scripts": {
+    "build": "fib-typify src -o lib",
+    "test": "fibjs test",
+    "ci": "npm run build && npm run test",
+    "ci-mysql": "npm run build && cross-env ORM_PROTOCOL=mysql npm run test",
+    "ci-sqlite": "npm run build && cross-env ORM_PROTOCOL=sqlite npm run test",
+    "prepublishOnly": "npm run build"
+  },
+  "ci": {
+    "type": "travis, appveyor",
+    "version": [
+      "0.26.0",
+      "0.26.1",
+      "0.27.0"
+    ],
+    "travis_services": [
+      "mysql"
+    ]
+  },
+  "dependencies": {
+    "@fibjs/enforce": "^0.1.1",
+    "@fxjs/db-driver": "^0.0.3",
+    "@fxjs/knex": "^0.1.2",
+    "@fxjs/orm-core": "^0.0.1",
+    "@fxjs/sql-ddl-sync": "^0.6.2",
+    "@fxjs/sql-query": "^0.5.1",
+    "fib-pool": "^1.5.3",
+    "knex": "^0.16.3",
+    "lodash.clonedeep": "^4.5.0",
+    "lodash.flatten": "^4.4.0",
+    "lodash.merge": "^4.6.1"
+  },
+  "devDependencies": {
+    "@fibjs/ci": "^2.2.0",
+    "@fibjs/types": "^0.27.1",
+    "@types/lodash.clonedeep": "^4.5.6",
+    "@types/lodash.flatten": "^4.4.6",
+    "@types/lodash.merge": "^4.6.6",
+    "async": "^2.6.2",
+    "cross-env": "^5.2.0",
+    "fib-typify": "^0.6.0",
+    "lodash": "^4.17.11",
+    "semver": "^5.6.0"
+  },
+  "peerDependencies": {
+    "@fxjs/sql-ddl-sync": ">= 0.6 < 7",
+    "@fxjs/sql-query": ">= 0.5 < 0.6",
+    "@fibjs/enforce": ">= 0.1.1 < 0.2",
+    "@fxjs/knex": ">= 0.1.1 < 0.2"
+  }
 }
