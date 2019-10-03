@@ -1,6 +1,8 @@
-import { default as sqlite } from './sqlite'
+import * as mysql from './mysql'
+import * as sqlite from './sqlite'
+import * as mongodb from './mongodb'
 
-export function getDDL (
+export function getDataStoreTransformer (
     type: FxDbDriverNS.Driver['type'],
 ): typeof sqlite {
     switch (type) {

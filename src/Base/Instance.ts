@@ -4,6 +4,7 @@ import coroutine = require('coroutine');
 import LinkedList from '../Utils/linked-list';
 import { setTarget } from '../Utils/deep-kv';
 import { buildDescriptor } from '../Decorators/property';
+import { filterPropertyToStoreData, fillStoreDataToProperty } from '../DXL/DML/_utils';
 
 const REVERSE_KEYS = [
     'set',
@@ -11,7 +12,8 @@ const REVERSE_KEYS = [
     'save',
     'remove',
     '$clearChange',
-    'toJSON'
+    'toJSON',
+    'toArray'
 ];
 
 function pushChange (
@@ -61,7 +63,15 @@ class Instance {
         return !Object.keys(this.$changes).length
     }
     
-    $clearChange (fieldName: string) { clearChange(this, fieldName) }
+    $clearChange (fieldName?: string) {
+        if (!fieldName) {
+            return Object.keys(this.$changes).forEach((f: string) => {
+                this.$clearChange(f)
+            })
+        }
+
+        clearChange(this, fieldName)
+    }
     get $changedKeys () {
         return Object.keys(this.$changes);
     }
@@ -71,6 +81,12 @@ class Instance {
     $isEnumerable (prop: string) {
         return this.$model.properties.hasOwnProperty(prop) && this.$model.properties[prop].enumerable
     }
+
+    // get $dataToStore () {
+    //     const kvs = Object.keys(this.$kvs)
+
+    //     Object.keys(this.$kvs)
+    // }
 
     get $isInstance () { return true };
     
@@ -109,14 +125,21 @@ class Instance {
 
         const result = this.$dml.insert(
             this.$model.collection,
-            props,
-            Object.values(this.$model.keyProperties)
+            filterPropertyToStoreData(props, this.$model),
+            {
+                keyProperties: Object.values(this.$model.keyProperties)
+            }
         );
 
-        if (result)
-            Object.keys(result).forEach((k: string) => {
-                this.$kvs[k] = result[k]
-            });
+        if (result) {
+            fillStoreDataToProperty(
+                Object.assign(result, props),
+                this.$model,
+                this.$kvs
+            )
+        }
+
+        this.$clearChange()
 
         return this
     }
@@ -131,6 +154,12 @@ class Instance {
 
         return kvs;
     }
+
+    toString () {
+        return JSON.stringify(this.toJSON())
+    }
+
+    [k: string]: any
 }
 
 function isInternalProp (prop: string) {
@@ -211,7 +240,6 @@ export function getInstance (
             },
             deleteProperty (target: typeof instanceBase, prop:string) {
                 if (REVERSE_KEYS.includes(prop) || isInternalProp(prop)) {
-
                     delete target[prop];
                     return true;
                 }

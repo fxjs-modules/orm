@@ -53,14 +53,24 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         this: DML_SQLite,
         table,
         data,
-        keyProperties,
+        {
+            keyProperties,
+            beforeQuery = () => void 0
+        } = {}
     ) {
-        const q = this.sqlQuery.insert()
-            .into(table)
-            .set(data)
-            .build();
+        
+        let kq = this.sqlQuery.knex(table)
 
-        const info = this.execSqlQuery<FxOrmQuery.InsertResult>(q);
+        kq.insert(data)
+
+        if (typeof beforeQuery === 'function') {
+            const kqbuilder = beforeQuery(kq)
+
+            if (kqbuilder)
+                kq = kqbuilder
+        }
+
+        const info = this.execSqlQuery<FxOrmQuery.InsertResult>(kq.toString());
 
         if (!keyProperties) return null;
 

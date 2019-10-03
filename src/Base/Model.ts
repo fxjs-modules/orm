@@ -13,7 +13,7 @@ import * as SYMBOLS from '../Utils/symbols';
 import { snapshot } from "../Utils/clone";
 import { filterProperty } from '../Utils/property';
 import { configurable } from '../Decorators/accessor';
-import { getDML } from '../DXL/DML';
+import { fillStoreDataToProperty } from '../DXL/DML/_utils';
 
 /**
  * @description Model is meta definition about database-like remote endpoints.
@@ -79,23 +79,20 @@ class Model implements FxOrmModel.ModelNG {
     @configurable(false)
     get _symbol () { return SYMBOLS.Model };
     
-    @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
-    $dml: FxOrmTypeHelpers.InstanceOf<FxOrmTypeHelpers.ReturnType<typeof getDML>> = null;
+    get $dml () { return this.orm.$dml };
+    get $ddl () { return this.orm.$ddl };
 
     constructor (config: FxOrmModel.ModelConstructorOptions) {
         Object.defineProperty(this, 'name', { value: config.name })
         this.collection = config.collection;
         this.orm = config.orm;
 
-        const DML = getDML(this.dbdriver.type)
-        this.$dml = new DML({ dbdriver: this.dbdriver });
-
         // normalize it
         Object.keys(config.properties)
             .forEach((prop: string) => {
                 const property = this.properties[prop] = filterProperty(
                     config.properties[prop],
-                    config.properties[prop].mapsTo || prop,
+                    prop,
                 );
 
                 if (property.key)
@@ -130,7 +127,9 @@ class Model implements FxOrmModel.ModelNG {
     /**
      * @description drop collection from remote endpoint
      */
-    drop (): void {}
+    drop (): void {
+        this.$ddl.dropTable(this.collection)
+    }
 
     /**
      * @description create one instance from this model
@@ -161,6 +160,10 @@ class Model implements FxOrmModel.ModelNG {
 
     New (base: Fibjs.AnyObject = {}) {
         return getInstance(this, base);
+    }
+
+    normalizeDataToProperties (data: Fibjs.AnyObject = {}) {
+        return fillStoreDataToProperty(data, this)
     }
 
     /**

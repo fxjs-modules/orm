@@ -105,8 +105,8 @@ export function filterProperty (
         throw new Error(`invalid property type 'function'`)
     
     return getPropertyConfig({
-        ...input,
         name: pname,
-        mapsTo: (input as any).mapsTo || pname
+        mapsTo: (input as any).mapsTo || pname,
+        ...input,
     });
 }

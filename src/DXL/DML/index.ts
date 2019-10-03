@@ -1,4 +1,3 @@
-import { default as Base } from './_base'
 import { default as sqlite } from './sqlite'
 
 export function getDML (

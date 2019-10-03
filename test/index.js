@@ -45,7 +45,7 @@ function t() {
     // run('./integration/model-find-mapsto.js');
     // run('./integration/model-find.js');
     // run('./integration/model-find.callback.js');
-    // run('./integration/model-get.js');
+    run('./integration/model-get.js');
     // run('./integration/model-get.callback.js');
     // run('./integration/model-keys.js');
     // run('./integration/model-one.js');

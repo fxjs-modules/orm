@@ -11,6 +11,9 @@ import Model from './Model';
 import { arraify } from '../Utils/array';
 import { snapshot } from '../Utils/clone';
 import { configurable } from '../Decorators/accessor';
+import { buildDescriptor } from '../Decorators/property';
+import { getDML } from '../DXL/DML';
+import { getDDL } from '../DXL/DDL';
 
 class ORM<ConnType = any> extends EventEmitter {
     /**
@@ -68,6 +71,11 @@ class ORM<ConnType = any> extends EventEmitter {
         return this._models;
     };
 
+    @buildDescriptor({ configurable: false, enumerable: false })
+    $dml: FxOrmTypeHelpers.InstanceOf<FxOrmTypeHelpers.ReturnType<typeof getDML>> = null;
+    @buildDescriptor({ configurable: false, enumerable: false })
+    $ddl: FxOrmTypeHelpers.InstanceOf<FxOrmTypeHelpers.ReturnType<typeof getDDL>> = null;
+
     driver: FxDbDriverNS.Driver<ConnType>;
 
     constructor (driver: FxDbDriverNS.Driver<ConnType> | string | FxDbDriverNS.ConnectionInputArgs) {
@@ -78,6 +86,12 @@ class ORM<ConnType = any> extends EventEmitter {
             driver = FxDbDriver.create(driver);
 
         this.driver = driver;
+
+        const DML = getDML(this.driver.type)
+        this.$dml = new DML({ dbdriver: this.driver as any });
+
+        const DDL = getDDL(this.driver.type)
+        this.$ddl = new DDL({ dbdriver: this.driver as any });
     }
 
     /**

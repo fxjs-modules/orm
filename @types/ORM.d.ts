@@ -22,6 +22,7 @@
 /// <reference path="Validators.d.ts" />
 /// <reference path="DMLDriver.d.ts" />
 /// <reference path="DML.d.ts" />
+/// <reference path="DDL.d.ts" />
 
 // fix fibjs types' missing
 // declare var console: any

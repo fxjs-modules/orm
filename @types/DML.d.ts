@@ -110,7 +110,14 @@ declare namespace FxOrmDML {
             (table: string, conditions: FxSqlQuerySubQuery.SubQueryConditions, opts: DMLDriver_CountOptions, cb?: FxOrmNS.GenericCallback<FxOrmQuery.CountResult[]>): FxOrmQuery.CountResult[]
         }
         insert: {
-            (table: string, data: FxSqlQuerySql.DataToSet, keyProperties: FxOrmProperty.NormalizedProperty[], cb?: FxOrmNS.GenericCallback<FxOrmQuery.InsertResult>): FxOrmQuery.InsertResult
+            (
+                table: string,
+                data: FxSqlQuerySql.DataToSet,
+                opts?: {
+                    keyProperties?: FxOrmProperty.NormalizedProperty[],
+                    beforeQuery?: (kq: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>) => typeof kq | void
+                }
+            ): FxOrmQuery.InsertResult
         }
         update: {
             <T=any>(table: string, changes: FxSqlQuerySql.DataToSet, conditions: FxSqlQuerySubQuery.SubQueryConditions, cb?: FxOrmNS.GenericCallback<T>): T

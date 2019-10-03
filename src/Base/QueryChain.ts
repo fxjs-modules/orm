@@ -55,7 +55,9 @@ class QueryChain<TUPLE_ITEM = any> {
         )
 
         this._tuples = results.map((x: TUPLE_ITEM) => {
-            const inst = this.model.New(x)
+            const inst = this.model.New(
+                this.model.normalizeDataToProperties(x)
+            )
             inst.$isPersisted = true
             return inst
         });
@@ -70,7 +72,7 @@ class QueryChain<TUPLE_ITEM = any> {
     get (id?: string | number): TUPLE_ITEM {
         return this.find({
             beforeQuery: (kqbuilder) => {
-                if (this.model.id)
+                if (id && this.model.id)
                     kqbuilder.where(this.model.id, '=', id)
             }
         }).first();
