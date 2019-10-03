@@ -1,53 +1,5 @@
 import { snapshot } from "../Utils/clone";
-
-function setTarget<T = any> (key: string, value: any, target: Fibjs.AnyObject): any {
-    const p = key.indexOf(".");
-
-	if (p === -1) {
-		return target[key] = value;
-	}
-
-	if (!target.hasOwnProperty(key.substr(0, p))) {
-		target[key.substr(0, p)] = {};
-	}
-
-	return setTarget(key.substr(p + 1), value, target[key.substr(0, p)]);
-}
-
-function getFrom(key: string, def: any, target: {[k: string]: any}): any {
-	const p = key.indexOf(".");
-
-	if (p === -1) {
-		if (key === '*')
-			return target;
-
-		return target.hasOwnProperty(key) ? target[key] : def;
-	}
-
-	if (!target.hasOwnProperty(key.substr(0, p)))
-		return def;
-
-	return getFrom(key.substr(p + 1), def, target[key.substr(0, p)]);
-}
-
-function unsetTarget(key: string, obj: any): 'reset' | undefined {
-	const p = key.indexOf(".");
-
-	if (p === -1) {
-		if (key === '*')
-			return 'reset';
-		else
-			delete obj[key];
-
-		return;
-	}
-
-	if (!obj.hasOwnProperty(key.substr(0, p)))
-		return;
-
-	if (unsetTarget(key.substr(p + 1), obj[key.substr(0, p)]) === 'reset')
-		obj[key.substr(0, p)] = {};
-}
+import { setTarget, getFrom, unsetTarget } from "../Utils/deep-kv";
 
 /**
  * @description Settings is one global/local setting deep key-value management tools

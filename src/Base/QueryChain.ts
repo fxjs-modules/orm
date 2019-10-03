@@ -49,7 +49,7 @@ class QueryChain<TUPLE_ITEM = any> {
 
             this._tuples = results.map((x: TUPLE_ITEM) => {
                 const inst = this.model.New(x)
-                inst._persisted = true
+                inst.$isPersisted = true
                 return inst
             });
         }
