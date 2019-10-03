@@ -1,11 +1,24 @@
-import "reflect-metadata";
-
-const formatMetadataKey = Symbol("format");
-
-export function format(formatString: string) {
-    return Reflect.metadata(formatMetadataKey, formatString);
+export function buildDescriptor (descriptor: PropertyDescriptor): any {
+    let { value = undefined } = descriptor
+    
+    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+        // Create new property with getter and setter
+        Object.defineProperty(target, propertyKey, {
+            get: () => value,
+            set: (nval: any) => { value = nval },
+            ...descriptor
+        });
+    };
 }
-
-export function getFormat(target: any, propertyKey: string) {
-    return Reflect.getMetadata(formatMetadataKey, target, propertyKey);
+export function enumerable (_enumerable: boolean) {
+    let val: any = undefined
+    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+        // Create new property with getter and setter
+        Object.defineProperty(target, propertyKey, {
+            get: () => val,
+            set: (nval: any) => { val = nval },
+            enumerable: !!_enumerable,
+            configurable: true
+        });
+    };
 }

@@ -1,17 +1,17 @@
 import util = require('util');
 import coroutine = require('coroutine');
 
-import { getDML } from '../DXL/DML';
 import LinkedList from '../Utils/linked-list';
 import { setTarget } from '../Utils/deep-kv';
+import { buildDescriptor } from '../Decorators/property';
 
 const REVERSE_KEYS = [
     'set',
     'get',
     'save',
     'remove',
-    'exists',
-    'clearChange'
+    '$clearChange',
+    'toJSON'
 ];
 
 function pushChange (
@@ -43,9 +43,13 @@ function clearChange(
     inst.$changes[fieldName].clear();
 }
 class Instance {
+    @buildDescriptor({ configurable: false, enumerable: false })
     $model: any
+    
     // TOOD: only allow settting fields of Model.properties into it.
     $kvs: Fibjs.AnyObject = {}
+    
+    @buildDescriptor({ configurable: false, enumerable: false })
     $changes: {
         [filed_name: string]: LinkedList<{
             via_path: string
@@ -53,6 +57,10 @@ class Instance {
             prev_state: any
         }>
     } = {};
+    get $saved (): boolean {
+        return !Object.keys(this.$changes).length
+    }
+    
     $clearChange (fieldName: string) { clearChange(this, fieldName) }
     get $changedKeys () {
         return Object.keys(this.$changes);
@@ -60,9 +68,13 @@ class Instance {
     $isPropertyKey (prop: string) {
         return this.$model.properties.hasOwnProperty(prop);
     }
+    $isEnumerable (prop: string) {
+        return this.$model.properties.hasOwnProperty(prop) && this.$model.properties[prop].enumerable
+    }
 
-    $isInstance = true;
-    $dml: any = null;
+    get $isInstance () { return true };
+    
+    get $dml () { return this.$model.$dml }
 
     constructor (
         model: any,
@@ -70,15 +82,10 @@ class Instance {
     ) {
         this.$kvs = {...instanceBase}
         this.$model = model;
-        
-        const DML = getDML(model.dbdriver.type)
-        this.$dml = new DML({ dbdriver: model.dbdriver })
     }
 
+    @buildDescriptor({ configurable: false, enumerable: false })
     $isPersisted: boolean = true;
-    get $saved (): boolean {
-        return !Object.keys(this.$changes).length
-    }
 
     set (prop: string | string[], value: any) {
         if (!prop) return ;
@@ -91,7 +98,7 @@ class Instance {
         }
     }
 
-    save (props: Fibjs.AnyObject) {
+    save (props: Fibjs.AnyObject = this.$kvs) {
         if (Array.isArray(props))
             return coroutine.parallel(props, (prop: Fibjs.AnyObject) => {
                 return this.save(prop)
@@ -112,6 +119,17 @@ class Instance {
             });
 
         return this
+    }
+
+    toJSON () {
+        const kvs = <Instance['$kvs']>{};
+
+        Object.entries(this.$kvs).forEach(([k, v]) => {
+            if (this.$isEnumerable(k))
+                kvs[k] = v;
+        })
+
+        return kvs;
     }
 }
 
@@ -187,13 +205,16 @@ export function getInstance (
 
                 return target.$kvs[prop];
             },
+            ownKeys (target: typeof instanceBase) {
+                return Reflect.ownKeys(target.$kvs)
+                // return Object.keys(target.$kvs)
+            },
             deleteProperty (target: typeof instanceBase, prop:string) {
-                if (REVERSE_KEYS.includes(prop))
-                    return false;
+                if (REVERSE_KEYS.includes(prop) || isInternalProp(prop)) {
 
-                // status
-                if (isInternalProp(prop))
-                    return false;
+                    delete target[prop];
+                    return true;
+                }
 
                 if (target.$kvs.hasOwnProperty(prop)) {
                     pushChange(target, prop, {

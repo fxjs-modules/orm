@@ -1,7 +1,8 @@
 function getPropertyConfig (overwrite?: Fibjs.AnyObject): FxOrmProperty.NormalizedProperty {
     const {
         name: pname = '',
-        mapsTo = pname
+        mapsTo = pname,
+        enumerable = true
     } = overwrite || {} as any
     
     return {
@@ -25,6 +26,8 @@ function getPropertyConfig (overwrite?: Fibjs.AnyObject): FxOrmProperty.Normaliz
         big: false,
 
         values: null,
+
+        enumerable,
 
         defaultValue: () => null,
         ...overwrite

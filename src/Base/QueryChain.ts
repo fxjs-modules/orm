@@ -2,59 +2,78 @@ import util = require('util');
 import SqlQuery = require('@fxjs/sql-query');
 
 import * as SYMBOLS from '../Utils/symbols';
-import { getInstance } from './Instance';
+
+function transformToQCIfModel (target: QueryChain, propertyName: string, descriptor: TypedPropertyDescriptor<Function>) {
+    let method = descriptor.value;
+
+    descriptor.value = function () {
+        // in-model
+        if (this.isModel) {
+            const qc = new QueryChain()
+            qc.model = this;
+
+            return qc[propertyName].apply(qc, arguments)
+        }
+
+        // just in QueryChain
+        switch (this.model.dbdriver.type) {
+            case 'mysql':
+            case 'mssql':
+            case 'sqlite':
+                this.sqlQuery = new SqlQuery.Query({
+                    dialect: this.model.dbdriver.type,
+                });
+                break
+        }
+
+        return method.apply(this, arguments);
+    }
+}
 
 class QueryChain<TUPLE_ITEM = any> {
     private _tuples: TUPLE_ITEM[] = [];
 
     model: any;
-    // dbdriver: FxDbDriverNS.Driver;
 
-    collection: string;
     conditions: any;
     sqlQuery: FxSqlQuery.Class_Query
 
     [k: string]: any;
 
-    private get isModel () { return this._symbol === SYMBOLS.Model };
+    get isModel () { return this._symbol === SYMBOLS.Model };
 
     /**
      * @description find tuples from remote endpoints
      */
-    find (): QueryChain {
-        if (this.isModel) {
-            const qc = new QueryChain()
-            qc.model = this;
+    @transformToQCIfModel
+    find (
+        opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']> = {}
+    ): QueryChain {
+        const results = this.model.$dml.find(
+            this.model.collection,
+            opts
+        )
 
-            switch (this.dbdriver.type) {
-                case 'mysql':
-                // case 'mssql':
-                case 'sqlite':
-                    qc.sqlQuery = new SqlQuery.Query({
-                        dialect: this.dbdriver.type,
-                    });
-                    qc.collection = this.collection
-                    break
-            }
-
-            return qc.find()
-        }
-
-        const sql = this.sqlQuery.select()
-            .from(this.collection)
-            .build()
-
-        if (this.model.dbdriver.isSql) {
-            const results = (this.model.dbdriver as FxDbDriverNS.SQLDriver).execute(sql);
-
-            this._tuples = results.map((x: TUPLE_ITEM) => {
-                const inst = this.model.New(x)
-                inst.$isPersisted = true
-                return inst
-            });
-        }
+        this._tuples = results.map((x: TUPLE_ITEM) => {
+            const inst = this.model.New(x)
+            inst.$isPersisted = true
+            return inst
+        });
 
         return this;
+    }
+
+    /**
+     * @description get first tuple from remote endpoints
+     */
+    @transformToQCIfModel
+    get (id?: string | number): TUPLE_ITEM {
+        return this.find({
+            beforeQuery: (kqbuilder) => {
+                if (this.model.id)
+                    kqbuilder.where(this.model.id, '=', id)
+            }
+        }).first();
     }
 
     first (): TUPLE_ITEM {

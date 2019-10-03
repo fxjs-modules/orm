@@ -13,6 +13,7 @@ import * as SYMBOLS from '../Utils/symbols';
 import { snapshot } from "../Utils/clone";
 import { filterProperty } from '../Utils/property';
 import { configurable } from '../Decorators/accessor';
+import { getDML } from '../DXL/DML';
 
 /**
  * @description Model is meta definition about database-like remote endpoints.
@@ -55,6 +56,14 @@ class Model implements FxOrmModel.ModelNG {
     
     properties: FxOrmModel.ModelConstructorOptions['properties'] = {};
 
+    /**
+     * @description id property name
+     */
+    @configurable(false)
+    get id (): string | undefined {
+        return Object.keys(this.keyProperties)[0] || undefined
+    }
+
     keyProperties: FxOrmProperty.NormalizedPropertyHash = {};
     @configurable(false)
     get keys (): string[] {
@@ -63,20 +72,23 @@ class Model implements FxOrmModel.ModelNG {
 
     orm: FxOrmModel.ModelConstructorOptions['orm']
 
-    @DecoratorsProperty.format("this is _modelName, %s")
-    private _modelName: string
-
     private get dbdriver(): FxDbDriverNS.Driver {
         return this.orm.driver as any;
     }
 
     @configurable(false)
     get _symbol () { return SYMBOLS.Model };
+    
+    @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
+    $dml: FxOrmTypeHelpers.InstanceOf<FxOrmTypeHelpers.ReturnType<typeof getDML>> = null;
 
     constructor (config: FxOrmModel.ModelConstructorOptions) {
         Object.defineProperty(this, 'name', { value: config.name })
         this.collection = config.collection;
         this.orm = config.orm;
+
+        const DML = getDML(this.dbdriver.type)
+        this.$dml = new DML({ dbdriver: this.dbdriver });
 
         // normalize it
         Object.keys(config.properties)
@@ -96,11 +108,6 @@ class Model implements FxOrmModel.ModelNG {
                 key: true
             }, 'id')
         }
-    }
-
-    logModelName (): void {
-        let formatString = DecoratorsProperty.getFormat(this, '_modelName');
-        console.log(formatString, this._modelName);
     }
 
     /**

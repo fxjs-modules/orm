@@ -77,7 +77,7 @@ describe("Model instance", function () {
         return db.close();
     });
 
-    odescribe("#save", function () {
+    describe("#save", function () {
         var main_item, item;
 
         before(function () {
@@ -125,7 +125,7 @@ describe("Model instance", function () {
         });
     });
 
-    odescribe("#$isInstance", function () {
+    describe("#$isInstance", function () {
         it("should always return true for instances", function () {
             assert.equal((Person.New(4)).$isInstance, true);
 
@@ -139,7 +139,7 @@ describe("Model instance", function () {
         });
     });
 
-    odescribe("#$isPersisted", function () {
+    describe("#$isPersisted", function () {
         it("should return true for persisted instances", function () {
             var item = Person.find().first();
             assert.equal(item.$isPersisted, true);
@@ -160,7 +160,7 @@ describe("Model instance", function () {
         });
     });
 
-    odescribe("#set", function () {
+    describe("#set", function () {
         var person = null;
         var data = null;
 
@@ -266,16 +266,34 @@ describe("Model instance", function () {
             person.set(4, 1);
             person.set(null, 1);
             person.set(undefined, 1);
-            // assert.equal(person.$saved, true);
-            console.log(
-                'person.$changes',
-                person.$changes
-            )
+            assert.equal(person.$saved, true);
             assert.equal(person.$changedKeys.join(','), '');
         });
     });
 
-    describe("#markAsDirty", function () {
+    describe("#$changes", function () {
+        var person = null;
+
+        beforeEach(function () {
+            person = Person.create({
+                name: 'John',
+                age: 44,
+                data: {
+                    a: 1
+                }
+            });
+        });
+
+        it("should mark individual properties as dirty", function () {
+            assert.equal(person.$saved, true);
+            person.set('name', person['name'] + '1');
+            person.set('data.a', person['data'].a + 1);
+            assert.equal(person.$saved, false);
+            assert.equal(person.$changedKeys.join(','), 'name,data');
+        });
+    });
+
+    xdescribe("#markAsDirty", function () {
         var person = null;
 
         beforeEach(function () {
@@ -298,7 +316,7 @@ describe("Model instance", function () {
         });
     });
 
-    describe("#dirtyProperties", function () {
+    xdescribe("#dirtyProperties", function () {
         var person = null;
 
         beforeEach(function () {
@@ -320,7 +338,7 @@ describe("Model instance", function () {
         });
     });
 
-    describe("#isShell", function () {
+    xdescribe("#isShell", function () {
         it("should return true for shell models", function () {
             assert.equal(Person(4).isShell(), true);
         });
@@ -335,8 +353,10 @@ describe("Model instance", function () {
         });
     });
 
-    describe("#validate", function () {
+    xdescribe("#validate", function () {
         it("should return validation errors if invalid", function () {
+            console.log('Person', Person);
+
             var person = new Person({
                 age: -1
             });
@@ -358,21 +378,21 @@ describe("Model instance", function () {
     describe("properties", function () {
         describe("Number", function () {
             it("should be saved for valid numbers, using both save & create", function () {
-                var person1 = new Person({
+                var person1 = Person.New({
                     height: 190
                 });
 
-                person1.saveSync();
+                person1.save();
 
                 var person2 = Person.create({
                     height: 170
                 });
 
-                var item = Person.getSync(person1[Person.id]);
+                var item = Person.get(person1[Person.id]);
 
                 assert.equal(item.height, 190);
 
-                item = Person.getSync(person2[Person.id]);
+                item = Person.get(person2[Person.id]);
                 assert.equal(item.height, 170);
             });
         });

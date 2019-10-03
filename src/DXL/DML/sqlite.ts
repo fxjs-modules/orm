@@ -2,11 +2,11 @@ import Base, { ConstructorOpts } from "./_base";
 import { configurable } from "../../Decorators/accessor";
 
 interface T_DML_SQLite {
-    find: FxOrmDMLDriver.DMLDriver['find']
-    insert: FxOrmDMLDriver.DMLDriver['insert']
-    remove: FxOrmDMLDriver.DMLDriver['remove']
-    update: FxOrmDMLDriver.DMLDriver['update']
-    clear: FxOrmDMLDriver.DMLDriver['clear']
+    find: FxOrmDML.DMLDriver['find']
+    insert: FxOrmDML.DMLDriver['insert']
+    remove: FxOrmDML.DMLDriver['remove']
+    update: FxOrmDML.DMLDriver['update']
+    clear: FxOrmDML.DMLDriver['clear']
 }
 
 class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
@@ -21,37 +21,35 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         super({ dbdriver: opts.dbdriver })
     }
 
-    find: FxOrmDMLDriver.DMLDriver['find'] = function (
+    find: FxOrmDML.DMLDriver['find'] = function (
         this: DML_SQLite,
-        fields,
         table,
-        conditions,
-        opts
+        {
+            fields,
+            offset = 0,
+            limit = 1000, // '9223372036854775807',
+            orderBy = undefined,
+            beforeQuery = () => void 0
+        } = {}
     ) {
-        const q = this.sqlQuery.select()
-            .from(table)
-            .select(fields);
+        let kq = this.sqlQuery.knex(table)
 
-        if (opts.offset) {
-            q.offset(opts.offset);
+        if (fields) kq.select(fields)
+        if (offset) kq.offset(offset)
+        if (limit) kq.limit(limit as number)
+        if (orderBy) kq.orderBy.apply(kq, orderBy)
+
+        if (typeof beforeQuery === 'function') {
+            const kqbuilder = beforeQuery(kq)
+
+            if (kqbuilder)
+                kq = kqbuilder
         }
-        if (typeof opts.limit == "number") {
-            q.limit(opts.limit);
-        } else if (opts.offset) {
-            // OFFSET cannot be used without LIMIT so we use the biggest INTEGER number possible
-            q.limit('9223372036854775807');
-        }
 
-        const results = this.dbdriver.execute(q.build());
-
-        // utils.buildOrderToQuery.apply(this, [q, opts.order]);
-        // q = utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
-        // utils.buildExistsToQuery.apply(this, [q, table, opts.exists]);
-
-        return results
+        return this.execSqlQuery(kq.toString());
     }
 
-    insert: FxOrmDMLDriver.DMLDriver['insert'] = function (
+    insert: FxOrmDML.DMLDriver['insert'] = function (
         this: DML_SQLite,
         table,
         data,
@@ -81,7 +79,7 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         return ids;
     }
 
-    update: FxOrmDMLDriver.DMLDriver['update'] = function (
+    update: FxOrmDML.DMLDriver['update'] = function (
         this: DML_SQLite,
         table,
         changes,
@@ -99,7 +97,7 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         return this.execSqlQuery(q);
     }
 
-    remove: FxOrmDMLDriver.DMLDriver['remove'] = function (
+    remove: FxOrmDML.DMLDriver['remove'] = function (
         this: DML_SQLite,
         table,
         conditions
@@ -115,8 +113,8 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         return this.execSqlQuery(q);
     }
 
-    clear: FxOrmDMLDriver.DMLDriver['clear'] = function(
-        this: FxOrmDMLDriver.DMLDriver_SQLite,
+    clear: FxOrmDML.DMLDriver['clear'] = function(
+        this: FxOrmDML.DMLDriver_SQLite,
         table
     ) {
         this.execQuery(

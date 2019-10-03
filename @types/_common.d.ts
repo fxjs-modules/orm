@@ -51,6 +51,10 @@ declare namespace FxOrmNS {
 declare namespace FxOrmTypeHelpers {
     type Parameters<T> = T extends (...args: infer T) => any ? T : never; 
     type FirstParameter<T> = T extends (arg: infer T, ...args: any[]) => any ? T : never; 
+    type SecondParameter<T> = T extends (arg1: any, arg: infer T, ...args: any[]) => any ? T : never; 
+    type _3rdParameter<T> = T extends (arg1: any, arg2: any, arg: infer T, ...args: any[]) => any ? T : never; 
 
     type ReturnType<T> = T extends (...args: any[]) => infer T ? T : never; 
+
+    type InstanceOf<T> = T extends new (...args: any[]) => infer T ? T : never;
 }

@@ -26,7 +26,7 @@ export default class Base<ConnType = any> {
             sqlstr = this.sqlQuery.escape(sqlstr, args);
 
         if (process.env.ORM_DEBUG)
-            console.log(require('@fibjs/chalk')`{bold.blue.inverse [SQL] {~inverse ${sqlstr}}}`)
+            console.log(require('@fibjs/chalk')`{bold.blue.inverse [SQL]{~inverse  ${sqlstr}}}`)
 
         return this.dbdriver.execute(sqlstr) as T_RESULT;
     }
@@ -34,8 +34,8 @@ export default class Base<ConnType = any> {
     /**
      * @description find items from remote endpoints
      */
-    find: FxOrmDMLDriver.DMLDriver['find'] = () => void 0
-    insert: FxOrmDMLDriver.DMLDriver['insert'] = () => void 0
-    update: FxOrmDMLDriver.DMLDriver['update'] = () => void 0
-    remove: FxOrmDMLDriver.DMLDriver['remove'] = () => void 0
+    find: FxOrmDML.DMLDriver['find'] = () => void 0
+    insert: FxOrmDML.DMLDriver['insert'] = () => void 0
+    update: FxOrmDML.DMLDriver['update'] = () => void 0
+    remove: FxOrmDML.DMLDriver['remove'] = () => void 0
 }

@@ -4,8 +4,6 @@
 /// <reference types="@fxjs/sql-ddl-sync" />
 /// <reference types="fib-pool" />
 
-/// <reference path="3rd.d.ts" />
-
 /// <reference path="_common.d.ts" />
 /// <reference path="settings.d.ts" />
 
@@ -23,6 +21,7 @@
 /// <reference path="Adapter.d.ts" />
 /// <reference path="Validators.d.ts" />
 /// <reference path="DMLDriver.d.ts" />
+/// <reference path="DML.d.ts" />
 
 // fix fibjs types' missing
 // declare var console: any
