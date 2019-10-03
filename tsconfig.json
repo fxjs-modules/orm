@@ -4,6 +4,8 @@
         "module": "commonjs",
         "noImplicitAny": true,
         "noImplicitUseStrict": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
         "inlineSourceMap": false,
         "lib": [
             "es6",

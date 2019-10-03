@@ -1,10 +1,10 @@
 declare namespace FxOrmProperty {
-    /**
-     * @description key linked association type
-     *  - 'primary': means this property is for column defined as 'primary'
-     *  - 'hasOne': means this property is for column used as asscociated key in 'hasOne' assciation
-     */
-    type KlassType = 'primary' | 'hasOne'
+    // /**
+    //  * @description key linked association type
+    //  *  - 'primary': means this property is for column defined as 'primary'
+    //  *  - 'hasOne': means this property is for column used as asscociated key in 'hasOne' assciation
+    //  */
+    // type KlassType = 'primary' | 'hasOne'
 
     interface CustomPropertyType extends FxOrmSqlDDLSync__Driver.CustomPropertyType {
         datastoreType: {
@@ -28,11 +28,14 @@ declare namespace FxOrmProperty {
     interface NormalizedProperty extends FxOrmSqlDDLSync__Column.Property {
         // all fields inherited from `FxOrmModel.ModelPropertyDefinition` are still optional
 
+        name: string
+        
         key?: boolean
-        klass?: KlassType
         lazyload?: boolean
-        alwaysValidate?: boolean
         lazyname?: string
+
+        // klass?: KlassType
+        // alwaysValidate?: boolean
     }
 
     interface NormalizedPropertyHash {

@@ -22,8 +22,8 @@ module.exports.dropSync = function (models, done) {
   }
 
   models.forEach(function (item) {
-    item.dropSync()
-    item.syncSync()
+    item.drop()
+    item.sync()
   })
 
   if (done)

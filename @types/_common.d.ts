@@ -45,4 +45,12 @@ declare namespace FxOrmNS {
         evt?: Class_Event,
         value: T
     }
+
+}
+
+declare namespace FxOrmTypeHelpers {
+    type Parameters<T> = T extends (...args: infer T) => any ? T : never; 
+    type FirstParameter<T> = T extends (arg: infer T, ...args: any[]) => any ? T : never; 
+
+    type ReturnType<T> = T extends (...args: any[]) => infer T ? T : never; 
 }

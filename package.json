@@ -39,8 +39,9 @@
         ]
     },
     "dependencies": {
+        "@fibjs/chalk": "^1.0.0",
         "@fibjs/enforce": "^0.1.1",
-        "@fxjs/db-driver": "^0.0.3",
+        "@fxjs/db-driver": "0.0.4",
         "@fxjs/knex": "^0.1.1",
         "@fxjs/orm-core": "^0.0.1",
         "@fxjs/sql-ddl-sync": "^0.6.2",
@@ -49,7 +50,8 @@
         "knex": "^0.16.3",
         "lodash.clonedeep": "^4.5.0",
         "lodash.flatten": "^4.4.0",
-        "lodash.merge": "^4.6.1"
+        "lodash.merge": "^4.6.1",
+        "reflect-metadata": "^0.1.13"
     },
     "devDependencies": {
         "@fibjs/ci": "^2.2.0",

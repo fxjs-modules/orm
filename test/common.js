@@ -95,7 +95,8 @@ common.getConnectionString = function (opts) {
       }
     case 'sqlite':
       var dbname = config.pathname || config.database;
-      return util.format("%s://%s?%s", protocol, `${dbname ? `${dbname}.db`: ''}`, query);
+      // return util.format("%s://%s?%s", protocol, `${dbname ? `${dbname}.db`: ''}`, query);
+      return util.format("%s:%s?%s", protocol, `${dbname ? `${dbname}.db`: ''}`, query);
     default:
       throw new Error("Unknown protocol " + protocol);
   }

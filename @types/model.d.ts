@@ -19,6 +19,11 @@ declare namespace FxOrmModel {
     }
 
     type OrderListOrLimitOffer = number | string | string[]
+
+    class ModelNG {
+        
+    }
+
     interface Model extends ModelInstanceConstructor, ModelHooks, FxOrmSynchronous.SynchronizedModel {
         name: string;
         properties: FxOrmProperty.NormalizedPropertyHash;
@@ -200,53 +205,34 @@ declare namespace FxOrmModel {
 
     interface ModelConstructorOptions {
         name: string
-        db: FxOrmNS.ORM
+        orm: FxOrmNS.ORM
         settings: FxOrmSettings.SettingInstance
-        driver_name: string
-        driver: FxOrmDMLDriver.DMLDriver
-        table: string
+        collection: string
         properties: FxOrmProperty.NormalizedPropertyHash
-        __for_extension: boolean
         indexes: string[]
         
-        identityCache: boolean
-        instanceCacheSize: number
-        
         keys: string[]
+        
         autoSave: boolean
         autoFetch: boolean
         autoFetchLimit: number
         cascadeRemove: boolean
-        hooks: Hooks
         methods: {[method_name: string]: Function}
         validations: FxOrmValidators.IValidatorHash
         ievents: FxOrmInstance.InstanceConstructorOptions['events']
     }
     
     interface ModelDefineOptions {
-        /**
-         * pririoty: table > collection
-         */
-        table?: ModelConstructorOptions['table']
-        collection?: ModelConstructorOptions['table']
+        collection?: ModelConstructorOptions['collection']
 
-        /**
-         * @dirty would be deprecated
-         */
-        __for_extension?: ModelConstructorOptions['__for_extension']
         indexes?: ModelConstructorOptions['indexes']
         // keys composition, it's array-like
         id?: ModelConstructorOptions['keys']
         autoSave?: ModelConstructorOptions['autoSave']
         autoFetch?: ModelConstructorOptions['autoFetch']
-        autoFetchLimit?: ModelConstructorOptions['autoFetchLimit']
-        hooks?: ModelConstructorOptions['hooks']
         validations?: ModelConstructorOptions['validations']
         methods?: { [name: string]: Function };
-        identityCache?: ModelConstructorOptions['identityCache']
         cascadeRemove?: ModelConstructorOptions['cascadeRemove']
-        ievents?: ModelConstructorOptions['ievents']
-        useSelfSettings?: boolean
 
         [extensibleProperty: string]: any;
     }
@@ -300,7 +286,7 @@ declare namespace FxOrmModel {
 
     interface ModelPropertyDefinition extends FxOrmSqlDDLSync__Column.Property {
         key?: boolean
-        klass?: FxOrmProperty.KlassType
+        // klass?: FxOrmProperty.KlassType
         alwaysValidate?: boolean
         enumerable?: boolean
         // whether lazyload property, if it is, it can be loaded only by its accessor
