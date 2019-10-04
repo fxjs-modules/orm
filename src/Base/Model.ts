@@ -1,17 +1,14 @@
 import util = require('util');
 import coroutine = require('coroutine');
-;
-import DDLSync = require('@fxjs/sql-ddl-sync');
 
-import * as DecoratorsParameters from '../Decorators/parameter';
-import * as DecoratorsProperty from '../Decorators/property';
+import DDLSync = require('@fxjs/sql-ddl-sync');
 
 import QueryChain from './QueryChain';
 import { getInstance } from './Instance';
 
 import * as SYMBOLS from '../Utils/symbols';
 import { snapshot } from "../Utils/clone";
-import { filterProperty } from '../Utils/property';
+import Property from './Property';
 import { configurable } from '../Decorators/accessor';
 import { fillStoreDataToProperty } from '../DXL/DML/_utils';
 
@@ -54,7 +51,8 @@ class Model implements FxOrmModel.ModelNG {
     name: FxOrmModel.ModelConstructorOptions['name']
     collection: FxOrmModel.ModelConstructorOptions['collection']
     
-    properties: FxOrmModel.ModelConstructorOptions['properties'] = {};
+    // properties: FxOrmModel.ModelConstructorOptions['properties'] = {};
+    properties: {[k: string]: Property} = {};
 
     /**
      * @description id property name
@@ -63,8 +61,26 @@ class Model implements FxOrmModel.ModelNG {
     get id (): string | undefined {
         return Object.keys(this.keyProperties)[0] || undefined
     }
+    /**
+     * @description all key field properties
+     */
+    @configurable(false)
+    get ids (): string[] {
+        const _ids = []
+        if (this.id)
+            _ids.push(this.id)
+        
+        return _ids
+    }
+    /**
+     * @description all key field properties
+     */
+    @configurable(false)
+    get keyPropertyList (): FxOrmProperty.NormalizedProperty[] {
+        return Object.values(this.keyProperties)
+    }
 
-    keyProperties: FxOrmProperty.NormalizedPropertyHash = {};
+    keyProperties: Model['properties'] = {};
     @configurable(false)
     get keys (): string[] {
         return Object.keys(this.keyProperties);
@@ -90,17 +106,13 @@ class Model implements FxOrmModel.ModelNG {
         // normalize it
         Object.keys(config.properties)
             .forEach((prop: string) => {
-                const property = this.properties[prop] = filterProperty(
-                    config.properties[prop],
-                    prop,
-                );
-
-                if (property.key)
-                    this.keyProperties[prop] = property;
+                const property = this.properties[prop] = Property.New(config.properties[prop], prop);
+                if (property.key) this.keyProperties[prop] = property;
             });
 
-        if (Object.keys(this.keyProperties).length === 0) {
-            this.keyProperties['id'] = this.properties['id'] = filterProperty({
+        if (this.ids.length === 0) {
+            this.keyProperties['id'] = this.properties['id'] = Property.New({
+                name: 'id',
                 type: 'serial',
                 key: true
             }, 'id')
@@ -156,6 +168,16 @@ class Model implements FxOrmModel.ModelNG {
     }
 
     hasOne(
+        name: string,
+        opts?: {
+            model?: Model,
+            config?: FxOrmAssociation.AssociationDefinitionOptions_HasOne
+        }
+    ): any {
+        
+    }
+
+    hasMany(
         name: string,
         opts?: {
             model?: Model,

@@ -1,6 +1,7 @@
 import Base, { ConstructorOpts } from "../Base.class";
 import { configurable } from "../../Decorators/accessor";
-import { filterKnexBuilderBeforeQuery, filterResultAfterQuery } from "./_utils", { dml: this };
+import { filterKnexBuilderBeforeQuery, filterResultAfterQuery } from "./_utils"import { arraify } from "../../Utils/array";
+, { dml: this };
 
 function HOOK_DEFAULT () {}
 interface T_DML_SQLite {
@@ -64,7 +65,7 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
 
         if (!keyProperties) return null;
 
-        const ids: { [k: string]: any } = {};
+        const ids: {[k: string]: any} = {};
 
         if (keyProperties.length == 1 && keyProperties[0].type == 'serial') {
             ids[keyProperties[0].name] = info.insertId;
@@ -90,7 +91,7 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
     ) {
         let kbuilder = this.sqlQuery.knex(table)
 
-        if (where) kbuilder.where.apply(kbuilder, where)
+        if (where) kbuilder.where.apply(kbuilder, arraify(where))
 
         kbuilder.update(changes)
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
@@ -113,7 +114,7 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         if (!where)
             throw new Error(`[DML:sqlite] where is required for remove`)
         
-        kbuilder.where.apply(kbuilder, where)
+        kbuilder.where.apply(kbuilder, arraify(where))
 
         kbuilder.delete()
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
@@ -125,15 +126,19 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         this: FxOrmDML.DMLDriver_SQLite,
         table,
         {
+            where,
             countParams,
             beforeQuery = HOOK_DEFAULT,
             filterQueryResult = (result) => Object.values(result[0])[0]
         } = {}
     ) {
         let kbuilder = this.sqlQuery.knex(table)
+
+        if (where)
+            kbuilder.where.apply(kbuilder, arraify(where))
         
         if (countParams)
-            kbuilder.count.apply(kbuilder, countParams)
+            kbuilder.count.apply(kbuilder, arraify(countParams))
         else
             kbuilder.count()
 

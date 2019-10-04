@@ -92,6 +92,7 @@ declare namespace FxOrmDML {
             <T=FxOrmDML.QueryDataPayload[]>(
                 table: string,
                 opts?: {
+                    where?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['where']>,
                     fields?: FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['select']>,
 
                     offset?: FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['offset']>
@@ -109,6 +110,7 @@ declare namespace FxOrmDML {
             <T=number>(
                 table: string,
                 opts?: {
+                    where?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['where']>,
                     countParams?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['count']>
                     beforeQuery?: (
                         builer: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>,

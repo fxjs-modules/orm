@@ -11,7 +11,7 @@ describe("Model.count()", function () {
         });
 
         return helper.dropSync(Person, function () {
-            Person.createSync([{
+            Person.create([{
                 id: 1,
                 name: "John Doe"
             }, {
@@ -29,14 +29,14 @@ describe("Model.count()", function () {
     });
 
     after(function () {
-        return db.closeSync();
+        return db.close();
     });
 
     describe("without conditions", function () {
         before(setup);
 
         it("should return all items in model", function () {
-            var count = Person.countSync();
+            var count = Person.count();
             assert.equal(count, 3);
         });
     });
@@ -45,8 +45,10 @@ describe("Model.count()", function () {
         before(setup);
 
         it("should return only matching items", function () {
-            var count = Person.countSync({
-                name: "John Doe"
+            var count = Person.count({
+                where: {
+                    name: "John Doe"
+                }
             });
             assert.equal(count, 2);
         });

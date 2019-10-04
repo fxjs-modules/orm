@@ -49,15 +49,10 @@ class QueryChain<TUPLE_ITEM = any> {
     find (
         opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']> = {}
     ): QueryChain {
-        const results = this.model.$dml.find(
-            this.model.collection,
-            opts
-        )
+        const results = this.model.$dml.find(this.model.collection, opts)
 
         this._tuples = results.map((x: TUPLE_ITEM) => {
-            const inst = this.model.New(
-                this.model.normalizeDataToProperties(x)
-            )
+            const inst = this.model.New(this.model.normalizeDataToProperties(x))
             inst.$isPersisted = true
             return inst
         });
@@ -97,6 +92,10 @@ class QueryChain<TUPLE_ITEM = any> {
 
     last (): TUPLE_ITEM {
         return util.last(this._tuples);
+    }
+
+    all (): TUPLE_ITEM[] {
+        return Array.from(this._tuples);
     }
 }
 

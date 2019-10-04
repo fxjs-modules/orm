@@ -409,6 +409,7 @@ describe("Model instance", function () {
                 });
 
                 var result = JSON.parse(JSON.stringify(p));
+                
                 assert.notExist(result.secret);
                 assert.exist(result.weight);
                 assert.exist(result.data);

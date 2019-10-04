@@ -3,7 +3,7 @@ import coroutine = require('coroutine');
 
 import LinkedList from '../Utils/linked-list';
 import { setTarget } from '../Utils/deep-kv';
-import { buildDescriptor } from '../Decorators/property';
+import * as DecoratorsProperty from '../Decorators/property';
 import { filterPropertyToStoreData, fillStoreDataToProperty } from '../DXL/DML/_utils';
 
 const REVERSE_KEYS = [
@@ -45,13 +45,13 @@ function clearChange(
     inst.$changes[fieldName].clear();
 }
 class Instance {
-    @buildDescriptor({ configurable: false, enumerable: false })
+    @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
     $model: any
     
     // TOOD: only allow settting fields of Model.properties into it.
     $kvs: Fibjs.AnyObject = {}
     
-    @buildDescriptor({ configurable: false, enumerable: false })
+    @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
     $changes: {
         [filed_name: string]: LinkedList<{
             via_path: string
@@ -75,18 +75,12 @@ class Instance {
     get $changedKeys () {
         return Object.keys(this.$changes);
     }
-    $isPropertyKey (prop: string) {
+    $isModelProperty (prop: string) {
         return this.$model.properties.hasOwnProperty(prop);
     }
     $isEnumerable (prop: string) {
         return this.$model.properties.hasOwnProperty(prop) && this.$model.properties[prop].enumerable
     }
-
-    // get $dataToStore () {
-    //     const kvs = Object.keys(this.$kvs)
-
-    //     Object.keys(this.$kvs)
-    // }
 
     get $isInstance () { return true };
     
@@ -100,7 +94,7 @@ class Instance {
         this.$model = model;
     }
 
-    @buildDescriptor({ configurable: false, enumerable: false })
+    @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
     $isPersisted: boolean = true;
 
     set (prop: string | string[], value: any) {
@@ -114,26 +108,26 @@ class Instance {
         }
     }
 
-    save (props: Fibjs.AnyObject = this.$kvs) {
-        if (Array.isArray(props))
-            return coroutine.parallel(props, (prop: Fibjs.AnyObject) => {
+    save (dataset: Fibjs.AnyObject = this.$kvs) {
+        if (Array.isArray(dataset))
+            return coroutine.parallel(dataset, (prop: Fibjs.AnyObject) => {
                 return this.save(prop)
             })
 
-        if (!props)
-            throw new Error(`props must be non-empty object!`)
+        if (!dataset)
+            throw new Error(`dataset must be non-empty object!`)
 
         const result = this.$dml.insert(
             this.$model.collection,
-            filterPropertyToStoreData(props, this.$model),
+            filterPropertyToStoreData(dataset, this.$model),
             {
-                keyProperties: Object.values(this.$model.keyProperties)
+                keyProperties: this.$model.keyPropertyList
             }
         );
 
         if (result) {
             fillStoreDataToProperty(
-                Object.assign(result, props),
+                Object.assign(result, dataset),
                 this.$model,
                 this.$kvs
             )
@@ -259,7 +253,7 @@ export function getInstance (
                 if (REVERSE_KEYS.includes(prop))
                     return false;
 
-                if (!instanceBase.$isPropertyKey(prop))
+                if (!instanceBase.$isModelProperty(prop))
                     return true;
 
                 if (isInternalProp(prop)) {

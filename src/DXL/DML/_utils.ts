@@ -5,6 +5,7 @@ export function filterPropertyToStoreData (
 	model: any
 ) {
 	// console.log('unFilteredPropertyValues', unFilteredPropertyValues);
+	// console.log('model.properties', model.properties);
 	// console.log('Object.keys(model.properties)', Object.keys(model.properties));
 	// console.log('Object.values(model.properties)', Object.values(model.properties));
 	const transformer = getDataStoreTransformer(model.dbdriver.type);
@@ -30,6 +31,8 @@ export function fillStoreDataToProperty (
 	model: any,
 	targetProps: Fibjs.AnyObject = {}
 ) {
+	// console.log('storeData', storeData);
+	// console.log('model.properties', model.properties);
 	const transformer = getDataStoreTransformer(model.dbdriver.type);
 
 	Object.values(model.properties).forEach((prop: FxOrmProperty.NormalizedProperty) => {
@@ -40,6 +43,7 @@ export function fillStoreDataToProperty (
 				{}
 			)
 	})
+	// console.log('targetProps', targetProps);
 
 	return targetProps
 }

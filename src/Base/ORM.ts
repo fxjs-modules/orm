@@ -1,4 +1,4 @@
-import util = require('util')
+import coroutine = require('coroutine')
 import events = require('events')
 const EventEmitter = events.EventEmitter;
 
@@ -146,6 +146,26 @@ class ORM<ConnType = any> extends EventEmitter {
      */
     New (modelName: string) {
         
+    }
+
+    /**
+     * @description sync all model in this.models to remote endpoints
+     */
+    sync () {
+        coroutine.parallel(
+            Object.values(this.models),
+            (model: Model) => model.sync()
+        )
+    }
+
+    /**
+     * @description sync all model in this.models from remote endpoints
+     */
+    drop () {
+        coroutine.parallel(
+            Object.values(this.models),
+            (model: Model) => model.drop()
+        )
     }
 
     close (): void {
