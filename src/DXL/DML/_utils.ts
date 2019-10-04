@@ -1,49 +1,26 @@
-import { getDataStoreTransformer } from "../../Utils/transfomers";
-
 export function filterPropertyToStoreData (
 	unFilteredPropertyValues: Fibjs.AnyObject,
-	model: any
+	properties: any
 ) {
-	// console.log('unFilteredPropertyValues', unFilteredPropertyValues);
-	// console.log('model.properties', model.properties);
-	// console.log('Object.keys(model.properties)', Object.keys(model.properties));
-	// console.log('Object.values(model.properties)', Object.values(model.properties));
-	const transformer = getDataStoreTransformer(model.dbdriver.type);
-	
 	const filteredKvs = <typeof unFilteredPropertyValues>{};
-	Object.values(model.properties).forEach((prop: FxOrmProperty.NormalizedProperty) => {
+	Object.values(properties).forEach((prop: FxOrmProperty.NormalizedProperty) => {
 		if (unFilteredPropertyValues.hasOwnProperty(prop.name))
-			filteredKvs[prop.mapsTo] = transformer.propertyToValue(
-				unFilteredPropertyValues[prop.name],
-				prop, {}
-			)
+			filteredKvs[prop.mapsTo] = prop.toStoreValue(unFilteredPropertyValues[prop.name])
 		else if (unFilteredPropertyValues.hasOwnProperty(prop.mapsTo))
-			filteredKvs[prop.mapsTo] = transformer.propertyToValue(
-				unFilteredPropertyValues[prop.mapsTo],
-				prop, {}
-			)
+			filteredKvs[prop.mapsTo] = prop.toStoreValue(unFilteredPropertyValues[prop.mapsTo])
 	})
 
 	return filteredKvs
 }
 export function fillStoreDataToProperty (
 	storeData: Fibjs.AnyObject,
-	model: any,
+	properties: any,
 	targetProps: Fibjs.AnyObject = {}
 ) {
-	// console.log('storeData', storeData);
-	// console.log('model.properties', model.properties);
-	const transformer = getDataStoreTransformer(model.dbdriver.type);
-
-	Object.values(model.properties).forEach((prop: FxOrmProperty.NormalizedProperty) => {
+	Object.values(properties).forEach((prop: FxOrmProperty.NormalizedProperty) => {
 		if (storeData.hasOwnProperty(prop.mapsTo))
-			targetProps[prop.name] = transformer.valueToProperty(
-				storeData[prop.mapsTo],
-				prop,
-				{}
-			)
+			targetProps[prop.name] = prop.fromStoreValue(storeData[prop.mapsTo])
 	})
-	// console.log('targetProps', targetProps);
 
 	return targetProps
 }

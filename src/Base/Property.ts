@@ -125,7 +125,7 @@ function filterProperty (
 export default class Property<ConnType = any> implements FxOrmProperty.Class_Property {
     static filterProperty = filterProperty;
 
-    dbdriver: FxDbDriverNS.Driver<ConnType>;
+    $storeType: FxDbDriverNS.Driver<ConnType>['type'];
 
     customType?: FxOrmProperty.CustomPropertyType
 
@@ -160,31 +160,36 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
     $orig: FxOrmProperty.NormalizedProperty
 
     get transformer () {
-        return getDataStoreTransformer(this.dbdriver.type)
+        return getDataStoreTransformer(this.$storeType)
     }
 
     fromStoreValue (storeValue: any) {
         return this.transformer.valueToProperty(
-            storeValue, this.$orig, this.customType ? {[this.$orig.type]: this.customType} : {}
+            storeValue, this,
+            this.customType ? {[this.$orig.type]: this.customType} : {}
         )
     }
 
     toStoreValue (value: any) {
         return this.transformer.propertyToValue(
-            value, this.$orig, this.customType ? {[this.$orig.type]: this.customType} : {}
+            value, this,
+            this.customType ? {[this.$orig.type]: this.customType} : {}
         )
     }
 
-    static New (input: FxOrmModel.ComplexModelPropertyDefinition, name?: string) {
-        return new Property(input, name);
+    static New (input: FxOrmModel.ComplexModelPropertyDefinition, opts?: { name?: string, storeType: FxOrmProperty.Class_Property['$storeType'] }) {
+        return new Property(input, opts);
     }
 
-    constructor (input: FxOrmModel.ComplexModelPropertyDefinition, name?: string) {
+    constructor (input: FxOrmModel.ComplexModelPropertyDefinition, opts?: { name?: string, storeType: FxOrmProperty.Class_Property['$storeType'] }) {
+        const { name, storeType } = opts || {};
+        if (!storeType)
+            throw new Error(`[Property] storeType is required!`)
+
+        this.$storeType = storeType
         this.$orig = <Property['$orig']>filterProperty(input, name);
         
         const self = this as any
         PROPERTIES_KEYS.forEach((k: any) => self[k] = this.$orig[k])
     }
-
-    toJSON() { return this.$orig }
 }

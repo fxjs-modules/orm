@@ -10,7 +10,7 @@ import * as SYMBOLS from '../Utils/symbols';
 import { snapshot } from "../Utils/clone";
 import Property from './Property';
 import { configurable } from '../Decorators/accessor';
-import { fillStoreDataToProperty } from '../DXL/DML/_utils';
+import { fillStoreDataToProperty, filterPropertyToStoreData } from '../DXL/DML/_utils';
 
 /**
  * @description Model is meta definition about database-like remote endpoints.
@@ -106,7 +106,10 @@ class Model implements FxOrmModel.ModelNG {
         // normalize it
         Object.keys(config.properties)
             .forEach((prop: string) => {
-                const property = this.properties[prop] = Property.New(config.properties[prop], prop);
+                const property = this.properties[prop] = Property.New(
+                    config.properties[prop],
+                    { name: prop, storeType: this.dbdriver.type }
+                );
                 if (property.key) this.keyProperties[prop] = property;
             });
 
@@ -115,7 +118,7 @@ class Model implements FxOrmModel.ModelNG {
                 name: 'id',
                 type: 'serial',
                 key: true
-            }, 'id')
+            }, { storeType: this.dbdriver.type })
         }
     }
 
@@ -191,8 +194,12 @@ class Model implements FxOrmModel.ModelNG {
         return getInstance(this, base);
     }
 
-    normalizeDataToProperties (data: Fibjs.AnyObject = {}) {
-        return fillStoreDataToProperty(data, this)
+    normalizeDataToProperties (data: Fibjs.AnyObject = {}, target: Fibjs.AnyObject = {}) {
+        return fillStoreDataToProperty(data, this.properties, target)
+    }
+
+    normalizePropertiesToData (data: Fibjs.AnyObject = {}) {
+        return filterPropertyToStoreData(data, this.properties)
     }
 
     /**

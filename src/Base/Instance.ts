@@ -4,7 +4,7 @@ import coroutine = require('coroutine');
 import LinkedList from '../Utils/linked-list';
 import { setTarget } from '../Utils/deep-kv';
 import * as DecoratorsProperty from '../Decorators/property';
-import { filterPropertyToStoreData, fillStoreDataToProperty } from '../DXL/DML/_utils';
+import { fillStoreDataToProperty } from '../DXL/DML/_utils';
 
 const REVERSE_KEYS = [
     'set',
@@ -119,16 +119,15 @@ class Instance {
 
         const result = this.$dml.insert(
             this.$model.collection,
-            filterPropertyToStoreData(dataset, this.$model),
+            this.$model.normalizePropertiesToData(dataset),
             {
                 keyProperties: this.$model.keyPropertyList
             }
         );
 
         if (result) {
-            fillStoreDataToProperty(
+            this.$model.normalizeDataToProperties(
                 Object.assign(result, dataset),
-                this.$model,
                 this.$kvs
             )
         }

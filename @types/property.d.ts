@@ -58,6 +58,8 @@ declare namespace FxOrmProperty {
     }
 
     class Class_Property implements NormalizedProperty {
+        $storeType: FxDbDriverNS.Driver<any>['type']
+
         name: string
 
         type: FxOrmSqlDDLSync__Column.Property['type']
@@ -88,10 +90,20 @@ declare namespace FxOrmProperty {
             input: FxOrmModel.ComplexModelPropertyDefinition,
             pname?: string
         ): FxOrmProperty.NormalizedProperty
-        static New (input: FxOrmModel.ComplexModelPropertyDefinition, name?: string): Class_Property
-        constructor (input: FxOrmModel.ComplexModelPropertyDefinition, name?: string)
-
-        toJSON(): FxOrmProperty.NormalizedProperty
+        static New (
+            input: FxOrmModel.ComplexModelPropertyDefinition,
+            opts?: {
+                name?: string,
+                storeType: FxOrmProperty.Class_Property['$storeType']
+            }
+        ): Class_Property
+        constructor (
+            input: FxOrmModel.ComplexModelPropertyDefinition,
+            opts?: {
+                name?: string,
+                storeType: FxOrmProperty.Class_Property['$storeType']
+            }
+        )
 
         readonly transformer: {
             valueToProperty(
