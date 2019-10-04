@@ -1,6 +1,8 @@
-import Base, { ConstructorOpts } from "./_base";
+import Base, { ConstructorOpts } from "../Base.class";
 import { configurable } from "../../Decorators/accessor";
+import { filterKnexBuilderBeforeQuery, filterResultAfterQuery } from "./_utils", { dml: this };
 
+function HOOK_DEFAULT () {}
 interface T_DML_SQLite {
     find: FxOrmDML.DMLDriver['find']
     insert: FxOrmDML.DMLDriver['insert']
@@ -29,24 +31,19 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
             offset = 0,
             limit = 1000, // '9223372036854775807',
             orderBy = undefined,
-            beforeQuery = () => void 0
+            beforeQuery = HOOK_DEFAULT
         } = {}
     ) {
-        let kq = this.sqlQuery.knex(table)
+        let kbuilder = this.sqlQuery.knex(table)
 
-        if (fields) kq.select(fields)
-        if (offset) kq.offset(offset)
-        if (limit) kq.limit(limit as number)
-        if (orderBy) kq.orderBy.apply(kq, orderBy)
+        if (fields) kbuilder.select(fields)
+        if (offset) kbuilder.offset(offset)
+        if (limit) kbuilder.limit(limit as number)
+        if (orderBy) kbuilder.orderBy.apply(kbuilder, orderBy)
 
-        if (typeof beforeQuery === 'function') {
-            const kqbuilder = beforeQuery(kq)
+        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
 
-            if (kqbuilder)
-                kq = kqbuilder
-        }
-
-        return this.execSqlQuery(kq.toString());
+        return this.execSqlQuery(kbuilder.toString());
     }
 
     insert: FxOrmDML.DMLDriver['insert'] = function (
@@ -55,22 +52,15 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         data,
         {
             keyProperties,
-            beforeQuery = () => void 0
+            beforeQuery = HOOK_DEFAULT
         } = {}
     ) {
-        
-        let kq = this.sqlQuery.knex(table)
+        let kbuilder = this.sqlQuery.knex(table)
 
-        kq.insert(data)
+        kbuilder.insert(data)
+        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
 
-        if (typeof beforeQuery === 'function') {
-            const kqbuilder = beforeQuery(kq)
-
-            if (kqbuilder)
-                kq = kqbuilder
-        }
-
-        const info = this.execSqlQuery<FxOrmQuery.InsertResult>(kq.toString());
+        const info = this.execSqlQuery<FxOrmQuery.InsertResult>(kbuilder.toString());
 
         if (!keyProperties) return null;
 
@@ -93,52 +83,86 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         this: DML_SQLite,
         table,
         changes,
-        conditions
+        {
+            where,
+            beforeQuery = HOOK_DEFAULT
+        } = {}
     ) {
-        const q = this.sqlQuery.update()
-            .into(table)
-            .set(changes)
-            .where(conditions)
-            .build();
+        let kbuilder = this.sqlQuery.knex(table)
 
-        if (this.isDebug)
-            require("../../Debug").sql('sqlite', q);
+        if (where) kbuilder.where.apply(kbuilder, where)
 
-        return this.execSqlQuery(q);
+        kbuilder.update(changes)
+        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
+
+        return this.execSqlQuery(kbuilder.toString());
     }
 
     remove: FxOrmDML.DMLDriver['remove'] = function (
         this: DML_SQLite,
         table,
-        conditions
+        {
+            where,
+            beforeQuery = HOOK_DEFAULT
+        } = {
+            where: null
+        }
     ) {
-        var q = this.sqlQuery.remove()
-                        .from(table)
-                        .where(conditions)
-                        .build();
+        let kbuilder = this.sqlQuery.knex(table)
 
-        if (this.isDebug)
-            require("../../Debug").sql('sqlite', q);
+        if (!where)
+            throw new Error(`[DML:sqlite] where is required for remove`)
+        
+        kbuilder.where.apply(kbuilder, where)
 
-        return this.execSqlQuery(q);
+        kbuilder.delete()
+        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
+
+        return this.execSqlQuery(kbuilder.toString());
+    }
+
+    count: FxOrmDML.DMLDriver['count'] = function (
+        this: FxOrmDML.DMLDriver_SQLite,
+        table,
+        {
+            countParams,
+            beforeQuery = HOOK_DEFAULT,
+            filterQueryResult = (result) => Object.values(result[0])[0]
+        } = {}
+    ) {
+        let kbuilder = this.sqlQuery.knex(table)
+        
+        if (countParams)
+            kbuilder.count.apply(kbuilder, countParams)
+        else
+            kbuilder.count()
+
+        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
+
+        return filterResultAfterQuery(
+            this.execSqlQuery(kbuilder.toString()),
+            filterQueryResult
+        );
     }
 
     clear: FxOrmDML.DMLDriver['clear'] = function(
         this: FxOrmDML.DMLDriver_SQLite,
         table
     ) {
-        this.execQuery(
-            this.query.remove()
-                    .from(table)
-                    .build()
-        );
-        
-        this.execQuery(
-            this.query.remove()
-                    .from(table)
-                    .where({ name: 'sqlite_sequence' })
-                    .build()
-        );
+        this.dbdriver.trans(() => {
+            this.execSqlQuery(
+                this.sqlQuery.remove()
+                        .from(table)
+                        .build()
+            );
+            
+            this.execSqlQuery(
+                this.sqlQuery.remove()
+                        .from(table)
+                        .where({ name: 'sqlite_sequence' })
+                        .build()
+            );
+        })
 
         return undefined
     }

@@ -112,14 +112,14 @@ class ORM<ConnType = any> extends EventEmitter {
     define (
         name: string,
         properties: FxOrmModel.ModelPropertyDefinitionHash,
-        config: FxOrmModel.ModelDefineOptions
+        config: FxOrmModel.ModelDefineOptions = {}
     ) {
         const filteredProps = properties as FxOrmProperty.NormalizedPropertyHash;
 
         return this.models[name] = new Model({
             name,
             properties: filteredProps,
-            keys: arraify(config.id),
+            keys: config.id ? arraify(config.id) : null,
 
             orm: this as any,
             settings: new Setting(snapshot(this.settings)) as any,

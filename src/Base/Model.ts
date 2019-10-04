@@ -148,6 +148,13 @@ class Model implements FxOrmModel.ModelNG {
         return instance;
     }
 
+    /**
+     * @description clear all data in remote endpoints
+     */
+    clear (): void {
+        this.$dml.clear(this.collection)
+    }
+
     hasOne(
         name: string,
         opts?: {

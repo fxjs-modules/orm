@@ -43,3 +43,29 @@ export function fillStoreDataToProperty (
 
 	return targetProps
 }
+
+export function filterKnexBuilderBeforeQuery (
+	builer: any,
+	beforeQuery: Function,
+	ctx?: any
+) {
+	if (typeof beforeQuery === 'function') {
+		const kqbuilder = beforeQuery(builer, ctx)
+
+		if (kqbuilder)
+			builer = kqbuilder
+	}
+
+	return builer
+}
+
+export function filterResultAfterQuery (
+	result: any,
+	afterQuery: Function
+) {
+	if (typeof afterQuery === 'function') {
+		result = afterQuery(result)
+	}
+
+	return result
+}

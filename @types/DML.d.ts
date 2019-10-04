@@ -98,16 +98,25 @@ declare namespace FxOrmDML {
                     limit?: FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['limit']>
                     orderBy?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['orderBy']>
 
-                    beforeQuery?: (kq: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>) => typeof kq | void
+                    beforeQuery?: (
+                        builer: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>,
+                        ctx: { dml: DMLDriver }
+                    ) => typeof builer | void
                 }
             ): T
         }
         count: {
-            /**
-             * mysql: {c: number}
-             * sqlite: {c: number}
-             */
-            (table: string, conditions: FxSqlQuerySubQuery.SubQueryConditions, opts: DMLDriver_CountOptions, cb?: FxOrmNS.GenericCallback<FxOrmQuery.CountResult[]>): FxOrmQuery.CountResult[]
+            <T=number>(
+                table: string,
+                opts?: {
+                    countParams?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['count']>
+                    beforeQuery?: (
+                        builer: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>,
+                        ctx: { dml: DMLDriver }
+                    ) => typeof builer | void
+                    filterQueryResult?: <T2 = any>(result: any) => T2
+                }
+            ): number
         }
         insert: {
             (
@@ -115,15 +124,38 @@ declare namespace FxOrmDML {
                 data: FxSqlQuerySql.DataToSet,
                 opts?: {
                     keyProperties?: FxOrmProperty.NormalizedProperty[],
-                    beforeQuery?: (kq: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>) => typeof kq | void
+                    beforeQuery?: (
+                        builer: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>,
+                        ctx: { dml: DMLDriver }
+                    ) => typeof builer | void
                 }
             ): FxOrmQuery.InsertResult
         }
         update: {
-            <T=any>(table: string, changes: FxSqlQuerySql.DataToSet, conditions: FxSqlQuerySubQuery.SubQueryConditions, cb?: FxOrmNS.GenericCallback<T>): T
+            <T=any>(
+                table: string,
+                changes: FxSqlQuerySql.DataToSet,
+                opts?: {
+                    where?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['where']>,
+                    beforeQuery?: (
+                        builer: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>,
+                        ctx: { dml: DMLDriver }
+                    ) => typeof builer | void
+                }
+            ): T
         }
         remove: {
-            <T=any>(table: string, conditions: FxSqlQuerySubQuery.SubQueryConditions, cb?: FxOrmNS.GenericCallback<T>): T
+            <T=any>(
+                table: string,
+                opts?: {
+                    where: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['where']>,
+                    beforeQuery?: (
+                        builer: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>,
+                        ctx: { dml: DMLDriver }
+                    ) => typeof builer | void
+                }
+                // conditions: FxSqlQuerySubQuery.SubQueryConditions
+            ): T
         }
         clear: {
             <T=any>(table: string, cb?: FxOrmNS.GenericCallback<T>): T

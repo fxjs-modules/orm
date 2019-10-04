@@ -34,7 +34,7 @@ function t() {
 
     run('./integration/instance.js');
     // run('./integration/model-aggregate.js');
-    // run('./integration/model-clear.js');
+    run('./integration/model-clear.js');
     // run('./integration/model-count.js');
     // run('./integration/model-count.callback.js');
     // run('./integration/model-create.js');

@@ -78,6 +78,19 @@ class QueryChain<TUPLE_ITEM = any> {
         }).first();
     }
 
+    /**
+     * @description get first tuple from remote endpoints
+     */
+    @transformToQCIfModel
+    count (
+        opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['count']> = {}
+    ): number {
+        return this.model.$dml.count(
+            this.model.collection,
+            opts
+        )
+    }
+
     first (): TUPLE_ITEM {
         return util.first(this._tuples);
     }

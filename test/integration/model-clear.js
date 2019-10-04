@@ -10,10 +10,10 @@ describe("Model.clear()", function () {
             name: String
         });
 
-        ORM.singleton.clear();
+        // ORM.singleton.clear();
 
         return helper.dropSync(Person, function () {
-            Person.createSync([{
+            Person.create([{
                 name: "John Doe"
             }, {
                 name: "Jane Doe"
@@ -26,16 +26,16 @@ describe("Model.clear()", function () {
     });
 
     after(function () {
-        db.closeSync();
+        db.close();
     });
 
     describe("with sync", function () {
         before(setup);
 
         it("should call when done", function () {
-            Person.clearSync();
+            Person.clear();
 
-            var count = Person.find().countSync();
+            var count = Person.count();
             assert.equal(count, 0);
         });
     });
