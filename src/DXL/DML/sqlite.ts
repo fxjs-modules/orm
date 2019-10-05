@@ -1,7 +1,7 @@
 import Base, { ConstructorOpts } from "../Base.class";
 import { configurable } from "../../Decorators/accessor";
-import { filterKnexBuilderBeforeQuery, filterResultAfterQuery } from "./_utils"import { arraify } from "../../Utils/array";
-, { dml: this };
+import { filterKnexBuilderBeforeQuery, filterResultAfterQuery } from "./_utils"
+import { arraify } from "../../Utils/array";
 
 function HOOK_DEFAULT () {}
 interface T_DML_SQLite {

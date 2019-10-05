@@ -236,4 +236,121 @@ declare namespace FxOrmAssociation {
         autoFetch?: boolean
         autoFetchLimit?: number
     }
+
+    /* next generation association :start */
+    interface AssociationMatchCondition {
+        /**
+         * source property name
+         */
+        source: string
+        /**
+         * target property name
+         */
+        target: string
+        /**
+         * comparator between properties
+         */
+        comparator?: string
+    }
+
+    type AssociationMatchConditionTuple = [
+        AssociationMatchCondition['source'],
+        AssociationMatchCondition['target'],
+        AssociationMatchCondition['comparator']?,
+    ]
+
+    class Class_AssociationProperty extends FxOrmProperty.Class_Property {
+        $collection: string
+        $association: FxOrmAssociation.Class_Association
+
+        static New (
+            input: FxOrmTypeHelpers.FirstParameter<typeof FxOrmProperty.Class_Property['New']>,
+            opts: FxOrmTypeHelpers.SecondParameter<typeof FxOrmProperty.Class_Property['New']> & {
+                collection: Class_AssociationProperty['collection']
+                association: Class_AssociationProperty['association']
+            }
+        ): Class_AssociationProperty
+
+        constructor (...args: FxOrmTypeHelpers.Parameters<typeof Class_AssociationProperty['New']>)
+    }
+
+    class Class_Association {
+        /**
+         * @description association name
+         */
+        name: string
+        /**
+         * @description association type
+         */
+        type: 'o2o' | 'o2m' | 'm2o' | 'm2m'
+        /**
+         * @description name of collection which used as association table/collection in remote endpoints
+         */
+        sourceModel: FxOrmModel.Class_Model
+        targetModel: FxOrmModel.Class_Model
+        matchKeys: FxOrmAssociation.AssociationMatchCondition[]
+
+        /**
+         * @description useful for type{'m2m'}
+         */
+        readonly mergeCollection: string | null
+        /**
+         * @description association properties
+         */
+        associatedProperties: FxOrmAssociation.Class_AssociationProperty[]
+        readonly associatedKeys: string[]
+
+        static build (opts: {
+            name: string
+            type: Class_Association['type']
+            source: Class_Association['sourceModel']
+            target: Class_Association['targetModel']
+            
+            matchKeys: FxOrmAssociation.AssociationMatchCondition[]
+            // associationKey: string
+        }): Class_Association
+
+        constructor(opts: FxOrmTypeHelpers.FirstParameter<typeof Class_Association['build']>)
+
+        readonly isNoAssociatedInSource: boolean
+        readonly isNoAssociatedInTarget: boolean
+        readonly isUseMergeTable: boolean
+        /**
+         * @description get keys properties in source model
+         */
+        readonly sourceKeyProperties: FxOrmProperty.Class_Property[]
+        /**
+         * @description get keys properties in target model
+         */
+        readonly targetKeyProperties: FxOrmProperty.Class_Property[]
+
+        /**
+         * @description sync mergeCollection if it's meaningful to remote endpoints
+         */
+        syncMergeCollection (): void
+        /**
+         * @description sync properties about association to remote endpoints
+         */
+        syncProperties (): void
+
+        /**
+         * @description
+         *  if one of models had composition keys,
+         *  it's hard to match keys from source model to target model,
+         * 
+         *  `getMatchConditions` return tuple strings, every tuple has format:
+         * 
+         *  ```
+         *  [sourceKey, targetKey, comparator]
+         *  ```
+         * 
+         *  e.g. for model `Person` and `Animal`, Person.o2m('pet', Animal), then
+         *  by default, association match person and animal by:
+         *  ```
+         *  [person_id, animal, '=']
+         *  ```
+         */
+        getMatchConditions (): [string, string, string][]
+    }
+    /* next generation association :end */
 }

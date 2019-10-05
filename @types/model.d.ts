@@ -368,4 +368,219 @@ declare namespace FxOrmModel {
     interface ModelOptions__Create {
         parallel?: boolean
     }
+
+    interface Class_ModelDefinitionOptions {
+        collection?: Class_ModelConstructOptions['collection']
+        indexes?: Class_ModelConstructOptions['indexes']
+        keys?: Class_ModelConstructOptions['keys']
+
+        autoSave?: boolean
+        autoFetch?: boolean
+        cascadeRemove?: boolean
+    }
+
+    // next generation model :start
+    type Class_ModelConstructOptions = FxOrmTypeHelpers.ConstructorParams<typeof FxOrmModel.Class_Model>[0]
+    class Class_Model {
+        name: string
+        collection: string
+
+        orm: FxOrmNS.Class_ORM
+
+        properties: {[k: string]: FxOrmProperty.Class_Property}
+        // associations: {[k: string]: FxOrmAssociation.Class_Association}
+        associations: {[k: string]: FxOrmModel.Class_MergeModel}
+
+        settings: any
+
+        readonly storeType: FxOrmProperty.Class_Property['$storeType']
+
+        /* meta :start */
+        /**
+         * @description if this model has no key
+         * @default false
+         */
+        readonly noKey: boolean
+        /* meta :end */
+
+        readonly id: string
+        readonly ids: string[]
+        readonly keyPropertyList: FxOrmProperty.Class_Property[]
+        readonly keys: string[]
+        readonly associationKeys: string[]
+
+        readonly _symbol: Symbol
+        readonly $dml: FxOrmDML.DMLDriver
+        readonly $ddl: FxOrmDDL.DDLDriver
+        readonly schemaBuilder: FXJSKnex.FXJSKnexModule.KnexInstance['schema']
+        readonly queryBuilder: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>
+
+        constructor (config: {
+            name: string
+            orm: FxOrmNS.Class_ORM
+            settings: any
+            collection: string
+            properties: FxOrmProperty.NormalizedPropertyHash
+            
+            indexes?: string[]
+            /**
+             * @description above priorities of properties' specification
+             * 
+             * if keys === false, all properties are not key
+             */
+            keys?: string[] | false
+            
+            autoSave?: boolean
+            autoFetch?: boolean
+            cascadeRemove?: boolean
+            methods?: {[method_name: string]: Function}
+            validations?: FxOrmValidators.IValidatorHash
+            ievents?: FxOrmInstance.InstanceConstructorOptions['events']
+        })
+        New (base: Fibjs.AnyObject): FxOrmInstance.Class_Instance
+
+        /* ddl about :start */
+
+        /**
+         * @description sync collection definition to remote endpoint
+         */
+        sync (): void
+
+        /**
+         * @description drop collection from remote endpoint
+         */
+        drop (): void
+
+        /**
+         * @description is property existed in remote endpoint
+         * @warn only valid in sql-type dbdriver
+         */
+        hasPropertyRemotely (property: string | FxOrmProperty.Class_Property): boolean
+        /* ddl about :end */
+
+        /* dml about :end */
+        /**
+         * @description create one instance from this model
+         */
+        create (kvItem: Fibjs.AnyObject | Fibjs.AnyObject[]): any
+        /**
+         * @description clear all data in remote endpoints
+         */
+        clear (): void
+        /* dml about :end */
+
+        /* utils :start */
+        normalizeDataToProperties (data: Fibjs.AnyObject, target: Fibjs.AnyObject): any
+        normalizePropertiesToData (data: Fibjs.AnyObject): any
+        addProperty(name: string, propertyDefinition: FxOrmProperty.Class_Property | FxOrmProperty.NormalizedProperty): typeof propertyDefinition
+
+        fieldInfo(propertyName: string): null | {
+            type: 'self'
+            property: Class_Model['properties'][any]
+        } | {
+            type: 'association'
+            association: Class_Model['associations'][any]
+        }
+        /* utils :end */
+
+        hasOne(
+            name: string,
+            opts?: {
+                model?: Class_Model,
+                associationKey?: string | ((ctx: any) => string)
+            }
+        ): FxOrmTypeHelpers.ReturnType<Class_Model['o2o']>
+
+        hasMany(
+            name: string,
+            opts?: (FxOrmTypeHelpers.SecondParameter<Class_Model['o2m']>
+                & FxOrmTypeHelpers.SecondParameter<Class_Model['m2m']>)
+                & {
+                    // model?: FxOrmModel.Class_Model
+                    type: 'm2m' | 'o2m',
+                    reverse?: boolean | string
+                }
+        ): FxOrmTypeHelpers.ReturnType<Class_Model['o2m']>
+
+        o2o(
+            name: string,
+            opts?: {
+                model?: Class_Model,
+                associationKey?: string | ((ctx: any) => string),
+            }
+        ): Class_MergeModel
+
+        o2m(
+            name: string,
+            opts?: {
+                model?: Class_Model,
+                associationKey?: string | ((ctx: any) => string),
+                matchKeys?: FxOrmAssociation.AssociationMatchCondition | FxOrmAssociation.AssociationMatchCondition[]
+            }
+        ): Class_MergeModel
+
+        m2m(
+            name: string,
+            opts?: {
+                model?: Class_Model,
+                associationKey?: string | ((ctx: any) => string),
+                matchKeys?: FxOrmAssociation.AssociationMatchCondition | FxOrmAssociation.AssociationMatchCondition[]
+            }
+        ): Class_MergeModel
+
+        m2o(
+            name: string,
+            opts?: {
+                model?: Class_Model,
+                associationKey?: string | ((ctx: any) => string),
+                matchKeys?: FxOrmAssociation.AssociationMatchCondition | FxOrmAssociation.AssociationMatchCondition[]
+            }
+        ): Class_MergeModel
+    }
+    /**
+     * @description generated on building association
+     */
+    class Class_MergeModel extends Class_Model {
+        /**
+         * @description association name
+         */
+        name: string
+        /**
+         * @description association type
+         */
+        type: 'o2o' | 'o2m' | 'm2o' | 'm2m'
+        /**
+         * @description name of collection which used as association table/collection in remote endpoints
+         */
+        sourceModel: FxOrmModel.Class_Model
+        readonly sourceKeys: string[]
+        targetModel: FxOrmModel.Class_Model
+        readonly targetKeys: string[]
+        
+        /**
+         * @description
+         *  association information, used to generate matching
+         *  where query-conditions
+         */
+        associationInfo: {
+            collection: string
+            andMatchKeys: FxOrmAssociation.AssociationMatchCondition[]
+        }
+        
+        constructor (opts: FxOrmModel.Class_ModelConstructOptions & {
+            mergeCollection: string
+            // name: string
+            type: Class_MergeModel['type']
+            source: Class_MergeModel['sourceModel']
+            target: Class_MergeModel['targetModel']
+            
+            matchKeys: FxOrmAssociation.AssociationMatchCondition[]
+        })
+
+        isSourceModel (model: Class_Model): boolean
+        isTarget (model: Class_Model): boolean
+
+        // joinFind (): any
+    }
+    // next generation model :end
 }

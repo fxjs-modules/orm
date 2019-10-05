@@ -9,16 +9,12 @@ import * as ORMRuntime from '../Decorators/orm-runtime';
 import Setting from './Setting';
 import Model from './Model';
 import { arraify } from '../Utils/array';
-import { snapshot } from '../Utils/clone';
 import { configurable } from '../Decorators/accessor';
 import { buildDescriptor } from '../Decorators/property';
 import { getDML } from '../DXL/DML';
 import { getDDL } from '../DXL/DDL';
 
-class ORM<ConnType = any> extends EventEmitter {
-    /**
-     * @description create one orm, but never do any real connection
-     */
+class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
     static create (connection: string | FxDbDriverNS.ConnectionInputArgs) {
         const dbdriver = FxDbDriver.create(connection);
         const orm = new ORM(dbdriver);
@@ -28,9 +24,6 @@ class ORM<ConnType = any> extends EventEmitter {
         return orm;
     }
 
-    /**
-     * @description create orm and connect it
-     */
     static connect (connection: string | FxDbDriverNS.DBConnectionConfig) {
         const orm = ORM.create(connection);
 
@@ -65,9 +58,9 @@ class ORM<ConnType = any> extends EventEmitter {
         }
     });
 
-    private _models: {[k: string]: Model} = {};
+    private _models: {[k: string]: FxOrmModel.Class_Model} = {};
     @configurable(false)
-    get models (): {[k: string]: Model} {
+    get models (): {[k: string]: FxOrmModel.Class_Model} {
         return this._models;
     };
 
@@ -98,9 +91,7 @@ class ORM<ConnType = any> extends EventEmitter {
      * @description load plugin, affect all models.
      * @param pluginConfig 
      */
-    use (pluginConfig: string | FxORMPlugin.PluginOptions) {
-
-    }
+    use (pluginConfig: string | FxORMPlugin.PluginOptions) {}
 
     /**
      * @description define one model with modelName(name) and properties(props)
@@ -112,25 +103,23 @@ class ORM<ConnType = any> extends EventEmitter {
     define (
         name: string,
         properties: FxOrmModel.ModelPropertyDefinitionHash,
-        config: FxOrmModel.ModelDefineOptions = {}
+        config: FxOrmModel.Class_ModelDefinitionOptions = {}
     ) {
         const filteredProps = properties as FxOrmProperty.NormalizedPropertyHash;
 
         return this.models[name] = new Model({
             name,
             properties: filteredProps,
-            keys: config.id ? arraify(config.id) : null,
+            keys: config.keys ? arraify(config.keys) : undefined,
 
             orm: this as any,
-            settings: new Setting(snapshot(this.settings)) as any,
+            settings: this.settings.clone(),
 
             collection: config.collection || name,
             indexes: [],
 
-
             autoSave: false,
             autoFetch: config.autoFetch,
-            autoFetchLimit: config.autoFetchLimit,
             cascadeRemove: config.cascadeRemove,
             
             methods: {},

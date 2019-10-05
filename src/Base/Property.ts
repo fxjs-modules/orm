@@ -177,11 +177,11 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
         )
     }
 
-    static New (input: FxOrmModel.ComplexModelPropertyDefinition, opts?: { name?: string, storeType: FxOrmProperty.Class_Property['$storeType'] }) {
+    static New (input: FxOrmModel.ComplexModelPropertyDefinition, opts: { name?: string, storeType: FxOrmProperty.Class_Property['$storeType'] }) {
         return new Property(input, opts);
     }
 
-    constructor (input: FxOrmModel.ComplexModelPropertyDefinition, opts?: { name?: string, storeType: FxOrmProperty.Class_Property['$storeType'] }) {
+    constructor (input: FxOrmModel.ComplexModelPropertyDefinition, opts: { name?: string, storeType: FxOrmProperty.Class_Property['$storeType'] }) {
         const { name, storeType } = opts || {};
         if (!storeType)
             throw new Error(`[Property] storeType is required!`)
@@ -191,5 +191,37 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
         
         const self = this as any
         PROPERTIES_KEYS.forEach((k: any) => self[k] = this.$orig[k])
+    }
+
+    deKeys () {
+        const raw = {...this.toJSON()}
+        raw.unique = false,
+        raw.index = false
+        raw.big = false
+        raw.key = false
+        raw.serial = false
+        raw.primary = false
+
+        if (raw.type === 'serial') raw.type = 'integer'
+
+        return raw
+    }
+
+    renameTo ({ name, mapsTo = name }: FxOrmTypeHelpers.FirstParameter<FxOrmProperty.Class_Property['renameTo']>) {
+        const newVal = Property.New({
+            ...this.toJSON(),
+            name,
+            mapsTo,
+        }, { storeType: this.$storeType })
+
+        return newVal
+    }
+
+    isKeyProperty () {
+        return (this.key || this.primary || this.serial)
+    }
+
+    toJSON () {
+        return this.$orig
     }
 }

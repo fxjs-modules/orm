@@ -50,7 +50,7 @@ declare namespace FxOrmProperty {
         
         lazyload: boolean
         lazyname: string
-        enumerable: string
+        enumerable: boolean
 
         // klass?: KlassType
         // alwaysValidate?: boolean
@@ -84,7 +84,7 @@ declare namespace FxOrmProperty {
         
         lazyload: boolean
         lazyname: string
-        enumerable: string
+        enumerable: boolean
 
         static filterProperty (
             input: FxOrmModel.ComplexModelPropertyDefinition,
@@ -120,6 +120,22 @@ declare namespace FxOrmProperty {
 
         fromStoreValue (storeValue: any): any
         toStoreValue (value: any): any
+
+        /**
+         * @description get one normalized non-key property snapshot
+         */
+        deKeys(): NormalizedProperty
+        /**
+         * @description if this is one key-property, which is:
+         * `property.key === true`
+         * or `property.primary === true`
+         * or `property.serial === true`
+         */
+        isKeyProperty(): boolean
+
+        renameTo (opts:{ name: Class_Property['name'], mapsTo?: Class_Property['mapsTo'] }): Class_Property
+
+        toJSON(): NormalizedProperty
     }
 
     interface NormalizedPropertyHash {

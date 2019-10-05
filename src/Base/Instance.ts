@@ -4,12 +4,15 @@ import coroutine = require('coroutine');
 import LinkedList from '../Utils/linked-list';
 import { setTarget } from '../Utils/deep-kv';
 import * as DecoratorsProperty from '../Decorators/property';
-import { fillStoreDataToProperty } from '../DXL/DML/_utils';
 
 const REVERSE_KEYS = [
     'set',
     'get',
     'save',
+    // 'saveo2o',
+    // 'savem2m',
+    // 'savem2m',
+    // 'savem2o',
     'remove',
     '$clearChange',
     'toJSON',
@@ -46,7 +49,7 @@ function clearChange(
 }
 class Instance {
     @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
-    $model: any
+    $model: FxOrmModel.Class_Model
     
     // TOOD: only allow settting fields of Model.properties into it.
     $kvs: Fibjs.AnyObject = {}
@@ -75,8 +78,8 @@ class Instance {
     get $changedKeys () {
         return Object.keys(this.$changes);
     }
-    $isModelProperty (prop: string) {
-        return this.$model.properties.hasOwnProperty(prop);
+    $isModelField (prop: string) {
+        return !!this.$model.fieldInfo(prop);
     }
     $isEnumerable (prop: string) {
         return this.$model.properties.hasOwnProperty(prop) && this.$model.properties[prop].enumerable
@@ -252,7 +255,7 @@ export function getInstance (
                 if (REVERSE_KEYS.includes(prop))
                     return false;
 
-                if (!instanceBase.$isModelProperty(prop))
+                if (!instanceBase.$isModelField(prop))
                     return true;
 
                 if (isInternalProp(prop)) {
@@ -283,9 +286,9 @@ export function getInstance (
 
                 return prop in target.$kvs;
             },
-            enumerate (target: typeof instanceBase) {
-                return Object.keys(target.$kvs);
-            },
+            // enumerate (target: typeof instanceBase) {
+            //     return Object.keys(target.$kvs);
+            // },
         }
     };
 

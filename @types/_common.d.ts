@@ -57,4 +57,8 @@ declare namespace FxOrmTypeHelpers {
     type ReturnType<T> = T extends (...args: any[]) => infer T ? T : never; 
 
     type InstanceOf<T> = T extends new (...args: any[]) => infer T ? T : never;
+
+    type ConstructorParams<T> = T extends {
+        new (...args: infer U): any
+    } ? U : never
 }

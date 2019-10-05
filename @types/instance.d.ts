@@ -151,4 +151,6 @@ declare namespace FxOrmInstance {
 
         [extraProperty: string]: any;
     }
+
+    class Class_Instance {}
 }

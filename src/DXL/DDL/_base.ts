@@ -12,6 +12,6 @@ export default class Base<ConnType = any> extends DXLBase<ConnType> {
     /**
      * @description find items from remote endpoints
      */
-    createTable: FxOrmDDL.DDLDriver['createTable'] = () => void 0
-    dropTable: FxOrmDDL.DDLDriver['dropTable'] = () => void 0
+    createTable () {}
+    dropTable () {}
 }

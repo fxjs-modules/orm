@@ -12,8 +12,8 @@ export default class Base<ConnType = any> extends DXLBase<ConnType> {
     /**
      * @description find items from remote endpoints
      */
-    find: FxOrmDML.DMLDriver['find'] = () => void 0
-    insert: FxOrmDML.DMLDriver['insert'] = () => void 0
-    update: FxOrmDML.DMLDriver['update'] = () => void 0
-    remove: FxOrmDML.DMLDriver['remove'] = () => void 0
+    find () {}
+    insert () {}
+    update () {}
+    remove () {}
 }

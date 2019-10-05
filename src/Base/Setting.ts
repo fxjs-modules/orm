@@ -44,6 +44,14 @@ class Settings {
                 unsetTarget(k, this._kvs);
         })
     }
+
+    toJSON () {
+        return snapshot(this._kvs)
+    }
+
+    clone () {
+        return new Settings(this.toJSON())
+    }
 }
 
 export default Settings

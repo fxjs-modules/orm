@@ -1,10 +1,11 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-describe("Model.create()", function () {
+odescribe("Association o2m", function () {
     var db = null;
     var Pet = null;
     var Person = null;
+    var mergeModel = null
 
     function setup() {
         Person = db.define("person", {
@@ -16,14 +17,7 @@ describe("Model.create()", function () {
                 defaultValue: "Mutt"
             }
         });
-        var pp_assoc = Person.hasMany("pets", Pet);
-
-        ;(function test_association () {
-            assert.propertyVal(pp_assoc, 'mergeCollection', undefined)
-
-            assert.property(Person.associations, 'pets')
-            assert.notProperty(Pet.associations, 'persons')
-        })();
+        mergeModel = Person.o2m("pets", { model: Pet });
 
         Person.drop();
         Pet.drop();
@@ -39,6 +33,30 @@ describe("Model.create()", function () {
         db.close();
     });
 
+    odescribe("Association", function () {
+        before(setup);
+
+        it('merge model has association property', function () {
+            assert.property(mergeModel.properties, 'person_id')
+        })
+
+        it('attach mergeModel to source model', function () {
+            assert.propertyVal(mergeModel.associationInfo, 'collection', 'pet')
+
+            assert.property(Person.associations, 'pets')
+            assert.notProperty(Pet.associations, 'persons')
+        });
+
+        it("#sourceKeys, #targetKeys", () => {
+            assert.ok(mergeModel.sourceKeys, ['id'])
+            assert.ok(mergeModel.targetKeys, ['id'])
+        });
+
+        it("associated key properties existed", () => {
+            assert.ok(Pet.hasPropertyRemotely('person_id'))
+        });
+    });
+
     odescribe("if passing an object", function () {
         before(setup);
 
@@ -51,7 +69,7 @@ describe("Model.create()", function () {
         });
     });
 
-    describe("if passing an array", function () {
+    odescribe("if passing an array", function () {
         before(setup);
 
         it("should accept it as a list of items to create", function () {
@@ -69,7 +87,7 @@ describe("Model.create()", function () {
         });
     });
 
-    describe("if passing array, options object", function () {
+    odescribe("if passing array, options object", function () {
         before(setup);
 
         it("should accept it as a list of items to create", function () {
@@ -91,7 +109,7 @@ describe("Model.create()", function () {
         });
     });
 
-    describe("if element has an association", function () {
+    odescribe("if element has an mergeModel", function () {
         before(setup);
 
         it("should also create it or save it", function () {
