@@ -5,6 +5,7 @@ import LinkedList from '../Utils/linked-list';
 import { setTarget } from '../Utils/deep-kv';
 import * as DecoratorsProperty from '../Decorators/property';
 import { arraify } from '../Utils/array';
+import { isEmptyPlainObject } from '../Utils/object';
 
 const REVERSE_KEYS = [
     'set',
@@ -15,7 +16,7 @@ const REVERSE_KEYS = [
     // 'savem2m',
     // 'savem2o',
     'remove',
-    '$clearChange',
+    '$clearChanges',
     'toJSON',
     'toArray'
 ];
@@ -26,20 +27,20 @@ function pushChange (
     payload: {
         via_path: string,
         type: 'add' | 'update' | 'delete',
-        prev_snapshot?: any
+        snapshot?: any
     }
 ) {
-    if (!inst.$changes[fieldName])
-        inst.$changes[fieldName] = new LinkedList();
+    if (!inst.$changes[fieldName]) inst.$changes[fieldName] = new LinkedList();
 
     inst.$changes[fieldName].addTail({
         via_path: payload.via_path,
         type: payload.type,
-        prev_state: payload.prev_snapshot
+        prev_state: payload.snapshot,
+        date: new Date()
     });
 }
 
-function clearChange(
+function clearChanges(
     inst: Instance,
     fieldName?: string
 ) {
@@ -59,9 +60,14 @@ class Instance implements FxOrmInstance.Class_Instance {
         [filed_name: string]: LinkedList<{
             via_path: string
             type: 'add' | 'update' | 'delete',
-            prev_state: any
+            prev_state: any,
+            date: Date
         }>
     } = {};
+
+    get $changedFieldsCount () {
+        return Object.keys(this.$changes).length
+    }
 
     @DecoratorsProperty.buildDescriptor({ enumerable: false })
     get $saved (): boolean {
@@ -77,14 +83,17 @@ class Instance implements FxOrmInstance.Class_Instance {
         return this.$kvs[x] !== undefined
     }
     
-    $clearChange (fieldName?: string) {
+    $clearChanges (fieldName?: string) {
         if (!fieldName) {
-            return Object.keys(this.$changes).forEach((f: string) => {
-                this.$clearChange(f)
+            Object.keys(this.$changes).forEach((f: string) => {
+                this.$clearChanges(f)
             })
+
+            return ;
         }
 
-        clearChange(this, fieldName)
+        clearChanges(this, fieldName)
+        delete this.$changes[fieldName]
     }
     get $changedKeys () {
         return Object.keys(this.$changes);
@@ -130,29 +139,19 @@ class Instance implements FxOrmInstance.Class_Instance {
                 return this.save(prop)
             })
 
-        if (!dataset)
+        if (!dataset || isEmptyPlainObject(dataset))
             throw new Error(`dataset must be non-empty object!`)
 
         this.$dml
             .toSingleton()
             .useTrans((dml: any) => {
                 if (this.$isPersisted) {
-                    console.log('[instance] update', dataset);
-
                     dml.update(
                         this.$model.collection,
                         this.$model.normalizePropertiesToData(dataset),
                         { keyPropertyList: this.$model.keyPropertyList }
                     )
                 } else {
-                    console.warn(
-                        '[instance] insert\n',
-                        this.$model.name, '\n',
-                        dataset,
-                        this.$model.normalizePropertiesToData(dataset),
-                        this.$model.keyPropertyNames
-                    );
-
                     const result = dml.insert(
                         this.$model.collection,
                         this.$model.normalizePropertiesToData(dataset),
@@ -177,7 +176,7 @@ class Instance implements FxOrmInstance.Class_Instance {
             })
             .releaseSingleton()
 
-        this.$clearChange()
+        this.$clearChanges()
 
         return this
     }
@@ -204,14 +203,17 @@ function isInternalProp (prop: string) {
     return prop.startsWith('$') || prop.startsWith('_')
 }
 
-export function getInstance (
+export const getInstance: FxOrmTypeHelpers.ReturnItemOrArrayAccordingTo_2ndParam<
+    Fibjs.AnyObject,
+    FxOrmInstance.Class_Instance
+> = function (
     model: any,
-    instanceBase: any = {}
-): FxOrmInstance.Class_Instance[] | FxOrmInstance.Class_Instance {
+    instanceBase = {}
+) {
     if (Array.isArray(instanceBase))
         return instanceBase.map(x => getInstance(model, x)) as any
     
-    instanceBase = new Instance(model, instanceBase)
+    const instance = new Instance(model, instanceBase)
 
     function getPhHandler ({
         parent_path = '',
@@ -231,9 +233,9 @@ export function getInstance (
                 },
                 deleteProperty (target: any, prop:string) {
                     if (target.hasOwnProperty(prop)) {
-                        pushChange(instanceBase, util.first(loose_p_tuple(prop)), {
+                        pushChange(instance, util.first(loose_p_tuple(prop)), {
                             type: 'delete',
-                            prev_snapshot: target[prop],
+                            snapshot: target[prop],
                             via_path: cur_path_str(prop)
                         });
                         delete target[prop];
@@ -244,16 +246,16 @@ export function getInstance (
                 set: function(target: any, prop: string, value: any) {
                     if (!target.hasOwnProperty(prop))
                         // @todo: only allow set deep key which existed in intialization
-                        // pushChange(instanceBase, util.first(loose_p_tuple(prop)), {
+                        // pushChange(instance, util.first(loose_p_tuple(prop)), {
                         //     type: 'add',
-                        //     prev_snapshot: target[prop],
+                        //     snapshot: target[prop],
                         //     via_path: cur_path_str(prop)
                         // });
                         return true;
                     else if (target[prop] !== value)
-                        pushChange(instanceBase, util.first(loose_p_tuple(prop)), {
+                        pushChange(instance, util.first(loose_p_tuple(prop)), {
                             type: 'update',
-                            prev_snapshot: target[prop],
+                            snapshot: target[prop],
                             via_path: cur_path_str(prop)
                         });
 
@@ -265,7 +267,7 @@ export function getInstance (
         }
         
         return {
-            get (target: typeof instanceBase, prop: string): any {
+            get (target: typeof instance, prop: string): any {
                 if (REVERSE_KEYS.includes(prop) || isInternalProp(prop))
                     return target[prop];
 
@@ -275,11 +277,11 @@ export function getInstance (
 
                 return target.$kvs[prop];
             },
-            ownKeys (target: typeof instanceBase) {
+            ownKeys (target: typeof instance) {
                 return Reflect.ownKeys(target.$kvs)
                 // return Object.keys(target.$kvs)
             },
-            deleteProperty (target: typeof instanceBase, prop:string) {
+            deleteProperty (target: typeof instance, prop:string) {
                 if (REVERSE_KEYS.includes(prop) || isInternalProp(prop)) {
                     delete target[prop];
                     return true;
@@ -288,7 +290,7 @@ export function getInstance (
                 if (target.$kvs.hasOwnProperty(prop)) {
                     pushChange(target, prop, {
                         type: 'delete',
-                        prev_snapshot: target.$kvs[prop],
+                        snapshot: target.$kvs[prop],
                         via_path: prop
                     });
                     delete target.$kvs[prop];
@@ -296,11 +298,11 @@ export function getInstance (
                     
                 return true;
             },
-            set: function(target: typeof instanceBase, prop: string, value: any) {
+            set: function(target: typeof instance, prop: string, value: any) {
                 if (REVERSE_KEYS.includes(prop))
                     return false;
 
-                if (!instanceBase.$isModelField(prop))
+                if (!instance.$isModelField(prop))
                     return true;
 
                 if (isInternalProp(prop)) {
@@ -311,13 +313,13 @@ export function getInstance (
                 if (!target.$kvs.hasOwnProperty(prop))
                     pushChange(target, prop, {
                         type: 'add',
-                        prev_snapshot: target.$kvs[prop],
+                        snapshot: target.$kvs[prop],
                         via_path: prop
                     });
                 else if (target.$kvs[prop] !== value)
                     pushChange(target, prop, {
                         type: 'update',
-                        prev_snapshot: target.$kvs[prop],
+                        snapshot: target.$kvs[prop],
                         via_path: prop
                     });
 
@@ -325,7 +327,7 @@ export function getInstance (
 
                 return true;
             },
-            has (target: typeof instanceBase, prop: string) {
+            has (target: typeof instance, prop: string) {
                 if (REVERSE_KEYS.includes(prop) || isInternalProp(prop))
                     return prop in target;
 
@@ -337,5 +339,5 @@ export function getInstance (
         }
     };
 
-    return new Proxy(instanceBase, getPhHandler({ parent_path: '' ,track_$kv: true }))
+    return new Proxy(instance, getPhHandler({ parent_path: '' ,track_$kv: true }))
 }

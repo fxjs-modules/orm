@@ -157,11 +157,16 @@ declare namespace FxOrmInstance {
 
         readonly $saved: boolean
         readonly $isPersisted: boolean
+        readonly $changes: any
+        readonly $changedFieldsCount: number
+
+        readonly $model: FxOrmModel.Class_Model
          
         save: {
             (kvs?: Fibjs.AnyObject): Class_Instance
             (kvs: Fibjs.AnyObject[]): Class_Instance[]
         }
+
 
         [k: string]: any
     }

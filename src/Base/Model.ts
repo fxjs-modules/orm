@@ -158,24 +158,26 @@ class Model implements FxOrmModel.Class_Model {
         this.orm = config.orm;
         this.settings = config.settings;
 
-        const specKeyPropertyNames = normalizeKeysInConfig(config.keys)
-
         // normalize it
-        Object.keys(config.properties)
-            .forEach((prop: string) => {
-                const property = this.properties[prop] = Property.New(
-                    config.properties[prop],
-                    { name: prop, storeType: this.storeType }
-                );
-                
-                if (specKeyPropertyNames)
-                    if (property.isKeyProperty() || specKeyPropertyNames.includes(prop))
-                        this.keyProperties[prop] = property;
-            });
+        ;(() => {
+            const specKeyPropertyNames = normalizeKeysInConfig(config.keys)
 
-        if (specKeyPropertyNames && this.ids.length === 0) {
-            this.keyProperties['id'] = this.properties['id'] = Property.New(DFLT_ID_DEF, { storeType: this.storeType })
-        }
+            Object.keys(config.properties)
+                .forEach((prop: string) => {
+                    const property = this.properties[prop] = Property.New(
+                        config.properties[prop],
+                        { name: prop, storeType: this.storeType }
+                    );
+                    
+                    if (specKeyPropertyNames)
+                        if (property.isKeyProperty() || specKeyPropertyNames.includes(prop))
+                            this.keyProperties[prop] = property;
+                });
+
+            if (specKeyPropertyNames && this.ids.length === 0) {
+                this.keyProperties['id'] = this.properties['id'] = Property.New(DFLT_ID_DEF, { storeType: this.storeType })
+            }
+        })();
     }
     sync (): void {
         if (!this.dbdriver.isSql) return ;
@@ -319,7 +321,25 @@ class Model implements FxOrmModel.Class_Model {
         return null as any
     }
 
-    New (base: Fibjs.AnyObject = {}) {
+    New (input: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['New']>) {
+        let base: Fibjs.AnyObject
+
+        switch (typeof input) {
+            case 'string':
+            case 'number':
+                if (this.ids.length >= 2)
+                    throw new Error(`[Model::New] model '${this.name}' has more than one id-type properties: ${this.ids.join(', ')}`)
+
+                base = { [this.id]: input }
+                
+                break
+            case 'object':
+                base = input
+                break
+            default:
+                throw new Error(`[Model::New] invalid input for [Model].New!`)
+        }
+
         return getInstance(this, base);
     }
 
@@ -335,7 +355,7 @@ class Model implements FxOrmModel.Class_Model {
         const kvs = []
         for (let assoc_name in this.associations) {
             const fInfo = this.fieldInfo(assoc_name)
-            if (fInfo && fInfo.type === 'association')
+            if (dataset.hasOwnProperty(assoc_name) && fInfo && fInfo.type === 'association')
                 kvs.push({
                     association: fInfo.association,
                     dataset: dataset[assoc_name]
@@ -406,7 +426,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
         this.sourceModel = source
         this.targetModel = target
 
-        // _generateAssociatedProperties
+        // generate associated properties
         ;(() => {
             switch (this.type) {
                 /**
@@ -461,16 +481,14 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     }) {
         switch (this.type) {
             case 'o2m':
-                sourceInstance[this.name] = sourceInstance[this.name] || [];
-                
-                // console.warn(
-                //     'sourceInstance.$kvs',
-                //     sourceInstance.$kvs,
-                //     sourceInstance.$model.name
-                // )
+                const inputs = arraify(this.New(associationDataSet));
+
+                // don't change it it no inputs
+                if (inputs && inputs.length)
+                    sourceInstance[this.name] = sourceInstance[this.name] || []
 
                 const assocs = coroutine.parallel(
-                    arraify(this.New(associationDataSet)),
+                    inputs,
                     (assocInst: FxOrmInstance.Class_Instance) => {
                         this.associationInfo.andMatchKeys.forEach(matchCond => {
                             if (!sourceInstance[matchCond.source]) return ;
@@ -481,27 +499,13 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                             // assocInst[property.name] = sourceInstance[property.name]
                         })
 
-                        console.notice('assocInst.$kvs [1]', assocInst.$kvs);
                         assocInst.save()
-                        console.notice('assocInst.$kvs [2]', assocInst.$kvs);
 
                         return assocInst.toJSON()
                     }
                 )
 
-                false && console.log(
-                    'assocs result',
-                    assocs
-                )
-
                 sourceInstance[this.name] = this.targetModel.New(assocs)
-
-                false && console.warn(
-                    'sourceInstance[this.name]',
-                    sourceInstance.$kvs,
-                    sourceInstance.$model.name === this.sourceModel.name,
-                    sourceInstance[this.name][0].$kvs
-                )
                 break
         }
     }

@@ -441,7 +441,7 @@ declare namespace FxOrmModel {
             validations?: FxOrmValidators.IValidatorHash
             ievents?: FxOrmInstance.InstanceConstructorOptions['events']
         })
-        New (base: Fibjs.AnyObject): FxOrmInstance.Class_Instance | FxOrmInstance.Class_Instance[]
+        New: FxOrmTypeHelpers.ReturnItemOrArrayAccordingTo_1stParam<Fibjs.AnyObject | string | number, FxOrmInstance.Class_Instance>
 
         /* ddl about :start */
 
@@ -477,8 +477,25 @@ declare namespace FxOrmModel {
         /* dml about :end */
 
         /* utils :start */
-        normalizeDataToProperties (data: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
-        normalizePropertiesToData (data: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        /**
+         * @description
+         *  filter out properties-about key-value in dataset only,
+         *  and transform [key] to correspoding `mapsTo` field in property
+         */
+        normalizeDataToProperties (dataset: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        /**
+         * @description
+         *  filter out properties-about key-value in datastore only,
+         *  and transform [key] to correspoding `name` field in property
+         */
+        normalizePropertiesToData (datastore: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        /**
+         * @description
+         *  filter out association-about key-value in dataset only,
+         *  if no key-value about association, would return one empty array
+         * 
+         * @return []
+         */
         filterOutAssociatedData (dataset: Fibjs.AnyObject, instanceDataSet?: Fibjs.AnyObject): {
             association: FxOrmModel.Class_Model['associations'][any],
             dataset: any,

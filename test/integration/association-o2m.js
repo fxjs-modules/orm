@@ -125,11 +125,15 @@ describe("Association o2m", function () {
             assert.ok(Array.isArray(John.pets));
 
             assert.propertyVal(John.pets[0], "name", "Deco");
-            console.log(
-                'John.pets[0]',
-                John.pets[0]
-            )
+            
             assert.property(John.pets[0], Pet.ids[0]);
+
+            console.log(
+                'John.pets[0].$changes',
+                John.pets[0].$changes,
+                John.pets[0].$kvs
+            )
+            
             assert.ok(John.pets[0].$saved);
         });
 

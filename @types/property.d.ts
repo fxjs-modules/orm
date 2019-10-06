@@ -118,6 +118,12 @@ declare namespace FxOrmProperty {
             ): any
         }
 
+        // getDefaultValue (
+        //     opts: {
+        //         instance: FxOrmInstance.Class_Instance
+        //     }
+        // ): any
+
         fromStoreValue (storeValue: any): any
         toStoreValue (value: any): any
 

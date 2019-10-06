@@ -1,19 +1,28 @@
+import util = require('util')
+
 import * as DecoratorsProperty from '../Decorators/property';
 
 import { getDataStoreTransformer } from '../Utils/transfomers';
 
-function getPropertyConfig (overwrite?: Fibjs.AnyObject): FxOrmProperty.NormalizedProperty {
+function getPropertyConfig (
+    overwrite?: Fibjs.AnyObject
+): FxOrmProperty.NormalizedProperty {
     const {
         name: pname = '',
         mapsTo = pname,
-        enumerable = true
+        enumerable = true,
     } = overwrite || {} as any
+
+    let {
+        defaultValue = null
+    } = overwrite || {} as any
+
+    if (util.isFunction(defaultValue) || util.isSymbol(defaultValue))
+        defaultValue = null
     
     return {
-        name: pname,
         type: '',
         size: 0,
-        mapsTo: mapsTo,
 
         key: false,
         unique: false,
@@ -26,17 +35,17 @@ function getPropertyConfig (overwrite?: Fibjs.AnyObject): FxOrmProperty.Normaliz
         rational: false,
 
         time: false,
-
         big: false,
-
         values: null,
-
         lazyload: false,
+        
+        ...overwrite,
+
+        defaultValue,
         lazyname: pname,
         enumerable,
-
-        defaultValue: () => null,
-        ...overwrite
+        name: pname,
+        mapsTo: mapsTo,
     }
 }
 
@@ -213,10 +222,6 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
     }
 
     renameTo ({ name, mapsTo = name, lazyname = name }: FxOrmTypeHelpers.FirstParameter<FxOrmProperty.Class_Property['renameTo']>) {
-        console.log(
-            require('@fibjs/chalk')`{bold.red.inverse [SQL]{~inverse  ${name} | ${mapsTo}}}`
-        )
-
         const newVal = Property.New({
             ...this.toJSON(),
             name,

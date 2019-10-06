@@ -61,4 +61,18 @@ declare namespace FxOrmTypeHelpers {
     type ConstructorParams<T> = T extends {
         new (...args: infer U): any
     } ? U : never
+
+    type ReturnItemOrArrayAccordingTo_1stParam<T, RETURN_T, EXTRA_T = void> = {
+        (
+            arg1: EXTRA_T extends void ? T : (T | EXTRA_T),
+            ...args: any[]): T extends any[] ? RETURN_T[] : RETURN_T
+    }
+
+    type ReturnItemOrArrayAccordingTo_2ndParam<T, RETURN_T, EXTRA_T = void> = {
+        (
+            arg1: any,
+            arg2: EXTRA_T extends void ? T : (T | EXTRA_T),
+            ...args: any[]
+        ): T extends any[] ? RETURN_T[] : RETURN_T
+    }
 }
