@@ -207,24 +207,17 @@ class Instance implements FxOrmInstance.Class_Instance {
     }
 
     exists (): boolean {
-        // TODO: migrate to dml
-        this.$dml.find(
+        const where: Fibjs.AnyObject = {};
+        this.$model.idPropertyList.forEach(prop => {
+            if (this[prop.name]) {
+                where[prop.name] = this[prop.name]
+            }
+        })
+        
+        return this.$dml.exists(
             this.$model.collection,
-            {
-                beforeQuery: (builder) => {
-                    let withConditions = false;
-
-                    this.$model.idPropertyList.forEach(prop => {
-                        if (this[prop.name]) {
-                            withConditions = true
-                            builder.where(prop.mapsTo, '=', this[prop.name])
-                        }
-                    })
-
-                    if (!withConditions)
-                        throw new Error('[DML::exists] no any where query conditions generated in this instance, examine your conditions input')
-                }
-            })
+            { where }
+        )
         
         return false
     }

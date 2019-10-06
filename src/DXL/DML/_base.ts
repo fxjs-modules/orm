@@ -16,4 +16,7 @@ export default class Base<ConnType = any> extends DXLBase<ConnType> implements F
     insert (...args: FxOrmTypeHelpers.Parameters<FxOrmDML.DMLDriver['insert']>): any {}
     update (...args: FxOrmTypeHelpers.Parameters<FxOrmDML.DMLDriver['update']>): any {}
     remove (...args: FxOrmTypeHelpers.Parameters<FxOrmDML.DMLDriver['remove']>): any {}
+    exists (...args: FxOrmTypeHelpers.Parameters<FxOrmDML.DMLDriver['exists']>): any {}
+    count (...args: FxOrmTypeHelpers.Parameters<FxOrmDML.DMLDriver['count']>): any {}
+    clear (...args: FxOrmTypeHelpers.Parameters<FxOrmDML.DMLDriver['clear']>): any {}
 }

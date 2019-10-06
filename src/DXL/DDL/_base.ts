@@ -1,6 +1,6 @@
 import DXLBase from '../Base.class';
 
-export default class Base<ConnType = any> extends DXLBase<ConnType> {
+export default class Base<ConnType = any> extends DXLBase<ConnType> implements FxOrmDDL.DDLDriver<ConnType> {
     dbdriver: FxDbDriverNS.Driver<ConnType>;
 
     sqlQuery: FxSqlQuery.Class_Query;
@@ -12,6 +12,6 @@ export default class Base<ConnType = any> extends DXLBase<ConnType> {
     /**
      * @description find items from remote endpoints
      */
-    createTable () {}
-    dropTable () {}
+    createTable (...args: FxOrmTypeHelpers.Parameters<FxOrmDDL.DDLDriver['createTable']>): any {}
+    dropTable (...args: FxOrmTypeHelpers.Parameters<FxOrmDDL.DDLDriver['dropTable']>): any {}
 }

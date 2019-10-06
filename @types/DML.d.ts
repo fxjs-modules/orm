@@ -8,12 +8,11 @@
 /// <reference path="query.d.ts" />
 
 declare namespace FxOrmDML {
-    interface DMLDriver<ConnType = any> {
-        customTypes: {[key: string]: FxOrmProperty.CustomPropertyType}
-
+    class DMLDriver<ConnType = any> extends FxOrmDXL.DXLDriver<ConnType> {
+        // uid: string
         find: {
             <T=Fibjs.AnyObject[]>(
-                table: string,
+                collection: string,
                 opts?: {
                     where?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['where']>,
                     fields?: FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['select']>,
@@ -31,7 +30,7 @@ declare namespace FxOrmDML {
         }
         count: {
             <T=number>(
-                table: string,
+                collection: string,
                 opts?: {
                     where?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['where']>,
                     countParams?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['count']>
@@ -43,9 +42,17 @@ declare namespace FxOrmDML {
                 }
             ): number
         }
+        exists: {
+            <T=boolean>(
+                collection: string,
+                opts?: {
+                    where?: Fibjs.AnyObject
+                }
+            ): boolean
+        }
         insert: {
             (
-                table: string,
+                collection: string,
                 data: FxSqlQuerySql.DataToSet,
                 opts?: {
                     keyPropertyList?: FxOrmProperty.NormalizedProperty[],
@@ -58,7 +65,7 @@ declare namespace FxOrmDML {
         }
         update: {
             <T=any>(
-                table: string,
+                collection: string,
                 changes: FxSqlQuerySql.DataToSet,
                 opts?: {
                     where?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['where']>,
@@ -71,7 +78,7 @@ declare namespace FxOrmDML {
         }
         remove: {
             <T=any>(
-                table: string,
+                collection: string,
                 opts?: {
                     where: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['where']>,
                     beforeQuery?: (
@@ -84,30 +91,8 @@ declare namespace FxOrmDML {
         }
         clear: {
             <T=any>(
-                table: string
+                collection: string
             ): T
         }
-        poolQuery: {
-            <T=any>(query: string, cb?: FxOrmNS.GenericCallback<T>): T
-        }
-        valueToProperty: {
-            (value: any, property: FxOrmProperty.NormalizedProperty): any
-        }
-        propertyToValue: {
-            (value: any, property: FxOrmProperty.NormalizedProperty): any
-        }
-        readonly isSql: boolean
-
-        /* patched :start */
-        // uniq id
-        uid: string
-        hasMany?: {
-            (Model: FxOrmModel.Model, association: FxOrmAssociation.InstanceAssociationItem): any
-        }
-        
-        execQuerySync: (query: string, opt: Fibjs.AnyObject) => any
-        /* patched :end */
-
-        [ext_key: string]: any
     }
 }

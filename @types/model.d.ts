@@ -523,6 +523,7 @@ declare namespace FxOrmModel {
 
         hasOne(
             name: string,
+            model?: Class_Model,
             opts?: {
                 model?: Class_Model,
                 associationKey?: string | ((ctx: any) => string)
@@ -531,6 +532,7 @@ declare namespace FxOrmModel {
 
         hasMany(
             name: string,
+            model?: Class_Model,
             opts?: (FxOrmTypeHelpers.SecondParameter<Class_Model['o2m']>
                 & FxOrmTypeHelpers.SecondParameter<Class_Model['m2m']>)
                 & {

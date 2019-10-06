@@ -1,7 +1,7 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-odescribe("Model.count()", function () {
+describe("Model.count()", function () {
     var db = null;
     var Person = null;
 

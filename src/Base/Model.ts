@@ -250,15 +250,27 @@ class Model implements FxOrmModel.Class_Model {
         this.$dml.clear(this.collection)
     }
 
-    hasOne: FxOrmModel.Class_Model['hasOne'] = function (this: FxOrmModel.Class_Model, name, opts?) {
+    hasOne: FxOrmModel.Class_Model['hasOne'] = function (
+        this: FxOrmModel.Class_Model,
+        name,
+        model?,
+        opts?
+    ) {
         return null as any
     }
 
-    hasMany: FxOrmModel.Class_Model['hasMany'] = function (this: FxOrmModel.Class_Model, name, opts?) {
+    hasMany: FxOrmModel.Class_Model['hasMany'] = function (
+        this: FxOrmModel.Class_Model,
+        name,
+        model?,
+        opts?
+    ) {
         const { type = 'o2m', reverse, ...restOpts } = opts || {} as typeof opts;
         const reverseKey = typeof reverse === 'string' ? reverse : `${this.name}s`
 
         let assoc = null
+
+        restOpts.model = model || this
 
         switch (type) {
             default:

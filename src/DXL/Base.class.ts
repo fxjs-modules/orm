@@ -1,10 +1,23 @@
 import SqlQuery = require('@fxjs/sql-query');
 
-export default class DXLBase<ConnType = any> {
+export default class DXLBase<ConnType = any> implements FxOrmDXL.DXLDriver<ConnType> {
     dbdriver: FxDbDriverNS.Driver<ConnType>;
     singleton_connection?: ConnType;
 
     sqlQuery: FxSqlQuery.Class_Query;
+
+    constructor(opts: {
+        dbdriver: DXLBase['dbdriver'],
+        singleton?: boolean,
+    }) {
+        this.dbdriver = opts.dbdriver;
+
+        if (opts.singleton)
+            this.singleton_connection = this.dbdriver.getConnection();
+
+        if (this.dbdriver.isSql)
+            this.sqlQuery = new SqlQuery.Query();
+    }
 
     toSingleton () {
         return new (<any>this.constructor)({ dbdriver: this.dbdriver, singleton: true })
@@ -26,6 +39,8 @@ export default class DXLBase<ConnType = any> {
     releaseSingleton () {
         if (this.singleton_connection)
             (<any>this.singleton_connection).close()
+
+        return this
     }
 
     useConnection (callback: (connection: ConnType) => any) {
@@ -33,19 +48,6 @@ export default class DXLBase<ConnType = any> {
             return callback(this.singleton_connection)
         else
             return this.dbdriver.connectionPool(conn => callback(conn))
-    }
-
-    constructor(opts: {
-        dbdriver: DXLBase['dbdriver'],
-        singleton?: boolean,
-    }) {
-        this.dbdriver = opts.dbdriver;
-
-        if (opts.singleton)
-            this.singleton_connection = this.dbdriver.getConnection();
-
-        if (this.dbdriver.isSql)
-            this.sqlQuery = new SqlQuery.Query();
     }
 
     execSqlQuery<T_RESULT = any>(

@@ -1,7 +1,7 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-xdescribe("Model.create()", function () {
+describe("Model.create()", function () {
     var db = null;
     var Pet = null;
     var Person = null;
@@ -16,14 +16,7 @@ xdescribe("Model.create()", function () {
                 defaultValue: "Mutt"
             }
         });
-        var pp_assoc = Person.hasMany("pets", Pet);
-
-        ;(function test_association () {
-            assert.propertyVal(pp_assoc, 'mergeCollection', undefined)
-
-            assert.property(Person.associations, 'pets')
-            assert.notProperty(Pet.associations, 'persons')
-        })();
+        Person.hasMany("pets", Pet);
 
         Person.drop();
         Pet.drop();
@@ -39,7 +32,7 @@ xdescribe("Model.create()", function () {
         db.close();
     });
 
-    odescribe("if passing an object", function () {
+    describe("if passing an object", function () {
         before(setup);
 
         it("should accept it as the only item to create", function () {
@@ -108,7 +101,7 @@ xdescribe("Model.create()", function () {
 
             assert.propertyVal(John.pets[0], "name", "Deco");
             assert.property(John.pets[0], Pet.ids[0]);
-            assert.ok(John.pets[0].saved());
+            assert.ok(John.pets[0].$saved);
         });
 
         it("should also create it or save it even if it's an object and not an instance", function () {
@@ -125,7 +118,7 @@ xdescribe("Model.create()", function () {
 
             assert.propertyVal(John.pets[0], "name", "Deco");
             assert.property(John.pets[0], Pet.ids[0]);
-            assert.ok(John.pets[0].saved());
+            assert.ok(John.pets[0].$saved);
         });
     });
 

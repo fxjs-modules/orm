@@ -21,6 +21,8 @@
 /// <reference path="Adapter.d.ts" />
 /// <reference path="Validators.d.ts" />
 /// <reference path="DMLDriver.d.ts" />
+
+/// <reference path="DXL.d.ts" />
 /// <reference path="DML.d.ts" />
 /// <reference path="DDL.d.ts" />
 

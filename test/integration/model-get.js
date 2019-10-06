@@ -53,7 +53,7 @@ describe("Model.get()", function() {
     return db.close();
   });
 
-  odescribe("mapsTo", function() {
+  describe("mapsTo", function() {
     before(setup(true));
 
     it("should create the table with a different column name than property name", function() {
@@ -86,7 +86,7 @@ describe("Model.get()", function() {
     before(setup(true));
 
     it("should return item with id 1", function() {
-      var John1 = Person.getSync(John[Person.id]);
+      var John1 = Person.get(John[Person.id]);
 
       assert.isObject(John1);
       assert.propertyVal(John1, Person.id[0], John[Person.id]);
@@ -94,7 +94,7 @@ describe("Model.get()", function() {
     });
 
     it("should have an UID method", function() {
-      var John1 = Person.getSync(John[Person.id]);
+      var John1 = Person.get(John[Person.id]);
 
       assert.isFunction(John1.UID);
       assert.equal(John1.UID(), John[Person.id]);
@@ -102,11 +102,11 @@ describe("Model.get()", function() {
 
     describe("changing name and getting id 1 again", function() {
       it("should return the original object with unchanged name", function() {
-        var John1 = Person.getSync(John[Person.id]);
+        var John1 = Person.get(John[Person.id]);
 
         John1.name = "James";
 
-        var John2 = Person.getSync(John[Person.id]);
+        var John2 = Person.get(John[Person.id]);
 
         assert.equal(John1[Person.id], John2[Person.id]);
         assert.equal(John2.name, "John Doe");
@@ -119,11 +119,11 @@ describe("Model.get()", function() {
       });
 
       it("should return the same object with the changed name", function() {
-        var John1 = Person.getSync(John[Person.id]);
+        var John1 = Person.get(John[Person.id]);
 
         John1.name = "James";
 
-        var John2 = Person.getSync(John[Person.id]);
+        var John2 = Person.get(John[Person.id]);
 
         assert.equal(John1[Person.id], John2[Person.id]);
         assert.equal(John2.name, "James");
@@ -136,8 +136,8 @@ describe("Model.get()", function() {
 
     describe("fetching several times", function() {
       it("should return different objects", function() {
-        var John1 = Person.getSync(John[Person.id]);
-        var John2 = Person.getSync(John[Person.id]);
+        var John1 = Person.get(John[Person.id]);
+        var John2 = Person.get(John[Person.id]);
 
         assert.equal(John1[Person.id], John2[Person.id]);
         assert.notEqual(John1, John2);
@@ -150,11 +150,11 @@ describe("Model.get()", function() {
 
     describe("fetching again after 0.2 secs", function() {
       it("should return same objects", function() {
-        var John1 = Person.getSync(John[Person.id]);
+        var John1 = Person.get(John[Person.id]);
 
         coroutine.sleep(200);
 
-        var John2 = Person.getSync(John[Person.id]);
+        var John2 = Person.get(John[Person.id]);
 
         assert.equal(John1[Person.id], John2[Person.id]);
         assert.equal(John1, John2);
@@ -163,17 +163,17 @@ describe("Model.get()", function() {
 
     describe("fetching again after 0.7 secs", function() {
       it("should return different objects", function() {
-        var John1 = Person.getSync(John[Person.id]);
+        var John1 = Person.get(John[Person.id]);
 
         coroutine.sleep(700);
 
-        var John2 = Person.getSync(John[Person.id]);
+        var John2 = Person.get(John[Person.id]);
         assert.notEqual(John1, John2);
       });
     });
   });
 
-  odescribe("with empty object as options", function() {
+  describe("with empty object as options", function() {
     before(setup());
 
     it("should return item with id 1 like previously", function() {
@@ -191,7 +191,7 @@ describe("Model.get()", function() {
 
     it("should return an error", function() {
       try {
-        Person.getSync(999);
+        Person.get(999);
       } catch (err) {
         assert.equal(err.message, "Not found");
       }
@@ -202,10 +202,10 @@ describe("Model.get()", function() {
     before(setup(true));
 
     it("should accept and try to fetch", function() {
-      var John1 = Person.getSync([John[Person.id]]);
+      var John1 = Person.get([John[Person.id]]);
 
       assert.isObject(John1);
-      assert.propertyVal(John1, Person.id[0], John[Person.id]);
+      assert.propertyVal(John1, Person.id, John[Person.id]);
       assert.propertyVal(John1, "name", "John Doe");
     });
   });
@@ -216,10 +216,10 @@ describe("Model.get()", function() {
         name: String
       });
 
-      ORM.singleton.clear();
+      // ORM.singleton.clear();
 
       return helper.dropSync(Person, function() {
-        Person.createSync([
+        Person.create([
           {
             name: "John Doe"
           },
@@ -230,14 +230,14 @@ describe("Model.get()", function() {
       });
     });
 
-    it("should search by key name and not 'id'", function() {
+    xit("should search by key name and not 'id'", function() {
       db.settings.set("properties.primary_key", "name");
 
       var OtherPerson = db.define("person", {
         id: Number
       });
 
-      var person = OtherPerson.getSync("Jane Doe");
+      var person = OtherPerson.get("Jane Doe");
       assert.equal(person.name, "Jane Doe");
     });
   });
@@ -253,7 +253,7 @@ describe("Model.get()", function() {
         location: { type: "point" }
       });
 
-      ORM.singleton.clear();
+      // ORM.singleton.clear();
 
       return helper.dropSync(Person, function() {
         Person.create(

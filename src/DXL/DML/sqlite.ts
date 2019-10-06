@@ -12,7 +12,7 @@ interface T_DML_SQLite {
     clear: FxOrmDML.DMLDriver['clear']
 }
 
-class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
+class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_SQLite> {
     dbdriver: FxDbDriverNS.SQLDriver;
 
     @configurable(false)
@@ -29,8 +29,9 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         table,
         {
             fields,
-            offset = 0,
-            limit = 1000, // '9223372036854775807',
+            offset = undefined,
+            // @todo: use default MAX limit to get better perfomance, such as '9223372036854775807'
+            limit = undefined,
             orderBy = undefined,
             beforeQuery = HOOK_DEFAULT
         } = {}
@@ -103,6 +104,28 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         return this.useConnection(connection => 
             this.execSqlQuery<any[]>(connection, kbuilder.toString())
         )
+    }
+
+    exists (
+        collection: string,
+        {
+            where = null
+        } = {}
+    ) {
+        const results = this.find(
+            collection,
+            {
+                fields: where ? Object.keys(where) : [],
+                beforeQuery: (builder) => {
+                    if (!where || !Object.keys(where).length)
+                        throw new Error('[DML::exists] no any where query where-conditions generated in this instance, examine your where-conditions input')
+
+                    builder.where(where)
+                }
+            }
+        )
+
+        return !!results.length
     }
 
     remove: FxOrmDML.DMLDriver['remove'] = function (
