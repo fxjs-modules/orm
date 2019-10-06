@@ -1,4 +1,4 @@
-import Base, { ConstructorOpts } from "../Base.class";
+import Base from "../Base.class";
 import { configurable } from "../../Decorators/accessor";
 import { filterKnexBuilderBeforeQuery, filterResultAfterQuery } from "./_utils"
 import { arraify } from "../../Utils/array";
@@ -20,7 +20,7 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         return false
     }
 
-    constructor(opts: ConstructorOpts<Class_SQLite>) {
+    constructor(opts: FxOrmTypeHelpers.ConstructorParams<typeof Base>[0]) {
         super({ dbdriver: opts.dbdriver })
     }
 
@@ -44,7 +44,9 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
 
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
 
-        return this.execSqlQuery(kbuilder.toString());
+        return this.useConnection(connection => 
+            this.execSqlQuery(connection, kbuilder.toString())
+        )
     }
 
     insert: FxOrmDML.DMLDriver['insert'] = function (
@@ -52,7 +54,7 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         table,
         data,
         {
-            keyProperties,
+            keyPropertyList,
             beforeQuery = HOOK_DEFAULT
         } = {}
     ) {
@@ -61,17 +63,19 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         kbuilder.insert(data)
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
 
-        const info = this.execSqlQuery<FxOrmQuery.InsertResult>(kbuilder.toString());
+        const info = this.useConnection(connection => 
+            this.execSqlQuery<FxOrmQuery.InsertResult>(connection, kbuilder.toString())
+        )
 
-        if (!keyProperties) return null;
+        if (!keyPropertyList) return null;
 
         const ids: {[k: string]: any} = {};
 
-        if (keyProperties.length == 1 && keyProperties[0].type == 'serial') {
-            ids[keyProperties[0].name] = info.insertId;
+        if (keyPropertyList.length == 1 && keyPropertyList[0].type == 'serial') {
+            ids[keyPropertyList[0].name] = info.insertId;
         } else {
-            for (let i = 0, prop; i < keyProperties.length; i++) {
-                prop = keyProperties[i];
+            for (let i = 0, prop; i < keyPropertyList.length; i++) {
+                prop = keyPropertyList[i];
                 // Zero is a valid value for an ID column
                 ids[prop.name] = data[prop.mapsTo] !== undefined ? data[prop.mapsTo] : null;
             }
@@ -96,7 +100,9 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         kbuilder.update(changes)
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
 
-        return this.execSqlQuery(kbuilder.toString());
+        return this.useConnection(connection => 
+            this.execSqlQuery<any[]>(connection, kbuilder.toString())
+        )
     }
 
     remove: FxOrmDML.DMLDriver['remove'] = function (
@@ -119,7 +125,9 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         kbuilder.delete()
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
 
-        return this.execSqlQuery(kbuilder.toString());
+        return this.useConnection(connection => 
+            this.execSqlQuery(connection, kbuilder.toString())
+        )
     }
 
     count: FxOrmDML.DMLDriver['count'] = function (
@@ -145,7 +153,9 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
 
         return filterResultAfterQuery(
-            this.execSqlQuery(kbuilder.toString()),
+            this.useConnection(connection => 
+                this.execSqlQuery(connection, kbuilder.toString(), [])
+            ),
             filterQueryResult
         );
     }
@@ -154,22 +164,28 @@ class DML_SQLite extends Base<Class_SQLite> implements T_DML_SQLite {
         this: FxOrmDML.DMLDriver_SQLite,
         table
     ) {
-        this.dbdriver.trans(() => {
-            this.execSqlQuery(
-                this.sqlQuery.remove()
-                        .from(table)
-                        .build()
-            );
-            
-            this.execSqlQuery(
-                this.sqlQuery.remove()
-                        .from(table)
-                        .where({ name: 'sqlite_sequence' })
-                        .build()
-            );
-        })
-
-        return undefined
+        const bTransResult = this.useConnection(connection => 
+            connection.trans(() => {
+                this.execSqlQuery(
+                    connection,
+                    this.sqlQuery.remove()
+                            .from(table)
+                            .build(),
+                    
+                );
+                
+                this.execSqlQuery(
+                    connection,
+                    this.sqlQuery.remove()
+                            .from(table)
+                            .where({ name: 'sqlite_sequence' })
+                            .build(),
+                    
+                );
+            })
+        )
+        
+        return bTransResult
     }
 }
 

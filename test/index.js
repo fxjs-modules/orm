@@ -6,6 +6,8 @@ test.setup();
 function t() {
     run('./integration/orm-exports.js');
 
+    run('./integration/utils-linked-list.js');
+
     run('./integration/association-o2m.js');
     // run('./integration/association-extend.js');
     // run('./integration/association-extend.callback.js');

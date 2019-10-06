@@ -125,7 +125,7 @@ declare namespace FxOrmDML {
                 table: string,
                 data: FxSqlQuerySql.DataToSet,
                 opts?: {
-                    keyProperties?: FxOrmProperty.NormalizedProperty[],
+                    keyPropertyList?: FxOrmProperty.NormalizedProperty[],
                     beforeQuery?: (
                         builer: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>,
                         ctx: { dml: DMLDriver }
@@ -160,7 +160,9 @@ declare namespace FxOrmDML {
             ): T
         }
         clear: {
-            <T=any>(table: string, cb?: FxOrmNS.GenericCallback<T>): T
+            <T=any>(
+                table: string
+            ): T
         }
         poolQuery: {
             <T=any>(query: string, cb?: FxOrmNS.GenericCallback<T>): T

@@ -46,7 +46,7 @@ function filterProperty (
     input: FxOrmModel.ComplexModelPropertyDefinition,
     pname?: string
 ): FxOrmProperty.NormalizedProperty {
-    if (!pname && input)
+    if (!pname)
         pname = (input as any).name || (input as any).mapsTo || null
         
     // built-in types
@@ -181,7 +181,12 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
         return new Property(input, opts);
     }
 
-    constructor (input: FxOrmModel.ComplexModelPropertyDefinition, opts: { name?: string, storeType: FxOrmProperty.Class_Property['$storeType'] }) {
+    constructor (
+        input: FxOrmModel.ComplexModelPropertyDefinition,
+        opts: {
+            name?: string,
+            storeType: FxOrmProperty.Class_Property['$storeType']
+        }) {
         const { name, storeType } = opts || {};
         if (!storeType)
             throw new Error(`[Property] storeType is required!`)
@@ -207,11 +212,16 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
         return raw
     }
 
-    renameTo ({ name, mapsTo = name }: FxOrmTypeHelpers.FirstParameter<FxOrmProperty.Class_Property['renameTo']>) {
+    renameTo ({ name, mapsTo = name, lazyname = name }: FxOrmTypeHelpers.FirstParameter<FxOrmProperty.Class_Property['renameTo']>) {
+        console.log(
+            require('@fibjs/chalk')`{bold.red.inverse [SQL]{~inverse  ${name} | ${mapsTo}}}`
+        )
+
         const newVal = Property.New({
             ...this.toJSON(),
             name,
             mapsTo,
+            lazyname
         }, { storeType: this.$storeType })
 
         return newVal

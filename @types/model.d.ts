@@ -388,7 +388,9 @@ declare namespace FxOrmModel {
         orm: FxOrmNS.Class_ORM
 
         properties: {[k: string]: FxOrmProperty.Class_Property}
-        // associations: {[k: string]: FxOrmAssociation.Class_Association}
+        readonly propertyNames: string[]
+        readonly propertyList: FxOrmProperty.Class_Property[]
+        
         associations: {[k: string]: FxOrmModel.Class_MergeModel}
 
         settings: any
@@ -405,6 +407,8 @@ declare namespace FxOrmModel {
 
         readonly id: string
         readonly ids: string[]
+        
+        readonly keyPropertyNames: string[]
         readonly keyPropertyList: FxOrmProperty.Class_Property[]
         readonly keys: string[]
         readonly associationKeys: string[]
@@ -437,7 +441,7 @@ declare namespace FxOrmModel {
             validations?: FxOrmValidators.IValidatorHash
             ievents?: FxOrmInstance.InstanceConstructorOptions['events']
         })
-        New (base: Fibjs.AnyObject): FxOrmInstance.Class_Instance
+        New (base: Fibjs.AnyObject): FxOrmInstance.Class_Instance | FxOrmInstance.Class_Instance[]
 
         /* ddl about :start */
 
@@ -462,7 +466,10 @@ declare namespace FxOrmModel {
         /**
          * @description create one instance from this model
          */
-        create (kvItem: Fibjs.AnyObject | Fibjs.AnyObject[]): any
+        create: {
+            (kvItem: Fibjs.AnyObject): FxOrmInstance.Class_Instance
+            (kvItem: Fibjs.AnyObject[]): FxOrmInstance.Class_Instance[]
+        }
         /**
          * @description clear all data in remote endpoints
          */
@@ -470,8 +477,12 @@ declare namespace FxOrmModel {
         /* dml about :end */
 
         /* utils :start */
-        normalizeDataToProperties (data: Fibjs.AnyObject, target: Fibjs.AnyObject): any
-        normalizePropertiesToData (data: Fibjs.AnyObject): any
+        normalizeDataToProperties (data: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        normalizePropertiesToData (data: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        filterOutAssociatedData (dataset: Fibjs.AnyObject, instanceDataSet?: Fibjs.AnyObject): {
+            association: FxOrmModel.Class_Model['associations'][any],
+            dataset: any,
+        }[]
         addProperty(name: string, propertyDefinition: FxOrmProperty.Class_Property | FxOrmProperty.NormalizedProperty): typeof propertyDefinition
 
         fieldInfo(propertyName: string): null | {
@@ -580,6 +591,10 @@ declare namespace FxOrmModel {
         isSourceModel (model: Class_Model): boolean
         isTarget (model: Class_Model): boolean
 
+        saveForSource (opts: {
+            associationDataSet: Fibjs.AnyObject,
+            sourceInstance: FxOrmInstance.Class_Instance
+        }): void
         // joinFind (): any
     }
     // next generation model :end

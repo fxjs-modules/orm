@@ -133,7 +133,11 @@ declare namespace FxOrmProperty {
          */
         isKeyProperty(): boolean
 
-        renameTo (opts:{ name: Class_Property['name'], mapsTo?: Class_Property['mapsTo'] }): Class_Property
+        renameTo (opts: {
+            name: Class_Property['name'],
+            mapsTo?: Class_Property['mapsTo'],
+            lazyname?: Class_Property['lazyname']
+        }): Class_Property
 
         toJSON(): NormalizedProperty
     }

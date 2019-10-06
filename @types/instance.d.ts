@@ -152,5 +152,17 @@ declare namespace FxOrmInstance {
         [extraProperty: string]: any;
     }
 
-    class Class_Instance {}
+    class Class_Instance {
+        readonly $kvs: Fibjs.AnyObject
+
+        readonly $saved: boolean
+        readonly $isPersisted: boolean
+         
+        save: {
+            (kvs?: Fibjs.AnyObject): Class_Instance
+            (kvs: Fibjs.AnyObject[]): Class_Instance[]
+        }
+
+        [k: string]: any
+    }
 }

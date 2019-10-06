@@ -9,9 +9,9 @@ class DDL_SQLite extends Base {
         return false
     }
 
-    dropTable: Base['dropTable'] = function (
+    dropTable (
         this: DDL_SQLite,
-        table,
+        table: string,
         {
             beforeQuery = () => void 0
         } = {}
@@ -28,7 +28,9 @@ class DDL_SQLite extends Base {
                 kq = kqbuilder
         }
 
-        this.execSqlQuery(kq.toString());
+        this.dbdriver.connectionPool(connection => {
+            this.execSqlQuery(connection, kq.toString());
+        })
 
         return true;
     }

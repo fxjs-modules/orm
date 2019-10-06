@@ -11,7 +11,7 @@ import { snapshot } from "../Utils/clone";
 import Property from './Property';
 import { configurable } from '../Decorators/accessor';
 import { fillStoreDataToProperty, filterPropertyToStoreData } from '../DXL/DML/_utils';
-import { filterAssociationKey } from './Association';
+
 import { arraify } from '../Utils/array';
 
 /**
@@ -70,9 +70,21 @@ class Model implements FxOrmModel.Class_Model {
     collection: FxOrmModel.Class_Model['collection']
 
     properties: {[k: string]: Property} = {};
+    /**
+     * @description all properties names
+     */
+    @configurable(false)
+    get propertyNames (): string[] {
+        return Object.keys(this.properties)
+    }
+    /**
+     * @description all field properties
+     */
+    @configurable(false)
+    get propertyList (): FxOrmProperty.Class_Property[] {
+        return Object.values(this.properties)
+    }
     associations: FxOrmModel.Class_Model['associations'] = {};
-    
-    associationProperties: FxOrmAssociation.Class_AssociationProperty[] = [];
 
     settings: any
 
@@ -100,6 +112,12 @@ class Model implements FxOrmModel.Class_Model {
      * @description all key field properties
      */
     @configurable(false)
+    get keyPropertyNames (): string[] {
+        return Object.keys(this.keyProperties)
+    }/**
+     * @description all key field properties
+     */
+    @configurable(false)
     get keyPropertyList (): FxOrmProperty.Class_Property[] {
         return Object.values(this.keyProperties)
     }
@@ -113,8 +131,7 @@ class Model implements FxOrmModel.Class_Model {
 
     @configurable(false)
     get associationKeys (): string[] {
-        // return Object.values(this.associations).map(x => x.sourceKey);
-        return []
+        return Object.keys(this.associations);
     }
 
     orm: FxOrmModel.Class_Model['orm']
@@ -219,13 +236,14 @@ class Model implements FxOrmModel.Class_Model {
             return coroutine.parallel(kvItem, (kv: Fibjs.AnyObject) => {
                 return this.create(kv);
             })
-            
-        const instance = getInstance(this, snapshot(kvItem));
+        
+        const isMultiple = Array.isArray(kvItem);
+        const instances = arraify(getInstance(this, snapshot(kvItem)))
+            .map(x => x.save(kvItem));
 
         // console.log(require('@fibjs/chalk')`{bold.yellow.inverse instance.$kvs [1]}`, kvItem, instance.$kvs);
-        instance.save(kvItem);
 
-        return instance;
+        return !isMultiple ? instances[0] : instances;
     }
 
     clear (): void {
@@ -291,16 +309,6 @@ class Model implements FxOrmModel.Class_Model {
         this.associations[name] = mergeModel
 
         return mergeModel
-
-        // const association = Association.build({
-        //     name, type: 'o2m', source: this, target: targetModel,
-        //     matchKeys: arraify(matchKeys)
-        //     // associationKey: filterAssociationKey(associationKey, { sourceModel: this, targetModel, association })
-        // })
-
-        // this.associations[name] = association;
-
-        // return association
     }
 
     m2m: FxOrmModel.Class_Model['m2m'] = function (this: FxOrmModel.Class_Model, name, opts?) {
@@ -315,12 +323,26 @@ class Model implements FxOrmModel.Class_Model {
         return getInstance(this, base);
     }
 
+    normalizePropertiesToData (data: Fibjs.AnyObject = {}, target: Fibjs.AnyObject = {}) {
+        return filterPropertyToStoreData(data, this.properties, target)
+    }
+
     normalizeDataToProperties (data: Fibjs.AnyObject = {}, target: Fibjs.AnyObject = {}) {
         return fillStoreDataToProperty(data, this.properties, target)
     }
 
-    normalizePropertiesToData (data: Fibjs.AnyObject = {}) {
-        return filterPropertyToStoreData(data, this.properties)
+    filterOutAssociatedData (dataset: Fibjs.AnyObject = {}, instanceDataSet: Fibjs.AnyObject = {}) {
+        const kvs = []
+        for (let assoc_name in this.associations) {
+            const fInfo = this.fieldInfo(assoc_name)
+            if (fInfo && fInfo.type === 'association')
+                kvs.push({
+                    association: fInfo.association,
+                    dataset: dataset[assoc_name]
+                })
+        }
+
+        return kvs
     }
 
     filterAssociationProperties (): any {
@@ -375,43 +397,54 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
             mergeCollection, source, target, matchKeys,
             ...restOpts
         } = opts
-        super(restOpts)
+        
+        super({...restOpts, keys: []})
 
         this.type = opts.type
-        this.associationInfo = {
-            collection: mergeCollection,
-            andMatchKeys: matchKeys
-        }
+        this.associationInfo = { collection: mergeCollection, andMatchKeys: matchKeys }
 
         this.sourceModel = source
         this.targetModel = target
 
         // _generateAssociatedProperties
         ;(() => {
-            const matchKeys = this.associationInfo.andMatchKeys
-
-            matchKeys.forEach(x => {            
-                switch (this.type) {
-                    case 'o2m':
-                        // dont add property when it existed.
+            switch (this.type) {
+                /**
+                 * for o2m, 
+                 * - this mergeModel has all properties in targetModel
+                 */
+                case 'o2m':
+                    this.associationInfo.andMatchKeys.forEach(x => {  
+                        // don't add property when it existed.
                         if (this.targetModel.fieldInfo(x.target))
                             return ;
                         
-                        const srcProperty = this.sourceModel.properties[x.source]
-                        if (!srcProperty)
+                        const sProperty = this.sourceModel.properties[x.source]
+                        if (!sProperty)
                             throw new Error(`[Association::o2m] no src property ${x.source} in source model, check your definition about 'matchKeys'`)
 
                         this.addProperty(
                             x.target,
-                            srcProperty
+                            sProperty
                                 .renameTo({ name: x.target, mapsTo: x.target })
                                 .deKeys()
                         )
-                        break
-                    case 'm2o':
-                        break
-                }
-            })
+                    })
+
+                    this.targetModel.propertyList.forEach(tProperty => {
+                        if (this.fieldInfo(tProperty.name)) return ;
+
+                        this.addProperty(
+                            tProperty.name,
+                            tProperty
+                                .renameTo({ name: tProperty.name })
+                                .deKeys()
+                        )
+                    })
+                    break
+                case 'm2o':
+                    break
+            }
         })();
     }
 
@@ -420,6 +453,57 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     }
     isTarget (model: FxOrmModel.Class_Model): boolean {
         return model === this.targetModel
+    }
+
+    saveForSource ({
+        associationDataSet = {},
+        sourceInstance = null
+    }) {
+        switch (this.type) {
+            case 'o2m':
+                sourceInstance[this.name] = sourceInstance[this.name] || [];
+                
+                // console.warn(
+                //     'sourceInstance.$kvs',
+                //     sourceInstance.$kvs,
+                //     sourceInstance.$model.name
+                // )
+
+                const assocs = coroutine.parallel(
+                    arraify(this.New(associationDataSet)),
+                    (assocInst: FxOrmInstance.Class_Instance) => {
+                        this.associationInfo.andMatchKeys.forEach(matchCond => {
+                            if (!sourceInstance[matchCond.source]) return ;
+                            assocInst[matchCond.target] = sourceInstance[matchCond.source]
+                        })
+
+                        this.targetModel.propertyList.forEach(property => {
+                            // assocInst[property.name] = sourceInstance[property.name]
+                        })
+
+                        console.notice('assocInst.$kvs [1]', assocInst.$kvs);
+                        assocInst.save()
+                        console.notice('assocInst.$kvs [2]', assocInst.$kvs);
+
+                        return assocInst.toJSON()
+                    }
+                )
+
+                false && console.log(
+                    'assocs result',
+                    assocs
+                )
+
+                sourceInstance[this.name] = this.targetModel.New(assocs)
+
+                false && console.warn(
+                    'sourceInstance[this.name]',
+                    sourceInstance.$kvs,
+                    sourceInstance.$model.name === this.sourceModel.name,
+                    sourceInstance[this.name][0].$kvs
+                )
+                break
+        }
     }
 }
 

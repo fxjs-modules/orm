@@ -67,10 +67,14 @@ describe("Model.get()", function() {
           "SELECT column_name FROM information_schema.columns WHERE table_name = ? AND table_schema = ?";
       }
 
-      var data = db.$dml.execSqlQuery(sql, [
-        Person.collection,
-        db.driver.config.database
-      ]);
+      var data = db.$dml.execSqlQuery(
+        db.driver.getConnection(),
+        sql,
+        [
+          Person.collection,
+          db.driver.config.database
+        ]
+      );
       var names = _.map(data, protocol == "sqlite" ? "name" : "column_name");
 
       assert.equal(typeof Person.properties.name, "object");

@@ -1,7 +1,7 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-odescribe("Association o2m", function () {
+describe("Association o2m", function () {
     var db = null;
     var Pet = null;
     var Person = null;
@@ -33,7 +33,7 @@ odescribe("Association o2m", function () {
         db.close();
     });
 
-    odescribe("Association", function () {
+    describe("Association", function () {
         before(setup);
 
         it('merge model has association property', function () {
@@ -57,7 +57,7 @@ odescribe("Association o2m", function () {
         });
     });
 
-    odescribe("if passing an object", function () {
+    describe("if passing an object", function () {
         before(setup);
 
         it("should accept it as the only item to create", function () {
@@ -69,7 +69,7 @@ odescribe("Association o2m", function () {
         });
     });
 
-    odescribe("if passing an array", function () {
+    describe("if passing an array", function () {
         before(setup);
 
         it("should accept it as a list of items to create", function () {
@@ -87,7 +87,7 @@ odescribe("Association o2m", function () {
         });
     });
 
-    odescribe("if passing array, options object", function () {
+    describe("if passing array, options object", function () {
         before(setup);
 
         it("should accept it as a list of items to create", function () {
@@ -112,7 +112,7 @@ odescribe("Association o2m", function () {
     odescribe("if element has an mergeModel", function () {
         before(setup);
 
-        it("should also create it or save it", function () {
+        oit("should also create it or save it", function () {
             var John = Person.create({
                 name: "John Doe",
                 pets: [Pet.New({
@@ -125,8 +125,12 @@ odescribe("Association o2m", function () {
             assert.ok(Array.isArray(John.pets));
 
             assert.propertyVal(John.pets[0], "name", "Deco");
+            console.log(
+                'John.pets[0]',
+                John.pets[0]
+            )
             assert.property(John.pets[0], Pet.ids[0]);
-            assert.ok(John.pets[0].saved());
+            assert.ok(John.pets[0].$saved);
         });
 
         it("should also create it or save it even if it's an object and not an instance", function () {
@@ -143,7 +147,7 @@ odescribe("Association o2m", function () {
 
             assert.propertyVal(John.pets[0], "name", "Deco");
             assert.property(John.pets[0], Pet.ids[0]);
-            assert.ok(John.pets[0].saved());
+            assert.ok(John.pets[0].$saved);
         });
     });
 

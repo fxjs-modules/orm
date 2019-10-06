@@ -4,6 +4,7 @@ import coroutine = require('coroutine');
 import LinkedList from '../Utils/linked-list';
 import { setTarget } from '../Utils/deep-kv';
 import * as DecoratorsProperty from '../Decorators/property';
+import { arraify } from '../Utils/array';
 
 const REVERSE_KEYS = [
     'set',
@@ -31,7 +32,6 @@ function pushChange (
     if (!inst.$changes[fieldName])
         inst.$changes[fieldName] = new LinkedList();
 
-    // console.trace(`[pushChange] fieldName ${fieldName}`);
     inst.$changes[fieldName].addTail({
         via_path: payload.via_path,
         type: payload.type,
@@ -47,14 +47,14 @@ function clearChange(
 
     inst.$changes[fieldName].clear();
 }
-class Instance {
-    @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
+class Instance implements FxOrmInstance.Class_Instance {
+    @DecoratorsProperty.buildDescriptor({ enumerable: false })
     $model: FxOrmModel.Class_Model
     
     // TOOD: only allow settting fields of Model.properties into it.
     $kvs: Fibjs.AnyObject = {}
     
-    @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
+    @DecoratorsProperty.buildDescriptor({ enumerable: false })
     $changes: {
         [filed_name: string]: LinkedList<{
             via_path: string
@@ -62,8 +62,19 @@ class Instance {
             prev_state: any
         }>
     } = {};
+
+    @DecoratorsProperty.buildDescriptor({ enumerable: false })
     get $saved (): boolean {
         return !Object.keys(this.$changes).length
+    }
+    @DecoratorsProperty.buildDescriptor({ enumerable: false })
+    get $isPersisted (): boolean {
+        return this.$model.keyPropertyNames
+            .every(x => this.$isFieldFilled(x))
+    }
+
+    $isFieldFilled (x: string) {
+        return this.$kvs[x] !== undefined
     }
     
     $clearChange (fieldName?: string) {
@@ -93,12 +104,12 @@ class Instance {
         model: any,
         instanceBase: Fibjs.AnyObject
     ) {
-        this.$kvs = {...instanceBase}
-        this.$model = model;
-    }
+        if (instanceBase instanceof Instance)
+            instanceBase = instanceBase.toJSON()
 
-    @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
-    $isPersisted: boolean = true;
+        this.$kvs = {...instanceBase}
+        Object.defineProperty(this, '$model', { configurable: true, enumerable: false, writable: false, value: model })
+    }
 
     set (prop: string | string[], value: any) {
         if (!prop) return ;
@@ -111,7 +122,9 @@ class Instance {
         }
     }
 
-    save (dataset: Fibjs.AnyObject = this.$kvs) {
+    save (
+        dataset: Fibjs.AnyObject = this.$kvs
+    ): any {
         if (Array.isArray(dataset))
             return coroutine.parallel(dataset, (prop: Fibjs.AnyObject) => {
                 return this.save(prop)
@@ -120,20 +133,49 @@ class Instance {
         if (!dataset)
             throw new Error(`dataset must be non-empty object!`)
 
-        const result = this.$dml.insert(
-            this.$model.collection,
-            this.$model.normalizePropertiesToData(dataset),
-            {
-                keyProperties: this.$model.keyPropertyList
-            }
-        );
+        this.$dml
+            .toSingleton()
+            .useTrans((dml: any) => {
+                if (this.$isPersisted) {
+                    console.log('[instance] update', dataset);
 
-        if (result) {
-            this.$model.normalizeDataToProperties(
-                Object.assign(result, dataset),
-                this.$kvs
-            )
-        }
+                    dml.update(
+                        this.$model.collection,
+                        this.$model.normalizePropertiesToData(dataset),
+                        { keyPropertyList: this.$model.keyPropertyList }
+                    )
+                } else {
+                    console.warn(
+                        '[instance] insert\n',
+                        this.$model.name, '\n',
+                        dataset,
+                        this.$model.normalizePropertiesToData(dataset),
+                        this.$model.keyPropertyNames
+                    );
+
+                    const result = dml.insert(
+                        this.$model.collection,
+                        this.$model.normalizePropertiesToData(dataset),
+                        { keyPropertyList: this.$model.keyPropertyList }
+                    );
+                    
+                    if (result)
+                        this.$model.normalizeDataToProperties(
+                            Object.assign(result, dataset),
+                            this.$kvs
+                        )
+                }
+
+                this.$model.filterOutAssociatedData(dataset)
+                    .forEach(item => {
+                        const assocModel = item.association
+                        assocModel.saveForSource({
+                            associationDataSet: item.dataset,
+                            sourceInstance: this
+                        })
+                    })
+            })
+            .releaseSingleton()
 
         this.$clearChange()
 
@@ -143,9 +185,9 @@ class Instance {
     toJSON () {
         const kvs = <Instance['$kvs']>{};
 
-        Object.entries(this.$kvs).forEach(([k, v]) => {
+        Object.keys(this.$kvs).forEach((k) => {
             if (this.$isEnumerable(k))
-                kvs[k] = v;
+                kvs[k] = this.$kvs[k];
         })
 
         return kvs;
@@ -165,7 +207,10 @@ function isInternalProp (prop: string) {
 export function getInstance (
     model: any,
     instanceBase: any = {}
-): FxOrmInstance.Instance {
+): FxOrmInstance.Class_Instance[] | FxOrmInstance.Class_Instance {
+    if (Array.isArray(instanceBase))
+        return instanceBase.map(x => getInstance(model, x)) as any
+    
     instanceBase = new Instance(model, instanceBase)
 
     function getPhHandler ({

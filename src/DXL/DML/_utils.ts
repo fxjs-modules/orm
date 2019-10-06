@@ -1,16 +1,16 @@
 export function filterPropertyToStoreData (
 	unFilteredPropertyValues: Fibjs.AnyObject,
-	properties: any
+	properties: any,
+	targetDataSet: Fibjs.AnyObject = {}
 ) {
-	const filteredKvs = <typeof unFilteredPropertyValues>{};
 	Object.values(properties).forEach((prop: FxOrmProperty.NormalizedProperty) => {
 		if (unFilteredPropertyValues.hasOwnProperty(prop.name))
-			filteredKvs[prop.mapsTo] = prop.toStoreValue(unFilteredPropertyValues[prop.name])
+			targetDataSet[prop.mapsTo] = prop.toStoreValue(unFilteredPropertyValues[prop.name])
 		else if (unFilteredPropertyValues.hasOwnProperty(prop.mapsTo))
-			filteredKvs[prop.mapsTo] = prop.toStoreValue(unFilteredPropertyValues[prop.mapsTo])
+			targetDataSet[prop.mapsTo] = prop.toStoreValue(unFilteredPropertyValues[prop.mapsTo])
 	})
 
-	return filteredKvs
+	return targetDataSet
 }
 export function fillStoreDataToProperty (
 	storeData: Fibjs.AnyObject,

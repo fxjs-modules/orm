@@ -41,8 +41,8 @@ export default class LinkedList<TP = any> {
     addTail (data: TP) {
         const node: LinkedNode<TP> = {
             _uuid: get_id(),
-            prev: null,
-            next: this._head,
+            prev: this._tail,
+            next: null,
             data: data
         };
 
