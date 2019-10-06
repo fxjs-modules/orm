@@ -88,16 +88,10 @@ class Model implements FxOrmModel.Class_Model {
 
     settings: any
 
-    /**
-     * @description id property name
-     */
     @configurable(false)
     get id (): string | undefined {
         return Object.keys(this.keyProperties)[0] || undefined
     }
-    /**
-     * @description all key field properties
-     */
     @configurable(false)
     get ids (): string[] {
         const _ids = []
@@ -105,6 +99,10 @@ class Model implements FxOrmModel.Class_Model {
             _ids.push(this.id)
         
         return _ids
+    }
+    @configurable(false)
+    get idPropertyList () {
+        return this.ids.map(id => this.properties[id])
     }
 
     keyProperties: FxOrmModel.Class_Model['properties'] = {};

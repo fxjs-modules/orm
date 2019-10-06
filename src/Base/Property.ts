@@ -14,11 +14,11 @@ function getPropertyConfig (
     } = overwrite || {} as any
 
     let {
-        defaultValue = null
+        defaultValue = undefined
     } = overwrite || {} as any
 
     if (util.isFunction(defaultValue) || util.isSymbol(defaultValue))
-        defaultValue = null
+        defaultValue = undefined
     
     return {
         type: '',
@@ -131,8 +131,33 @@ function filterProperty (
     });
 }
 
+/**
+ * @from @fxjs/sql-ddl-sync Utils.ts `filterPropertyDefaultValue`
+ * 
+ * @param property 
+ * @param ctx 
+ */
+function filterDefaultValue (
+    property: FxOrmSqlDDLSync__Column.Property,
+    ctx: {
+        collection: string,
+        property: FxOrmSqlDDLSync__Column.Property,
+        driver: FxDbDriverNS.Driver
+    }
+) {
+    let _dftValue
+    if (property.hasOwnProperty('defaultValue'))
+        if (typeof property.defaultValue === 'function')
+            _dftValue = property.defaultValue(ctx)
+        else
+            _dftValue = property.defaultValue
+
+    return _dftValue
+}
+
 export default class Property<ConnType = any> implements FxOrmProperty.Class_Property {
     static filterProperty = filterProperty;
+    static filterDefaultValue = filterDefaultValue;
 
     $storeType: FxDbDriverNS.Driver<ConnType>['type'];
 

@@ -90,6 +90,16 @@ declare namespace FxOrmProperty {
             input: FxOrmModel.ComplexModelPropertyDefinition,
             pname?: string
         ): FxOrmProperty.NormalizedProperty
+
+        static filterDefaultValue (
+            property: FxOrmSqlDDLSync__Column.Property,
+            ctx: {
+                collection: string,
+                property: FxOrmSqlDDLSync__Column.Property,
+                driver: FxDbDriverNS.Driver
+            }
+        ): any
+
         static New (
             input: FxOrmModel.ComplexModelPropertyDefinition,
             opts?: {

@@ -109,10 +109,10 @@ describe("Association o2m", function () {
         });
     });
 
-    odescribe("if element has an mergeModel", function () {
+    describe("if element has an mergeModel", function () {
         before(setup);
 
-        oit("should also create it or save it", function () {
+        it("should also create it or save it", function () {
             var John = Person.create({
                 name: "John Doe",
                 pets: [Pet.New({
@@ -127,22 +127,19 @@ describe("Association o2m", function () {
             assert.propertyVal(John.pets[0], "name", "Deco");
             
             assert.property(John.pets[0], Pet.ids[0]);
-
-            console.log(
-                'John.pets[0].$changes',
-                John.pets[0].$changes,
-                John.pets[0].$kvs
-            )
             
             assert.ok(John.pets[0].$saved);
+            assert.ok(John.pets[0].$isPersisted);
         });
 
         it("should also create it or save it even if it's an object and not an instance", function () {
             var John = Person.create({
                 name: "John Doe",
-                pets: [{
-                    name: "Deco"
-                }]
+                pets: [
+                    {
+                        name: "Deco"
+                    }
+                ]
             });
 
             assert.propertyVal(John, "name", "John Doe");
@@ -160,7 +157,14 @@ describe("Association o2m", function () {
 
         it("should use defaultValue if defined", function () {
             var Mutt = Pet.create({});
+
             assert.propertyVal(Mutt, "name", "Mutt");
+        });
+
+        it("should throw error if defaultValue not defined", function () {
+            assert.throws(() => {
+                var John = Person.create({});
+            }, 'dataset must be non-empty object!');
         });
     });
 });

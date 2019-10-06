@@ -1,6 +1,6 @@
 import DXLBase from '../Base.class';
 
-export default class Base<ConnType = any> extends DXLBase<ConnType> {
+export default class Base<ConnType = any> extends DXLBase<ConnType> implements FxOrmDML.DMLDriver<ConnType> {
     dbdriver: FxDbDriverNS.Driver<ConnType>;
 
     sqlQuery: FxSqlQuery.Class_Query;
@@ -12,8 +12,8 @@ export default class Base<ConnType = any> extends DXLBase<ConnType> {
     /**
      * @description find items from remote endpoints
      */
-    find () {}
-    insert () {}
-    update () {}
-    remove () {}
+    find (...args: FxOrmTypeHelpers.Parameters<FxOrmDML.DMLDriver['find']>): any {}
+    insert (...args: FxOrmTypeHelpers.Parameters<FxOrmDML.DMLDriver['insert']>): any {}
+    update (...args: FxOrmTypeHelpers.Parameters<FxOrmDML.DMLDriver['update']>): any {}
+    remove (...args: FxOrmTypeHelpers.Parameters<FxOrmDML.DMLDriver['remove']>): any {}
 }

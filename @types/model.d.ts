@@ -405,8 +405,18 @@ declare namespace FxOrmModel {
         readonly noKey: boolean
         /* meta :end */
 
+        /**
+         * @description id property name
+         */
         readonly id: string
+        /**
+         * @description all id-type field property names
+         */
         readonly ids: string[]
+        /**
+         * @description all id-type field properties
+         */
+        readonly idPropertyList: FxOrmProperty.Class_Property[]
         
         readonly keyPropertyNames: string[]
         readonly keyPropertyList: FxOrmProperty.Class_Property[]

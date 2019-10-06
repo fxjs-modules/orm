@@ -1,7 +1,7 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-odescribe("Instance Changes Track", function () {
+describe("Instance Changes Track", function () {
     var db = null;
     var Pet = null;
     var Person = null;
@@ -115,12 +115,15 @@ odescribe("Instance Changes Track", function () {
         });
     });
 
-    odescribe("when not passing a property", function () {
+    describe("when not passing a property", function () {
         before(setup);
 
         it("should use defaultValue if defined", function () {
             var Mutt = Pet.create({});
             assert.propertyVal(Mutt, "name", "Mutt");
+            assert.notProperty(Mutt.$changes, "name");
         });
     });
+
+    // TODO: add changes-track test case when change occured in merged model's instance
 });

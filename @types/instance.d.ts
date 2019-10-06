@@ -167,6 +167,8 @@ declare namespace FxOrmInstance {
             (kvs: Fibjs.AnyObject[]): Class_Instance[]
         }
 
+        exists (): boolean
+
 
         [k: string]: any
     }

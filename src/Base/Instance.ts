@@ -4,13 +4,14 @@ import coroutine = require('coroutine');
 import LinkedList from '../Utils/linked-list';
 import { setTarget } from '../Utils/deep-kv';
 import * as DecoratorsProperty from '../Decorators/property';
-import { arraify } from '../Utils/array';
 import { isEmptyPlainObject } from '../Utils/object';
+import Property from './Property';
 
 const REVERSE_KEYS = [
     'set',
     'get',
     'save',
+    'exists',
     // 'saveo2o',
     // 'savem2m',
     // 'savem2m',
@@ -139,13 +140,37 @@ class Instance implements FxOrmInstance.Class_Instance {
                 return this.save(prop)
             })
 
-        if (!dataset || isEmptyPlainObject(dataset))
+        dataset = {...dataset, ...this.$kvs};
+
+        /* fill default value :start */
+        this.$model.propertyList.forEach(property => {
+            if (
+                (dataset[property.name] === undefined)
+                && (dataset[property.mapsTo] === undefined)
+            ) {
+                let dfltValue = Property.filterDefaultValue(
+                    property,
+                    {
+                        collection: this.$model.name,
+                        property,
+                        driver: this.$model.orm.driver
+                    }
+                )
+
+                if (dfltValue !== undefined)
+                    dataset[property.name] = dfltValue
+
+            }
+        })
+        /* fill default value :end */
+
+        if (isEmptyPlainObject(dataset))
             throw new Error(`dataset must be non-empty object!`)
 
         this.$dml
             .toSingleton()
             .useTrans((dml: any) => {
-                if (this.$isPersisted) {
+                if (this.$isPersisted && this.exists()) {
                     dml.update(
                         this.$model.collection,
                         this.$model.normalizePropertiesToData(dataset),
@@ -179,6 +204,29 @@ class Instance implements FxOrmInstance.Class_Instance {
         this.$clearChanges()
 
         return this
+    }
+
+    exists (): boolean {
+        // TODO: migrate to dml
+        this.$dml.find(
+            this.$model.collection,
+            {
+                beforeQuery: (builder) => {
+                    let withConditions = false;
+
+                    this.$model.idPropertyList.forEach(prop => {
+                        if (this[prop.name]) {
+                            withConditions = true
+                            builder.where(prop.mapsTo, '=', this[prop.name])
+                        }
+                    })
+
+                    if (!withConditions)
+                        throw new Error('[DML::exists] no any where query conditions generated in this instance, examine your conditions input')
+                }
+            })
+        
+        return false
     }
 
     toJSON () {
