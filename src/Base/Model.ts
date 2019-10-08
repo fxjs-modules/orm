@@ -163,6 +163,9 @@ class Model implements FxOrmModel.Class_Model {
         ;(() => {
             const specKeyPropertyNames = normalizeKeysInConfig(config.keys)
 
+            /**
+             * @todo check if there are more than one serial properties
+             */
             Object.keys(config.properties)
                 .forEach((prop: string) => {
                     const property = this.properties[prop] = Property.New(
@@ -221,7 +224,7 @@ class Model implements FxOrmModel.Class_Model {
                 .forEach((association) => association.sync())
     }
     drop (): void {
-        this.$ddl.dropTable(this.collection)
+        this.$ddl.dropCollection(this.collection)
     }
 
     // TODO: migrate to ddl
@@ -261,7 +264,6 @@ class Model implements FxOrmModel.Class_Model {
     }
 
     hasOne (
-        this: FxOrmModel.Class_Model,
         name,
         model?,
         opts?
@@ -270,7 +272,6 @@ class Model implements FxOrmModel.Class_Model {
     }
 
     hasMany (
-        this: FxOrmModel.Class_Model,
         name,
         model?,
         opts?

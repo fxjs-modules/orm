@@ -12,6 +12,10 @@ export default class Base<ConnType = any> extends DXLBase<ConnType> implements F
     /**
      * @description find items from remote endpoints
      */
-    createTable (...args: FxOrmTypeHelpers.Parameters<FxOrmDDL.DDLDriver['createTable']>): any {}
-    dropTable (...args: FxOrmTypeHelpers.Parameters<FxOrmDDL.DDLDriver['dropTable']>): any {}
+    createCollection (...args: FxOrmTypeHelpers.Parameters<FxOrmDDL.DDLDriver['createCollection']>): any {}
+    alertCollection (...args: FxOrmTypeHelpers.Parameters<FxOrmDDL.DDLDriver['alertCollection']>): any {}
+    truncateCollection (...args: FxOrmTypeHelpers.Parameters<FxOrmDDL.DDLDriver['truncateCollection']>): any {}
+    commentCollection (...args: FxOrmTypeHelpers.Parameters<FxOrmDDL.DDLDriver['commentCollection']>): any {}
+    dropCollection (...args: FxOrmTypeHelpers.Parameters<FxOrmDDL.DDLDriver['dropCollection']>): any {}
+    renameCollection (...args: FxOrmTypeHelpers.Parameters<FxOrmDDL.DDLDriver['renameCollection']>): any {}
 }

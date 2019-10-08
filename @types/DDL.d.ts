@@ -5,15 +5,11 @@
 declare namespace FxOrmDDL {
     class DDLDriver<ConnType = any> extends FxOrmDXL.DXLDriver<ConnType> {
         // uid: string
-        createTable: {
-            <T=Fibjs.AnyObject[]>(
-                table: string
-            ): T
-        }
-        dropTable: {
-            <T=number>(
-                table: string
-            ): number
-        }
+        createCollection: <T = Fibjs.AnyObject[]>(collection: string) => T
+        alertCollection: <T = any>(collection: string) => T
+        truncateCollection: <T = any>(collection: string) => T
+        commentCollection: <T = any>(collection: string) => T
+        dropCollection: <T = number>(collection: string) => T
+        renameCollection: <T = number>(collection: string) => T
     }
 }

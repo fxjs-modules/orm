@@ -1,9 +1,9 @@
 import util = require('util')
+import uuid = require('uuid')
 
 import * as DecoratorsProperty from '../Decorators/property';
 
 import { getDataStoreTransformer } from '../Utils/transfomers';
-import { snapshot } from '../Utils/clone';
 
 function getNormalizedProperty (
     overwrite?: Fibjs.AnyObject
@@ -33,21 +33,22 @@ function getNormalizedProperty (
     if (util.isFunction(defaultValue) || util.isSymbol(defaultValue))
         defaultValue = undefined
 
-    const isPrimary = !!overwrite.primary
-    const isSerial = /* !!overwrite.serial ||  */type === 'serial'
+    let isPrimary = !!overwrite.primary
+    const isSerial = type === 'serial'
     
     let isUnsigned = !!overwrite.unsigned
-    if (isSerial) isUnsigned = true
     
     let isUnique = !!overwrite.unique
-    if (isSerial) isUnique = true
+
+    // TODO: should use serial always primary?
+    if (isSerial) {
+        isUnsigned = isPrimary = isUnique = true
+        defaultValue = undefined
+    }
 
     if (!size && isSerial) size = 4
 
     if (isPrimary || isSerial) required = true
-
-    // if (isSerial) type = 'integer'
-
     
     return {
         key: false,
@@ -86,17 +87,28 @@ function filterComplexPropertyDefinition (
      */
     prop_name: string
 ): FxOrmProperty.NormalizedProperty {
-    if (typeof input === 'object') input = {...input}
+    if (input && typeof input === 'object')
+        input = Array.isArray(input) ? Array.from(input) : {...input}
 
     const normalizedNameStruct = <FxOrmProperty.NormalizedProperty>{ name: prop_name }
 
     // built-in types
     switch (input) {
+        case null:
+        case undefined:
+            return getNormalizedProperty({
+                ...normalizedNameStruct,
+                type: 'text',
+                defaultValue: null
+            })
         case Boolean:
             return getNormalizedProperty({
                 ...normalizedNameStruct,
                 type: 'boolean',
+                defaultValue: false
             })
+        case Symbol:
+            return filterComplexPropertyDefinition(input.toString(), prop_name)
         case String:
             return getNormalizedProperty({
                 ...normalizedNameStruct,
@@ -108,9 +120,7 @@ function filterComplexPropertyDefinition (
             return getNormalizedProperty({
                 ...normalizedNameStruct,
                 type: 'integer',
-                size: 4,
-
-                unsigned: true,
+                size: 4
             })
         case Date:
             return getNormalizedProperty({
@@ -123,16 +133,22 @@ function filterComplexPropertyDefinition (
                 ...normalizedNameStruct,
                 type: 'binary',
                 big: false,
+                lazyload: true
             })
-        case 'password':
+        case Array:
+            throw new Error(`[filterComplexPropertyDefinition] invalid property definition Array, maybe you wanna give one non-empty plain array used as enum values??`)
+        case 'serial':
             return getNormalizedProperty({
                 ...normalizedNameStruct,
-                type: 'text',
+                type: 'serial'
             })
         case 'uuid':
             return getNormalizedProperty({
                 ...normalizedNameStruct,
-                type: 'text'
+                type: 'text',
+                unique: true,
+                serial: false,
+                defaultValue: () => uuid.snowflake().hex()
             })
     }
 
@@ -140,7 +156,8 @@ function filterComplexPropertyDefinition (
         return getNormalizedProperty({
             ...normalizedNameStruct,
             type: 'enum',
-            values: input
+            values: input,
+            defaultValue: input[0] || undefined
         })
 
     if (!input || typeof input !== 'object')
@@ -248,7 +265,7 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
             storeType: FxOrmProperty.Class_Property['$storeType']
         }
     ) {
-        const { storeType, propertyName } = opts || {};
+        const { storeType = 'unknown', propertyName = '' } = opts || {};
         if (!storeType) throw new Error(`[Property] storeType is required!`)
         if (!propertyName) throw new Error(`[Property] propertyName is required!`)
 
