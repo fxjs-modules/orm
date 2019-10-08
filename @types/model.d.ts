@@ -411,6 +411,7 @@ declare namespace FxOrmModel {
         settings: any
 
         readonly storeType: FxOrmProperty.Class_Property['$storeType']
+        readonly isMergeModel: boolean
 
         /* meta :start */
         /**
@@ -611,6 +612,11 @@ declare namespace FxOrmModel {
         readonly sourceKeys: string[]
         targetModel: FxOrmModel.Class_Model
         readonly targetKeys: string[]
+        
+        /**
+         * @description this is fully determined by `options.matchKeys` in constructor
+         */
+        readonly associationKeys: string[]
         
         /**
          * @description

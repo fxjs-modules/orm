@@ -144,7 +144,7 @@ declare namespace FxOrmProperty {
             lazyname?: Class_Property['lazyname']
         }): Class_Property
 
-        transformForAssociation(): this
+        useForAssociationMatch(): this
 
         toJSON(): NormalizedProperty
     }

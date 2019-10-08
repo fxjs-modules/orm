@@ -140,7 +140,7 @@ class Instance implements FxOrmInstance.Class_Instance {
                 return this.save(prop)
             })
 
-        dataset = {...dataset, ...this.$kvs};
+        dataset = {...this.$kvs, ...dataset};
 
         /* fill default value :start */
         this.$model.propertyList.forEach(property => {
@@ -165,7 +165,7 @@ class Instance implements FxOrmInstance.Class_Instance {
         /* fill default value :end */
 
         if (isEmptyPlainObject(dataset))
-            throw new Error(`dataset must be non-empty object!`)
+            throw new Error(`[Instance::save] dataset must be non-empty object!`)
 
         this.$dml
             .toSingleton()
@@ -174,18 +174,18 @@ class Instance implements FxOrmInstance.Class_Instance {
                     dml.update(
                         this.$model.collection,
                         this.$model.normalizePropertiesToData(dataset),
-                        { keyPropertyList: this.$model.keyPropertyList }
+                        { idPropertyList: this.$model.idPropertyList }
                     )
                 } else {
-                    const result = dml.insert(
+                    const insertResult = dml.insert(
                         this.$model.collection,
                         this.$model.normalizePropertiesToData(dataset),
-                        { keyPropertyList: this.$model.keyPropertyList }
+                        { idPropertyList: this.$model.idPropertyList }
                     );
-                    
-                    if (result)
+
+                    if (insertResult)
                         this.$model.normalizeDataToProperties(
-                            Object.assign(result, dataset),
+                            Object.assign(insertResult, dataset),
                             this.$kvs
                         )
                 }
@@ -208,11 +208,28 @@ class Instance implements FxOrmInstance.Class_Instance {
 
     exists (): boolean {
         const where: Fibjs.AnyObject = {};
+
+        if (!this.$model.idPropertyList.length) {
+            if (this.$model.isMergeModel)
+                throw new Error(
+                    `[Instance::exists] merge-model(name: ${this.$model.name}, ` + 
+                    `type: ${(<FxOrmModel.Class_MergeModel>this.$model).type})` +
+                    `has no any property as id, check your definitions`
+                )
+            else
+                throw new Error(`[Instance::exists] model(${this.$model.name}) has no any property as id, check your definitions`)
+        }
+
+        let withIdFilled = false
         this.$model.idPropertyList.forEach(prop => {
-            if (this[prop.name]) {
-                where[prop.name] = this[prop.name]
+            if (this.$isFieldFilled(prop.name)) {
+                where[prop.mapsTo] = this[prop.name]
+                withIdFilled = true
             }
         })
+        
+        // if no any id filled, return false directly
+        if (!withIdFilled) return false
         
         return this.$dml.exists(
             this.$model.collection,

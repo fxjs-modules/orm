@@ -55,7 +55,7 @@ declare namespace FxOrmDML {
                 collection: string,
                 data: FxSqlQuerySql.DataToSet,
                 opts?: {
-                    keyPropertyList?: FxOrmProperty.NormalizedProperty[],
+                    idPropertyList?: FxOrmProperty.NormalizedProperty[],
                     beforeQuery?: (
                         builer: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>,
                         ctx: { dml: DMLDriver }

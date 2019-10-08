@@ -69,6 +69,9 @@ class Model implements FxOrmModel.Class_Model {
     name: FxOrmModel.Class_Model['name']
     collection: FxOrmModel.Class_Model['collection']
 
+    @configurable(false)
+    get isMergeModel () { return false }
+
     properties: {[k: string]: Property} = {};
     /**
      * @description all properties names
@@ -436,6 +439,25 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     get sourceKeys () { return this.sourceModel.keys }
     targetModel: FxOrmModel.Class_Model
     get targetKeys () { return this.targetModel.keys }
+
+    @configurable(false)
+    get isMergeModel () { return true }
+
+    @configurable(false)
+    get ids (): string[] {
+        let _ids
+
+        switch (this.type) {
+            case 'o2m':
+                _ids = Array.from(
+                    new Set(super.ids.concat(this.targetModel.ids))
+                )
+            default:
+                break
+        }
+
+        return _ids
+    }
     
     associationInfo: FxOrmModel.Class_MergeModel['associationInfo']
 
@@ -478,7 +500,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                             x.target,
                             sProperty
                                 .renameTo({ name: x.target })
-                                .transformForAssociation()
+                                .useForAssociationMatch()
                                 .deKeys()
                         )
                     })
@@ -490,7 +512,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                             tProperty.name,
                             tProperty
                                 .renameTo({ name: tProperty.name })
-                                .transformForAssociation()
+                                .useForAssociationMatch()
                                 .deKeys()
                         )
                     })

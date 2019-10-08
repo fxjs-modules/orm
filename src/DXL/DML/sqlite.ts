@@ -55,7 +55,7 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
         table,
         data,
         {
-            keyPropertyList,
+            idPropertyList,
             beforeQuery = HOOK_DEFAULT
         } = {}
     ) {
@@ -68,15 +68,15 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
             this.execSqlQuery<FxOrmQuery.InsertResult>(connection, kbuilder.toString())
         )
 
-        if (!keyPropertyList) return null;
+        if (!idPropertyList) return null;
 
         const ids: {[k: string]: any} = {};
 
-        if (keyPropertyList.length == 1 && keyPropertyList[0].type == 'serial') {
-            ids[keyPropertyList[0].name] = info.insertId;
+        if (idPropertyList.length == 1/*  && idPropertyList[0].type == 'serial' */) {
+            ids[idPropertyList[0].name] = info.insertId;
         } else {
-            for (let i = 0, prop; i < keyPropertyList.length; i++) {
-                prop = keyPropertyList[i];
+            for (let i = 0, prop; i < idPropertyList.length; i++) {
+                prop = idPropertyList[i];
                 // Zero is a valid value for an ID column
                 ids[prop.name] = data[prop.mapsTo] !== undefined ? data[prop.mapsTo] : null;
             }
@@ -154,7 +154,7 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
     }
 
     count: FxOrmDML.DMLDriver['count'] = function (
-        this: FxOrmDML.DMLDriver_SQLite,
+        this: FxOrmDML.DMLDriver<Class_SQLite>,
         table,
         {
             where,
@@ -184,7 +184,7 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
     }
 
     clear: FxOrmDML.DMLDriver['clear'] = function(
-        this: FxOrmDML.DMLDriver_SQLite,
+        this: FxOrmDML.DMLDriver<Class_SQLite>,
         table
     ) {
         const bTransResult = this.useConnection(connection => 

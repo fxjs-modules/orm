@@ -334,8 +334,8 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
         return this.type === 'serial'
     }
 
-    transformForAssociation () {
-        this.required = true
+    useForAssociationMatch () {
+        this.required = false
 
         return this
     }

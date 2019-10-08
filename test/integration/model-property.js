@@ -1,7 +1,7 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-odescribe("Model Property", function () {
+describe("Model Property", function () {
     var db = null;
     var Pet = null;
     var Person = null;
@@ -248,8 +248,8 @@ odescribe("Model Property", function () {
                 assert.propertyVal(PersonPets.properties.id, 'serial', false)
                 assert.propertyVal(PersonPets.properties.id, 'unsigned', true)
                 assert.propertyVal(PersonPets.properties.id, 'primary', false)
-                // coerce associated [property].required = true in merge model
-                assert.propertyVal(PersonPets.properties.id, 'required', true)
+                // coerce associated [property].required = false as in merge model
+                assert.propertyVal(PersonPets.properties.id, 'required', false)
                 assert.propertyVal(PersonPets.properties.id, 'defaultValue', undefined)
                 assert.propertyVal(PersonPets.properties.id, 'size', 4)
                 assert.propertyVal(PersonPets.properties.id, 'rational', false)
@@ -274,8 +274,8 @@ odescribe("Model Property", function () {
             assert.propertyVal(PersonPets.properties.person_id, 'serial', false)
             assert.propertyVal(PersonPets.properties.person_id, 'unsigned', true)
             assert.propertyVal(PersonPets.properties.person_id, 'primary', false)
-            // coerce associated [property].required = true in merge model
-            assert.propertyVal(PersonPets.properties.person_id, 'required', true)
+            // coerce associated [property].required = false as in merge model
+            assert.propertyVal(PersonPets.properties.person_id, 'required', false)
             assert.propertyVal(PersonPets.properties.person_id, 'defaultValue', undefined)
             assert.propertyVal(PersonPets.properties.person_id, 'size', 4)
             assert.propertyVal(PersonPets.properties.person_id, 'rational', false)
@@ -285,6 +285,10 @@ odescribe("Model Property", function () {
             assert.propertyVal(PersonPets.properties.person_id, 'lazyload', false)
             assert.propertyVal(PersonPets.properties.person_id, 'lazyname', 'person_id')
             assert.propertyVal(PersonPets.properties.person_id, 'enumerable', true)
+        });
+
+        xit('merge model always has non-empty association Ids(id property names)', function () {
+            // assert.property(PersonPets.ids, ['person_id'])
         });
     });
 });
