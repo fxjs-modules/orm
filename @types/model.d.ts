@@ -380,6 +380,21 @@ declare namespace FxOrmModel {
     }
 
     // next generation model :start
+    class Class_QueryBuilder {
+        readonly isModel: boolean
+        model: any;
+        conditions: any;
+        sqlQuery: FxSqlQuery.Class_Query
+
+        find (opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>): Class_QueryBuilder
+        count (opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['count']>): number
+        get<TUPLE_ITEM = any> (id?: string | number): TUPLE_ITEM
+        
+        first<TUPLE_ITEM = any> (): TUPLE_ITEM
+        last<TUPLE_ITEM = any> (): TUPLE_ITEM
+        all<TUPLE_ITEM = any> (): TUPLE_ITEM[]
+    }
+
     type Class_ModelConstructOptions = FxOrmTypeHelpers.ConstructorParams<typeof FxOrmModel.Class_Model>[0]
     class Class_Model {
         name: string
@@ -512,13 +527,13 @@ declare namespace FxOrmModel {
         }[]
         addProperty(name: string, propertyDefinition: FxOrmProperty.Class_Property | FxOrmProperty.NormalizedProperty): typeof propertyDefinition
 
-        fieldInfo(propertyName: string): null | {
+        fieldInfo(propertyName: string): {
             type: 'self'
             property: Class_Model['properties'][any]
         } | {
             type: 'association'
             association: Class_Model['associations'][any]
-        }
+        } | null
         /* utils :end */
 
         hasOne(

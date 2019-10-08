@@ -3,117 +3,142 @@ import util = require('util')
 import * as DecoratorsProperty from '../Decorators/property';
 
 import { getDataStoreTransformer } from '../Utils/transfomers';
+import { snapshot } from '../Utils/clone';
 
-function getPropertyConfig (
+function getNormalizedProperty (
     overwrite?: Fibjs.AnyObject
 ): FxOrmProperty.NormalizedProperty {
-    const {
-        name: pname = '',
-        mapsTo = pname,
-        enumerable = true,
+    let {
+        name: name = '',
     } = overwrite || {} as any
 
     let {
-        defaultValue = undefined
+        mapsTo = name,
+        lazyname = name,
+    } = overwrite || {} as any
+
+    if (!name) name = mapsTo || lazyname
+
+    if (!name)
+        throw new Error(`no name given! check your property definition input: \n ${overwrite}`)
+
+    let {
+        defaultValue = undefined,
+        enumerable = true,
+        required = false,
+        size = 0,
+        type = 'text'
     } = overwrite || {} as any
 
     if (util.isFunction(defaultValue) || util.isSymbol(defaultValue))
         defaultValue = undefined
+
+    const isPrimary = !!overwrite.primary
+    const isSerial = /* !!overwrite.serial ||  */type === 'serial'
+    
+    let isUnsigned = !!overwrite.unsigned
+    if (isSerial) isUnsigned = true
+    
+    let isUnique = !!overwrite.unique
+    if (isSerial) isUnique = true
+
+    if (!size && isSerial) size = 4
+
+    if (isPrimary || isSerial) required = true
+
+    // if (isSerial) type = 'integer'
+
     
     return {
-        type: '',
-        size: 0,
-
         key: false,
-        unique: false,
         index: false,
-        serial: false,
-        primary: false,
-        required: false,
 
-        unsigned: false,
         rational: false,
-
         time: false,
         big: false,
         values: null,
         lazyload: false,
         
         ...overwrite,
+        type,
+        name,
+        size,
+        required,
 
         defaultValue,
-        lazyname: pname,
+        lazyname,
         enumerable,
-        name: pname,
         mapsTo: mapsTo,
+        primary: isPrimary,
+        unsigned: isUnsigned,
+        unique: isUnique,
+        // @deprecated: just compute it rather than allowing it in input
+        serial: isSerial,
     }
 }
 
-const PROPERTIES_KEYS = Object.keys(getPropertyConfig())
+const PROPERTIES_KEYS = Object.keys(getNormalizedProperty({name: 'fake'}))
 
-function filterProperty (
+function filterComplexPropertyDefinition (
     input: FxOrmModel.ComplexModelPropertyDefinition,
-    pname?: string
+    /**
+     * @description property key name in properties dictionary
+     */
+    prop_name: string
 ): FxOrmProperty.NormalizedProperty {
-    if (!pname)
-        pname = (input as any).name || (input as any).mapsTo || null
-        
+    if (typeof input === 'object') input = {...input}
+
+    const normalizedNameStruct = <FxOrmProperty.NormalizedProperty>{ name: prop_name }
+
     // built-in types
     switch (input) {
         case Boolean:
-            return getPropertyConfig({
-                name: pname,
-                mapsTo: pname,
+            return getNormalizedProperty({
+                ...normalizedNameStruct,
                 type: 'boolean',
             })
         case String:
-            return getPropertyConfig({
-                name: pname,
-                mapsTo: pname,
+            return getNormalizedProperty({
+                ...normalizedNameStruct,
                 type: 'text',
-                size: 255,
+                size: 0,
             })
+        // @TODO: make it more meaningful
         case Number:
-            return getPropertyConfig({
-                name: pname,
-                mapsTo: pname,
+            return getNormalizedProperty({
+                ...normalizedNameStruct,
                 type: 'integer',
                 size: 4,
 
                 unsigned: true,
             })
         case Date:
-            return getPropertyConfig({
-                name: pname,
-                mapsTo: pname,
+            return getNormalizedProperty({
+                ...normalizedNameStruct,
                 type: 'date',
                 time: true,
             })
         case Buffer:
-            return getPropertyConfig({
-                name: pname,
-                mapsTo: pname,
+            return getNormalizedProperty({
+                ...normalizedNameStruct,
                 type: 'binary',
                 big: false,
             })
         case 'password':
-            return getPropertyConfig({
-                name: pname,
-                mapsTo: pname,
+            return getNormalizedProperty({
+                ...normalizedNameStruct,
                 type: 'text',
             })
         case 'uuid':
-            return getPropertyConfig({
-                name: pname,
-                mapsTo: pname,
+            return getNormalizedProperty({
+                ...normalizedNameStruct,
                 type: 'text'
             })
     }
 
     if (Array.isArray(input))
-        return getPropertyConfig({
-            name: pname,
-            mapsTo: pname,
+        return getNormalizedProperty({
+            ...normalizedNameStruct,
             type: 'enum',
             values: input
         })
@@ -124,9 +149,8 @@ function filterProperty (
     if (input instanceof Function)
         throw new Error(`invalid property type 'function'`)
     
-    return getPropertyConfig({
-        name: pname,
-        mapsTo: (input as any).mapsTo || pname,
+    return getNormalizedProperty({
+        ...normalizedNameStruct,
         ...input,
     });
 }
@@ -156,7 +180,6 @@ function filterDefaultValue (
 }
 
 export default class Property<ConnType = any> implements FxOrmProperty.Class_Property {
-    static filterProperty = filterProperty;
     static filterDefaultValue = filterDefaultValue;
 
     $storeType: FxDbDriverNS.Driver<ConnType>['type'];
@@ -164,6 +187,8 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
     customType?: FxOrmProperty.CustomPropertyType
 
     /* meta :start */
+    name: FxOrmProperty.Class_Property['name']
+
     type: FxOrmProperty.Class_Property['type']
 
     key: FxOrmProperty.Class_Property['key']
@@ -184,7 +209,6 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
     big: FxOrmProperty.Class_Property['big']
     values: FxOrmProperty.Class_Property['values']
 
-    name: FxOrmProperty.Class_Property['name']
     lazyload: FxOrmProperty.Class_Property['lazyload']
     lazyname: FxOrmProperty.Class_Property['lazyname']
     enumerable: FxOrmProperty.Class_Property['enumerable']
@@ -211,35 +235,74 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
         )
     }
 
-    static New (input: FxOrmModel.ComplexModelPropertyDefinition, opts: { name?: string, storeType: FxOrmProperty.Class_Property['$storeType'] }) {
-        return new Property(input, opts);
+    static New (
+        ...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmProperty.Class_Property>
+    ) {
+        return new Property(...args);
     }
 
     constructor (
         input: FxOrmModel.ComplexModelPropertyDefinition,
         opts: {
-            name?: string,
+            propertyName: string
             storeType: FxOrmProperty.Class_Property['$storeType']
-        }) {
-        const { name, storeType } = opts || {};
-        if (!storeType)
-            throw new Error(`[Property] storeType is required!`)
+        }
+    ) {
+        const { storeType, propertyName } = opts || {};
+        if (!storeType) throw new Error(`[Property] storeType is required!`)
+        if (!propertyName) throw new Error(`[Property] propertyName is required!`)
 
         this.$storeType = storeType
-        this.$orig = <Property['$orig']>filterProperty(input, name);
+
+        const $orig = this.$orig = <Property['$orig']>filterComplexPropertyDefinition(input, propertyName);
         
         const self = this as any
-        PROPERTIES_KEYS.forEach((k: any) => self[k] = this.$orig[k])
+        PROPERTIES_KEYS.forEach((k: any) => self[k] = $orig[k])
+
+        return new Proxy(this, {
+            set (target: any, setKey: string, value: any) {
+                if (setKey === '$orig')
+                    return false
+
+                if (PROPERTIES_KEYS.includes(setKey))
+                    $orig[setKey] = value
+                else
+                    target[setKey] = value
+
+                return true
+            },
+            get (target: any, getKey: string, receiver) {
+                if (getKey === '$orig')
+                    return false
+
+                if (PROPERTIES_KEYS.includes(getKey))
+                    return $orig[getKey]
+
+                return target[getKey]
+            },
+            deleteProperty (target: any, delKey:string) {
+                if (delKey === '$orig' || PROPERTIES_KEYS.includes(delKey))
+                    // never allow delete it
+                    return false
+                else
+                    delete target[delKey]
+
+                return true
+            },
+            ownKeys () {
+                return PROPERTIES_KEYS
+            },
+        })
     }
 
     deKeys () {
-        const raw = {...this.toJSON()}
-        raw.unique = false,
+        const raw = this.toJSON()
+        raw.unique = false
         raw.index = false
         raw.big = false
         raw.key = false
-        raw.serial = false
         raw.primary = false
+        raw.serial = false
 
         if (raw.type === 'serial') raw.type = 'integer'
 
@@ -247,21 +310,43 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
     }
 
     renameTo ({ name, mapsTo = name, lazyname = name }: FxOrmTypeHelpers.FirstParameter<FxOrmProperty.Class_Property['renameTo']>) {
+        if (!name)
+            throw new Error('[Property::renameTo] new name is required')
+
         const newVal = Property.New({
             ...this.toJSON(),
             name,
             mapsTo,
             lazyname
-        }, { storeType: this.$storeType })
+        }, {
+            propertyName: name,
+            storeType: this.$storeType
+        })
 
         return newVal
     }
 
     isKeyProperty () {
-        return (this.key || this.primary || this.serial)
+        return (this.key || this.primary || this.isSerial())
+    }
+
+    isSerial () {
+        return this.type === 'serial'
+    }
+
+    transformForAssociation () {
+        this.required = true
+
+        return this
     }
 
     toJSON () {
-        return this.$orig
+        const kvs = <FxOrmProperty.NormalizedProperty>{}
+        const self = this as any
+        PROPERTIES_KEYS.forEach(k => {
+            kvs[k] = self[k]
+        });
+
+        return kvs;
     }
 }

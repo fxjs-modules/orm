@@ -3,19 +3,23 @@ import SqlQuery = require('@fxjs/sql-query');
 
 import * as SYMBOLS from '../Utils/symbols';
 
-function transformToQCIfModel (target: QueryChain, propertyName: string, descriptor: TypedPropertyDescriptor<Function>) {
+function transformToQCIfModel (
+    target: Class_QueryBuilder,
+    propertyName: string,
+    descriptor: TypedPropertyDescriptor<Function>
+) {
     let method = descriptor.value;
 
     descriptor.value = function () {
         // in-model
         if (this.isModel) {
-            const qc = new QueryChain()
+            const qc = new Class_QueryBuilder()
             qc.model = this;
 
             return qc[propertyName].apply(qc, arguments)
         }
 
-        // just in QueryChain
+        // just in Class_QueryBuilder
         switch (this.model.dbdriver.type) {
             case 'mysql':
             case 'mssql':
@@ -30,7 +34,7 @@ function transformToQCIfModel (target: QueryChain, propertyName: string, descrip
     }
 }
 
-class QueryChain<TUPLE_ITEM = any> {
+class Class_QueryBuilder<TUPLE_ITEM = any> {
     private _tuples: TUPLE_ITEM[] = [];
 
     model: any;
@@ -48,7 +52,7 @@ class QueryChain<TUPLE_ITEM = any> {
     @transformToQCIfModel
     find (
         opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']> = {}
-    ): QueryChain {
+    ): Class_QueryBuilder {
         const results = this.model.$dml.find(this.model.collection, opts)
 
         this._tuples = results.map((x: TUPLE_ITEM) => {
@@ -99,4 +103,4 @@ class QueryChain<TUPLE_ITEM = any> {
     }
 }
 
-export default QueryChain
+export default Class_QueryBuilder

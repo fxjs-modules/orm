@@ -100,17 +100,11 @@ declare namespace FxOrmProperty {
             }
         ): any
 
-        static New (
-            input: FxOrmModel.ComplexModelPropertyDefinition,
-            opts?: {
-                name?: string,
-                storeType: FxOrmProperty.Class_Property['$storeType']
-            }
-        ): Class_Property
+        static New (...args: FxOrmTypeHelpers.ConstructorParams<Class_Property>): Class_Property
         constructor (
             input: FxOrmModel.ComplexModelPropertyDefinition,
             opts?: {
-                name?: string,
+                propertyName: string,
                 storeType: FxOrmProperty.Class_Property['$storeType']
             }
         )
@@ -128,12 +122,6 @@ declare namespace FxOrmProperty {
             ): any
         }
 
-        // getDefaultValue (
-        //     opts: {
-        //         instance: FxOrmInstance.Class_Instance
-        //     }
-        // ): any
-
         fromStoreValue (storeValue: any): any
         toStoreValue (value: any): any
 
@@ -145,15 +133,18 @@ declare namespace FxOrmProperty {
          * @description if this is one key-property, which is:
          * `property.key === true`
          * or `property.primary === true`
-         * or `property.serial === true`
+         * or `property.type === 'serial'`
          */
         isKeyProperty(): boolean
+        isSerial(): boolean
 
         renameTo (opts: {
             name: Class_Property['name'],
             mapsTo?: Class_Property['mapsTo'],
             lazyname?: Class_Property['lazyname']
         }): Class_Property
+
+        transformForAssociation(): this
 
         toJSON(): NormalizedProperty
     }

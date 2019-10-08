@@ -38,6 +38,7 @@ function t() {
     run('./integration/instance.js');
     run('./integration/instance-changes-track.js');
 
+    run('./integration/model-property.js');
     // run('./integration/model-aggregate.js');
     run('./integration/model-clear.js');
     run('./integration/model-count.js');

@@ -3,7 +3,7 @@ import coroutine = require('coroutine');
 
 import DDLSync = require('@fxjs/sql-ddl-sync');
 
-import QueryChain from './QueryChain';
+import Class_QueryBuilder from './QueryBuilder';
 import { getInstance } from './Instance';
 
 import * as SYMBOLS from '../Utils/symbols';
@@ -164,7 +164,7 @@ class Model implements FxOrmModel.Class_Model {
                 .forEach((prop: string) => {
                     const property = this.properties[prop] = Property.New(
                         config.properties[prop],
-                        { name: prop, storeType: this.storeType }
+                        { propertyName: prop, storeType: this.storeType }
                     );
                     
                     if (specKeyPropertyNames)
@@ -173,7 +173,13 @@ class Model implements FxOrmModel.Class_Model {
                 });
 
             if (specKeyPropertyNames && this.ids.length === 0) {
-                this.keyProperties['id'] = this.properties['id'] = Property.New(DFLT_ID_DEF, { storeType: this.storeType })
+                this.keyProperties[DFLT_ID_DEF.name] = this.properties[DFLT_ID_DEF.name] = Property.New(
+                    {...DFLT_ID_DEF},
+                    {
+                        propertyName: DFLT_ID_DEF.name,
+                        storeType: this.storeType
+                    }
+                )
             }
         })();
     }
@@ -215,6 +221,7 @@ class Model implements FxOrmModel.Class_Model {
         this.$ddl.dropTable(this.collection)
     }
 
+    // TODO: migrate to ddl
     hasPropertyRemotely (property: string | FxOrmProperty.Class_Property): boolean {
         if (this.dbdriver.isNoSql) return true;
         
@@ -250,7 +257,7 @@ class Model implements FxOrmModel.Class_Model {
         this.$dml.clear(this.collection)
     }
 
-    hasOne: FxOrmModel.Class_Model['hasOne'] = function (
+    hasOne (
         this: FxOrmModel.Class_Model,
         name,
         model?,
@@ -259,7 +266,7 @@ class Model implements FxOrmModel.Class_Model {
         return null as any
     }
 
-    hasMany: FxOrmModel.Class_Model['hasMany'] = function (
+    hasMany (
         this: FxOrmModel.Class_Model,
         name,
         model?,
@@ -288,11 +295,15 @@ class Model implements FxOrmModel.Class_Model {
         return assoc
     }
 
-    o2o: FxOrmModel.Class_Model['o2o'] = function (this: FxOrmModel.Class_Model, name, opts?) {
+    o2o (name: string, opts?: FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['o2o']>) {
         return null as any
     }
 
-    o2m: FxOrmModel.Class_Model['o2m'] = function (this: FxOrmModel.Class_Model, name, opts?) {
+    m2o (name: string, opts?: FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['m2o']>) {
+        return null as any
+    }
+
+    o2m (name: string, opts?: FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['o2m']>) {
         if (!name) throw new Error(`[o2m] association name is required`)
 
         const { model: targetModel = this } = opts || {}
@@ -307,6 +318,10 @@ class Model implements FxOrmModel.Class_Model {
         const mergeModel = new MergeModel({
             name: name,
             collection: targetModel.collection,
+            /**
+             * @import pass {keys: false} to disable auto-fill id key
+             */
+            // keys: false,
             orm: this.orm,
             properties: {},
             settings: this.settings.clone(),
@@ -323,11 +338,7 @@ class Model implements FxOrmModel.Class_Model {
         return mergeModel
     }
 
-    m2m: FxOrmModel.Class_Model['m2m'] = function (this: FxOrmModel.Class_Model, name, opts?) {
-        return null as any
-    }
-
-    m2o: FxOrmModel.Class_Model['m2o'] = function (this: FxOrmModel.Class_Model, name, opts?) {
+    m2m (name: string, opts?: FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['m2m']>) {
         return null as any
     }
 
@@ -384,25 +395,31 @@ class Model implements FxOrmModel.Class_Model {
         }
     }
 
-    addProperty: FxOrmModel.Class_Model['addProperty'] = function (this: FxOrmModel.Class_Model, name, property) {
+    addProperty (name: string, property: FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['addProperty']>) {
         if (this.fieldInfo(name))
             throw new Error(`[Model] property '${name}' existed in model '${this.name}'`)
-        
+
+        // if (name === 'name')
+        //     console.notice('[add Property] property', property);
+
         if ((property instanceof Property))
             return this.properties[name] = property
             
-        return this.properties[name] = property = Property.New({...property, name}, { storeType: this.storeType })
+        return this.properties[name] = property = Property.New({...property, name}, {
+            propertyName: name,
+            storeType: this.storeType
+        })
     }
 
-    fieldInfo: FxOrmModel.Class_Model['fieldInfo'] = function (this: FxOrmModel.Class_Model, propertyName) {
+    fieldInfo (propertyName: string) {
         if (this.properties.hasOwnProperty(propertyName))
             return {
-                type: 'self',
+                type: 'self' as 'self',
                 property: this.properties[propertyName]
             }
         if (this.associations.hasOwnProperty(propertyName))
             return {
-                type: 'association',
+                type: 'association' as 'association',
                 association: this.associations[propertyName]
             }
 
@@ -410,7 +427,7 @@ class Model implements FxOrmModel.Class_Model {
     }
 }
 
-util.inherits(Model, QueryChain)
+util.inherits(Model, Class_QueryBuilder)
 
 class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     name: string
@@ -425,10 +442,14 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     constructor (opts: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmModel.Class_MergeModel>[0]) {
         const {
             mergeCollection, source, target, matchKeys,
+            /**
+             * @description for MergeModel, deal with options.keys alone to avoid parent `Model`'s processing
+             */
+            keys,
             ...restOpts
         } = opts
         
-        super({...restOpts, keys: []})
+        super({...restOpts, keys: false})
 
         this.type = opts.type
         this.associationInfo = { collection: mergeCollection, andMatchKeys: matchKeys }
@@ -451,12 +472,13 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                         
                         const sProperty = this.sourceModel.properties[x.source]
                         if (!sProperty)
-                            throw new Error(`[Association::o2m] no src property ${x.source} in source model, check your definition about 'matchKeys'`)
+                            throw new Error(`[Association::o2m] no src property ${x.source} in source model, check your definition about 'andMatchKeys'`)
 
                         this.addProperty(
                             x.target,
                             sProperty
-                                .renameTo({ name: x.target, mapsTo: x.target })
+                                .renameTo({ name: x.target })
+                                .transformForAssociation()
                                 .deKeys()
                         )
                     })
@@ -468,6 +490,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                             tProperty.name,
                             tProperty
                                 .renameTo({ name: tProperty.name })
+                                .transformForAssociation()
                                 .deKeys()
                         )
                     })
