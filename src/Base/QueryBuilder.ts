@@ -2,6 +2,7 @@ import util = require('util');
 import SqlQuery = require('@fxjs/sql-query');
 
 import * as SYMBOLS from '../Utils/symbols';
+import { configurable } from '../Decorators/accessor';
 
 function transformToQCIfModel (
     target: Class_QueryBuilder,
@@ -12,7 +13,7 @@ function transformToQCIfModel (
 
     descriptor.value = function () {
         // in-model
-        if (this.isModel) {
+        if (this.notQueryBuilder) {
             const qc = new Class_QueryBuilder()
             qc.model = this;
 
@@ -34,7 +35,7 @@ function transformToQCIfModel (
     }
 }
 
-class Class_QueryBuilder<TUPLE_ITEM = any> {
+class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmModel.Class_QueryBuilder<TUPLE_ITEM> {
     private _tuples: TUPLE_ITEM[] = [];
 
     model: any;
@@ -44,7 +45,17 @@ class Class_QueryBuilder<TUPLE_ITEM = any> {
 
     [k: string]: any;
 
-    get isModel () { return this._symbol === SYMBOLS.Model };
+    @configurable(false)
+    get _symbol () { return SYMBOLS.QueryBuilder };
+    get notQueryBuilder () { return this.constructor !== Class_QueryBuilder };
+
+    /**
+     * @description find tuples from remote endpoints
+     */
+    @transformToQCIfModel
+    getQueryBuilder () {
+        return this
+    }
 
     /**
      * @description find tuples from remote endpoints
@@ -52,7 +63,7 @@ class Class_QueryBuilder<TUPLE_ITEM = any> {
     @transformToQCIfModel
     find (
         opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']> = {}
-    ): Class_QueryBuilder {
+    ): TUPLE_ITEM[] {
         const results = this.model.$dml.find(this.model.collection, opts)
 
         this._tuples = results.map((x: TUPLE_ITEM) => {
@@ -61,20 +72,37 @@ class Class_QueryBuilder<TUPLE_ITEM = any> {
             return inst
         });
 
-        return this;
+        return Array.from(this._tuples);
     }
 
     /**
      * @description get first tuple from remote endpoints
      */
     @transformToQCIfModel
-    get (id?: string | number): TUPLE_ITEM {
-        return this.find({
-            beforeQuery: (kqbuilder) => {
-                if (id && this.model.id)
-                    kqbuilder.where(this.model.id, '=', id)
-            }
-        }).first();
+    get (
+        id?: string | number | FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>['where'],
+        opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>
+    ): TUPLE_ITEM {
+        let where: Fibjs.AnyObject
+        
+        if (typeof id !== 'object' || Array.isArray(id))
+            where = {[this.model.id]: id}
+        else if (id !== undefined)
+            where = id
+
+        opts.where = {...opts.where, ...where}
+
+        return this.find(opts)[0];
+    }
+
+    /**
+     * @description check if one item existed in remote endpoints
+     */
+    @transformToQCIfModel
+    exists (
+        id?: string | number | FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['count']>['where']
+    ): boolean {
+        return !!this.get(id);
     }
 
     /**

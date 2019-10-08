@@ -380,19 +380,22 @@ declare namespace FxOrmModel {
     }
 
     // next generation model :start
-    class Class_QueryBuilder {
-        readonly isModel: boolean
+    class Class_QueryBuilder<T_RETURN = any> {
+        readonly notQueryBuilder: boolean
+
         model: any;
         conditions: any;
         sqlQuery: FxSqlQuery.Class_Query
-
-        find (opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>): Class_QueryBuilder
-        count (opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['count']>): number
-        get<TUPLE_ITEM = any> (id?: string | number): TUPLE_ITEM
         
-        first<TUPLE_ITEM = any> (): TUPLE_ITEM
-        last<TUPLE_ITEM = any> (): TUPLE_ITEM
-        all<TUPLE_ITEM = any> (): TUPLE_ITEM[]
+        getQueryBuilder (): Class_QueryBuilder<T_RETURN>
+
+        find (opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>): T_RETURN[]
+        count (opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['count']>): number
+        get (id?: string | number): T_RETURN
+        
+        first (): T_RETURN
+        last (): T_RETURN
+        all (): T_RETURN[]
     }
 
     type Class_ModelConstructOptions = FxOrmTypeHelpers.ConstructorParams<typeof FxOrmModel.Class_Model>[0]

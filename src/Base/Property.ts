@@ -232,7 +232,10 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
     /* meta :end */
     
     @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
-    $orig: FxOrmProperty.NormalizedProperty
+    $definition: FxOrmProperty.NormalizedProperty
+    
+    // @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
+    // $remote: FxOrmProperty.NormalizedProperty
 
     get transformer () {
         return getDataStoreTransformer(this.$storeType)
@@ -241,14 +244,14 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
     fromStoreValue (storeValue: any) {
         return this.transformer.valueToProperty(
             storeValue, this,
-            this.customType ? {[this.$orig.type]: this.customType} : {}
+            this.customType ? {[this.$definition.type]: this.customType} : {}
         )
     }
 
     toStoreValue (value: any) {
         return this.transformer.propertyToValue(
             value, this,
-            this.customType ? {[this.$orig.type]: this.customType} : {}
+            this.customType ? {[this.$definition.type]: this.customType} : {}
         )
     }
 
@@ -271,34 +274,34 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
 
         this.$storeType = storeType
 
-        const $orig = this.$orig = <Property['$orig']>filterComplexPropertyDefinition(input, propertyName);
+        const $definition = this.$definition = <Property['$definition']>filterComplexPropertyDefinition(input, propertyName);
         
         const self = this as any
-        PROPERTIES_KEYS.forEach((k: any) => self[k] = $orig[k])
+        PROPERTIES_KEYS.forEach((k: any) => self[k] = $definition[k])
 
         return new Proxy(this, {
             set (target: any, setKey: string, value: any) {
-                if (setKey === '$orig')
+                if (setKey === '$definition')
                     return false
 
                 if (PROPERTIES_KEYS.includes(setKey))
-                    $orig[setKey] = value
+                    $definition[setKey] = value
                 else
                     target[setKey] = value
 
                 return true
             },
             get (target: any, getKey: string, receiver) {
-                if (getKey === '$orig')
+                if (getKey === '$definition')
                     return false
 
                 if (PROPERTIES_KEYS.includes(getKey))
-                    return $orig[getKey]
+                    return $definition[getKey]
 
                 return target[getKey]
             },
             deleteProperty (target: any, delKey:string) {
-                if (delKey === '$orig' || PROPERTIES_KEYS.includes(delKey))
+                if (delKey === '$definition' || PROPERTIES_KEYS.includes(delKey))
                     // never allow delete it
                     return false
                 else
@@ -363,6 +366,8 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
         PROPERTIES_KEYS.forEach(k => {
             kvs[k] = self[k]
         });
+
+        kvs.name = this.name
 
         return kvs;
     }

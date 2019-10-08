@@ -42,14 +42,6 @@ declare namespace FxOrmDML {
                 }
             ): number
         }
-        exists: {
-            <T=boolean>(
-                collection: string,
-                opts?: {
-                    where?: Fibjs.AnyObject
-                }
-            ): boolean
-        }
         insert: {
             (
                 collection: string,

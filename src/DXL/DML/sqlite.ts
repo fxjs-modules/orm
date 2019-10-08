@@ -29,6 +29,7 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
         table,
         {
             fields,
+            where,
             offset = undefined,
             // @todo: use default MAX limit to get better perfomance, such as '9223372036854775807'
             limit = undefined,
@@ -41,7 +42,8 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
         if (fields) kbuilder.select(fields)
         if (offset) kbuilder.offset(offset)
         if (limit) kbuilder.limit(limit as number)
-        if (orderBy) kbuilder.orderBy.apply(kbuilder, orderBy)
+        if (orderBy) kbuilder.orderBy.apply(kbuilder, [orderBy])
+        if (where) kbuilder.where.apply(kbuilder, arraify(where))
 
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
 
@@ -104,28 +106,6 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
         return this.useConnection(connection => 
             this.execSqlQuery<any[]>(connection, kbuilder.toString())
         )
-    }
-
-    exists (
-        collection: string,
-        {
-            where = null
-        } = {}
-    ) {
-        const results = this.find(
-            collection,
-            {
-                fields: where ? Object.keys(where) : [],
-                beforeQuery: (builder) => {
-                    if (!where || !Object.keys(where).length)
-                        throw new Error('[DML::exists] no any where query where-conditions generated in this instance, examine your where-conditions input')
-
-                    builder.where(where)
-                }
-            }
-        )
-
-        return !!results.length
     }
 
     remove: FxOrmDML.DMLDriver['remove'] = function (

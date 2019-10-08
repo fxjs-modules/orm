@@ -13,7 +13,7 @@ describe("Model.exists()", function () {
             });
 
             return helper.dropSync(Person, function () {
-                var people = Person.createSync([{
+                var people = Person.create([{
                     name: "Jeremy Doe"
                 }, {
                     name: "John Doe"
@@ -38,19 +38,19 @@ describe("Model.exists()", function () {
     });
 
     after(function () {
-        db.closeSync();
+        db.close();
     });
 
     describe("with an id", function () {
         before(setup());
 
         it("should return true if found", function () {
-            var exists = Person.existsSync(good_id);
+            var exists = Person.exists(good_id);
             assert.ok(exists);
         });
 
         it("should return false if not found", function () {
-            var exists = Person.existsSync(bad_id);
+            var exists = Person.exists(bad_id);
             assert.notOk(exists);
         });
     });
@@ -59,12 +59,12 @@ describe("Model.exists()", function () {
         before(setup());
 
         it("should return true if found", function () {
-            var exists = Person.existsSync([good_id]);
+            var exists = Person.exists([good_id]);
             assert.ok(exists);
         });
 
         it("should return false if not found", function () {
-            var exists = Person.existsSync([bad_id]);
+            var exists = Person.exists([bad_id]);
             assert.notOk(exists);
         });
     });
@@ -73,14 +73,14 @@ describe("Model.exists()", function () {
         before(setup());
 
         it("should return true if found", function () {
-            var exists = Person.existsSync({
+            var exists = Person.exists({
                 name: "John Doe"
             });
             assert.ok(exists);
         });
 
         it("should return false if not found", function () {
-            var exists = Person.existsSync({
+            var exists = Person.exists({
                 name: "Jack Doe"
             });
             assert.notOk(exists);

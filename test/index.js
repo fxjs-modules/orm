@@ -15,11 +15,11 @@ function t() {
     // run('./integration/model-count.callback.js');
     run('./integration/model-create.js');
     // run('./integration/model-create.callback.js');
-    // run('./integration/model-exists.js');
+    run('./integration/model-exists.js');
     // run('./integration/model-find-chain.js');
     // run('./integration/model-find-chain.callback.js');
     // run('./integration/model-find-mapsto.js');
-    // run('./integration/model-find.js');
+    run('./integration/model-find.js');
     // run('./integration/model-find.callback.js');
     run('./integration/model-get.js');
     // run('./integration/model-get.callback.js');
