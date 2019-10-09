@@ -19,9 +19,10 @@ declare namespace FxOrmQueries {
 
         getQueryBuilder (): Class_QueryBuilder<T_RETURN>
 
-        find (opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>): T_RETURN[]
-        count (opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['count']>): number
-        get (id?: string | number): T_RETURN
+        find (opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>): T_RETURN[]
+        one (opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>): T_RETURN
+        get (id?: string | number | (string|number)[]): T_RETURN
+        count (opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['count']>): number
 
         first (): T_RETURN
         last (): T_RETURN

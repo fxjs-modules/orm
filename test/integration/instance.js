@@ -115,9 +115,9 @@ describe("Model instance", function () {
         });
 
         it("should have a saving state to avoid loops", function () {
-            var mainItem = main_item.find({
+            var mainItem = main_item.one({
                 name: "Main Item"
-            }).first();
+            });
             
             mainItem.save({
                 name: "new name"
@@ -129,7 +129,7 @@ describe("Model instance", function () {
         it("should always return true for instances", function () {
             assert.equal((Person.New(4)).$isInstance, true);
 
-            var item = Person.find().first();
+            var item = Person.one();
             assert.equal(item.$isInstance, true);
         });
 
@@ -141,7 +141,7 @@ describe("Model instance", function () {
 
     describe("#$isPersisted", function () {
         it("should return true for persisted instances", function () {
-            var item = Person.find().first();
+            var item = Person.one();
             assert.equal(item.$isPersisted, true);
         });
 

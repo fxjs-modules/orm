@@ -26,7 +26,7 @@ describe("Model.pkMapTo.find()", function () {
             });
 
             return helper.dropSync(Person, function () {
-                Person.createSync([{
+                Person.create([{
                     personId: 1001,
                     name: "John",
                     surname: "Doe",
@@ -66,7 +66,7 @@ describe("Model.pkMapTo.find()", function () {
     });
 
     after(function () {
-        return db.closeSync();
+        return db.close();
     });
 
 
@@ -74,19 +74,23 @@ describe("Model.pkMapTo.find()", function () {
         before(setup());
 
         it("1st find should work", function () {
-            var people = Person.findSync({
-                surname: "Dean"
+            var people = Person.find({
+                where: {
+                    surname: "Dean"
+                }
             });
-            assert.isObject(people);
+            assert.isArray(people);
             assert.propertyVal(people, "length", 2);
             assert.equal(people[0].surname, "Dean");
         });
 
         it("2nd find should should also work", function () {
-            var people = Person.findSync({
-                surname: "Doe"
+            var people = Person.find({
+                where: {
+                    surname: "Doe"
+                }
             });
-            assert.isObject(people);
+            assert.isArray(people);
             assert.propertyVal(people, "length", 3);
             assert.equal(people[0].surname, "Doe");
         });

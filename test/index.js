@@ -19,13 +19,13 @@ function t() {
     run('./integration/model-exists.js');
     // run('./integration/model-find-chain.js');
     // run('./integration/model-find-chain.callback.js');
-    // run('./integration/model-find-mapsto.js');
+    run('./integration/model-find-mapsto.js');
     run('./integration/model-find.js');
     // run('./integration/model-find.callback.js');
     run('./integration/model-get.js');
     // run('./integration/model-get.callback.js');
-    // run('./integration/model-keys.js');
-    // run('./integration/model-one.js');
+    run('./integration/model-keys.js');
+    run('./integration/model-one.js');
     // run('./integration/model-one.callback.js');
     // run('./integration/model-remove.js');
     // run('./integration/model-remove.callback.js');

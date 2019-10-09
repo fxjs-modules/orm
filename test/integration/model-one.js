@@ -12,7 +12,7 @@ describe("Model.one()", function () {
             });
 
             return helper.dropSync(Person, function () {
-                Person.createSync([{
+                Person.create([{
                     id: 1,
                     name: "Jeremy Doe"
                 }, {
@@ -31,14 +31,14 @@ describe("Model.one()", function () {
     });
 
     after(function () {
-        return db.closeSync();
+        return db.close();
     });
 
     describe("without arguments", function () {
         before(setup());
 
         it("should return first item in model", function () {
-            var person = Person.oneSync();
+            var person = Person.one();
             assert.equal(person.name, "Jeremy Doe");
         });
     });
@@ -47,7 +47,9 @@ describe("Model.one()", function () {
         before(setup());
 
         it("should return first item in model based on order", function () {
-            var person = Person.oneSync("-name");
+            var person = Person.one({
+                orderBy: ['name', 'desc']
+            });
             assert.equal(person.name, "John Doe");
         });
     });
@@ -56,8 +58,10 @@ describe("Model.one()", function () {
         before(setup());
 
         it("should return first item in model based on conditions", function () {
-            var person = Person.oneSync({
-                name: "Jane Doe"
+            var person = Person.one({
+                where: {
+                    name: "Jane Doe"
+                }
             });
             assert.equal(person.name, "Jane Doe");
         });
@@ -66,8 +70,10 @@ describe("Model.one()", function () {
             before(setup());
 
             it("should return null", function () {
-                var person = Person.oneSync({
-                    name: "Jack Doe"
+                var person = Person.one({
+                    where: {
+                        name: "Jack Doe"
+                    }
                 });
                 assert.equal(person, null);
             });

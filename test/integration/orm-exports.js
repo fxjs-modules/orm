@@ -8,7 +8,7 @@ var common = require('../common')
 var protocol = common.protocol()
 
 describe('ORM', function () {
-  odescribe('when loaded', function () {
+  describe('when loaded', function () {
     it('should expose .use() and .connect()', function () {
       assert.isFunction(ORM.connect)
     })
@@ -37,7 +37,7 @@ describe('ORM', function () {
     })
   })
 
-  odescribe('ORM.connect()', function () {
+  describe('ORM.connect()', function () {
     it('should be a function', function () {
       assert.isFunction(ORM.connect)
     })
@@ -232,7 +232,7 @@ describe('ORM', function () {
     })
   })
 
-  describe('ORM.connect()', function () {
+  xdescribe('ORM.connect()', function () {
     it('should expose .use(), .define(), .sync() and .load()', function (done) {
       var db = ORM.connect()
 
@@ -437,7 +437,7 @@ describe('ORM', function () {
     })
   })
 
-  describe('ORM.use()', function () {
+  xdescribe('ORM.use()', function () {
     xit('should be able to use an established connection', function (done) {
       var db = new sqlite.Database(':memory:')
 

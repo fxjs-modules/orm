@@ -9,10 +9,10 @@ describe("Model keys option", function () {
     });
 
     after(function () {
-        return db.closeSync();
+        return db.close();
     });
 
-    describe("if model id is a property", function () {
+    xdescribe("if model id is a property", function () {
         var Person = null;
 
         before(function () {
@@ -28,7 +28,7 @@ describe("Model keys option", function () {
         });
 
         it("should not auto increment IDs", function () {
-            var JohnDoe = Person.createSync({
+            var JohnDoe = Person.create({
                 uid: "john-doe",
                 name: "John",
                 surname: "Doe"
@@ -39,7 +39,7 @@ describe("Model keys option", function () {
         });
     });
 
-    describe("if model defines several keys", function () {
+    xdescribe("if model defines several keys", function () {
         var DoorAccessHistory = null;
 
         before(function () {
@@ -60,7 +60,7 @@ describe("Model keys option", function () {
             });
 
             return helper.dropSync(DoorAccessHistory, function () {
-                DoorAccessHistory.createSync([{
+                DoorAccessHistory.create([{
                         year: 2013,
                         month: 7,
                         day: 11,
@@ -79,7 +79,7 @@ describe("Model keys option", function () {
         });
 
         it("should make possible to get instances based on all keys", function () {
-            var HistoryItem = DoorAccessHistory.getSync(2013, 7, 11);
+            var HistoryItem = DoorAccessHistory.get(2013, 7, 11);
 
             assert.equal(HistoryItem.year, 2013);
             assert.equal(HistoryItem.month, 7);
@@ -89,11 +89,11 @@ describe("Model keys option", function () {
         });
 
         it("should make possible to remove instances based on all keys", function () {
-            var HistoryItem = DoorAccessHistory.getSync(2013, 7, 12);
+            var HistoryItem = DoorAccessHistory.get(2013, 7, 12);
 
             HistoryItem.removeSync();
 
-            var exists = DoorAccessHistory.existsSync(2013, 7, 12);
+            var exists = DoorAccessHistory.exists(2013, 7, 12);
             assert.isFalse(exists);
         });
     });

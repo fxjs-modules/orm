@@ -37,6 +37,10 @@ function transformToQCIfModel (
     }
 }
 
+function isIdsInput (id: any) {
+    return util.isArray(id) || typeof id === 'string' || (typeof id === 'number' && !isNaN(id))
+}
+
 function filterWhereToKnexActions (
     opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>
 ) {
@@ -51,20 +55,28 @@ function filterWhereToKnexActions (
     const bQList = (opts.beforeQuery ? arraify(opts.beforeQuery) : []).filter(x => typeof x === 'function')
 
     opts.beforeQuery = bQList
+
+    // @todo: deal with case fieldName is symbol, which woudnt' read by Object.keys(where)
     Object.keys(where).forEach((fieldName: string) => {
         if (!util.isObject(where[fieldName])) {
             flattenedWhere[fieldName] = where[fieldName];
             return ;
         }
         // @todo: deal with array-type where[fieldName]
+        if (Array.isArray(where[fieldName])) {
+            const values = where[fieldName];
+            bQList.push((builder) => {
+                builder.whereIn(fieldName, values)
+            })
+            return
+        }
 
         /**
          * @notice all non-operator symbol-index(string, number) would be ignored
          */
         const fieldOpSyms = Object.getOwnPropertySymbols(where[fieldName])
 
-        // @todo: deal with case fieldName is symbol
-        const v = <any>where[fieldName];
+        const v = where[fieldName];
 
         // const oldBeforeQuery = opts.beforeQuery
         bQList.push(function (builder, ctx) {
@@ -177,18 +189,25 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
     /**
      * @description get first tuple from remote endpoints
      */
+    one (
+        opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>
+    ): TUPLE_ITEM {
+        return this.find(opts)[0]
+    }
+
+    /**
+     * @description get first tuple from remote endpoints
+     */
     @transformToQCIfModel
     get (
         id?: string | number | FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>['where'],
-        opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>
     ): TUPLE_ITEM {
         let where: Fibjs.AnyObject
         
-        if (typeof id !== 'object' || Array.isArray(id))
+        if (isIdsInput(id))
             where = {[this.model.id]: id}
-        else if (id !== undefined)
-            where = id
 
+        const opts = <FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>>{}
         opts.where = {...opts.where, ...where}
 
         return this.find(opts)[0];
@@ -201,11 +220,14 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
     exists (
         id?: string | number | FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['count']>['where']
     ): boolean {
-        return !!this.get(id);
+        if (isIdsInput(id))
+            return !!this.get(id)
+        else
+            return !!this.one({ where: id })
     }
 
     /**
-     * @description get first tuple from remote endpoints
+     * @description count tuples from remote endpoints
      */
     @transformToQCIfModel
     count (
