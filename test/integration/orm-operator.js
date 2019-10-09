@@ -1,7 +1,7 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-odescribe("ORM-operator", function () {
+describe("ORM Operators", function () {
     var db = null;
     var Person = null;
     var Pet = null;

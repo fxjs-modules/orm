@@ -385,7 +385,8 @@ declare namespace FxOrmModel {
         name: string
         collection: string
 
-        orm: FxOrmNS.Class_ORM
+        readonly orm: FxOrmNS.Class_ORM
+        readonly Op: FxOrmQueries.Operators
 
         properties: {[k: string]: FxOrmProperty.Class_Property}
         readonly propertyNames: string[]

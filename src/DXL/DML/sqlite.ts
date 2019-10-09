@@ -31,7 +31,7 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
             fields,
             where,
             offset = undefined,
-            // @todo: use default MAX limit to get better perfomance, such as '9223372036854775807'
+            // @todo: use default MAX limit to get better perfomance, such as '9223372036854775807' or '18446744073709551615'
             limit = undefined,
             orderBy = undefined,
             beforeQuery = HOOK_DEFAULT
@@ -41,8 +41,12 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
 
         if (fields) kbuilder.select(fields)
         if (offset) kbuilder.offset(offset)
+        
+        // TODO: for sqlite3, when offset provided, set limit as -1
         if (limit) kbuilder.limit(limit as number)
-        if (orderBy) kbuilder.orderBy.apply(kbuilder, [orderBy])
+        else if (offset) kbuilder.limit(-1)
+        
+        if (orderBy) kbuilder.orderBy.apply(kbuilder, arraify(orderBy))
         if (where) kbuilder.where.apply(kbuilder, arraify(where))
 
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })

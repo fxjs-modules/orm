@@ -48,6 +48,13 @@ export function filterKnexBuilderBeforeQuery (
 	return builder
 }
 
+export function getFindOptionValueIfNotFunc (optValue: Function | any) {
+	if (typeof optValue === 'function')
+		return optValue.apply(null, [])
+
+	return optValue
+}
+
 export function filterResultAfterQuery (
 	result: any,
 	afterQuery: Function

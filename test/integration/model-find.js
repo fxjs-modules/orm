@@ -1,7 +1,7 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-describe("Model.find()", function () {
+odescribe("Model.find()", function () {
     var db = null;
     var Person = null;
 
@@ -51,7 +51,7 @@ describe("Model.find()", function () {
         return db.close();
     });
 
-    odescribe("without arguments", function () {
+    describe("without arguments", function () {
         before(setup);
 
         it("should return all items", function () {
@@ -62,44 +62,46 @@ describe("Model.find()", function () {
         });
     });
 
-    odescribe("with an Object as argument", function () {
+    describe("with an Object as argument", function () {
         before(setup);
 
-        oit("should use it as conditions", function () {
+        it("should use it as conditions", function () {
             var people = Person.find({
                 where: {
                     age: 16
                 }
             });
 
-            assert.isObject(people);
+            assert.isArray(people);
             assert.propertyVal(people, "length", 1);
             assert.equal(people[0].age, 16);
         });
 
-        oit("should accept comparison objects", function () {
+        it("should accept comparison objects", function () {
             var people = Person.find({
                 where: {
-                    age: '16'
+                    age: {
+                        [Person.Op.gt]: 18
+                    }
                 }
             });
 
-            assert.isObject(people);
+            assert.isArray(people);
             assert.propertyVal(people, "length", 2);
             assert.equal(people[0].age, 20);
             assert.equal(people[1].age, 20);
         });
 
-        describe("with another Object as argument", function () {
+        describe("with options", function () {
             before(setup);
 
-            it("should use it as options", function () {
+            xit("should use it as options", function () {
                 var people = Person.find({
                     age: 18
                 }, 1, {
                     cache: false
                 });
-                assert.isObject(people);
+                assert.isArray(people);
                 assert.propertyVal(people, "length", 1);
                 assert.equal(people[0].age, 18);
             });
@@ -109,12 +111,13 @@ describe("Model.find()", function () {
 
                 it("should use it", function () {
                     var people = Person.find({
-                        age: 18
-                    }, {
+                        where: {
+                            age: 18
+                        },
                         limit: 1
                     });
 
-                    assert.isObject(people);
+                    assert.isArray(people);
                     assert.propertyVal(people, "length", 1);
                     assert.equal(people[0].age, 18);
                 });
@@ -124,11 +127,12 @@ describe("Model.find()", function () {
                 before(setup);
 
                 it("should use it", function () {
-                    var people = Person.find({}, {
-                        offset: 1
-                    }, "age");
+                    var people = Person.find({
+                        offset: 1,
+                        orderBy: "age"
+                    });
 
-                    assert.isObject(people);
+                    assert.isArray(people);
                     assert.propertyVal(people, "length", 4);
                     assert.equal(people[0].age, 18);
                 });
@@ -137,11 +141,12 @@ describe("Model.find()", function () {
             describe("if an order is passed", function () {
                 before(setup);
 
-                it("should use it", function () {
+                it("should use it, default asc", function () {
                     var people = Person.find({
-                        surname: "Doe"
-                    }, {
-                        order: "age"
+                        where: {
+                            surname: "Doe"
+                        },
+                        orderBy: "age"
                     });
 
                     assert.isObject(people);
@@ -149,22 +154,24 @@ describe("Model.find()", function () {
                     assert.equal(people[0].age, 16);
                 });
 
-                it("should use it and ignore previously defined order", function () {
+                it("order desc", function () {
                     var people = Person.find({
-                        surname: "Doe"
-                    }, "-age", {
-                        order: "age"
+                        where: {
+                            surname: "Doe",
+                            age: {[Person.Op.lt]: 20}
+                        },
+                        orderBy: ["age", "desc"]
                     });
 
                     assert.isObject(people);
-                    assert.propertyVal(people, "length", 3);
-                    assert.equal(people[0].age, 16);
+                    assert.propertyVal(people, "length", 2);
+                    assert.equal(people[0].age, 18);
                 });
             });
         });
     });
 
-    describe("if defined static methods", function () {
+    xdescribe("if defined static methods", function () {
         before(setup);
 
         it("should be rechainable", function () {
@@ -188,7 +195,7 @@ describe("Model.find()", function () {
         });
     });
 
-    describe("with identityCache disabled", function () {
+    xdescribe("with identityCache disabled", function () {
         it("should not return singletons", function () {
             var people = Person.find({
                 name: "Jasmine"
@@ -208,32 +215,6 @@ describe("Model.find()", function () {
             }, {
                 identityCache: false
             });
-
-            assert.isObject(people);
-            assert.propertyVal(people, "length", 1);
-            assert.equal(people[0].name, "Jasmine");
-            assert.equal(people[0].surname, "Doe");
-        });
-    });
-
-    describe("when using Model", function () {
-        it("should work exactly the same", function () {
-            var people = Person.allSync({
-                surname: "Doe"
-            }, "-age", 1);
-
-            assert.isObject(people);
-            assert.propertyVal(people, "length", 1);
-            assert.equal(people[0].name, "Jasmine");
-            assert.equal(people[0].surname, "Doe");
-        });
-    });
-
-    describe("when using Model.where()", function () {
-        it("should work exactly the same", function () {
-            var people = Person.whereSync({
-                surname: "Doe"
-            }, "-age", 1);
 
             assert.isObject(people);
             assert.propertyVal(people, "length", 1);
