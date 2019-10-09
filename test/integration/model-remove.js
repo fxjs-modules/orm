@@ -1,17 +1,17 @@
 var helper   = require('../support/spec_helper');
 
-describe("Model.removeSync()", function() {
+describe("Model.remove()", function() {
   var db = null;
   var Person = null;
 
   var setup = function () {
-    return function (done) {
+    return function () {
       Person = db.define("person", {
         name   : String
       });
 
       return helper.dropSync(Person, function () {
-        Person.createSync([{
+        Person.create([{
           id  : 1,
           name: "Jeremy Doe"
         }, {
@@ -21,8 +21,6 @@ describe("Model.removeSync()", function() {
           id  : 3,
           name: "Jane Doe"
         }]);
-
-        done();
       });
     };
   };
@@ -35,7 +33,35 @@ describe("Model.removeSync()", function() {
     return db.close();
   });
 
-  describe("mockable", function() {
+  describe("runnable", function () {
+    beforeEach(setup());
+
+    it('remove all', () => {
+      assert.equal(Person.count(), 3);
+
+      Person.remove();
+      assert.equal(Person.count(), 0);
+    });
+
+    it('remove with conditions', () => {
+      assert.equal(Person.count(), 3);
+
+      Person.remove({
+        where: {
+          id: {
+            [Person.Op.gt]: 1
+          }
+        }
+      });
+      assert.equal(Person.count(), 1);
+      var rest_people = Person.find();
+
+      assert.equal(rest_people.length, 1);
+      assert.equal(rest_people[0].id, 1);
+    });
+  });
+
+  xdescribe("mockable", function() {
     before(setup());
 
     it("remove should be writable", function() {
@@ -43,19 +69,19 @@ describe("Model.removeSync()", function() {
         name: "John"
       });
       var removeCalled = false;
-      John.removeSync = function() {
+      John.remove = function() {
         removeCalled = true;
       };
-      John.removeSync();
+      John.remove();
       assert.equal(removeCalled,true);
     });
 
-    it("removeSync should be writable", function() {
+    it("remove should be writable", function() {
       var John = new Person({
         name: "John"
       });
       var removeCalled = false;
-      John.removeSync = function() {
+      John.remove = function() {
         removeCalled = true;
       };
       John.remove(function (err) {

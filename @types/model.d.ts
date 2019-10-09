@@ -483,6 +483,18 @@ declare namespace FxOrmModel {
             (kvItem: Fibjs.AnyObject[]): FxOrmInstance.Class_Instance[]
         }
         /**
+         * @description remove items corresponding to conditions
+         * 
+         * @param opts.where
+         * 
+         * @return remove count
+         */
+        remove (
+            opts?: {
+                where: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>['where']
+            }
+        ): number
+        /**
          * @description clear all data in remote endpoints
          */
         clear (): void

@@ -73,13 +73,12 @@ declare namespace FxOrmDML {
             ): T
         }
         remove: {
-            <T=any>(
+            <T=number>(
                 collection: string,
                 opts?: {
                     where: FxOrmQueries.WhereObject,
                     beforeQuery?: BeforeQueryItem | BeforeQueryItem[]
                 }
-                // conditions: FxSqlQuerySubQuery.SubQueryConditions
             ): T
         }
         clear: {

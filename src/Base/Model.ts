@@ -263,23 +263,23 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return !isMultiple ? instances[0] : instances;
     }
 
+    remove (opts?: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['remove']>) {
+        const { where = null } = opts || {};
+        
+        return this.$dml.remove(this.collection, { where })
+    }
+
     clear (): void {
         this.$dml.clear(this.collection)
     }
 
-    hasOne (
-        name,
-        model?,
-        opts?
-    ) {
+    hasOne (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['hasOne']>) {
         return null as any
     }
 
-    hasMany (
-        name,
-        model?,
-        opts?
-    ) {
+    hasMany (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['hasMany']>) {
+        const [ name, model, opts ] = args || [];
+
         const { type = 'o2m', reverse, ...restOpts } = opts || {} as typeof opts;
         const reverseKey = typeof reverse === 'string' ? reverse : `${this.name}s`
 
@@ -323,7 +323,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             }
         } = opts || {}
 
-        const mergeModel = new MergeModel({
+        const mergeModel: MergeModel = new MergeModel({
             name: name,
             collection: targetModel.collection,
             /**

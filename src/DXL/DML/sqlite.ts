@@ -1,16 +1,9 @@
 import Base from "../Base.class";
 import { configurable } from "../../Decorators/accessor";
-import { filterKnexBuilderBeforeQuery, filterResultAfterQuery } from "./_utils"
+import { filterKnexBuilderBeforeQuery, filterResultAfterQuery, filterWhereToKnexActions } from "./_utils"
 import { arraify } from "../../Utils/array";
 
 function HOOK_DEFAULT () {}
-interface T_DML_SQLite {
-    find: FxOrmDML.DMLDriver['find']
-    insert: FxOrmDML.DMLDriver['insert']
-    remove: FxOrmDML.DMLDriver['remove']
-    update: FxOrmDML.DMLDriver['update']
-    clear: FxOrmDML.DMLDriver['clear']
-}
 
 class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_SQLite> {
     dbdriver: FxDbDriverNS.SQLDriver;
@@ -27,7 +20,11 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
     find: FxOrmDML.DMLDriver['find'] = function (
         this: DML_SQLite,
         table,
-        {
+        opts?
+    ) {
+        filterWhereToKnexActions(opts);
+
+        const {
             fields,
             where,
             offset = undefined,
@@ -35,8 +32,8 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
             limit = undefined,
             orderBy = undefined,
             beforeQuery = HOOK_DEFAULT
-        } = {}
-    ) {
+        } = opts || {};
+
         let kbuilder = this.sqlQuery.knex(table)
 
         if (fields) kbuilder.select(fields)
@@ -82,13 +79,17 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
     count: FxOrmDML.DMLDriver['count'] = function (
         this: FxOrmDML.DMLDriver<Class_SQLite>,
         table,
-        {
+        opts?
+    ) {
+        filterWhereToKnexActions(opts)
+
+        const {
             where,
             countParams,
             beforeQuery = HOOK_DEFAULT,
-            filterQueryResult = (result) => Object.values(result[0])[0]
-        } = {}
-    ) {
+            filterQueryResult = (result: any) => Object.values(result[0])[0]
+        } = opts || {}
+
         let kbuilder = this.sqlQuery.knex(table)
 
         if (where)
@@ -168,26 +169,31 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
     remove: FxOrmDML.DMLDriver['remove'] = function (
         this: DML_SQLite,
         table,
-        {
+        opts?
+    ) {
+        filterWhereToKnexActions(opts)
+
+        const {
             where,
             beforeQuery = HOOK_DEFAULT
-        } = {
-            where: null
-        }
-    ) {
+        } = opts || {}
+
+        if (!where) return this.clear(table)
+
         let kbuilder = this.sqlQuery.knex(table)
 
-        if (!where)
-            throw new Error(`[DML:sqlite] where is required for remove`)
-        
         kbuilder.where.apply(kbuilder, arraify(where))
 
         kbuilder.delete()
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
 
-        return this.useConnection(connection => 
-            this.execSqlQuery(connection, kbuilder.toString())
+        const bTransResult = this.useConnection(connection => 
+            connection.trans(() => {
+                this.execSqlQuery(connection, kbuilder.toString());
+            })
         )
+
+        return bTransResult
     }
 
     clear: FxOrmDML.DMLDriver['clear'] = function(

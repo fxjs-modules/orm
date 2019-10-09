@@ -27,7 +27,7 @@ function t() {
     run('./integration/model-keys.js');
     run('./integration/model-one.js');
     // run('./integration/model-one.callback.js');
-    // run('./integration/model-remove.js');
+    run('./integration/model-remove.js');
     // run('./integration/model-remove.callback.js');
     // run('./integration/model-save.js');
     // run('./integration/model-save.callback.js');
