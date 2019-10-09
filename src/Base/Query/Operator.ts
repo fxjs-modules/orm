@@ -23,12 +23,14 @@ export const Operators = {
     // LIKE '%hat%'
     substring: Symbol('OPERATOR#substring'),
     
+    col: Symbol('OPERATOR#col'),
+}
+
+export const SpecOperators = {
     // REGEXP/~ '^[h|a|t]' (MySQL/PG only)
     regexp: Symbol('OPERATOR#regexp'),
     // NOT REGEXP/!~ '^[h|a|t]' (MySQL/PG only)
     notRegexp: Symbol('OPERATOR#notRegexp'),
-    
-    col: Symbol('OPERATOR#col'),
 }
 
 export const PgOperators = {

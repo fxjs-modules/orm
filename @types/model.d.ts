@@ -454,7 +454,6 @@ declare namespace FxOrmModel {
             ievents?: FxOrmInstance.InstanceConstructorOptions['events']
         })
         New: FxOrmTypeHelpers.ReturnItemOrArrayAccordingTo_1stParam<Fibjs.AnyObject | string | number, FxOrmInstance.Class_Instance>
-
         /* ddl about :start */
 
         /**
@@ -533,6 +532,8 @@ declare namespace FxOrmModel {
             type: 'association'
             association: Class_Model['associations'][any]
         } | null
+
+        buildQueryNormalizer(opts: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmQueries.Class_QueryNormalizer>[1]): FxOrmQueries.Class_QueryNormalizer
         /* utils :end */
 
         hasOne(

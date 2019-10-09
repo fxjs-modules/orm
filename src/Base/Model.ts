@@ -13,6 +13,7 @@ import { configurable } from '../Decorators/accessor';
 import { fillStoreDataToProperty, filterPropertyToStoreData } from '../DXL/DML/_utils';
 
 import { arraify } from '../Utils/array';
+import Class_QueryNormalizer from './Query/Normalizer';
 
 /**
  * @description Model is meta definition about database-like remote endpoints.
@@ -432,6 +433,12 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             }
 
         return null
+    }
+
+    buildQueryNormalizer(
+        opts: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['buildQueryNormalizer']>
+    ): FxOrmTypeHelpers.ReturnType<FxOrmModel.Class_Model['buildQueryNormalizer']> {
+        return new Class_QueryNormalizer(this.collection, opts)
     }
 }
 
