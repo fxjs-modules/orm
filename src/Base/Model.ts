@@ -65,7 +65,7 @@ function normalizeKeysInConfig (
     return keys.filter(x => !!x)
 }
 
-class Model implements FxOrmModel.Class_Model {
+class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     name: FxOrmModel.Class_Model['name']
     collection: FxOrmModel.Class_Model['collection']
 
@@ -154,6 +154,8 @@ class Model implements FxOrmModel.Class_Model {
     get queryBuilder () { return this.$ddl.sqlQuery.knex.queryBuilder() }
 
     constructor (config: FxOrmModel.Class_ModelConstructOptions) {
+        super()
+
         Object.defineProperty(this, 'name', { value: config.name })
         this.collection = config.collection;
         this.orm = config.orm;
@@ -431,7 +433,7 @@ class Model implements FxOrmModel.Class_Model {
     }
 }
 
-util.inherits(Model, Class_QueryBuilder)
+// util.inherits(Model, Class_QueryBuilder)
 
 class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     name: string

@@ -3,6 +3,8 @@ import SqlQuery = require('@fxjs/sql-query');
 
 import * as SYMBOLS from '../Utils/symbols';
 import { configurable } from '../Decorators/accessor';
+import { Operators } from './Query/Operator';
+import { arraify } from '../Utils/array';
 
 function transformToQCIfModel (
     target: Class_QueryBuilder,
@@ -35,7 +37,97 @@ function transformToQCIfModel (
     }
 }
 
-class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmModel.Class_QueryBuilder<TUPLE_ITEM> {
+function filterWhereToKnexActions (
+    opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>
+) {
+    if (!opts) return
+    const { where = null } = opts || {}
+    if (!where) return
+
+    const flattenedWhere: {[k: string]: Exclude<any, symbol>} = {};
+
+    // if (where[Operators.or])
+
+    const bQList = (opts.beforeQuery ? arraify(opts.beforeQuery) : []).filter(x => typeof x === 'function')
+
+    opts.beforeQuery = bQList
+    Object.keys(where).forEach((fieldName: string) => {
+        if (!util.isObject(where[fieldName])) {
+            flattenedWhere[fieldName] = where[fieldName];
+            return ;
+        }
+        // @todo: deal with array-type where[fieldName]
+
+        /**
+         * @notice all non-operator symbol-index(string, number) would be ignored
+         */
+        const fieldOpSyms = Object.getOwnPropertySymbols(where[fieldName])
+
+        // @todo: deal with case fieldName is symbol
+        const v = <any>where[fieldName];
+
+        // const oldBeforeQuery = opts.beforeQuery
+        bQList.push(function (builder, ctx) {
+            // if (typeof oldBeforeQuery === 'function') oldBeforeQuery.apply(null, arguments)
+
+            fieldOpSyms.forEach(symbol => {
+                switch (symbol) {
+                    case Operators.eq:
+                    case Operators.is:
+                        builder.where(fieldName, '=', v[Operators.eq])
+                        break
+                    case Operators.ne:
+                        // builder.whereNot(fieldName, '<>', v[Operators.ne])
+                        builder.whereNot(fieldName, '=', v[Operators.ne])
+                        break
+                    case Operators.gt:
+                        builder.where(fieldName, '>', v[Operators.gt])
+                        break
+                    case Operators.gte:
+                        builder.where(fieldName, '>=', v[Operators.gte])
+                        break
+                    case Operators.lt:
+                        builder.where(fieldName, '<', v[Operators.lt])
+                        break
+                    case Operators.lte:
+                        builder.where(fieldName, '<=', v[Operators.lte])
+                        break
+                    case Operators.in:
+                        builder.whereIn(fieldName, v[Operators.in])
+                        break
+                    case Operators.notIn:
+                        builder.whereNotIn(fieldName, v[Operators.notIn])
+                        break
+                    case Operators.between:
+                        builder.whereBetween(fieldName, v[Operators.between])
+                        break
+                    case Operators.notBetween:
+                        builder.whereNotBetween(fieldName, v[Operators.notBetween])
+                        break
+                    case Operators.like:
+                        builder.where(fieldName, 'like', v[Operators.like])
+                        break
+                    case Operators.startsWith:
+                        builder.where(fieldName, 'like', `${v[Operators.like]}%`)
+                        break
+                    case Operators.endsWith:
+                        builder.where(fieldName, 'like', `%${v[Operators.like]}`)
+                        break
+                    case Operators.substring:
+                        builder.where(fieldName, 'like', `%${v[Operators.like]}%`)
+                        break
+                    case Operators.notLike:
+                        builder.whereNot(fieldName, 'like', v[Operators.notLike])
+                        break
+                }
+            });
+        })
+    });
+
+    opts.where = flattenedWhere
+}
+
+class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBuilder<TUPLE_ITEM> {
     private _tuples: TUPLE_ITEM[] = [];
 
     model: any;
@@ -64,6 +156,8 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmModel.Class_QueryBuil
     find (
         opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']> = {}
     ): TUPLE_ITEM[] {
+        filterWhereToKnexActions(opts)
+        
         const results = this.model.$dml.find(this.model.collection, opts)
 
         this._tuples = results.map((x: TUPLE_ITEM) => {
@@ -112,6 +206,8 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmModel.Class_QueryBuil
     count (
         opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['count']> = {}
     ): number {
+        filterWhereToKnexActions(opts)
+
         return this.model.$dml.count(
             this.model.collection,
             opts

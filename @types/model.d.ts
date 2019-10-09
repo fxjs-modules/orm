@@ -7,6 +7,7 @@
 /// <reference path="instance.d.ts" />
 /// <reference path="settings.d.ts" />
 /// <reference path="query.d.ts" />
+/// <reference path="Queries.d.ts" />
 
 declare namespace FxOrmModel {
     type ModelInstanceConstructorOptions = (string | number | FxOrmInstance.InstanceDataPayload)[]
@@ -379,27 +380,8 @@ declare namespace FxOrmModel {
         cascadeRemove?: boolean
     }
 
-    // next generation model :start
-    class Class_QueryBuilder<T_RETURN = any> {
-        readonly notQueryBuilder: boolean
-
-        model: any;
-        conditions: any;
-        sqlQuery: FxSqlQuery.Class_Query
-        
-        getQueryBuilder (): Class_QueryBuilder<T_RETURN>
-
-        find (opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>): T_RETURN[]
-        count (opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['count']>): number
-        get (id?: string | number): T_RETURN
-        
-        first (): T_RETURN
-        last (): T_RETURN
-        all (): T_RETURN[]
-    }
-
     type Class_ModelConstructOptions = FxOrmTypeHelpers.ConstructorParams<typeof FxOrmModel.Class_Model>[0]
-    class Class_Model {
+    class Class_Model extends FxOrmQueries.Class_QueryBuilder {
         name: string
         collection: string
 

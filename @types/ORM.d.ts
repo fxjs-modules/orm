@@ -335,6 +335,9 @@ declare namespace FxOrmNS {
 
     /* next generation :start */
     class Class_ORM<ConnType = any> {
+        static Op: {
+            [k: string]: Symbol
+        }
         /**
          * @description create one orm, but never do any real connection
          */

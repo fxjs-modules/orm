@@ -8,23 +8,26 @@
 /// <reference path="query.d.ts" />
 
 declare namespace FxOrmDML {
+    // type WhereObject = FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['where']>
+    type BeforeQueryItem = (
+        builer: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>,
+        ctx: { dml: DMLDriver }
+    ) => typeof builer | void
+
     class DMLDriver<ConnType = any> extends FxOrmDXL.DXLDriver<ConnType> {
         // uid: string
         find: {
             <T=Fibjs.AnyObject[]>(
                 collection: string,
                 opts?: {
-                    where?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['where']>,
+                    where?: FxOrmQueries.WhereObject,
                     fields?: FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['select']>,
 
                     offset?: FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['offset']>
                     limit?: FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['limit']>
                     orderBy?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['orderBy']>
 
-                    beforeQuery?: (
-                        builer: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>,
-                        ctx: { dml: DMLDriver }
-                    ) => typeof builer | void
+                    beforeQuery?: BeforeQueryItem | BeforeQueryItem[]
                 }
             ): T
         }
@@ -32,15 +35,22 @@ declare namespace FxOrmDML {
             <T=number>(
                 collection: string,
                 opts?: {
-                    where?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['where']>,
+                    where?: FxOrmQueries.WhereObject,
                     countParams?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['count']>
-                    beforeQuery?: (
-                        builer: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>,
-                        ctx: { dml: DMLDriver }
-                    ) => typeof builer | void
+                    beforeQuery?: BeforeQueryItem | BeforeQueryItem[]
                     filterQueryResult?: <T2 = any>(result: any) => T2
                 }
             ): number
+        }
+        exists: {
+            <T=boolean>(
+                collection: string,
+                opts?: {
+                    where?: FxOrmQueries.WhereObject,
+                    beforeQuery?: BeforeQueryItem | BeforeQueryItem[]
+                    filterQueryResult?: <T2 = any>(result: any) => T2
+                }
+            ): boolean
         }
         insert: {
             (
@@ -48,10 +58,7 @@ declare namespace FxOrmDML {
                 data: FxSqlQuerySql.DataToSet,
                 opts?: {
                     idPropertyList?: FxOrmProperty.NormalizedProperty[],
-                    beforeQuery?: (
-                        builer: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>,
-                        ctx: { dml: DMLDriver }
-                    ) => typeof builer | void
+                    beforeQuery?: BeforeQueryItem | BeforeQueryItem[]
                 }
             ): FxOrmQuery.InsertResult
         }
@@ -60,11 +67,8 @@ declare namespace FxOrmDML {
                 collection: string,
                 changes: FxSqlQuerySql.DataToSet,
                 opts?: {
-                    where?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['where']>,
-                    beforeQuery?: (
-                        builer: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>,
-                        ctx: { dml: DMLDriver }
-                    ) => typeof builer | void
+                    where?: FxOrmQueries.WhereObject,
+                    beforeQuery?: BeforeQueryItem | BeforeQueryItem[]
                 }
             ): T
         }
@@ -72,11 +76,8 @@ declare namespace FxOrmDML {
             <T=any>(
                 collection: string,
                 opts?: {
-                    where: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['where']>,
-                    beforeQuery?: (
-                        builer: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>,
-                        ctx: { dml: DMLDriver }
-                    ) => typeof builer | void
+                    where: FxOrmQueries.WhereObject,
+                    beforeQuery?: BeforeQueryItem | BeforeQueryItem[]
                 }
                 // conditions: FxSqlQuerySubQuery.SubQueryConditions
             ): T

@@ -52,6 +52,59 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
         )
     }
 
+    exists (
+        collection: string,
+        {
+            where = null
+        } = {}
+    ) {
+        const results = this.find(
+            collection,
+            {
+                // don't read all fields
+                fields: where ? Object.keys(where) : [],
+                beforeQuery: (builder) => {
+                    if (!where || !Object.keys(where).length)
+                        throw new Error('[DML::exists] no any where query where-conditions generated in this instance, examine your where-conditions input')
+
+                    builder.where(where)
+                }
+            }
+        )
+
+        return !!results.length
+    }
+
+    count: FxOrmDML.DMLDriver['count'] = function (
+        this: FxOrmDML.DMLDriver<Class_SQLite>,
+        table,
+        {
+            where,
+            countParams,
+            beforeQuery = HOOK_DEFAULT,
+            filterQueryResult = (result) => Object.values(result[0])[0]
+        } = {}
+    ) {
+        let kbuilder = this.sqlQuery.knex(table)
+
+        if (where)
+            kbuilder.where.apply(kbuilder, arraify(where))
+        
+        if (countParams)
+            kbuilder.count.apply(kbuilder, arraify(countParams))
+        else
+            kbuilder.count()
+
+        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
+
+        return filterResultAfterQuery(
+            this.useConnection(connection => 
+                this.execSqlQuery(connection, kbuilder.toString(), [])
+            ),
+            filterQueryResult
+        );
+    }
+
     insert: FxOrmDML.DMLDriver['insert'] = function (
         this: DML_SQLite,
         table,
@@ -131,36 +184,6 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
         return this.useConnection(connection => 
             this.execSqlQuery(connection, kbuilder.toString())
         )
-    }
-
-    count: FxOrmDML.DMLDriver['count'] = function (
-        this: FxOrmDML.DMLDriver<Class_SQLite>,
-        table,
-        {
-            where,
-            countParams,
-            beforeQuery = HOOK_DEFAULT,
-            filterQueryResult = (result) => Object.values(result[0])[0]
-        } = {}
-    ) {
-        let kbuilder = this.sqlQuery.knex(table)
-
-        if (where)
-            kbuilder.where.apply(kbuilder, arraify(where))
-        
-        if (countParams)
-            kbuilder.count.apply(kbuilder, arraify(countParams))
-        else
-            kbuilder.count()
-
-        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
-
-        return filterResultAfterQuery(
-            this.useConnection(connection => 
-                this.execSqlQuery(connection, kbuilder.toString(), [])
-            ),
-            filterQueryResult
-        );
     }
 
     clear: FxOrmDML.DMLDriver['clear'] = function(

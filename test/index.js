@@ -5,6 +5,7 @@ test.setup();
 
 function t() {
     run('./integration/orm-exports.js');
+    run('./integration/orm-operator.js');
 
     run('./integration/utils-linked-list.js');
 

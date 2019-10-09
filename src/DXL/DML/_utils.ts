@@ -26,18 +26,26 @@ export function fillStoreDataToProperty (
 }
 
 export function filterKnexBuilderBeforeQuery (
-	builer: any,
-	beforeQuery: Function,
+	builder: any,
+	beforeQuery: Function | Function[],
 	ctx?: any
 ) {
-	if (typeof beforeQuery === 'function') {
-		const kqbuilder = beforeQuery(builer, ctx)
+	if (Array.isArray(beforeQuery)) {
+		beforeQuery.forEach(bQ => {
+			builder = filterKnexBuilderBeforeQuery(builder, bQ, ctx)
+		})
 
-		if (kqbuilder)
-			builer = kqbuilder
+		return builder
 	}
 
-	return builer
+	if (typeof beforeQuery === 'function') {
+		const kqbuilder = beforeQuery(builder, ctx)
+
+		if (kqbuilder)
+			builder = kqbuilder
+	}
+
+	return builder
 }
 
 export function filterResultAfterQuery (
