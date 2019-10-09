@@ -73,7 +73,6 @@ function filterWhereToKnexActions (
             fieldOpSyms.forEach(symbol => {
                 switch (symbol) {
                     case Operators.eq:
-                    case Operators.is:
                         builder.where(fieldName, '=', v[Operators.eq])
                         break
                     case Operators.ne:
@@ -91,6 +90,12 @@ function filterWhereToKnexActions (
                         break
                     case Operators.lte:
                         builder.where(fieldName, '<=', v[Operators.lte])
+                        break
+                    case Operators.is:
+                        builder.where(fieldName, v[Operators.is])
+                        break
+                    case Operators.not:
+                        builder.whereNot(fieldName, v[Operators.not])
                         break
                     case Operators.in:
                         builder.whereIn(fieldName, v[Operators.in])
