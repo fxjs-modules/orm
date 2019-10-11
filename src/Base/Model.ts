@@ -481,6 +481,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
         switch (this.type) {
             case 'o2m':
                 _ids = Array.from(new Set(super.ids.concat(this.targetModel.ids)))
+                break
             case 'm2m':
                 _ids = [this.sourceJoinKey, this.targetJoinKey]
                 break

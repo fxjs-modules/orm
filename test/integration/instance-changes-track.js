@@ -5,7 +5,7 @@ describe("Instance Changes Track", function () {
     var db = null;
     var Pet = null;
     var Person = null;
-    var associationModel = null
+    var PersonPets = null
 
     function setup() {
         Person = db.define("person", {
@@ -17,7 +17,7 @@ describe("Instance Changes Track", function () {
                 defaultValue: "Mutt"
             }
         });
-        associationModel = Person.o2m("pets", { model: Pet });
+        PersonPets = Person.o2m("pets", { model: Pet });
 
         Person.drop();
         Pet.drop();
