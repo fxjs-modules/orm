@@ -416,15 +416,6 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return kvs
     }
 
-    filterAssociationProperties (): any {
-        return {
-            o2o: [],
-            o2m: [],
-            m2m: [],
-            m2o: [],
-        }
-    }
-
     addProperty (name: string, property: FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['addProperty']>) {
         if (this.fieldInfo(name))
             throw new Error(`[Model] property '${name}' existed in model '${this.name}'`)

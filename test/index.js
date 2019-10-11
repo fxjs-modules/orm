@@ -10,6 +10,7 @@ function t() {
     run('./integration/utils-linked-list.js');
 
     run('./integration/model-property.js');
+    run('./integration/model-apis.js');
     run('./integration/model-build_query_normalizer.js');
     
     // run('./integration/model-aggregate.js');
