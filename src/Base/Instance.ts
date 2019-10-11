@@ -235,8 +235,6 @@ class Instance implements FxOrmInstance.Class_Instance {
             this.$model.collection,
             { where }
         )
-        
-        return false
     }
 
     toJSON () {

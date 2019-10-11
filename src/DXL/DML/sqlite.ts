@@ -149,11 +149,15 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
         this: DML_SQLite,
         table,
         changes,
-        {
+        opts?
+    ) {
+        filterWhereToKnexActions(opts)
+        
+        const {
             where,
             beforeQuery = HOOK_DEFAULT
-        } = {}
-    ) {
+        } = opts || {}
+
         let kbuilder = this.sqlQuery.knex(table)
 
         if (where) kbuilder.where.apply(kbuilder, arraify(where))

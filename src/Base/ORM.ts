@@ -143,20 +143,14 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
      * @description sync all model in this.models to remote endpoints
      */
     sync () {
-        coroutine.parallel(
-            Object.values(this.models),
-            (model: Model) => model.sync()
-        )
+        Object.values(this.models).forEach(model => model.sync())
     }
 
     /**
      * @description sync all model in this.models from remote endpoints
      */
     drop () {
-        coroutine.parallel(
-            Object.values(this.models),
-            (model: Model) => model.drop()
-        )
+        Object.values(this.models).forEach(model => model.drop())
     }
 
     close (): void {

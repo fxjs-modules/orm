@@ -3,6 +3,7 @@ import SqlQuery = require('@fxjs/sql-query');
 
 import * as SYMBOLS from '../Utils/symbols';
 import { configurable } from '../Decorators/accessor';
+import { buildDescriptor } from '../Decorators/property';
 
 function transformToQCIfModel (
     target: Class_QueryBuilder,
@@ -40,6 +41,7 @@ function isIdsInput (id: any) {
 }
 
 class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBuilder<TUPLE_ITEM> {
+    @buildDescriptor({ enumerable: false, configurable: false })
     private _tuples: TUPLE_ITEM[] = [];
 
     model: any;
