@@ -461,6 +461,10 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     ): FxOrmTypeHelpers.ReturnType<FxOrmModel.Class_Model['buildQueryNormalizer']> {
         return new Class_QueryNormalizer(this.collection, opts)
     }
+
+    defineMergeModel (opts: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['defineMergeModel']>) {
+        return null as any   
+    }
 }
 
 // util.inherits(Model, Class_QueryBuilder)

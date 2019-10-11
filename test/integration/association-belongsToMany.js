@@ -41,7 +41,7 @@ odescribe("Association belongsToMany", function () {
         db.close();
     });
 
-    odescribe("Model existence", function () {
+    describe("Model existence", function () {
         before(setup);
 
         it("association models has corresponding association", function () {
@@ -83,7 +83,7 @@ odescribe("Association belongsToMany", function () {
         });
     });
 
-    odescribe("Association", function () {
+    describe("Association", function () {
         before(setup);
 
         it('merge model has association property', function () {
@@ -104,10 +104,10 @@ odescribe("Association belongsToMany", function () {
         });
     });
 
-    odescribe("if element has an PersonPets", function () {
+    describe("if element has an PersonPets", function () {
         before(setup);
 
-        oit("should also create it or save it", function () {
+        it("should also create it or save it", function () {
             var John = Person.create({
                 name: "John Doe",
                 pets: [Pet.New({

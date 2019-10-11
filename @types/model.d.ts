@@ -575,6 +575,39 @@ declare namespace FxOrmModel {
                 matchKeys?: FxOrmAssociation.AssociationMatchCondition | FxOrmAssociation.AssociationMatchCondition[]
             }
         ): Class_MergeModel
+
+        defineMergeModel (
+            opts: {
+                source: {
+                    model: Class_Model,
+                    foreignKey: string | string[]
+                },
+                target: {
+                    model: Class_Model
+                    foreignKey: string | string[]
+                },
+                onFind: (
+                    ctx: {
+                        sourceModel: Class_Model,
+                        sourceModelKeys: string[],
+                        targetModel: Class_Model,
+                        targetModelKeys: string[],
+                        mergeModel: Class_MergeModel,
+                    }
+                ) => FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['find']>,
+                onSourceInstanceSave: ({
+                    sourceModel: Class_Model,
+                    sourceModelKeys: string[],
+                    sourceInstance: FxOrmInstance.Class_Instance,
+
+                    targetModel: Class_Model,
+                    targetModelKeys: string[],
+                    targetInstance: FxOrmInstance.Class_Instance,
+
+                    mergeModel: Class_MergeModel,
+                }),
+            }
+        ): Class_MergeModel
     }
     /**
      * @description generated on building association
