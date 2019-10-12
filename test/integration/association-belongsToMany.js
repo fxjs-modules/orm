@@ -1,7 +1,7 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-odescribe("Association belongsToMany", function () {
+describe("Association belongsToMany", function () {
     var db = null;
     var Pet = null;
     var Person = null;

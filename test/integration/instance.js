@@ -93,8 +93,8 @@ describe("Model instance", function () {
                 identityCache: false
             });
 
-            item.hasOne("main_item", {
-                model: main_item,
+            item.hasOne(main_item, {
+                as: "main_item",
                 config: {
                     reverse: "items",
                     autoFetch: true

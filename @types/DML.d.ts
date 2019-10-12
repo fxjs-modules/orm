@@ -68,6 +68,7 @@ declare namespace FxOrmDML {
                 changes: FxSqlQuerySql.DataToSet,
                 opts?: {
                     where?: FxOrmQueries.WhereObject,
+                    idPropertyList?: FxOrmProperty.NormalizedProperty[],
                     beforeQuery?: BeforeQueryItem | BeforeQueryItem[]
                 }
             ): T

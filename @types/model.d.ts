@@ -423,7 +423,6 @@ declare namespace FxOrmModel {
         readonly keyPropertyNames: string[]
         readonly keyPropertyList: FxOrmProperty.Class_Property[]
         readonly keys: string[]
-        readonly associationKeys: string[]
 
         readonly _symbol: Symbol
         readonly $dml: FxOrmDML.DMLDriver
@@ -453,6 +452,14 @@ declare namespace FxOrmModel {
             validations?: FxOrmValidators.IValidatorHash
             ievents?: FxOrmInstance.InstanceConstructorOptions['events']
         })
+
+        /**
+         * @description create one instance from data input
+         * 
+         * if input is just one instance, New() would create the new one rather than use old one
+         * 
+         * @param input dataset for create one instance
+         */
         New: FxOrmTypeHelpers.ReturnItemOrArrayAccordingTo_1stParam<Fibjs.AnyObject | string | number, FxOrmInstance.Class_Instance>
         /* ddl about :start */
 
@@ -537,10 +544,9 @@ declare namespace FxOrmModel {
         /* utils :end */
 
         hasOne(
-            name: string,
-            model?: FxOrmModel.Class_Model,
+            model: FxOrmModel.Class_Model,
             opts?: {
-                model?: FxOrmModel.Class_Model,
+                as?: string,
                 associationKey?: string | ((ctx: any) => string)
             }
         ): FxOrmTypeHelpers.ReturnType<FxOrmModel.Class_Model['o2m']>
@@ -663,7 +669,7 @@ declare namespace FxOrmModel {
         isTarget (model: Class_Model): boolean
 
         saveForSource (opts: {
-            associationDataSet: Fibjs.AnyObject,
+            targetDataSet: Fibjs.AnyObject | FxOrmInstance.Class_Instance,
             sourceInstance: FxOrmInstance.Class_Instance
         }): void
         // joinFind (): any

@@ -1,4 +1,5 @@
 import util = require('util');
+import events = require('events');
 import coroutine = require('coroutine');
 
 import LinkedList from '../Utils/linked-list';
@@ -7,15 +8,18 @@ import * as DecoratorsProperty from '../Decorators/property';
 import { isEmptyPlainObject } from '../Utils/object';
 import Property from './Property';
 
+const { EventEmitter } = events
+
 const REVERSE_KEYS = [
+    /* base operator from EventEmitter :start */
+    'on',
+    'off',
+    /* base operator from EventEmitter :end */
+
     'set',
     'get',
     'save',
     'exists',
-    // 'saveo2o',
-    // 'savem2m',
-    // 'savem2m',
-    // 'savem2o',
     'remove',
     '$clearChanges',
     'toJSON',
@@ -23,7 +27,7 @@ const REVERSE_KEYS = [
 ];
 
 function pushChange (
-    inst: Instance,
+    inst: FxOrmInstance.Class_Instance,
     fieldName: string,
     payload: {
         via_path: string,
@@ -49,11 +53,13 @@ function clearChanges(
 
     inst.$changes[fieldName].clear();
 }
-class Instance implements FxOrmInstance.Class_Instance {
+class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
     @DecoratorsProperty.buildDescriptor({ enumerable: false })
     $model: FxOrmModel.Class_Model
     
-    // TOOD: only allow settting fields of Model.properties into it.
+    /**
+     * only allow settting fields of Model.properties into it.
+     */
     $kvs: Fibjs.AnyObject = {}
     
     @DecoratorsProperty.buildDescriptor({ enumerable: false })
@@ -110,15 +116,21 @@ class Instance implements FxOrmInstance.Class_Instance {
     
     get $dml () { return this.$model.$dml }
 
-    constructor (
-        model: any,
-        instanceBase: Fibjs.AnyObject
-    ) {
+    constructor (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmInstance.Class_Instance>) {
+        super()
+
+        let [model, instanceBase] = args || []
+
+        if (Array.isArray(instanceBase))
+            return instanceBase.map(x => new Instance(model, x)) as any
+
         if (instanceBase instanceof Instance)
             instanceBase = instanceBase.toJSON()
 
         this.$kvs = {...instanceBase}
         Object.defineProperty(this, '$model', { configurable: true, enumerable: false, writable: false, value: model })
+
+        return getInstance(this) as any;
     }
 
     set (prop: string | string[], value: any) {
@@ -135,6 +147,9 @@ class Instance implements FxOrmInstance.Class_Instance {
     save (
         dataset: Fibjs.AnyObject = this.$kvs
     ): any {
+        if (dataset !== undefined && typeof dataset !== 'object')
+            throw new Error(`[Instance::save] invalid save arguments ${dataset}, it should be non-empty object or undefined`)
+            
         if (Array.isArray(dataset))
             return coroutine.parallel(dataset, (prop: Fibjs.AnyObject) => {
                 return this.save(prop)
@@ -171,11 +186,21 @@ class Instance implements FxOrmInstance.Class_Instance {
             .toSingleton()
             .useTrans((dml: any) => {
                 if (this.$isPersisted && this.exists()) {
+                    const changes = this.$model.normalizePropertiesToData(dataset);
+                    const whereCond = <typeof changes>{};
+
+                    Object.values(this.$model.idPropertyList).forEach(property => {
+                        if (changes.hasOwnProperty(property.mapsTo)) {
+                            whereCond[property.mapsTo] = changes[property.mapsTo]
+                            delete changes[property.mapsTo];
+                        }
+                    });
+
                     dml.update(
                         this.$model.collection,
-                        this.$model.normalizePropertiesToData(dataset),
-                        { idPropertyList: this.$model.idPropertyList }
-                    )
+                        changes,
+                        { where: whereCond }
+                    );
                 } else {
                     const insertResult = dml.insert(
                         this.$model.collection,
@@ -193,15 +218,28 @@ class Instance implements FxOrmInstance.Class_Instance {
                 this.$model.filterOutAssociatedData(dataset)
                     .forEach(item => {
                         const assocModel = item.association
+                        
                         assocModel.saveForSource({
-                            associationDataSet: item.dataset,
+                            targetDataSet: item.dataset,
                             sourceInstance: this
-                        })
+                        });
+
+                        /**
+                         * @whatif item.dataset is array of Instance
+                         */
+                        if (item.dataset instanceof Instance) {
+                            item.dataset.$model.propertyList.forEach(property => {
+                                if (this[item.association.name].$kvs.hasOwnProperty(property.name))
+                                    item.dataset[property.name] = this[item.association.name].$kvs[property.name]
+                            });
+                        }
                     })
             })
             .releaseSingleton()
 
         this.$clearChanges()
+
+        super.emit('saved')
 
         return this
     }
@@ -259,18 +297,9 @@ function isInternalProp (prop: string) {
     return prop.startsWith('$') || prop.startsWith('_')
 }
 
-export const getInstance: FxOrmTypeHelpers.ReturnItemOrArrayAccordingTo_2ndParam<
-    Fibjs.AnyObject,
-    FxOrmInstance.Class_Instance
-> = function (
-    model: any,
-    instanceBase = {}
+const getInstance = function (
+    instance: FxOrmInstance.Class_Instance,
 ) {
-    if (Array.isArray(instanceBase))
-        return instanceBase.map(x => getInstance(model, x)) as any
-    
-    const instance = new Instance(model, instanceBase)
-
     function getPhHandler ({
         parent_path = '',
         track_$kv = false,
@@ -388,7 +417,7 @@ export const getInstance: FxOrmTypeHelpers.ReturnItemOrArrayAccordingTo_2ndParam
                     return prop in target;
 
                 return prop in target.$kvs;
-            },
+            }
             // enumerate (target: typeof instanceBase) {
             //     return Object.keys(target.$kvs);
             // },
@@ -397,3 +426,5 @@ export const getInstance: FxOrmTypeHelpers.ReturnItemOrArrayAccordingTo_2ndParam
 
     return new Proxy(instance, getPhHandler({ parent_path: '' ,track_$kv: true }))
 }
+
+export default Instance

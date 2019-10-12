@@ -2,6 +2,7 @@ import Base from "../Base.class";
 import { configurable } from "../../Decorators/accessor";
 import { filterKnexBuilderBeforeQuery, filterResultAfterQuery, filterWhereToKnexActions } from "./_utils"
 import { arraify } from "../../Utils/array";
+import { isEmptyPlainObject } from "../../Utils/object";
 
 function HOOK_DEFAULT () {}
 
@@ -162,6 +163,9 @@ class DML_SQLite extends Base<Class_SQLite> implements FxOrmDML.DMLDriver<Class_
 
         if (where) kbuilder.where.apply(kbuilder, arraify(where))
 
+        if (isEmptyPlainObject(changes))
+            throw new Error(`[DML_SQLite::update] invalid changes input given! it must be non-empty object`);
+            
         kbuilder.update(changes)
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
 
