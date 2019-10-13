@@ -4,7 +4,6 @@ import coroutine = require('coroutine');
 import DDLSync = require('@fxjs/sql-ddl-sync');
 
 import Class_QueryBuilder from './QueryBuilder';
-// import { getInstance } from './Instance';
 import Instance from './Instance';
 
 import * as SYMBOLS from '../Utils/symbols';
@@ -80,15 +79,23 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     @configurable(false)
     get propertyNames (): string[] {
         return Object.keys(this.properties)
-    }
+    }    
     /**
-     * @description all field properties
+     * @description all properties
      */
     @configurable(false)
     get propertyList () {
         return Object.values(this.properties)
     }
+    
     associations: FxOrmModel.Class_Model['associations'] = {};
+    /**
+     * @description all association names
+     */
+    @configurable(false)
+    get associationNames (): string[] {
+        return Object.keys(this.associations)
+    }
 
     settings: any
 
@@ -217,19 +224,6 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
          */
         syncor.defineCollection(this.collection, this.properties)
 
-        // /* avoid loop */
-        // if (!this.hasOwnProperty('associationInfo')) {
-        //     let assocProperties: FxOrmModel.Class_MergeModel['properties'];
-        //     Object.values(this.associations)
-        //         .forEach(assoc => {
-        //             if (assoc.associationInfo.collection !== this.collection) return;
-
-        //             assocProperties = assocProperties || {};
-        //         })
-
-        //     if (assocProperties) syncor.defineCollection(this.collection, assocProperties)
-        // }
-
         syncor.sync()
 
         /* avoid loop */
@@ -332,13 +326,11 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             orm: this.orm,
             properties: {},
             settings: this.settings.clone(),
-            matchKeys: [
-                {
-                    source: `${asKey}_id`,
-                    target: targetModel.id,
-                    comparator: '='
-                }
-            ],
+            matchKeys: {
+                source: `${asKey}_id`,
+                target: targetModel.id,
+                comparator: '='
+            },
 
             mergeCollection: this.collection,
             type: 'o2o',
@@ -376,7 +368,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             orm: this.orm,
             properties: {},
             settings: this.settings.clone(),
-            matchKeys: arraify(matchKeys),
+            matchKeys: matchKeys,
 
             mergeCollection: targetModel.collection,
             type: 'o2m',
@@ -400,7 +392,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         if (targetModel.fieldInfo(asKey))
             throw new Error(`[MergeModel::belongsToMany] target model(collection: ${targetModel.collection}) already has field "${asKey}", it's not allowed to add one associated field to it.`)
 
-        const { matchKeys = [] } = opts || {}
+        const { matchKeys = undefined } = opts || {}
 
         const mergeModel: MergeModel = new MergeModel({
             name: asKey,
@@ -412,7 +404,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             orm: this.orm,
             properties: {},
             settings: this.settings.clone(),
-            matchKeys: arraify(matchKeys),
+            matchKeys: matchKeys,
 
             mergeCollection: collection,
             type: 'm2m',
@@ -451,6 +443,14 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         })
 
         return kvs
+    }
+
+    normlizeAssociationData (dataset: Fibjs.AnyObject = {}, refs: Fibjs.AnyObject = {}) {
+        this.associationNames.forEach(assocName => {
+            if (dataset.hasOwnProperty(assocName)) refs[assocName] = dataset[assocName]
+        })
+
+        return refs
     }
 
     filterOutAssociatedData (dataset: Fibjs.AnyObject = {}) {
@@ -583,19 +583,17 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                      * @whatif use lonely merge Table
                      */
                     ;(() => {
-                        this.associationInfo.andMatchKeys.forEach(x => {
-                            const tProperty = this.targetModel.properties[x.target]
-                            if (!tProperty)
-                                throw new Error(`[MergetModel::constructor/o2o] no target property "${x.target}" in target model, check your definition about 'andMatchKeys'`)
+                        const tProperty = this.targetModel.properties[matchKeys.target]
+                        if (!tProperty)
+                            throw new Error(`[MergetModel::constructor/o2o] no target property "${matchKeys.target}" in target model, check your definition about 'andMatchKeys'`)
 
-                            this.addProperty(
-                                x.source,
-                                tProperty
-                                    .renameTo({ name: x.source })
-                                    .useForAssociationMatch()
-                                    .deKeys()
-                            )
-                        })
+                        this.addProperty(
+                            matchKeys.source,
+                            tProperty
+                                .renameTo({ name: matchKeys.source })
+                                .useForAssociationMatch()
+                                .deKeys()
+                        )
 
                         this.sourceModel.propertyList.forEach(sProperty => {
                             if (this.fieldInfo(sProperty.name)) return ;
@@ -618,23 +616,20 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                      * @whatif use lonely merge Table
                      */
                     ;(() => {
-                        this.associationInfo.andMatchKeys.forEach(x => {
-                            // don't add property when it existed.
-                            if (this.targetModel.fieldInfo(x.target))
-                                return ;
-                            
-                            const sProperty = this.sourceModel.properties[x.source]
-                            if (!sProperty)
-                                throw new Error(`[MergetModel::constructor/o2m] no src property "${x.source}" in source model, check your definition about 'andMatchKeys'`)
+                        if (this.targetModel.fieldInfo(matchKeys.target))
+                            return ;
+                        
+                        const sProperty = this.sourceModel.properties[matchKeys.source]
+                        if (!sProperty)
+                            throw new Error(`[MergetModel::constructor/o2m] no src property "${matchKeys.source}" in source model, check your definition about 'andMatchKeys'`)
 
-                            this.addProperty(
-                                x.target,
-                                sProperty
-                                    .renameTo({ name: x.target })
-                                    .useForAssociationMatch()
-                                    .deKeys()
-                            )
-                        })
+                        this.addProperty(
+                            matchKeys.target,
+                            sProperty
+                                .renameTo({ name: matchKeys.target })
+                                .useForAssociationMatch()
+                                .deKeys()
+                        )
 
                         this.targetModel.propertyList.forEach(tProperty => {
                             if (this.fieldInfo(tProperty.name)) return ;
@@ -715,6 +710,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     }: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['saveForSource']>) {
         let inputs = <FxOrmInstance.Class_Instance[]>[]
         let targetInstances = []
+        const matchCond = this.associationInfo.andMatchKeys
 
         switch (this.type) {
             case 'o2o':
@@ -729,9 +725,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
 
                         const mergeInst = this.New(sourceInstance.toJSON())
 
-                        this.associationInfo.andMatchKeys.forEach(matchCond => {
-                            mergeInst[matchCond.source] = targetInst[matchCond.target]
-                        });
+                        mergeInst[matchCond.source] = targetInst[matchCond.target]
 
                         mergeInst.$save();
 
@@ -748,10 +742,8 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                 targetInstances = coroutine.parallel(
                     inputs,
                     (targetInst: FxOrmInstance.Class_Instance) => {
-                        this.associationInfo.andMatchKeys.forEach(matchCond => {
-                            if (!sourceInstance[matchCond.source]) return ;
-                            targetInst[matchCond.target] = sourceInstance[matchCond.source]
-                        })
+                        if (!sourceInstance[matchCond.source]) return ;
+                        targetInst[matchCond.target] = sourceInstance[matchCond.source]
 
                         this.targetModel.propertyList.forEach(property => {
                             // targetInst[property.name] = sourceInstance[property.name]
@@ -792,6 +784,65 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                 sourceInstance[this.name] = this.targetModel.New(targetInstances)
                 break
         }
+    }
+
+    findForSource ({
+        sourceInstance = null
+    }: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['saveForSource']>) {
+        const whereCond = <any>{};
+        const matchCond = this.associationInfo.andMatchKeys
+
+        switch (this.type) {
+            case 'o2o':
+                const mergeInst = this.New({
+                    [this.sourceModel.id]: sourceInstance[this.sourceModel.id]
+                });
+
+                mergeInst.$fetch();
+                
+                const targetInst = this.targetModel.New({
+                    [this.targetModel.id]: this[this.targetModel.id]
+                });
+
+                if (mergeInst[matchCond.source] === null) {
+                    sourceInstance[this.name] = null;
+                    break
+                }
+
+                targetInst[matchCond.target] = mergeInst[matchCond.source]
+                targetInst.$fetch();
+
+                sourceInstance[this.name] = targetInst;
+                break
+            default:
+                break
+        }
+
+        return sourceInstance
+    }
+
+    removeForSource ({
+        sourceInstance = null
+    }: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['saveForSource']>) {
+        const whereCond = <any>{};
+        const matchCond = this.associationInfo.andMatchKeys
+
+        switch (this.type) {
+            case 'o2o':
+                const mergeInst = this.New({
+                    [this.sourceModel.id]: sourceInstance[this.sourceModel.id]
+                });
+
+                mergeInst.$fetch();
+                mergeInst.$set(matchCond.source, null).$save();
+
+                sourceInstance[this.name] = null;
+                break
+            default:
+                break
+        }
+        
+        return sourceInstance
     }
 }
 

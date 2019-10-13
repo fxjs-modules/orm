@@ -31,6 +31,7 @@ declare namespace FxOrmModel {
         readonly propertyNames: string[]
         readonly propertyList: ModelProperty[]
         
+        readonly associationNames: string[]
         associations: {[k: string]: FxOrmModel.Class_MergeModel}
 
         settings: any
@@ -167,10 +168,16 @@ declare namespace FxOrmModel {
         normalizePropertiesToData (datastore: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
         /**
          * @description
-         *  filter out properties-about key-value in datastore only,
+         *  filter out properties-about key-value in `mixed` only,
          *  and transform [key] to correspoding `name` field in property
          */
         normlizePropertyData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        /**
+         * @description
+         *  filter out association-about key-value in `mixed` only,
+         *  and transform [key] to correspoding `name` field in property
+         */
+        normlizeAssociationData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
         /**
          * @description
          *  filter out association-about key-value in dataset only,
@@ -297,7 +304,7 @@ declare namespace FxOrmModel {
                 source: string,
                 target: string,
                 comparator: string
-            }[]
+            }
         }
         
         constructor (opts: FxOrmModel.Class_ModelConstructOptions & {
@@ -319,6 +326,17 @@ declare namespace FxOrmModel {
             targetDataSet: Fibjs.AnyObject | FxOrmInstance.Class_Instance,
             sourceInstance: FxOrmInstance.Class_Instance
         }): void
+
+        findForSource (opts: {
+            sourceInstance: FxOrmInstance.Class_Instance
+        }): FxOrmTypeHelpers.ItOrListOfIt<FxOrmInstance.Class_Instance>
+
+        removeForSource (opts: {
+            sourceInstance: FxOrmInstance.Class_Instance
+        }): void
+
+        // this.$refs[refName].remove()
+
         // joinFind (): any
     }
     // next generation model :end

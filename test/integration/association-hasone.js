@@ -1,8 +1,7 @@
 var ORM = require('../../');
 var helper = require('../support/spec_helper');
-var _ = require('lodash');
 
-describe("hasOne", function () {
+odescribe("hasOne", function () {
     var db = null;
     var Tree = null;
     var Stalk = null;
@@ -43,37 +42,40 @@ describe("hasOne", function () {
             }, {
                 validations: opts.validations
             });
-            Leaf.hasOne('tree', Tree, {
-                field: 'treeId',
-                autoFetch: !!opts.autoFetch
+            Leaf.hasOne(Tree, {
+                as: 'tree',
+                // field: 'treeId',
+                // autoFetch: !!opts.autoFetch
             });
-            Leaf.hasOne('stalk', Stalk, {
-                field: 'stalkId',
-                mapsTo: 'stalk_id'
+            Leaf.hasOne(Stalk, {
+                as: 'stalk',
+                // field: 'stalkId',
+                // mapsTo: 'stalk_id'
             });
-            Leaf.hasOne('hole', Hole, {
-                field: 'holeId'
+            Leaf.hasOne(Hole, {
+                as: 'hole',
+                // field: 'holeId'
             });
 
             helper.dropSync([Tree, Stalk, Hole, Leaf], function () {
-                var tree = Tree.createSync({
+                var tree = Tree.create({
                     type: 'pine'
                 });
                 treeId = tree[Tree.id];
 
-                var leaf = Leaf.createSync({
+                var leaf = Leaf.create({
                     size: 14
                 });
                 leafId = leaf[Leaf.id];
-                leaf.setTreeSync(tree);
+                leaf.$set('tree', tree).$save();
 
-                var stalk = Stalk.createSync({
+                var stalk = Stalk.create({
                     length: 20
                 });
                 assert.exist(stalk);
                 stalkId = stalk[Stalk.id];
 
-                var hole = Hole.createSync({
+                var hole = Hole.create({
                     width: 3
                 });
                 holeId = hole.id;
@@ -86,95 +88,102 @@ describe("hasOne", function () {
     });
 
     after(function () {
-        db.closeSync();
+        db.close();
     });
 
-    describe("accessors", function () {
+    odescribe("accessors", function () {
         before(setup());
 
-        it("get should get the association", function () {
-            var leaf = Leaf.oneSync({
+        oit("get should get the association", function () {
+            var leaf = Leaf.one({
                 size: 14
             });
             assert.exist(leaf);
-            var tree = leaf.getTreeSync();
+            var tree = leaf.$getReference('tree');
+
             assert.exist(tree);
+            assert.strictEqual(treeId, tree.id);
+
+            var [tree] = leaf.$getReference(['tree']);
+            assert.exist(tree);
+            assert.strictEqual(treeId, tree.id);
         });
 
-        it("should return proper instance model", function () {
-            var leaf = Leaf.oneSync({
+        oit("should return proper instance model", function () {
+            var leaf = Leaf.one({
                 size: 14
             });
-            var tree = leaf.getTreeSync();
-            assert.equal(tree.model(), Tree);
+            var tree = leaf.$getReference('tree');
+
+            assert.equal(tree.$model, Tree);
         });
 
-        it("get should get the association with a shell model", function () {
+        xit("get should get the association with a shell model", function () {
             var tree = Leaf(leafId).getTreeSync();
             assert.exist(tree);
             assert.equal(tree[Tree.id], treeId);
         });
 
-        it("has should indicate if there is an association present", function () {
-            var leaf = Leaf.oneSync({
+        oit("has should indicate if there is an association present", function () {
+            var leaf = Leaf.one({
                 size: 14
             });
             assert.exist(leaf);
 
-            var has = leaf.hasTreeSync();
+            var has = leaf.$hasReference('tree');
             assert.equal(has, true);
 
-            has = leaf.hasStalkSync();
+            has = leaf.$hasReference('stalk');
             assert.equal(has, false);
         });
 
-        it("set should associate another instance", function () {
-            var stalk = Stalk.oneSync({
+        oit("set should associate another instance", function () {
+            var stalk = Stalk.one({
                 length: 20
             });
             assert.exist(stalk);
 
-            var leaf = Leaf.oneSync({
+            var leaf = Leaf.one({
                 size: 14
             });
             assert.exist(leaf);
-            assert.notExist(leaf.stalkId);
+            assert.notExist(leaf.stalk);
 
-            leaf.setStalkSync(stalk);
+            leaf.$set('stalk', stalk).$save();
 
-            var leaf = Leaf.oneSync({
-                size: 14
-            });
-            assert.equal(leaf.stalkId, stalk[Stalk.id]);
+            assert.equal(leaf.stalk.id, stalk[Stalk.id]);
         });
 
-        it("remove should unassociation another instance", function () {
-            var stalk = Stalk.oneSync({
+        oit("remove should unassociation another instance", function () {
+            var stalk = Stalk.one({
                 length: 20
             });
             assert.exist(stalk);
-            var leaf = Leaf.oneSync({
+            var leaf = Leaf.one({
                 size: 14
-            });
+            }).$fetchReference();
+
             assert.exist(leaf);
-            assert.exist(leaf.stalkId);
-            leaf.removeStalkSync();
-            var leaf = Leaf.oneSync({
+            assert.exist(leaf.stalk);
+            leaf.$removeReference('stalk');
+            assert.equal(leaf.stalk, null);
+            
+            var leaf = Leaf.one({
                 size: 14
             });
-            assert.equal(leaf.stalkId, null);
+            assert.equal(leaf.stalk, null);
         });
     });
 
     [false, true].forEach(function (af) {
-        describe("with autofetch = " + af, function () {
+        xdescribe("with autofetch = " + af, function () {
             before(setup({
                 autoFetch: af
             }));
 
             describe("autofetching", function () {
                 it((af ? "should" : "shouldn't") + " be done", function () {
-                    var leaf = Leaf.oneSync({});
+                    var leaf = Leaf.one({});
                     assert.equal(typeof leaf.tree, af ? 'object' : 'undefined');
                 });
             });
@@ -183,7 +192,7 @@ describe("hasOne", function () {
                 var tree = null;
 
                 before(function () {
-                    tree = Tree.createSync({
+                    tree = Tree.create({
                         type: "cyprus"
                     });
                 });
@@ -229,7 +238,7 @@ describe("hasOne", function () {
                 });
 
                 it("should work when calling Model.create", function () {
-                    var leaf = Leaf.createSync({
+                    var leaf = Leaf.create({
                         size: 4,
                         treeId: tree[Tree.id]
                     });
@@ -255,15 +264,15 @@ describe("hasOne", function () {
         });
     });
 
-    describe("validations", function () {
+    xdescribe("validations", function () {
         before(setup({
             validations: {
-                stalkId: ORM.validators.rangeNumber(undefined, 50)
+                // stalkId: ORM.validators.rangeNumber(undefined, 50)
             }
         }));
 
         it("should allow validating parentId", function () {
-            var leaf = Leaf.oneSync({
+            var leaf = Leaf.one({
                 size: 14
             });
             assert.exist(leaf);
@@ -381,7 +390,7 @@ describe("hasOne", function () {
         });
     });
 
-    describe("association name letter case", function () {
+    odescribe("association name letter case", function () {
         it("should be kept", function () {
             db.settings.set('instance.identityCache', false);
             db.settings.set('instance.returnAllErrors', true);
@@ -389,18 +398,23 @@ describe("hasOne", function () {
             var Person = db.define("person", {
                 name: String
             });
-            Person.hasOne("topParent", Person);
+            Person.hasOne(Person, {
+                as: "topParent",
+                property: {
+                    mapsTo: 'top_parent'
+                }
+            });
 
             helper.dropSync(Person, function () {
-                var person = Person.createSync({
+                var person = Person.create({
                     name: "Child"
                 });
 
-                person = Person.getSync(person[Person.id]);
+                person = Person.get(person[Person.id]);
 
-                assert.isFunction(person.setTopParent);
-                assert.isFunction(person.removeTopParent);
-                assert.isFunction(person.hasTopParent);
+                assert.isFunction(person.$set);
+                assert.isFunction(person.$removeReference);
+                assert.isFunction(person.$hasReference);
             });
         });
     });
@@ -440,7 +454,7 @@ describe("hasOne", function () {
             before(setup());
 
             before(function () {
-                var lf = Leaf.createSync({
+                var lf = Leaf.create({
                     size: 444,
                     stalkId: stalkId,
                     holeId: holeId
@@ -478,7 +492,7 @@ describe("hasOne", function () {
             before(setup());
 
             before(function () {
-                var lf = Leaf.createSync({
+                var lf = Leaf.create({
                     size: 444,
                     stalkId: stalkId,
                     holeId: holeId

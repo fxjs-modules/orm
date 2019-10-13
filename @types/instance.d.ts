@@ -4,6 +4,7 @@ declare namespace FxOrmInstance {
 
     class Class_Instance extends Class_EventEmitter {
         readonly $kvs: Fibjs.AnyObject
+        readonly $refs: {[k: string]: FxOrmInstance.Class_Instance | any}
 
         readonly $saved: boolean
         readonly $isPersisted: boolean
@@ -29,7 +30,7 @@ declare namespace FxOrmInstance {
         $off: Class_EventEmitter['off']
         $emit: Class_EventEmitter['emit']
          
-        $set (prop: string | string[], value: any): void
+        $set (prop: string | string[], value: any): this
         /**
          * @description
          *  fetch all properties(not all fields, not includes associations) from remote endpoints,
@@ -38,15 +39,44 @@ declare namespace FxOrmInstance {
         $fetch (): this
         /**
          * 
-         * @param fieldName just fetch field name (list) from remote endpoints, but never update local instance,
+         * @description just fetch field name (list) from remote endpoints, but never update local instance,
          * just return field-value object
          */
         $get (fieldName: string | string[]): Fibjs.AnyObject
+        
+        /**
+         * @description
+         *  fetch all references(associations) from remote endpoints,
+         *  update instance automatically
+         */
+        $fetchReference (): this
+        /**
+         * 
+         * @description just fetch reference name (list) from remote endpoints, but never update local instance,
+         * just return ref-value object
+         */
+        $getReference: FxOrmTypeHelpers.ReturnItemOrArrayAccordingTo_1stParam<string, Class_Instance>
+        /**
+         * 
+         * @description just check if reference name (list) exist(s) in remote endpoints, but never update local instance,
+         * just return check result
+         */
+        $hasReference: FxOrmTypeHelpers.ReturnItemOrArrayAccordingTo_1stParam<string, boolean>
+
         $save: {
             (kvs?: Fibjs.AnyObject): Class_Instance
             (kvs: Fibjs.AnyObject[]): Class_Instance[]
         }
+        /**
+         * @description remove instance
+         */
         $remove (): void
+        /**
+         * 
+         * @description remove reference with `name` in remote endpoints, update local instance
+         */
+        $removeReference (refName: string | string[]): this
+
         $exists (): boolean
         $clearChanges(fieldName?: string | string[]): void
 

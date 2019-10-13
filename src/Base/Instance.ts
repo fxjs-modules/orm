@@ -43,13 +43,14 @@ function clearChanges(
     inst.$changes[fieldName].clear();
 }
 class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
-    @DecoratorsProperty.buildDescriptor({ enumerable: false })
+    // @DecoratorsProperty.buildDescriptor({ enumerable: false })
     $model: FxOrmModel.Class_Model
     
     /**
      * only allow settting fields of Model.properties into it.
      */
-    $kvs: Fibjs.AnyObject = {}
+    $kvs: FxOrmInstance.Class_Instance['$kvs'] = {};
+    $refs: FxOrmInstance.Class_Instance['$refs'] = {};
     
     @DecoratorsProperty.buildDescriptor({ enumerable: false })
     $changes: {
@@ -71,12 +72,15 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
     }
     @DecoratorsProperty.buildDescriptor({ enumerable: false })
     get $isPersisted (): boolean {
-        return this.$model.keyPropertyNames
-            .every(x => this.$isFieldFilled(x))
+        return this.$model.keyPropertyNames.every(x => this.$isFieldFilled(x))
     }
 
     $isFieldFilled (x: string) {
-        return this.$kvs[x] !== undefined
+        return (
+            this.$model.isPropertyName(x) && this.$kvs[x] !== undefined
+        ) || (
+            this.$model.isAssociationName(x) && this.$refs[x] !== undefined
+        )
     }
     
     $clearChanges (fieldName?: string | string[]) {
@@ -98,7 +102,10 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         return !!this.$model.fieldInfo(prop);
     }
     $isEnumerable (prop: string) {
-        return this.$model.properties.hasOwnProperty(prop) && this.$model.properties[prop].enumerable
+        return (
+            this.$model.properties.hasOwnProperty(prop) && this.$model.properties[prop].enumerable
+            || this.$model.isAssociationName(prop)
+        )
     }
 
     get $isInstance () { return true };
@@ -113,11 +120,14 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         if (Array.isArray(instanceBase))
             return instanceBase.map(x => new Instance(model, x)) as any
 
+        this.$model = model
+
         if (instanceBase instanceof Instance)
             instanceBase = instanceBase.toJSON()
-
-        this.$kvs = {...instanceBase}
-        Object.defineProperty(this, '$model', { configurable: true, enumerable: false, writable: false, value: model })
+        
+        instanceBase = {...instanceBase}
+        this.$kvs = this.$model.normlizePropertyData(instanceBase, this.$kvs)
+        this.$refs = this.$model.normlizeAssociationData(instanceBase, this.$refs)
 
         return getInstance(this) as any;
     }
@@ -130,11 +140,18 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         if (!prop) return ;
 
         if (typeof prop === 'string') {
-            setTarget(prop, value, this);
+            if (this.$model.isPropertyName(prop))
+                setTarget(prop, value, this);
+            else if (this.$model.isAssociationName(prop)) {
+                this.$refs[prop] = value
+            }
+
         } if (Array.isArray(prop)) {
             prop = prop.filter(x => x && typeof x === 'string').join('.');
             this.$set(prop, value);
         }
+
+        return this
     }
 
     $fetch () {
@@ -151,16 +168,14 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         return this
     }
 
-    /**
-     * @TODO support get association by `assocNames`
-     */
     $get (fieldName: string | string[]) {
         const propertyNames = arraify(fieldName).filter(x => this.$model.isPropertyName(x))
-        const assocNames = arraify(fieldName).filter(x => this.$model.isAssociationName(x))
 
-        if (!propertyNames.length && !assocNames.length)
-            throw new Error(`[Instance::$get] invalid field name given`)
+        if (!propertyNames.length)
+            throw new Error(`[Instance::$get] invalid field names given`)
 
+        const kvs = <any>{};
+        
         const whereCond = <any>{};
         this.$model.idPropertyList.forEach((property) => {
             whereCond[property.name] = this[property.name];
@@ -183,14 +198,58 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
             throw new Error(`[Instance::$get] item not found, check if id properties(${this.$model.ids.join(', ')}) of your model(collection: ${this.$model.collection}) filled in this instance!`)
 
         const itemRaw = item.toJSON();
-        const kvs = <any>{};
         propertyNames.forEach(fname => {
             if (this.$isModelField(fname)) {
                 kvs[fname] = itemRaw[fname]
             }
         });
 
-        return kvs
+        return isEmptyPlainObject(kvs) ? undefined : kvs;
+    }
+
+    $fetchReference () {
+        const refs = this.$getReference(this.$model.associationNames);
+
+        this.$model.normlizeAssociationData(refs, this.$refs);
+
+        return this
+    }
+
+    $getReference (refName: string | string[]) {
+        const associationInfos = <FxOrmTypeHelpers.ReturnType<FxOrmModel.Class_Model['fieldInfo']>[]>[]
+        arraify(refName).filter(x => {
+            if (this.$model.isAssociationName(x))
+                associationInfos.push(this.$model.fieldInfo(x))
+        })
+        if (!associationInfos.length)
+            throw new Error(`[Instance::$getReference] invalid reference names given`)
+
+        const refs = <any>[];
+        
+        coroutine.parallel(
+            associationInfos,
+            (associationInfo: typeof associationInfos[any]) => {
+                if (associationInfo.type !== 'association') return ;
+
+                associationInfo.association.findForSource({
+                    sourceInstance: this
+                });
+
+                refs.push(this[associationInfo.association.name] || null);
+            }
+        )
+
+        return Array.isArray(refName) ? refs : refs[0];
+    }
+
+    $hasReference (refName: string | string[]): any {
+        if (Array.isArray(refName))
+            return refName.map(_ref => this.$hasReference(_ref)) as any
+            
+        if (!this.$model.isAssociationName(refName))
+            throw new Error(`[Instance::$hasReference] "${refName}" is not reference of this instance, with model(collection: ${this.$model.collection})`)
+
+        return !!this.$getReference(refName) as any
     }
 
     $save (
@@ -204,13 +263,14 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
                 return this.save(prop)
             })
 
-        dataset = {...this.$kvs, ...dataset};
+        const kvs = {...this.$kvs, ...this.$model.normlizePropertyData(dataset)}
+        const refs = {...this.$refs, ...this.$model.normlizeAssociationData(dataset)}
 
         /* fill default value :start */
         this.$model.propertyList.forEach(property => {
             if (
-                (dataset[property.name] === undefined)
-                && (dataset[property.mapsTo] === undefined)
+                (kvs[property.name] === undefined)
+                && (kvs[property.mapsTo] === undefined)
             ) {
                 let dfltValue = Property.filterDefaultValue(
                     property,
@@ -222,20 +282,20 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
                 )
 
                 if (dfltValue !== undefined)
-                    dataset[property.name] = dfltValue
+                    kvs[property.name] = dfltValue
 
             }
         })
         /* fill default value :end */
 
-        if (isEmptyPlainObject(dataset))
-            throw new Error(`[Instance::save] dataset must be non-empty object!`)
+        if (isEmptyPlainObject(kvs) && isEmptyPlainObject(refs))
+            throw new Error(`[Instance::save] at least one of "kvs" and "refs" must be non-empty object!`)
 
         this.$dml
             .toSingleton()
             .useTrans((dml: any) => {
                 if (this.$isPersisted && this.$exists()) {
-                    const changes = this.$model.normalizePropertiesToData(dataset);
+                    const changes = this.$model.normalizePropertiesToData(kvs);
                     const whereCond = <typeof changes>{};
 
                     Object.values(this.$model.idPropertyList).forEach(property => {
@@ -251,7 +311,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
                         { where: whereCond }
                     );
                 } else {
-                    const creates = this.$model.normalizePropertiesToData(dataset);
+                    const creates = this.$model.normalizePropertiesToData(kvs);
                     const insertResult = dml.insert(
                         this.$model.collection,
                         creates,
@@ -263,13 +323,13 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
                             Object.assign(insertResult),
                             this.$kvs
                         )
-                    this.$model.normlizePropertyData(dataset, this.$kvs)
+                    this.$model.normlizePropertyData(kvs, this.$kvs)
                 }
 
-                this.$model.filterOutAssociatedData(dataset)
+                this.$model.filterOutAssociatedData(refs)
                     .forEach(item => {
                         const assocModel = item.association
-                        
+
                         assocModel.saveForSource({
                             targetDataSet: item.dataset,
                             sourceInstance: this
@@ -296,7 +356,35 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
     }
 
     $remove (): void {
+        const whereCond = <any>{};
 
+        this.$model.ids.forEach((pname) => {
+            if (this.$isFieldFilled(pname))
+                whereCond[pname] = this[pname]
+        })
+
+        if (isEmptyPlainObject(whereCond))
+            throw new Error(`[Instance::$remove] empty where conditions for removation generated, check if all id fields filled in your instance!`)
+
+        this.$model.remove({
+            where: whereCond
+        })
+    }
+
+    $removeReference (refName: string | string[]) {
+        const refNames = arraify(refName).filter(x => this.$refs.hasOwnProperty(x))
+
+        if (!refNames.length)
+            throw new Error(`[Instance::$removeReference] no any valid reference names provided!`)
+            
+        this.$model.filterOutAssociatedData(this.$refs)
+            .filter(item => refNames.includes(item.association.name))
+            .forEach(item => {
+                const assocModel = item.association
+
+                assocModel.removeForSource({ sourceInstance: this });
+            })
+        return this
     }
 
     $exists (): boolean {
@@ -331,14 +419,16 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
     }
 
     toJSON () {
-        const kvs = <Instance['$kvs']>{};
+        const json = <Instance['$kvs']>{};
 
         Object.keys(this.$kvs).forEach((k) => {
             if (this.$isEnumerable(k))
-                kvs[k] = this.$kvs[k];
+                json[k] = this.$kvs[k];
         })
 
-        return kvs;
+        this.$model.normlizeAssociationData(this.$refs, json);
+
+        return json;
     }
 
     toString () {
@@ -365,6 +455,9 @@ const getInstance = function (
 
             return {
                 get (target: any, prop: string): any {
+                    if (Array.isArray(target[prop]))
+                        return target[prop];
+
                     if (target[prop] && typeof target[prop] === 'object') {
                         return new Proxy(target[prop], getPhHandler({ parent_path: cur_path_str(prop) }))
                     }
@@ -410,7 +503,10 @@ const getInstance = function (
             get (target: typeof instance, prop: string): any {
                 if (REVERSE_KEYS.includes(prop) || isInternalProp(prop))
                     return target[prop];
-
+                
+                if (target.$model.isAssociationName(prop))
+                    return target.$refs[prop];
+                    
                 if (target.$kvs[prop] && typeof target.$kvs[prop] === 'object') {
                     return new Proxy(target.$kvs[prop], getPhHandler({ parent_path: prop }))
                 }
@@ -418,11 +514,21 @@ const getInstance = function (
                 return target.$kvs[prop];
             },
             ownKeys (target: typeof instance) {
-                return Reflect.ownKeys(target.$kvs)
+                return Reflect.ownKeys(target.$kvs).concat(
+                    Reflect.ownKeys(target.$refs)
+                )
+                // return instance.$model.propertyNames.concat(
+                //     Object.keys(instance.$model.associations)
+                // )
             },
             deleteProperty (target: typeof instance, prop:string) {
                 if (REVERSE_KEYS.includes(prop) || isInternalProp(prop)) {
                     delete target[prop];
+                    return true;
+                }
+
+                if (target.$model.isAssociationName(prop)) {
+                    delete target.$refs[prop];
                     return true;
                 }
 
@@ -441,11 +547,8 @@ const getInstance = function (
                 if (REVERSE_KEYS.includes(prop) || !instance.$isModelField(prop))
                     return false;
 
-                /**
-                 * @shouldit allowed?
-                 */
-                if (isInternalProp(prop)) {
-                    target[prop] = value;
+                if (target.$model.isAssociationName(prop)) {
+                    target.$refs[prop] = value;
                     return true;
                 }
 
@@ -463,14 +566,13 @@ const getInstance = function (
                     });
 
                 target.$kvs[prop] = value;
-
                 return true;
             },
             has (target: typeof instance, prop: string) {
                 if (REVERSE_KEYS.includes(prop) || isInternalProp(prop))
                     return prop in target;
 
-                return prop in target.$kvs;
+                return target.$kvs.hasOwnProperty(prop) || target.$refs.hasOwnProperty(prop);
             }
         }
     };

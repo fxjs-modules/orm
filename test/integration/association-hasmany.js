@@ -17,7 +17,7 @@ function assertModelInstanceWithHasMany(instance) {
     assert.property(instance.__opts, 'associations')
 }
 
-describe("hasMany", function () {
+xdescribe("hasMany", function () {
     var db = null;
     var Person = null;
     var Pet = null;
@@ -27,10 +27,10 @@ describe("hasMany", function () {
     });
 
     after(function () {
-        db.closeSync();
+        db.close();
     });
 
-    describe("normal", function () {
+    odescribe("normal", function () {
 
         var setup = function (opts) {
             opts = opts || {};
@@ -46,14 +46,18 @@ describe("hasMany", function () {
                 Pet = db.define('pet', {
                     name: String
                 });
-                Person.hasMany('pets', Pet, {}, {
+                Person.hasMany(Pet, {
+                    as: 'pets'
+                }, {
                     reverse: opts.reversePets,
                     autoFetch: opts.autoFetchPets
                 });
-                Person.hasMany('friends', Person, {}, {});
+                Person.hasMany(Person, {
+                    as: 'friends'
+                }, {}, {});
 
                 helper.dropSync([Person, Pet], function () {
-                    Pet.createSync([{
+                    Pet.create([{
                         name: "Cat"
                     }, {
                         name: "Dog"
@@ -67,7 +71,7 @@ describe("hasMany", function () {
                      *
                      * Justin
                      */
-                    Person.createSync([{
+                    Person.create([{
                         name: "Bob",
                         surname: "Smith",
                         age: 30
@@ -94,13 +98,13 @@ describe("hasMany", function () {
                         name: "Jane"
                     }).firstSync();
 
-                    var pets = Pet.findSync({
+                    var pets = Pet.find({
                         name: "Mutt"
                     });
 
                     Jane.addPetsSync(pets);
                     Jane.addFriendsSync(
-                        Person.findSync({
+                        Person.find({
                             name: "Bob",
                         })
                     );
@@ -113,7 +117,7 @@ describe("hasMany", function () {
             before(setup());
 
             it("should allow to specify order as string", function () {
-                var people = Person.findSync({
+                var people = Person.find({
                     name: "John"
                 });
 
@@ -127,7 +131,7 @@ describe("hasMany", function () {
             });
 
             it("should return proper instance model", function () {
-                var people = Person.findSync({
+                var people = Person.find({
                     name: "John"
                 });
                 var pets = people[0].getPetsSync("-name");
@@ -135,7 +139,7 @@ describe("hasMany", function () {
             });
 
             it("should allow to specify order as Array", function () {
-                var people = Person.findSync({
+                var people = Person.find({
                     name: "John"
                 });
 
@@ -173,7 +177,7 @@ describe("hasMany", function () {
             });
 
             it("should return a chain if no callback defined", function () {
-                var people = Person.findSync({
+                var people = Person.find({
                     name: "John"
                 });
                 var chain = people[0].getPets({
@@ -188,7 +192,7 @@ describe("hasMany", function () {
             });
 
             it("should allow chaining count()", function () {
-                var people = Person.findSync({});
+                var people = Person.find({});
 
                 var count = people[1].getPets().countSync();
                 assert.strictEqual(count, 2);
@@ -203,7 +207,7 @@ describe("hasMany", function () {
             before(setup());
 
             it("should return true if instance has associated item", function () {
-                var pets = Pet.findSync({
+                var pets = Pet.find({
                     name: "Mutt"
                 });
                 var Jane = Person.find({
@@ -227,7 +231,7 @@ describe("hasMany", function () {
             });
 
             it("should return true if all passed instances are associated", function () {
-                var pets = Pet.findSync({
+                var pets = Pet.find({
                     name: ["Mutt", "Deco"]
                 });
                 var John = Person.find({
@@ -238,7 +242,7 @@ describe("hasMany", function () {
             });
 
             it("should return false if any passed instances are not associated", function () {
-                var pets = Pet.findSync();
+                var pets = Pet.find();
                 var Jane = Person.find({
                     name: "Jane"
                 }).firstSync();
@@ -247,7 +251,7 @@ describe("hasMany", function () {
             });
 
             it("should return true if join table has duplicate entries", function () {
-                var pets = Pet.findSync({
+                var pets = Pet.find({
                     name: ["Mutt", "Deco"]
                 });
 
@@ -273,10 +277,10 @@ describe("hasMany", function () {
             before(setup());
 
             it("should remove specific associations if passed", function () {
-                var pets = Pet.findSync({
+                var pets = Pet.find({
                     name: "Mutt"
                 });
-                var people = Person.findSync({
+                var people = Person.find({
                     name: "John"
                 });
 
@@ -307,10 +311,10 @@ describe("hasMany", function () {
             before(setup());
 
             it("might add duplicates", function () {
-                var pets = Pet.findSync({
+                var pets = Pet.find({
                     name: "Mutt"
                 });
-                var people = Person.findSync({
+                var people = Person.find({
                     name: "Jane"
                 });
 
@@ -347,7 +351,7 @@ describe("hasMany", function () {
             });
 
             it("should accept several arguments as associations", function () {
-                var pets = Pet.findSync();
+                var pets = Pet.find();
                 var Justin = Person.find({
                     name: "Justin"
                 }).firstSync();
@@ -360,7 +364,7 @@ describe("hasMany", function () {
             });
 
             it("should accept array as list of associations", function () {
-                var pets = Pet.createSync([{
+                var pets = Pet.create([{
                     name: 'Ruff'
                 }, {
                     name: 'Spotty'
@@ -395,7 +399,7 @@ describe("hasMany", function () {
             before(setup());
 
             it("should accept several arguments as associations", function () {
-                var pets = Pet.findSync();
+                var pets = Pet.find();
                 var Justin = Person.find({
                     name: "Justin"
                 }).firstSync();
@@ -409,7 +413,7 @@ describe("hasMany", function () {
             });
 
             it("should accept an array of associations", function () {
-                var pets = Pet.findSync();
+                var pets = Pet.find();
                 var Justin = Person.find({
                     name: "Justin"
                 }).firstSync();
@@ -435,7 +439,7 @@ describe("hasMany", function () {
             });
 
             it("clears current associations", function () {
-                var pets = Pet.findSync({
+                var pets = Pet.find({
                     name: "Deco"
                 });
                 var Deco = pets[0];
@@ -705,7 +709,7 @@ describe("hasMany", function () {
             });
 
             it("should save existing", function () {
-                Person.createSync({
+                Person.create({
                     name: 'Bishan'
                 });
                 var person = Person.oneSync({
@@ -719,7 +723,7 @@ describe("hasMany", function () {
                 var pets = Pet.allSync();
                 assert.equal(pets.length, 4);
 
-                var paul = Person.createSync({
+                var paul = Person.create({
                     name: 'Paul'
                 });
 
@@ -796,7 +800,7 @@ describe("hasMany", function () {
 
         it("should place ids in the right place", function () {
             setup({});
-            var emails = Email.createSync([{
+            var emails = Email.create([{
                 bounced: true,
                 text: 'a@test.com'
             }, {
@@ -804,7 +808,7 @@ describe("hasMany", function () {
                 text: 'z@test.com'
             }]);
 
-            var account = Account.createSync({
+            var account = Account.create({
                 name: "Stuff"
             });
             assertModelInstanceWithHasMany(account)
@@ -905,7 +909,7 @@ describe("hasMany", function () {
 
         it('should query association model data with getAccessor', function () {
             setup({})
-            var emails = Email.createSync([{
+            var emails = Email.create([{
                 bounced: true,
                 text: 'a@test.com'
             }, {
@@ -913,7 +917,7 @@ describe("hasMany", function () {
                 text: 'z@test.com'
             }]);
 
-            var account = Account.createSync({
+            var account = Account.create({
                 name: "Stuff"
             });
             account.addEmailsSync(emails);

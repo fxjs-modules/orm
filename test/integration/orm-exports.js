@@ -7,7 +7,7 @@ var ORM = require('../../')
 var common = require('../common')
 var protocol = common.protocol()
 
-describe('ORM', function () {
+xdescribe('ORM', function () {
   describe('when loaded', function () {
     it('should expose .use() and .connect()', function () {
       assert.isFunction(ORM.connect)

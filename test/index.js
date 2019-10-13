@@ -48,16 +48,16 @@ function t() {
     run('./integration/association-o2m.js');
     run('./integration/association-belongsToMany.js');
     // run('./integration/association-extend.js');
-
-    // run('./integration/association-hasmany-extra.js');
-    // run('./integration/association-hasmany-hooks.js');
-    // run('./integration/association-hasmany.js');
-    // run('./integration/association-hasmany-mapsto.js');
     
-    // run('./integration/association-hasone.js');
+    run('./integration/association-hasone.js');
     // run('./integration/association-hasone-required.js');
     // run('./integration/association-hasone-reverse.js');
     // run('./integration/association-hasone-zeroid.js');
+
+    run('./integration/association-hasmany.js');
+    // run('./integration/association-hasmany-extra.js');
+    // run('./integration/association-hasmany-hooks.js');
+    // run('./integration/association-hasmany-mapsto.js');
     // run('./integration/event.js');
 
     // run('./integration/hook.js');

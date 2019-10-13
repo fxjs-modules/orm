@@ -285,7 +285,7 @@ export default class Property<T_CTX = any> implements FxOrmProperty.Class_Proper
             customType = undefined,
             $ctx = undefined
         } = opts || {};
-        
+
         if (!storeType) throw new Error(`[Property] storeType is required!`)
         if (!propertyName) throw new Error(`[Property] propertyName is required!`)
 
