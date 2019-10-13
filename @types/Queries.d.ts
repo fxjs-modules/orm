@@ -3,7 +3,6 @@
 /// <reference path="_common.d.ts" />
 /// <reference path="property.d.ts" />
 /// <reference path="assoc.d.ts" />
-/// <reference path="query.d.ts" />
 
 declare namespace FxOrmQueries {
     interface Operators {

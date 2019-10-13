@@ -32,7 +32,8 @@
         "version": [
             "0.26.0",
             "0.26.1",
-            "0.27.0"
+            "0.27.0",
+            "0.28.0"
         ],
         "travis_services": [
             "mysql"
@@ -48,18 +49,11 @@
         "@fxjs/sql-query": "^0.5.1",
         "fib-pool": "^1.5.3",
         "knex": "^0.16.3",
-        "lodash.clonedeep": "^4.5.0",
-        "lodash.flatten": "^4.4.0",
-        "lodash.merge": "^4.6.1",
         "reflect-metadata": "^0.1.13"
     },
     "devDependencies": {
         "@fibjs/ci": "^2.2.0",
         "@fibjs/types": "^0.27.1",
-        "@types/lodash.clonedeep": "^4.5.6",
-        "@types/lodash.flatten": "^4.4.6",
-        "@types/lodash.merge": "^4.6.6",
-        "async": "^2.6.2",
         "cross-env": "^5.2.0",
         "fib-typify": "^0.6.0",
         "lodash": "^4.17.11",

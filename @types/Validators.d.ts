@@ -27,8 +27,8 @@ declare namespace FxOrmValidators {
    }
 
    interface ValidatorContext extends FibjsEnforce.ContextMap {
-      driver: FibOrmNS.ORM['driver']
-      instance: FxOrmInstance.Instance
-      model: FxOrmModel.Model
+      driver: FibOrmNS.Class_ORM['driver']
+      instance: FxOrmInstance.Class_Instance
+      model: FxOrmModel.Class_Model
    }
 }

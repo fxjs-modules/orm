@@ -31,6 +31,6 @@ declare namespace FxOrmError {
 
     interface BatchOperationInstanceErrorItem extends ExtendedError {
         index: number
-        instance: FxOrmInstance.Instance
+        instance: FxOrmInstance.Class_Instance
     }
 }

@@ -5,7 +5,6 @@
 /// <reference path="_common.d.ts" />
 /// <reference path="property.d.ts" />
 /// <reference path="assoc.d.ts" />
-/// <reference path="query.d.ts" />
 
 declare namespace FxOrmDML {
     // type WhereObject = FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['where']>

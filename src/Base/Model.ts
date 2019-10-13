@@ -325,7 +325,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     }
 
     hasMany (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['hasMany']>) {
-        const [ name, model, opts ] = args || [];
+        const [ name, model, opts ] = args;
 
         const { type = 'o2m', reverse, ...restOpts } = opts || {} as typeof opts;
         const reverseKey = typeof reverse === 'string' ? reverse : `${this.name}s`

@@ -11,6 +11,9 @@ matrix:
     - os: linux
       env:
         - VERSION=0.27.0
+    - os: linux
+      env:
+        - VERSION=0.28.0
     - os: osx
       osx_image: xcode9
       env:
@@ -23,6 +26,10 @@ matrix:
       osx_image: xcode9
       env:
         - VERSION=0.27.0
+    - os: osx
+      osx_image: xcode9
+      env:
+        - VERSION=0.28.0
 services:
     - mysql
 before_install:
@@ -47,3 +54,4 @@ script:
     fi
   - chmod a+x ./node_modules/.bin/fibjs
   - npm run ci
+  
