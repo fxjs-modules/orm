@@ -77,7 +77,7 @@ describe("Model instance", function () {
         return db.close();
     });
 
-    describe("#save", function () {
+    describe("#$save", function () {
         var main_item, item;
 
         before(function () {
@@ -160,7 +160,7 @@ describe("Model instance", function () {
         });
     });
 
-    describe("#set", function () {
+    describe("#$set", function () {
         var person = null;
         var data = null;
 
@@ -293,66 +293,6 @@ describe("Model instance", function () {
         });
     });
 
-    xdescribe("#markAsDirty", function () {
-        var person = null;
-
-        beforeEach(function () {
-            person = Person.create({
-                name: 'John',
-                age: 44,
-                data: {
-                    a: 1
-                }
-            });
-        });
-
-        it("should mark individual properties as dirty", function () {
-            assert.equal(person.$saved, true);
-            person.markAsDirty('name');
-            assert.equal(person.$saved, false);
-            assert.equal(person.__opts.changes.join(','), 'name');
-            person.markAsDirty('data');
-            assert.equal(person.__opts.changes.join(','), 'name,data');
-        });
-    });
-
-    xdescribe("#dirtyProperties", function () {
-        var person = null;
-
-        beforeEach(function () {
-            person = Person.create({
-                name: 'John',
-                age: 44,
-                data: {
-                    a: 1
-                }
-            });
-        });
-
-        it("should mark individual properties as dirty", function () {
-            assert.equal(person.$saved, true);
-            person.markAsDirty('name');
-            person.markAsDirty('data');
-            assert.equal(person.$saved, false);
-            assert.equal(person.dirtyProperties.join(','), 'name,data');
-        });
-    });
-
-    xdescribe("#isShell", function () {
-        it("should return true for shell models", function () {
-            assert.equal(Person(4).isShell(), true);
-        });
-
-        it("should return false for new models", function () {
-            assert.equal((new Person).isShell(), false);
-        });
-
-        it("should return false for existing models", function () {
-            var item = Person.find().firstSync();
-            assert.equal(item.isShell(), false);
-        });
-    });
-
     xdescribe("#validate", function () {
         it("should return validation errors if invalid", function () {
             console.log('Person', Person);
@@ -415,6 +355,82 @@ describe("Model instance", function () {
                 assert.exist(result.data);
                 assert.exist(result.name);
             });
+        });
+    });
+
+    describe("$get", function () {
+        it("specify id", function () {
+            var person1 = Person.New({
+                height: 200
+            });
+
+            person1.$save();
+
+            var person1Copy = Person.New({
+                id: person1.id
+            });
+
+            var resutls = person1Copy.$get('height');
+
+            assert.deepEqual(
+                resutls,
+                {
+                    height: person1.height
+                }
+            )
+
+            var resutls = person1Copy.$get(['id', 'height', 'age']);
+
+            assert.deepEqual(
+                resutls,
+                {
+                    id: person1.id,
+                    height: person1.height,
+                    age: null
+                }
+            )
+        });
+
+        it('only invalid field-names provided', function () {
+            var personWhatever = Person.New({
+                height: 200
+            });
+
+            personWhatever.$save();
+
+            var personCopy = Person.New({
+                id: personWhatever.id
+            });
+
+            assert.throws(() => {
+                personCopy.$get(['id1', 'id2', 'id3'])
+            });
+        });
+    });
+
+    describe("$fetch", function () {
+        it("specify id", function () {
+            var person1 = Person.New({
+                height: 200
+            });
+
+            person1.$save();
+
+            var person1Copy = Person.New({
+                id: person1.id
+            });
+
+            person1Copy.$fetch();
+
+            assert.strictEqual(person1.id, person1Copy.id);
+            assert.strictEqual(person1.height, person1Copy.height);
+
+            person1.$fetch();
+
+            assert.deepEqual(
+                person1.toJSON(),
+                person1Copy.toJSON(),
+            );
         });
     });
 });

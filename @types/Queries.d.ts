@@ -128,7 +128,7 @@ declare namespace FxOrmQueries {
     class Class_QueryBuilder<T_RETURN = any> {
         readonly notQueryBuilder: boolean
 
-        model: any;
+        model: FxOrmModel.Class_Model;
         conditions: any;
         sqlQuery: FxSqlQuery.Class_Query
 

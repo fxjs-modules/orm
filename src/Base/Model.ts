@@ -190,6 +190,13 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             }
         })();
     }
+
+    isPropertyName (name: string): boolean {
+        return this.properties.hasOwnProperty(name);
+    }
+    isAssociationName (name: string): boolean {
+        return this.associations.hasOwnProperty(name);
+    }
     
     sync (): void {
         if (!this.dbdriver.isSql) return ;

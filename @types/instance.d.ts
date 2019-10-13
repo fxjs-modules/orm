@@ -180,14 +180,25 @@ declare namespace FxOrmInstance {
         $emit: Class_EventEmitter['emit']
          
         $set (prop: string | string[], value: any): void
-        $get (fieldName: string): any
+        /**
+         * @description
+         *  fetch all properties(not all fields, not includes associations) from remote endpoints,
+         *  update instance automatically
+         */
+        $fetch (): this
+        /**
+         * 
+         * @param fieldName just fetch field name (list) from remote endpoints, but never update local instance,
+         * just return field-value object
+         */
+        $get (fieldName: string | string[]): Fibjs.AnyObject
         $save: {
             (kvs?: Fibjs.AnyObject): Class_Instance
             (kvs: Fibjs.AnyObject[]): Class_Instance[]
         }
         $remove (): void
         $exists (): boolean
-        $clearChanges(): void
+        $clearChanges(fieldName?: string | string[]): void
 
 
         toString (): string

@@ -7,12 +7,12 @@ import { setTarget } from '../Utils/deep-kv';
 import * as DecoratorsProperty from '../Decorators/property';
 import { isEmptyPlainObject } from '../Utils/object';
 import Property from './Property';
+import { arraify } from '../Utils/array';
 
 const { EventEmitter } = events
 
 const REVERSE_KEYS = [
-    'toJSON',
-    'toArray'
+    'toJSON'
 ];
 
 function pushChange (
@@ -79,13 +79,13 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         return this.$kvs[x] !== undefined
     }
     
-    $clearChanges (fieldName?: string) {
-        if (!fieldName) {
-            Object.keys(this.$changes).forEach((f: string) => {
-                this.$clearChanges(f)
-            })
+    $clearChanges (fieldName?: string | string[]) {
+        if (!fieldName)
+            fieldName = Object.keys(this.$changes);
 
-            return ;
+        if (Array.isArray(fieldName)) {
+            fieldName.forEach(x => this.$clearChanges(x))
+            return
         }
 
         clearChanges(this, fieldName)
@@ -137,8 +137,60 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         }
     }
 
-    $get (fieldName: string) {
-        return null as any
+    $fetch () {
+        const kvs = this.$get(this.$model.propertyNames);
+
+        Object.keys(kvs).forEach(fieldName => {
+            if (this.$isModelField(fieldName)) {
+                this[fieldName] = kvs[fieldName]
+            }
+        });
+
+        this.$clearChanges(this.$model.propertyNames);
+
+        return this
+    }
+
+    /**
+     * @TODO support get association by `assocNames`
+     */
+    $get (fieldName: string | string[]) {
+        const propertyNames = arraify(fieldName).filter(x => this.$model.isPropertyName(x))
+        const assocNames = arraify(fieldName).filter(x => this.$model.isAssociationName(x))
+
+        if (!propertyNames.length && !assocNames.length)
+            throw new Error(`[Instance::$get] invalid field name given`)
+
+        const whereCond = <any>{};
+        Object.values(this.$model.idPropertyList).forEach((property) => {
+            whereCond[property.name] = this[property.name];
+        });
+        if (isEmptyPlainObject(whereCond))
+            throw new Error(`[Instance::$get] invalid where conditions generated, check if id properties(${this.$model.ids.join(', ')}) of your model(collection: ${this.$model.collection}) filled in this instance!`)
+
+        /**
+         * @is all key in propertyNames is valid property/association names?
+         */
+        const item = this.$model.find(
+            {
+                limit: 1,
+                where: whereCond,
+                fields: propertyNames
+            }
+        )[0];
+
+        if (!item)
+            throw new Error(`[Instance::$get] item not found, check if id properties(${this.$model.ids.join(', ')}) of your model(collection: ${this.$model.collection}) filled in this instance!`)
+
+        const itemRaw = item.toJSON();
+        const kvs = <any>{};
+        propertyNames.forEach(fname => {
+            if (this.$isModelField(fname)) {
+                kvs[fname] = itemRaw[fname]
+            }
+        });
+
+        return kvs
     }
 
     $save (
@@ -365,7 +417,6 @@ const getInstance = function (
             },
             ownKeys (target: typeof instance) {
                 return Reflect.ownKeys(target.$kvs)
-                // return Object.keys(target.$kvs)
             },
             deleteProperty (target: typeof instance, prop:string) {
                 if (REVERSE_KEYS.includes(prop) || isInternalProp(prop)) {
@@ -385,12 +436,12 @@ const getInstance = function (
                 return true;
             },
             set: function(target: typeof instance, prop: string, value: any) {
-                if (REVERSE_KEYS.includes(prop))
+                if (REVERSE_KEYS.includes(prop) || !instance.$isModelField(prop))
                     return false;
 
-                if (!instance.$isModelField(prop))
-                    return true;
-
+                /**
+                 * @shouldit allowed?
+                 */
                 if (isInternalProp(prop)) {
                     target[prop] = value;
                     return true;
@@ -419,9 +470,6 @@ const getInstance = function (
 
                 return prop in target.$kvs;
             }
-            // enumerate (target: typeof instanceBase) {
-            //     return Object.keys(target.$kvs);
-            // },
         }
     };
 

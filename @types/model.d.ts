@@ -453,6 +453,9 @@ declare namespace FxOrmModel {
             ievents?: FxOrmInstance.InstanceConstructorOptions['events']
         })
 
+        isPropertyName (name: string): boolean
+        isAssociationName (name: string): boolean
+
         /**
          * @description create one instance from data input
          * 

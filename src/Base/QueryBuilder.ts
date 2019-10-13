@@ -4,6 +4,8 @@ import SqlQuery = require('@fxjs/sql-query');
 import * as SYMBOLS from '../Utils/symbols';
 import { configurable } from '../Decorators/accessor';
 import { buildDescriptor } from '../Decorators/property';
+import { arraify } from '../Utils/array';
+import { isEmptyPlainObject } from '../Utils/object';
 
 function transformToQCIfModel (
     target: Class_QueryBuilder,
@@ -37,14 +39,14 @@ function transformToQCIfModel (
 }
 
 function isIdsInput (id: any) {
-    return util.isArray(id) || typeof id === 'string' || (typeof id === 'number' && !isNaN(id))
+    return Array.isArray(id) || typeof id === 'string' || (typeof id === 'number' && !isNaN(id))
 }
 
 class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBuilder<TUPLE_ITEM> {
     @buildDescriptor({ enumerable: false, configurable: false })
     private _tuples: TUPLE_ITEM[] = [];
 
-    model: any;
+    model: FxOrmModel.Class_Model;
 
     conditions: any;
     sqlQuery: FxSqlQuery.Class_Query
@@ -70,12 +72,25 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
     find (
         opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']> = {}
     ): TUPLE_ITEM[] {
-        const results = this.model.$dml.find(this.model.collection, opts)
+        const _opts = {...opts}
+
+        let filteredFileds = arraify(opts.fields).filter(x => typeof x === 'string' && this.model.isPropertyName(x))
+        if (!filteredFileds.length)
+            filteredFileds = this.model.propertyNames
+
+        _opts.fields = Array.from(new Set(filteredFileds.map(x => this.model.properties[x].mapsTo)))
+
+        if (_opts.where && !isEmptyPlainObject(_opts.where)) {
+            const where = <typeof _opts.where>{};
+            this.model.normalizePropertiesToData(_opts.where, where);
+            _opts.where = where;
+        }
+
+        const results = this.model.$dml.find(this.model.collection, _opts)
 
         this._tuples = results.map((x: TUPLE_ITEM) => {
             const inst = this.model.New(this.model.normalizeDataToProperties(x))
-            inst.$isPersisted = true
-            return inst
+            return inst as any
         });
 
         return Array.from(this._tuples);
@@ -87,6 +102,7 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
     one (
         opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>
     ): TUPLE_ITEM {
+        opts = {...opts, limit: 1}
         return this.find(opts)[0]
     }
 
@@ -101,9 +117,12 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
         
         if (isIdsInput(id))
             where = {[this.model.id]: id}
+        else if (typeof id === 'object')
+            where = id
 
         const opts = <FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>>{}
         opts.where = {...opts.where, ...where}
+        opts.limit = 1
 
         return this.find(opts)[0];
     }
@@ -117,8 +136,10 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
     ): boolean {
         if (isIdsInput(id))
             return !!this.get(id)
-        else
+        else if (typeof id === 'object')
             return !!this.one({ where: id })
+
+        throw new Error(`[QueryBuilder::exists] invalid input! its type must be one of string, number, object`)
     }
 
     /**
