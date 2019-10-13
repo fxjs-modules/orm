@@ -174,14 +174,24 @@ declare namespace FxOrmInstance {
             model: FxOrmModel.Class_Model,
             input?: Fibjs.AnyObject
         );
+
+        $on: Class_EventEmitter['on']
+        $off: Class_EventEmitter['off']
+        $emit: Class_EventEmitter['emit']
          
-        save: {
+        $set (prop: string | string[], value: any): void
+        $get (fieldName: string): any
+        $save: {
             (kvs?: Fibjs.AnyObject): Class_Instance
             (kvs: Fibjs.AnyObject[]): Class_Instance[]
         }
+        $remove (): void
+        $exists (): boolean
+        $clearChanges(): void
 
-        exists (): boolean
 
+        toString (): string
+        toJSON (): Class_Instance['$kvs'];
 
         [k: string]: any
     }

@@ -110,7 +110,7 @@ describe("Model instance", function () {
                     name: "Item"
                 });
 
-                var r = mainItem.set('items', Item);
+                var r = mainItem.$set('items', Item);
             });
         });
 
@@ -119,7 +119,7 @@ describe("Model instance", function () {
                 name: "Main Item"
             });
             
-            mainItem.save({
+            mainItem.$save({
                 name: "new name"
             });
         });
@@ -187,14 +187,14 @@ describe("Model instance", function () {
 
         it("should do nothing with flat paths when setting to same value", function () {
             assert.equal(person.$saved, true);
-            person.set('name', 'Dilbert');
+            person.$set('name', 'Dilbert');
             assert.equal(person.name, 'Dilbert');
             assert.equal(person.$saved, true);
         });
 
         it("should mark as dirty with flat paths when setting to different value", function () {
             assert.equal(person.$saved, true);
-            person.set('name', 'Dogbert');
+            person.$set('name', 'Dogbert');
             assert.equal(person.name, 'Dogbert');
             assert.equal(person.$saved, false);
             assert.equal(person.$changedKeys.join(','), 'name');
@@ -202,7 +202,7 @@ describe("Model instance", function () {
 
         it("should do nothing with deep paths when setting to same value", function () {
             assert.equal(person.$saved, true);
-            person.set('data.e', 5);
+            person.$set('data.e', 5);
 
             var expected = clone(data);
             expected.e = 5;
@@ -213,7 +213,7 @@ describe("Model instance", function () {
 
         it("should mark as dirty with deep paths when setting to different value", function () {
             assert.equal(person.$saved, true);
-            person.set('data.e', 6);
+            person.$set('data.e', 6);
 
             var expected = clone(data);
             expected.e = 6;
@@ -225,7 +225,7 @@ describe("Model instance", function () {
 
         it("should do nothing with deeper paths when setting to same value", function () {
             assert.equal(person.$saved, true);
-            person.set('data.a.b.d', 4);
+            person.$set('data.a.b.d', 4);
 
             var expected = clone(data);
             expected.a.b.d = 4;
@@ -236,7 +236,7 @@ describe("Model instance", function () {
 
         it("should mark as dirty with deeper paths when setting to different value", function () {
             assert.equal(person.$saved, true);
-            person.set('data.a.b.d', 6);
+            person.$set('data.a.b.d', 6);
 
             var expected = clone(data);
             expected.a.b.d = 6;
@@ -248,7 +248,7 @@ describe("Model instance", function () {
 
         it("should mark as dirty with array path when setting to different value", function () {
             assert.equal(person.$saved, true);
-            person.set(['data', 'a', 'b', 'd'], 6);
+            person.$set(['data', 'a', 'b', 'd'], 6);
 
             var expected = clone(data);
             expected.a.b.d = 6;
@@ -260,12 +260,12 @@ describe("Model instance", function () {
 
         it("should do nothing with invalid paths", function () {
             assert.equal(person.$saved, true);
-            person.set('data.a.b.d.y.z', 1);
-            person.set('data.y.z', 1);
-            person.set('z', 1);
-            person.set(4, 1);
-            person.set(null, 1);
-            person.set(undefined, 1);
+            person.$set('data.a.b.d.y.z', 1);
+            person.$set('data.y.z', 1);
+            person.$set('z', 1);
+            person.$set(4, 1);
+            person.$set(null, 1);
+            person.$set(undefined, 1);
             assert.equal(person.$saved, true);
             assert.equal(person.$changedKeys.join(','), '');
         });
@@ -286,8 +286,8 @@ describe("Model instance", function () {
 
         it("should mark individual properties as dirty", function () {
             assert.equal(person.$saved, true);
-            person.set('name', person['name'] + '1');
-            person.set('data.a', person['data'].a + 1);
+            person.$set('name', person['name'] + '1');
+            person.$set('data.a', person['data'].a + 1);
             assert.equal(person.$saved, false);
             assert.equal(person.$changedKeys.join(','), 'name,data');
         });
@@ -382,7 +382,7 @@ describe("Model instance", function () {
                     height: 190
                 });
 
-                person1.save();
+                person1.$save();
 
                 var person2 = Person.create({
                     height: 170

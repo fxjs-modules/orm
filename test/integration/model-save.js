@@ -4,7 +4,7 @@ test.setup();
 var helper = require('../support/spec_helper');
 var common = require('../common');
 
-describe("Model.Instance.save()", function () {
+describe("Model.Instance.$save()", function () {
     var db = null;
     var Person = null;
 
@@ -47,7 +47,7 @@ describe("Model.Instance.save()", function () {
         it("should use it if not defined", function () {
             var John = Person.New();
 
-            John.save();
+            John.$save();
             assert.equal(John.name, "John");
         });
     });
@@ -59,7 +59,7 @@ describe("Model.Instance.save()", function () {
             var John = Person.New({
                 name: "John"
             });
-            John.save();
+            John.$save();
 
             assert.exist(John[Person.id]);
 
@@ -79,7 +79,7 @@ describe("Model.Instance.save()", function () {
             });
 
             let count = 0;
-            John.on("saved", function (err) {
+            John.$on("saved", function (err) {
                 assert.equal(err, null);
                 assert.exist(John[Person.id]);
 
@@ -93,9 +93,9 @@ describe("Model.Instance.save()", function () {
                 if (count >= 3) done();
             });
 
-            John.save();
-            John.save();
-            John.save();
+            John.$save();
+            John.$save();
+            John.$save();
         });
     });
 
@@ -106,7 +106,7 @@ describe("Model.Instance.save()", function () {
             var John = Person.New({
                 name: "Jane"
             });
-            John.save({
+            John.$save({
                 name: "John"
             });
 
@@ -129,7 +129,7 @@ describe("Model.Instance.save()", function () {
             });
 
             assert.throws(function () {
-                John.save("will-fail");
+                John.$save("will-fail");
             });
         });
     });
@@ -145,7 +145,7 @@ describe("Model.Instance.save()", function () {
                 name: "John",
                 parent: Jane
             });
-            John.save();
+            John.$save();
 
             assert.isTrue(John.$saved);
             assert.isTrue(Jane.$saved);
@@ -165,7 +165,7 @@ describe("Model.Instance.save()", function () {
                     name: "Jane"
                 }
             });
-            John.save();
+            John.$save();
 
             assert.isTrue(John.$saved);
             assert.isTrue(John.parent.$saved);
@@ -185,10 +185,10 @@ describe("Model.Instance.save()", function () {
             var John = Person.New({
                 name: "Jhon"
             });
-            John.save(function (err) {
+            John.$save(function (err) {
                 assert.equal(err, null);
 
-                John.on("saved", function () {
+                John.$on("saved", function () {
                     return done();
                 });
 
@@ -241,7 +241,7 @@ describe("Model.Instance.save()", function () {
                 assert.exist(hagar.parent);
 
                 hagar.parent.name = 'Olga2';
-                hagar.save({
+                hagar.$save({
                     name: 'Hagar2'
                 }, {
                         saveAssociations: false
@@ -258,7 +258,7 @@ describe("Model.Instance.save()", function () {
                     name: 'Hagar'
                 });
 
-                hagar.save({}, {
+                hagar.$save({}, {
                     saveAssociations: false
                 });
 
@@ -275,7 +275,7 @@ describe("Model.Instance.save()", function () {
                 assert.exist(hagar.parent);
 
                 hagar.parent.name = 'Olga2';
-                hagar.save({
+                hagar.$save({
                     name: 'Hagar2'
                 });
 
@@ -294,7 +294,7 @@ describe("Model.Instance.save()", function () {
                 assert.exist(hagar.parent);
 
                 hagar.parent.name = 'Olga2';
-                hagar.save({
+                hagar.$save({
                     name: 'Hagar2'
                 }, {
                         saveAssociations: true
@@ -351,7 +351,7 @@ describe("Model.Instance.save()", function () {
                 assert.exist(hagar.parent);
 
                 hagar.parent.name = 'Olga2';
-                hagar.save({
+                hagar.$save({
                     name: 'Hagar2'
                 });
 
@@ -371,7 +371,7 @@ describe("Model.Instance.save()", function () {
                 assert.exist(hagar.parent);
 
                 hagar.parent.name = 'Olga2';
-                hagar.save({
+                hagar.$save({
                     name: 'Hagar2'
                 }, {
                         saveAssociations: false
@@ -390,7 +390,7 @@ describe("Model.Instance.save()", function () {
                 assert.exist(hagar.parent);
 
                 hagar.parent.name = 'Olga2';
-                hagar.save({
+                hagar.$save({
                     name: 'Hagar2'
                 }, {
                         saveAssociations: true
@@ -413,7 +413,7 @@ describe("Model.Instance.save()", function () {
                 var John = Person.New({
                     name: { x: 51.5177, y: -0.0968 }
                 });
-                John.save(function (err) {
+                John.$save(function (err) {
                     assert.equal(err, null);
 
                     assert.isTrue(John.name instanceof Object);
@@ -437,11 +437,11 @@ describe("Model.Instance.save()", function () {
                 name: "John"
             });
             var saveCalled = false;
-            John.save = function (cb) {
+            John.$save = function (cb) {
                 saveCalled = true;
                 cb(null);
             };
-            John.save(function (err) {
+            John.$save(function (err) {
                 assert.equal(saveCalled, true);
                 return done();
             });

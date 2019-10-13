@@ -255,7 +255,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         
         const isMultiple = Array.isArray(kvItem);
         const instances = arraify(new Instance(this, snapshot(kvItem)))
-            .map(x => x.save(kvItem));
+            .map(x => x.$save(kvItem));
 
         // console.log(require('@fibjs/chalk')`{bold.yellow.inverse instance.$kvs [1]}`, kvItem, instance.$kvs);
 
@@ -413,7 +413,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
     New (
         input: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['New']>
-    ) {
+    ): any {
         let base: Fibjs.AnyObject
 
         switch (typeof input) {
@@ -435,6 +435,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                 throw new Error(`[Model::New] invalid input for model(collection: ${this.collection})!`)
         }
 
+        // it also maybe array of instance.
         return new Instance(this, base);
     }
 
@@ -720,7 +721,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                     (targetInst: typeof targetDataSet) => {
                         if (!targetInst.$isInstance) targetInst = this.targetModel.New(targetInst)
 
-                        targetInst.save()
+                        targetInst.$save()
 
                         const mergeInst = this.New(sourceInstance.toJSON())
 
@@ -728,7 +729,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                             mergeInst[matchCond.source] = targetInst[matchCond.target]
                         });
 
-                        mergeInst.save();
+                        mergeInst.$save();
 
                         sourceInstance[this.name] = targetInst
                     }
@@ -752,7 +753,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                             // targetInst[property.name] = sourceInstance[property.name]
                         })
 
-                        targetInst.save()
+                        targetInst.$save()
 
                         return targetInst.toJSON()
                     }
@@ -771,14 +772,14 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                     inputs,
                     // TODO: try to use trans here
                     (targetInst: FxOrmInstance.Class_Instance) => {
-                        targetInst.save()
+                        targetInst.$save()
 
                         const mergeInstance = this.New({
                             [this.sourceJoinKey]: sourceInstance[sourceInstance.$model.id],
                             [this.targetJoinKey]: targetInst[targetInst.$model.id],
                         })
                         
-                        if (!mergeInstance.exists()) mergeInstance.save()
+                        if (!mergeInstance.$exists()) mergeInstance.$save()
 
                         return targetInst.toJSON()
                     }

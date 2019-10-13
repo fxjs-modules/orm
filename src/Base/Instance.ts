@@ -11,17 +11,6 @@ import Property from './Property';
 const { EventEmitter } = events
 
 const REVERSE_KEYS = [
-    /* base operator from EventEmitter :start */
-    'on',
-    'off',
-    /* base operator from EventEmitter :end */
-
-    'set',
-    'get',
-    'save',
-    'exists',
-    'remove',
-    '$clearChanges',
     'toJSON',
     'toArray'
 ];
@@ -133,18 +122,26 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         return getInstance(this) as any;
     }
 
-    set (prop: string | string[], value: any) {
+    $on (...args: any[]) { return super.on.apply(this, args) }
+    $off (...args: any[]) { return super.off.apply(this, args) }
+    $emit (...args: any[]) { return super.emit.apply(this, args) }
+
+    $set (prop: string | string[], value: any) {
         if (!prop) return ;
 
         if (typeof prop === 'string') {
             setTarget(prop, value, this);
         } if (Array.isArray(prop)) {
             prop = prop.filter(x => x && typeof x === 'string').join('.');
-            this.set(prop, value);
+            this.$set(prop, value);
         }
     }
 
-    save (
+    $get (fieldName: string) {
+        return null as any
+    }
+
+    $save (
         dataset: Fibjs.AnyObject = this.$kvs
     ): any {
         if (dataset !== undefined && typeof dataset !== 'object')
@@ -185,7 +182,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         this.$dml
             .toSingleton()
             .useTrans((dml: any) => {
-                if (this.$isPersisted && this.exists()) {
+                if (this.$isPersisted && this.$exists()) {
                     const changes = this.$model.normalizePropertiesToData(dataset);
                     const whereCond = <typeof changes>{};
 
@@ -244,7 +241,11 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         return this
     }
 
-    exists (): boolean {
+    $remove (): void {
+
+    }
+
+    $exists (): boolean {
         const where: Fibjs.AnyObject = {};
 
         if (!this.$model.idPropertyList.length) {
