@@ -99,12 +99,12 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
      * @description define one model with modelName(name) and properties(props)
      * 
      * @param name 
-     * @param props 
+     * @param properties 
      * @param config 
      */
     define (
         name: string,
-        properties: FxOrmModel.ModelPropertyDefinitionHash,
+        properties: Fibjs.AnyObject,
         config: FxOrmModel.Class_ModelDefinitionOptions = {}
     ) {
         const filteredProps = properties as FxOrmProperty.NormalizedPropertyHash;
@@ -126,17 +126,7 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
             
             methods: {},
             validations: {},
-            ievents: {},
         });
-    }
-
-    /**
-     * @description create one model's instance from model with (modelName)
-     * 
-     * @param modelName 
-     */
-    New (modelName: string) {
-        
     }
 
     /**

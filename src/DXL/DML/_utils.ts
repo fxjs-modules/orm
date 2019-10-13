@@ -3,33 +3,6 @@ import util = require('util');
 import { Operators } from '../../Base/Query/Operator';
 import { arraify } from '../../Utils/array';
 
-export function filterPropertyToStoreData (
-	unFilteredPropertyValues: Fibjs.AnyObject,
-	properties: any,
-	targetDataSet: Fibjs.AnyObject = {}
-) {
-	Object.values(properties).forEach((prop: FxOrmProperty.NormalizedProperty) => {
-		if (unFilteredPropertyValues.hasOwnProperty(prop.name))
-			targetDataSet[prop.mapsTo] = prop.toStoreValue(unFilteredPropertyValues[prop.name])
-		else if (unFilteredPropertyValues.hasOwnProperty(prop.mapsTo))
-			targetDataSet[prop.mapsTo] = prop.toStoreValue(unFilteredPropertyValues[prop.mapsTo])
-	})
-
-	return targetDataSet
-}
-export function fillStoreDataToProperty (
-	storeData: Fibjs.AnyObject,
-	properties: any,
-	targetProps: Fibjs.AnyObject = {}
-) {
-	Object.values(properties).forEach((prop: FxOrmProperty.NormalizedProperty) => {
-		if (storeData.hasOwnProperty(prop.mapsTo))
-			targetProps[prop.name] = prop.fromStoreValue(storeData[prop.mapsTo])
-	})
-
-	return targetProps
-}
-
 export function filterKnexBuilderBeforeQuery (
 	builder: any,
 	beforeQuery: Function | Function[],

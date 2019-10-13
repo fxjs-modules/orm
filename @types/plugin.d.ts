@@ -1,5 +1,5 @@
 declare namespace FxORMPlugin {
     interface PluginOptions {
-        beforeDefine (name: string, properties: FxOrmModel.ModelPropertyDefinitionHash): void
+        beforeDefine (name: string, properties: Fibjs.AnyObject): void
     }
 }

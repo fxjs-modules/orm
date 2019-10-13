@@ -1,4 +1,5 @@
 import { default as sqlite } from './sqlite'
+import { default as mysql } from './mysql'
 
 export function getDDL (
     type: FxDbDriverNS.Driver['type'],
@@ -6,7 +7,9 @@ export function getDDL (
     switch (type) {
         case 'sqlite':
             return sqlite
+        case 'mysql':
+            return mysql
         default:
-            return sqlite
+            throw new Error(`[getDDL] unsupported type: ${type}`)
     }
 }

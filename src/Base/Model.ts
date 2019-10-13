@@ -11,7 +11,6 @@ import * as SYMBOLS from '../Utils/symbols';
 import { snapshot } from "../Utils/clone";
 import Property from './Property';
 import { configurable } from '../Decorators/accessor';
-import { fillStoreDataToProperty, filterPropertyToStoreData } from '../DXL/DML/_utils';
 
 import { arraify } from '../Utils/array';
 import Class_QueryNormalizer from './Query/Normalizer';
@@ -74,7 +73,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     @configurable(false)
     get isMergeModel () { return false }
 
-    properties: {[k: string]: Property} = {};
+    properties: FxOrmModel.Class_Model['properties'] = {};
     /**
      * @description all properties names
      */
@@ -86,7 +85,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
      * @description all field properties
      */
     @configurable(false)
-    get propertyList (): FxOrmProperty.Class_Property[] {
+    get propertyList () {
         return Object.values(this.properties)
     }
     associations: FxOrmModel.Class_Model['associations'] = {};
@@ -121,7 +120,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
      * @description all key field properties
      */
     @configurable(false)
-    get keyPropertyList (): FxOrmProperty.Class_Property[] {
+    get keyPropertyList () {
         return Object.values(this.keyProperties)
     }
 
@@ -136,9 +135,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
     get Op () { return (<any>this.orm.constructor).Op }
 
-    get storeType () {
-        return this.orm.driver.type
-    }
+    get storeType () { return this.orm.driver.type }
 
     private get dbdriver(): FxDbDriverNS.Driver {
         return this.orm.driver as any;
@@ -147,10 +144,17 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     @configurable(false)
     get _symbol () { return SYMBOLS.Model };
     
-    get $dml () { return this.orm.$dml };
-    get $ddl () { return this.orm.$ddl };
+    get $dml (): FxOrmModel.Class_Model['$dml'] { return this.orm.$dml };
+    get $ddl (): FxOrmModel.Class_Model['$ddl'] { return this.orm.$ddl };
     get schemaBuilder () { return this.$ddl.sqlQuery.knex.schema }
     get queryBuilder () { return this.$ddl.sqlQuery.knex.queryBuilder() }
+
+    get propertyContext() {
+        return {
+            model: this,
+            knex: this.$ddl.sqlQuery.knex
+        }
+    }
 
     constructor (config: FxOrmModel.Class_ModelConstructOptions) {
         super()
@@ -169,9 +173,9 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
              */
             Object.keys(config.properties)
                 .forEach((prop: string) => {
-                    const property = this.properties[prop] = Property.New(
+                    const property = this.properties[prop] = new Property(
                         config.properties[prop],
-                        { propertyName: prop, storeType: this.storeType }
+                        { propertyName: prop, storeType: this.storeType, $ctx: this.propertyContext }
                     );
                     
                     if (specKeyPropertyNames)
@@ -180,11 +184,12 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                 });
 
             if (specKeyPropertyNames && this.ids.length === 0) {
-                this.keyProperties[DFLT_ID_DEF.name] = this.properties[DFLT_ID_DEF.name] = Property.New(
+                this.keyProperties[DFLT_ID_DEF.name] = this.properties[DFLT_ID_DEF.name] = new Property(
                     {...DFLT_ID_DEF},
                     {
                         propertyName: DFLT_ID_DEF.name,
-                        storeType: this.storeType
+                        storeType: this.storeType,
+                        $ctx: this.propertyContext
                     }
                 )
             }
@@ -420,15 +425,35 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return mergeModel
     }
 
-    normalizePropertiesToData (data: Fibjs.AnyObject = {}, target: Fibjs.AnyObject = {}) {
-        return filterPropertyToStoreData(data, this.properties, target)
+    normalizePropertiesToData (inputdata: Fibjs.AnyObject = {}, target: Fibjs.AnyObject = {}) {
+        this.propertyList.forEach((prop: FxOrmProperty.NormalizedProperty) => {
+            if (inputdata.hasOwnProperty(prop.name))
+                target[prop.mapsTo] = prop.toStoreValue(inputdata[prop.name])
+            else if (inputdata.hasOwnProperty(prop.mapsTo))
+                target[prop.mapsTo] = prop.toStoreValue(inputdata[prop.mapsTo])
+        })
+    
+        return target
     }
 
-    normalizeDataToProperties (data: Fibjs.AnyObject = {}, target: Fibjs.AnyObject = {}) {
-        return fillStoreDataToProperty(data, this.properties, target)
+    normalizeDataToProperties (storeData: Fibjs.AnyObject = {}, target: Fibjs.AnyObject = {}) {
+        this.propertyList.forEach((prop: FxOrmProperty.NormalizedProperty) => {
+            if (storeData.hasOwnProperty(prop.mapsTo))
+                target[prop.name] = prop.fromStoreValue(storeData[prop.mapsTo])
+        })
+    
+        return target
     }
 
-    filterOutAssociatedData (dataset: Fibjs.AnyObject = {}, instanceDataSet: Fibjs.AnyObject = {}) {
+    normlizePropertyData (dataset: Fibjs.AnyObject = {}, kvs: Fibjs.AnyObject = {}) {
+        this.propertyList.forEach(property => {
+            if (dataset.hasOwnProperty(property.name)) kvs[property.name] = dataset[property.name]
+        })
+
+        return kvs
+    }
+
+    filterOutAssociatedData (dataset: Fibjs.AnyObject = {}) {
         const kvs = []
         for (let assoc_name in this.associations) {
             const fInfo = this.fieldInfo(assoc_name)
@@ -446,15 +471,13 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         if (this.fieldInfo(name))
             throw new Error(`[Model] property '${name}' existed in model '${this.name}'`)
 
-        // if (name === 'name')
-        //     console.notice('[add Property] property', property);
-
         if ((property instanceof Property))
             return this.properties[name] = property
             
-        return this.properties[name] = property = Property.New({...property, name}, {
+        return this.properties[name] = new Property({...property, name}, {
             propertyName: name,
-            storeType: this.storeType
+            storeType: this.storeType,
+            $ctx: this.propertyContext
         })
     }
 

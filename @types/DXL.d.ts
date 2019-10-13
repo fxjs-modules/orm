@@ -1,8 +1,8 @@
 declare namespace FxOrmDXL {
-    class DXLDriver<ConnType> {
+    class DXLDriver<CONN_TYPE> {
         // uid: string
-        dbdriver: FxDbDriverNS.Driver<ConnType>;
-        singleton_connection?: ConnType;
+        dbdriver: FxDbDriverNS.Driver<CONN_TYPE>;
+        singleton_connection?: CONN_TYPE;
 
         // readonly isSql: boolean
         /**
@@ -11,32 +11,20 @@ declare namespace FxOrmDXL {
         sqlQuery: FxSqlQuery.Class_Query;
 
         constructor(opts: {
-            dbdriver: DXLDriver<ConnType>['dbdriver'],
+            dbdriver: DXLDriver<CONN_TYPE>['dbdriver'],
             singleton?: boolean,
         })
 
         toSingleton (): this
-        useTrans (callback: (dxl: DXLDriver<ConnType>) => any): this
+        useTrans (callback: (dxl: DXLDriver<CONN_TYPE>) => any): this
         releaseSingleton (): this
 
-        useConnection (callback: (connection: ConnType) => any): any
+        useConnection (callback: (connection: CONN_TYPE) => any): any
 
         execSqlQuery<T_RESULT = any>(
             connection: any,
             sqlstr: string,
             args?: any[]
         ): T_RESULT
-
-        // poolQuery: {
-        //     <T=any>(query: string, cb?: FxOrmNS.GenericCallback<T>): T
-        // }
-        
-        // valueToProperty: {
-        //     (value: any, property: FxOrmProperty.NormalizedProperty): any
-        // }
-        // propertyToValue: {
-        //     (value: any, property: FxOrmProperty.NormalizedProperty): any
-        // }
-        // customTypes: {[key: string]: FxOrmProperty.CustomPropertyType}
     }
 }

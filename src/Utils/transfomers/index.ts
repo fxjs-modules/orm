@@ -4,11 +4,15 @@ import * as mongodb from './mongodb'
 
 export function getDataStoreTransformer (
     type: FxDbDriverNS.Driver['type'],
-): typeof sqlite {
+): FxOrmDTransformer.Transformer {
     switch (type) {
         case 'sqlite':
             return sqlite
+        case 'mysql':
+            return mysql
+        case 'mongodb':
+            return mongodb
         default:
-            return sqlite
+            throw new Error(`[getDataStoreTransformer] unsupported type: ${type}`)
     }
 }

@@ -150,6 +150,11 @@ function filterComplexPropertyDefinition (
                 serial: false,
                 defaultValue: () => uuid.snowflake().hex()
             })
+        case 'point':
+            return getNormalizedProperty({
+                ...normalizedNameStruct,
+                type: 'point'
+            })
     }
 
     if (Array.isArray(input))
@@ -196,10 +201,23 @@ function filterDefaultValue (
     return _dftValue
 }
 
-export default class Property<ConnType = any> implements FxOrmProperty.Class_Property {
+function isValidCustomizedType(
+    customType?: FxOrmProperty.Class_Property['customType']
+) {
+    if (!customType) return 
+
+    return (
+        typeof customType.datastoreType === 'function'
+        || typeof customType.valueToProperty === 'function'
+        || typeof customType.propertyToValue === 'function'
+    )
+}
+
+export default class Property<T_CTX = any> implements FxOrmProperty.Class_Property<T_CTX> {
     static filterDefaultValue = filterDefaultValue;
 
-    $storeType: FxDbDriverNS.Driver<ConnType>['type'];
+    $storeType: FxDbDriverNS.Driver<any>['type'];
+    $ctx: FxOrmProperty.Class_Property<T_CTX>['$ctx'];
 
     customType?: FxOrmProperty.CustomPropertyType
 
@@ -237,40 +255,42 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
     // @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
     // $remote: FxOrmProperty.NormalizedProperty
 
-    get transformer () {
-        return getDataStoreTransformer(this.$storeType)
-    }
+    get transformer () { return getDataStoreTransformer(this.$storeType) }
 
-    fromStoreValue (storeValue: any) {
+    fromStoreValue (storeValue: any): any {
         return this.transformer.valueToProperty(
-            storeValue, this,
+            storeValue, this as any,
             this.customType ? {[this.$definition.type]: this.customType} : {}
         )
     }
 
-    toStoreValue (value: any) {
+    toStoreValue (value: any): any {
         return this.transformer.propertyToValue(
-            value, this,
+            value, this as any,
             this.customType ? {[this.$definition.type]: this.customType} : {}
         )
     }
 
-    static New (
-        ...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmProperty.Class_Property>
-    ) {
-        return new Property(...args);
-    }
+    // static create (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmProperty.Class_Property>) {
+    //     return new Property(...args);
+    // }
 
     constructor (
-        input: any,
-        opts: {
-            propertyName: string
-            storeType: FxOrmProperty.Class_Property['$storeType']
-        }
+        input: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmProperty.Class_Property>[0],
+        opts: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmProperty.Class_Property>[1]
     ) {
-        const { storeType = 'unknown', propertyName = '' } = opts || {};
+        const {
+            storeType = 'unknown',
+            propertyName = '',
+            customType = undefined,
+            $ctx = undefined
+        } = opts || {};
+        
         if (!storeType) throw new Error(`[Property] storeType is required!`)
         if (!propertyName) throw new Error(`[Property] propertyName is required!`)
+
+        if (isValidCustomizedType(customType)) this.customType = customType
+        this.$ctx = $ctx
 
         this.$storeType = storeType
 
@@ -316,31 +336,33 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
     }
 
     deKeys () {
-        const raw = this.toJSON()
-        raw.unique = false
-        raw.index = false
-        raw.big = false
-        raw.key = false
-        raw.primary = false
-        raw.serial = false
+        const json = this.toJSON()
+        json.unique = false
+        json.index = false
+        json.big = false
+        json.key = false
+        json.primary = false
+        json.serial = false
 
-        if (raw.type === 'serial') raw.type = 'integer'
+        if (json.type === 'serial') json.type = 'integer'
 
-        return raw
+        return json
     }
 
     renameTo ({ name, mapsTo = name, lazyname = name }: FxOrmTypeHelpers.FirstParameter<FxOrmProperty.Class_Property['renameTo']>) {
         if (!name)
             throw new Error('[Property::renameTo] new name is required')
 
-        const newVal = Property.New({
+        const newVal = new Property<T_CTX>({
             ...this.toJSON(),
             name,
             mapsTo,
             lazyname
         }, {
             propertyName: name,
-            storeType: this.$storeType
+            storeType: this.$storeType,
+            customType: this.customType,
+            $ctx: this.$ctx
         })
 
         return newVal

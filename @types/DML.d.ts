@@ -4,7 +4,7 @@
 
 /// <reference path="_common.d.ts" />
 /// <reference path="property.d.ts" />
-/// <reference path="assoc.d.ts" />
+/// <reference path="Queries.d.ts" />
 
 declare namespace FxOrmDML {
     // type WhereObject = FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['where']>
@@ -13,8 +13,7 @@ declare namespace FxOrmDML {
         ctx: { dml: DMLDriver }
     ) => typeof builer | void
 
-    class DMLDriver<ConnType = any> extends FxOrmDXL.DXLDriver<ConnType> {
-        // uid: string
+    class DMLDriver<CONN_TYPE = any> extends FxOrmDXL.DXLDriver<CONN_TYPE> {
         find: {
             <T=Fibjs.AnyObject[]>(
                 collection: string,
@@ -26,7 +25,7 @@ declare namespace FxOrmDML {
                     limit?: FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['limit']>
                     orderBy?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['orderBy']>
 
-                    beforeQuery?: BeforeQueryItem | BeforeQueryItem[]
+                    beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                 }
             ): T
         }
@@ -36,7 +35,7 @@ declare namespace FxOrmDML {
                 opts?: {
                     where?: FxOrmQueries.WhereObject,
                     countParams?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['count']>
-                    beforeQuery?: BeforeQueryItem | BeforeQueryItem[]
+                    beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                     filterQueryResult?: <T2 = any>(result: any) => T2
                 }
             ): number
@@ -46,7 +45,7 @@ declare namespace FxOrmDML {
                 collection: string,
                 opts?: {
                     where?: FxOrmQueries.WhereObject,
-                    beforeQuery?: BeforeQueryItem | BeforeQueryItem[]
+                    beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                     filterQueryResult?: <T2 = any>(result: any) => T2
                 }
             ): boolean
@@ -57,9 +56,9 @@ declare namespace FxOrmDML {
                 data: FxSqlQuerySql.DataToSet,
                 opts?: {
                     idPropertyList?: FxOrmProperty.NormalizedProperty[],
-                    beforeQuery?: BeforeQueryItem | BeforeQueryItem[]
+                    beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                 }
-            ): FxOrmQuery.InsertResult
+            ): Fibjs.AnyObject
         }
         update: {
             <T=any>(
@@ -68,7 +67,7 @@ declare namespace FxOrmDML {
                 opts?: {
                     where?: FxOrmQueries.WhereObject,
                     idPropertyList?: FxOrmProperty.NormalizedProperty[],
-                    beforeQuery?: BeforeQueryItem | BeforeQueryItem[]
+                    beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                 }
             ): T
         }
@@ -77,7 +76,7 @@ declare namespace FxOrmDML {
                 collection: string,
                 opts?: {
                     where: FxOrmQueries.WhereObject,
-                    beforeQuery?: BeforeQueryItem | BeforeQueryItem[]
+                    beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                 }
             ): T
         }

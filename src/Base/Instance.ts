@@ -251,17 +251,19 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
                         { where: whereCond }
                     );
                 } else {
+                    const creates = this.$model.normalizePropertiesToData(dataset);
                     const insertResult = dml.insert(
                         this.$model.collection,
-                        this.$model.normalizePropertiesToData(dataset),
+                        creates,
                         { idPropertyList: this.$model.idPropertyList }
                     );
 
                     if (insertResult)
                         this.$model.normalizeDataToProperties(
-                            Object.assign(insertResult, dataset),
+                            Object.assign(insertResult),
                             this.$kvs
                         )
+                    this.$model.normlizePropertyData(dataset, this.$kvs)
                 }
 
                 this.$model.filterOutAssociatedData(dataset)

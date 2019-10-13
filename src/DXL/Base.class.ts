@@ -19,8 +19,17 @@ export default class DXLBase<ConnType = any> implements FxOrmDXL.DXLDriver<ConnT
             this.sqlQuery = new SqlQuery.Query();
     }
 
+    /**
+     * @warning you should always call releaseSingleton when task of singleton finished
+     */
     toSingleton () {
         return new (<any>this.constructor)({ dbdriver: this.dbdriver, singleton: true })
+    }
+    releaseSingleton () {
+        if (this.singleton_connection)
+            (<any>this.singleton_connection).close()
+
+        return this
     }
 
     useTrans (callback: (dxl: DXLBase<ConnType>) => any) {
@@ -32,13 +41,6 @@ export default class DXLBase<ConnType = any> implements FxOrmDXL.DXLDriver<ConnT
             else
                 callback(this)
         })
-
-        return this
-    }
-
-    releaseSingleton () {
-        if (this.singleton_connection)
-            (<any>this.singleton_connection).close()
 
         return this
     }
@@ -63,10 +65,4 @@ export default class DXLBase<ConnType = any> implements FxOrmDXL.DXLDriver<ConnT
 
         return connection.execute(sqlstr)
     }
-
-    /**
-     * generate one fresh DXL with alone context:
-     * - one-time, fresh connection
-     */
-    // getOneConnectionContext
 }

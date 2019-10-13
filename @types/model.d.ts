@@ -3,6 +3,7 @@
 /// <reference path="Validators.d.ts" />
 /// <reference path="instance.d.ts" />
 /// <reference path="settings.d.ts" />
+/// <reference path="property.d.ts" />
 /// <reference path="Queries.d.ts" />
 
 declare namespace FxOrmModel {
@@ -17,6 +18,8 @@ declare namespace FxOrmModel {
     }
 
     type Class_ModelConstructOptions = FxOrmTypeHelpers.ConstructorParams<typeof FxOrmModel.Class_Model>[0]
+    type ModelProperty = FxOrmProperty.Class_Property<Class_Model['propertyContext']>
+
     class Class_Model extends FxOrmQueries.Class_QueryBuilder {
         name: string
         collection: string
@@ -24,15 +27,15 @@ declare namespace FxOrmModel {
         readonly orm: FxOrmNS.Class_ORM
         readonly Op: FxOrmQueries.Operators
 
-        properties: {[k: string]: FxOrmProperty.Class_Property}
+        properties: {[k: string]: ModelProperty}
         readonly propertyNames: string[]
-        readonly propertyList: FxOrmProperty.Class_Property[]
+        readonly propertyList: ModelProperty[]
         
         associations: {[k: string]: FxOrmModel.Class_MergeModel}
 
         settings: any
 
-        readonly storeType: FxOrmProperty.Class_Property['$storeType']
+        readonly storeType: ModelProperty['$storeType']
         readonly isMergeModel: boolean
 
         /* meta :start */
@@ -54,10 +57,10 @@ declare namespace FxOrmModel {
         /**
          * @description all id-type field properties
          */
-        readonly idPropertyList: FxOrmProperty.Class_Property[]
+        readonly idPropertyList: ModelProperty[]
         
         readonly keyPropertyNames: string[]
-        readonly keyPropertyList: FxOrmProperty.Class_Property[]
+        readonly keyPropertyList: ModelProperty[]
         readonly keys: string[]
 
         readonly _symbol: Symbol
@@ -65,6 +68,11 @@ declare namespace FxOrmModel {
         readonly $ddl: FxOrmDDL.DDLDriver
         readonly schemaBuilder: FXJSKnex.FXJSKnexModule.KnexInstance['schema']
         readonly queryBuilder: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>
+
+        readonly propertyContext: {
+            model: FxOrmModel.Class_Model,
+            knex: FxOrmDXL.DXLDriver<any>['sqlQuery']['knex']
+        }
 
         constructor (config: {
             name: string
@@ -115,7 +123,7 @@ declare namespace FxOrmModel {
          * @description is property existed in remote endpoint
          * @warn only valid in sql-type dbdriver
          */
-        hasPropertyRemotely (property: string | FxOrmProperty.Class_Property): boolean
+        hasPropertyRemotely (property: string | ModelProperty): boolean
         /* ddl about :end */
 
         /* dml about :end */
@@ -159,16 +167,25 @@ declare namespace FxOrmModel {
         normalizePropertiesToData (datastore: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
         /**
          * @description
+         *  filter out properties-about key-value in datastore only,
+         *  and transform [key] to correspoding `name` field in property
+         */
+        normlizePropertyData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        /**
+         * @description
          *  filter out association-about key-value in dataset only,
          *  if no key-value about association, would return one empty array
          * 
          * @return []
          */
-        filterOutAssociatedData (dataset: Fibjs.AnyObject, instanceDataSet?: Fibjs.AnyObject): {
+        filterOutAssociatedData (dataset: Fibjs.AnyObject): {
             association: FxOrmModel.Class_Model['associations'][any],
             dataset: any,
         }[]
-        addProperty(name: string, propertyDefinition: FxOrmProperty.Class_Property | FxOrmProperty.NormalizedProperty): typeof propertyDefinition
+        addProperty(
+            name: string,
+            propertyDefinition: ModelProperty | FxOrmProperty.NormalizedProperty
+        ): ModelProperty
 
         fieldInfo(propertyName: string): {
             type: 'self'

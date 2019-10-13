@@ -1,11 +1,4 @@
 declare namespace FxOrmProperty {
-    // /**
-    //  * @description key linked association type
-    //  *  - 'primary': means this property is for column defined as 'primary'
-    //  *  - 'hasOne': means this property is for column used as asscociated key in 'hasOne' assciation
-    //  */
-    // type KlassType = 'primary' | 'hasOne'
-
     interface CustomPropertyType extends FxOrmSqlDDLSync__Driver.CustomPropertyType {
         datastoreType: {
             (prop?: FxOrmProperty.NormalizedProperty): string
@@ -14,17 +7,13 @@ declare namespace FxOrmProperty {
             (value?: any, prop?: FxOrmProperty.NormalizedProperty): any
         }
         propertyToValue?: {
-            (value?: any, prop?: FxOrmProperty.NormalizedProperty): any
-        }
-        datastoreGet?: {
-            (prop?: FxOrmProperty.NormalizedProperty, helper?: FxSqlQuery.Class_Query): any
+            (propertyValue?: any, prop?: FxOrmProperty.NormalizedProperty): any
         }
     }
     
     /**
      * @description useful when pass property's option(such as type, big, ...etc) internally, useless for exposed api.
      */
-    // interface NormalizedProperty extends FxOrmModel.ModelPropertyDefinition {
     interface NormalizedProperty {
         name: string
 
@@ -57,8 +46,9 @@ declare namespace FxOrmProperty {
         [ext_k: string]: any
     }
 
-    class Class_Property implements NormalizedProperty {
+    class Class_Property<T_CTX = any> implements NormalizedProperty {
         $storeType: FxDbDriverNS.Driver<any>['type']
+        $ctx: T_CTX
 
         name: string
 
@@ -86,10 +76,7 @@ declare namespace FxOrmProperty {
         lazyname: string
         enumerable: boolean
 
-        static filterProperty (
-            input: FxOrmModel.ComplexModelPropertyDefinition,
-            pname?: string
-        ): FxOrmProperty.NormalizedProperty
+        customType?: FxOrmProperty.CustomPropertyType
 
         static filterDefaultValue (
             property: FxOrmSqlDDLSync__Column.Property,
@@ -100,12 +87,15 @@ declare namespace FxOrmProperty {
             }
         ): any
 
-        static New (...args: FxOrmTypeHelpers.ConstructorParams<Class_Property>): Class_Property
+        // static create (...args: FxOrmTypeHelpers.ConstructorParams<Class_Property>): Class_Property
         constructor (
-            input: FxOrmModel.ComplexModelPropertyDefinition,
-            opts?: {
-                propertyName: string,
+            input: any,
+            opts?: 
+            {
+                propertyName: string
                 storeType: FxOrmProperty.Class_Property['$storeType']
+                customType?: FxOrmProperty.Class_Property['customType']
+                $ctx?: FxOrmProperty.Class_Property['$ctx']
             }
         )
 
@@ -113,12 +103,12 @@ declare namespace FxOrmProperty {
             valueToProperty(
                 value: any,
                 property: FxOrmProperty.NormalizedProperty,
-                customTypes: FxOrmDMLDriver.DMLDriver['customTypes']
+                customTypes: FxOrmDTransformer.CustomTypes
             ): any
             propertyToValue (
                 value: any,
                 property: FxOrmProperty.NormalizedProperty,
-                customTypes: FxOrmDMLDriver.DMLDriver['customTypes']
+                customTypes: FxOrmDTransformer.CustomTypes
             ): any
         }
 

@@ -1,12 +1,15 @@
+import knex = require('@fxjs/knex')
 import util = require('util')
+import { use_propertyToValue, use_valueToProperty } from './_utils';
+import { coerceNumber } from '../number';
+
+export const storeType = 'sqlite'
 
 export function valueToProperty (
     value: any,
-    property: FxOrmProperty.NormalizedProperty,
-    customTypes: FxOrmDMLDriver.DMLDriver['customTypes']
+    property: FxOrmModel.Class_Model['properties'][any],
+    customTypes: FxOrmDTransformer.CustomTypes
 ) {
-	var customType;
-
 	switch (property.type) {
 		case "date":
 			if (util.isNumber(value) || util.isString(value))
@@ -26,18 +29,17 @@ export function valueToProperty (
 			}
 			break;
 		default:
-			customType = customTypes[property.type];
-			if(customType && 'valueToProperty' in customType) {
-				value = customType.valueToProperty(value);
-			}
+			value = use_valueToProperty(value, customTypes[property.type])
+			break;
+
 	}
 	return value;
 };
 
 export function propertyToValue (
     value: any,
-    property: FxOrmProperty.NormalizedProperty,
-    customTypes: FxOrmDMLDriver.DMLDriver['customTypes']
+    property: FxOrmModel.Class_Model['properties'][any],
+    customTypes: FxOrmDTransformer.CustomTypes
 ) {
 	switch (property.type) {
 		case "date":
@@ -53,12 +55,17 @@ export function propertyToValue (
 			}
 			break;
 		case "point":
-			return function() { return 'POINT(' + value.x + ', ' + value.y + ')'; };
-		default:
-			const customType = customTypes[property.type];
-			if(customType && 'propertyToValue' in customType) {
-				value = customType.propertyToValue(value);
+			try {
+				value = `POINT(${coerceNumber(value.x)} ${coerceNumber(value.y)})`
+			} catch (error) {
+				value = `POINT(0 0)`
 			}
+			
+			value = property.$ctx.knex.raw(`GeomFromText('${value}')`)
+            break
+		default:
+			value = use_propertyToValue(value, customTypes[property.type])
+            break
 	}
 	return value;
 };

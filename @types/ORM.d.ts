@@ -1,5 +1,6 @@
 /// <reference types="@fibjs/types" />
 /// <reference types="@fibjs/enforce" />
+/// <reference types="@fxjs/db-driver" />
 /// <reference types="@fxjs/sql-query" />
 /// <reference types="@fxjs/sql-ddl-sync" />
 /// <reference types="fib-pool" />
@@ -10,6 +11,7 @@
 /// <reference path="model.d.ts" />
 /// <reference path="property.d.ts" />
 /// <reference path="instance.d.ts" />
+/// <reference path="dtransformer.d.ts" />
 
 /// <reference path="Error.d.ts" />
 /// <reference path="Validators.d.ts" />

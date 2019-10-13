@@ -2,7 +2,6 @@ import DXLBase from '../Base.class';
 
 export default class Base<ConnType = any> extends DXLBase<ConnType> implements FxOrmDML.DMLDriver<ConnType> {
     dbdriver: FxDbDriverNS.Driver<ConnType>;
-
     sqlQuery: FxSqlQuery.Class_Query;
 
     static create (opts: { dbdriver: Base['dbdriver'] }) {

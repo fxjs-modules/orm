@@ -1,29 +1,6 @@
-import Base from "./_base";
-import { configurable } from "../../Decorators/accessor";
+import KnexBased from './_knex';
 
-class DDL_SQLite extends Base {
-    dbdriver: FxDbDriverNS.SQLDriver;
-
-    @configurable(false)
-    get isDebug () {
-        return false
-    }
-
-    createCollection (collection: string) {
-        
-    }
-
-    dropCollection (collection: string) {
-        const kq = this.sqlQuery
-            .knex.schema
-            .dropTableIfExists(collection)
-
-        this.dbdriver.connectionPool(connection => {
-            this.execSqlQuery(connection, kq.toString());
-        })
-
-        return true;
-    }
+class DDL_SQLite extends KnexBased {
 }
 
 export default DDL_SQLite

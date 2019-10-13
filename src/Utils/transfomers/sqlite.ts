@@ -1,14 +1,15 @@
 import util = require('util')
+import { coerceNumber } from '../number';
+import { use_propertyToValue, use_valueToProperty } from './_utils';
+
+export const storeType = 'sqlite'
 
 export function valueToProperty(
     value: any,
     property: FxOrmProperty.NormalizedProperty,
-    customTypes: FxOrmDMLDriver.DMLDriver['customTypes']
+    customTypes: FxOrmDTransformer.CustomTypes
 ) {
-    let v, customType;
-
-    if (typeof customTypes)
-        customTypes = customTypes || {};
+    let v;
 
     switch (property.type) {
         case "boolean":
@@ -54,11 +55,22 @@ export function valueToProperty(
                 value = new Date(value);
 
             break;
-        default:
-            customType = customTypes[property.type];
-            if (customType && typeof customType.valueToProperty === 'function') {
-                value = customType.valueToProperty(value, property);
+		case "point":
+            try {
+                if (typeof value === 'string') {
+                    const [_, x = 0, y = 0] = (value || '').match(/POINT\(([0-9\.]+),\s?([0-9\.]+)\)/g)
+                    value = {
+                        x: coerceNumber(x),
+                        y: coerceNumber(y),
+                    }
+                }
+            } catch (error) {
+                value = {x: 0, y: 0}
             }
+            break;
+        default:
+			value = use_valueToProperty(value, customTypes[property.type])
+			break;
     }
     return value;
 }
@@ -66,7 +78,7 @@ export function valueToProperty(
 export function propertyToValue (
     value: any,
     property: FxOrmProperty.NormalizedProperty,
-    customTypes: FxOrmDMLDriver.DMLDriver['customTypes']
+    customTypes: FxOrmDTransformer.CustomTypes
 ) {
 	switch (property.type) {
 		case "boolean":
@@ -80,12 +92,17 @@ export function propertyToValue (
 		case "date":
 			if (util.isNumber(value) || util.isString(value))
             	value = new Date(value);
-			break;
-		default:
-			const customType = customTypes[property.type];
-            if (customType && typeof customType.propertyToValue === 'function') {
-                value = customType.propertyToValue(value, property);
+            break;
+		case "point":
+            try {
+                value = `POINT(${coerceNumber(value.x)}, ${coerceNumber(value.y)})`
+            } catch (error) {
+                value = `POINT(0, 0)`
             }
+            break
+		default:
+            value = use_propertyToValue(value, customTypes[property.type])
+            break
 	}
 	return value;
 }

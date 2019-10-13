@@ -243,7 +243,7 @@ describe("Model.get()", function() {
   });
 
   describe("with a point property type", function() {
-    if (common.protocol() == "sqlite" || common.protocol() == "mongodb") return;
+    if (common.protocol() == "mongodb") return;
 
     it("should deserialize the point to an array", function(done) {
       db.settings.set("properties.primary_key", "id");
@@ -253,27 +253,22 @@ describe("Model.get()", function() {
         location: { type: "point" }
       });
 
-      // ORM.singleton.clear();
-
       return helper.dropSync(Person, function() {
-        Person.create(
+        var person = Person.create(
           {
             name: "John Doe",
             location: { x: 51.5177, y: -0.0968 }
-          },
-          function(err, person) {
-            assert.equal(err, null);
-
-            assert.isTrue(person.location instanceof Object);
-
-            assert.property(person.location, "x");
-            assert.equal(person.location.x, 51.5177);
-            assert.property(person.location, "y");
-            assert.equal(person.location.y, -0.0968);
-
-            return done();
           }
         );
+
+        assert.isTrue(person.location instanceof Object);
+
+        assert.property(person.location, "x");
+        assert.equal(person.location.x, 51.5177);
+        assert.property(person.location, "y");
+        assert.equal(person.location.y, -0.0968);
+
+        return done();
       });
     });
   });

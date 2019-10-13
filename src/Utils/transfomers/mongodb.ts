@@ -1,14 +1,16 @@
+export const storeType = 'sqlite'
+
 export function valueToProperty (
     value: any,
     property: FxOrmProperty.NormalizedProperty,
-    customTypes: FxOrmDMLDriver.DMLDriver['customTypes']
+    customTypes: FxOrmDTransformer.CustomTypes
 ) {
     return value;
 }
 export function propertyToValue (
     value: any,
     property: FxOrmProperty.NormalizedProperty,
-    customTypes: FxOrmDMLDriver.DMLDriver['customTypes']
+    customTypes: FxOrmDTransformer.CustomTypes
 ) {
     return value;
 }
