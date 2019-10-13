@@ -335,7 +335,7 @@ exports.getType = function (collection, property, driver) {
 		if (property.required) {
 			type += " NOT NULL";
 		}
-		if (property.hasOwnProperty("defaultValue")) {
+		if (property.hasOwnProperty("defaultValue") && property.defaultValue !== undefined) {
 			if (property.type == 'date' && property.defaultValue === Date.now ){
 				type += " DEFAULT now()";
 			} else {

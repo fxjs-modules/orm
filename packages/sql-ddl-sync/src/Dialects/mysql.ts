@@ -551,7 +551,7 @@ export const getType: FxOrmSqlDDLSync__Dialect.Dialect['getType'] = function (
 		}
 		type += " AUTO_INCREMENT";
 	}
-	if (property.hasOwnProperty("defaultValue")) {
+	if (property.hasOwnProperty("defaultValue") && property.defaultValue !== undefined) {
 		const defaultValue = filterPropertyDefaultValue(property, {
 			collection,
 			property,

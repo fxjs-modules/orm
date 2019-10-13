@@ -1,6 +1,6 @@
 {
 	"name": "@fxjs/sql-ddl-sync",
-	"version": "0.6.2",
+	"version": "0.6.3",
 	"description": "Fibjs SQL DDL Synchronization",
 	"keywords": [
 		"sql",
@@ -37,7 +37,7 @@
 	"devDependencies": {
 		"@fibjs/ci": "^2.2.0",
 		"@fibjs/types": "^0.27.1",
-		"@fxjs/db-driver": "^0.0.2",
+		"@fxjs/db-driver": "0.0.5",
 		"@fxjs/sql-query": "^0.4.0",
 		"cross-env": "^5.2.0",
 		"fib-rollup": "^0.4.0",
