@@ -108,7 +108,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
     constructor (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmInstance.Class_Instance>) {
         super()
 
-        let [model, instanceBase] = args || []
+        let [model, instanceBase] = args
 
         if (Array.isArray(instanceBase))
             return instanceBase.map(x => new Instance(model, x)) as any
@@ -162,7 +162,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
             throw new Error(`[Instance::$get] invalid field name given`)
 
         const whereCond = <any>{};
-        Object.values(this.$model.idPropertyList).forEach((property) => {
+        this.$model.idPropertyList.forEach((property) => {
             whereCond[property.name] = this[property.name];
         });
         if (isEmptyPlainObject(whereCond))

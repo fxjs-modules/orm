@@ -9,7 +9,7 @@ describe("Model.sync", function () {
     });
 
     after(function () {
-        db.closeSync();
+        db.close();
     });
 
     // SQLite scopes index names to a database and NOT a table, so

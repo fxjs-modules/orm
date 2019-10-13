@@ -29,6 +29,8 @@ describe("Association belongsToMany", function () {
 
         Person.drop();
         Pet.drop();
+        PersonPets.drop();
+        PetOwners.drop();
 
         db.sync();
     };
@@ -104,7 +106,7 @@ describe("Association belongsToMany", function () {
         });
     });
 
-    describe("if element has an PersonPets", function () {
+    odescribe("if element has an association", function () {
         before(setup);
 
         it("should also create it or save it", function () {
