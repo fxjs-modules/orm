@@ -75,4 +75,6 @@ declare namespace FxOrmTypeHelpers {
             ...args: any[]
         ): T extends any[] ? RETURN_T[] : RETURN_T
     }
+
+    type ItOrListOfIt<T> = T | T[]
 }

@@ -28,7 +28,7 @@ describe("Model Property", function () {
             }
         });
 
-        models["pets"] = PersonPets = Person.o2m("pets", { model: Pet });
+        models["pets"] = PersonPets = Person.hasMany(Pet, { as: "pets" });
 
         models["type_test"] = db.define("type_test", {
             String: String,

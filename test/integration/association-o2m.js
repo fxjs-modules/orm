@@ -17,7 +17,7 @@ describe("Association o2m", function () {
                 defaultValue: "Mutt"
             }
         });
-        mergeModel = Person.o2m("pets", { model: Pet });
+        mergeModel = Person.hasMany(Pet, { as: "pets" });
 
         Person.drop();
         Pet.drop();

@@ -16,7 +16,9 @@ describe("Model.create()", function () {
                 defaultValue: "Mutt"
             }
         });
-        Person.hasMany("pets", Pet);
+        Person.hasMany(Pet, {
+            as: "pets"
+        });
 
         Person.drop();
         Pet.drop();

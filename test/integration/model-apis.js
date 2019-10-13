@@ -39,7 +39,7 @@ describe("Model APIs", function () {
             }
         });
 
-        models["pets"] = PersonPets = Person.o2m("pets", { model: Pet });
+         models["pets"] = PersonPets = Person.hasMany(Pet, { as: "pets" });
     };
 
     before(function () {

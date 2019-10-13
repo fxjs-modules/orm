@@ -1,7 +1,6 @@
 /// <reference types="@fxjs/sql-query" />
 /// <reference path="_common.d.ts" />
 /// <reference path="Validators.d.ts" />
-/// <reference path="assoc.d.ts" />
 /// <reference path="instance.d.ts" />
 /// <reference path="settings.d.ts" />
 /// <reference path="Queries.d.ts" />
@@ -188,36 +187,24 @@ declare namespace FxOrmModel {
                 as?: string,
                 associationKey?: string | ((ctx: any) => string)
             }
-        ): FxOrmTypeHelpers.ReturnType<FxOrmModel.Class_Model['o2m']>
+        ): Class_MergeModel
 
         hasMany(
-            name: string,
-            model?: FxOrmModel.Class_Model,
-            opts?: (FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['o2m']>)
-                & {
-                    type: 'm2m' | 'o2m',
-                    reverse?: boolean | string
-                }
-        ): FxOrmTypeHelpers.ReturnType<Class_Model['o2m']>
+            model: FxOrmModel.Class_Model,
+            opts?: {
+                as: string
+                collection: string
+                type: 'm2m' | 'o2m'
+                matchKeys?: FxOrmTypeHelpers.ItOrListOfIt<Class_MergeModel['associationInfo']['andMatchKeys'][any]>
+            }
+        ): Class_MergeModel
 
         belongsToMany(
             model: Class_Model,
-            opts?: (FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['o2m']>
-                & FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['o2m']>)
-                & {
-                    as?: string
-                    collection: string
-                    associationKey?: string | ((ctx: any) => string),
-                    matchKeys?: FxOrmAssociation.AssociationMatchCondition | FxOrmAssociation.AssociationMatchCondition[]
-                }
-        ): FxOrmTypeHelpers.ReturnType<Class_Model['o2m']>
-
-        o2m(
-            name: string,
             opts?: {
-                model?: FxOrmModel.Class_Model,
-                associationKey?: string | ((ctx: any) => string),
-                matchKeys?: FxOrmAssociation.AssociationMatchCondition | FxOrmAssociation.AssociationMatchCondition[]
+                as?: string
+                collection: string
+                matchKeys?: FxOrmTypeHelpers.ItOrListOfIt<Class_MergeModel['associationInfo']['andMatchKeys'][any]>
             }
         ): Class_MergeModel
 
@@ -289,7 +276,11 @@ declare namespace FxOrmModel {
          */
         associationInfo: {
             collection: string
-            andMatchKeys: FxOrmAssociation.AssociationMatchCondition[]
+            andMatchKeys: {
+                source: string,
+                target: string,
+                comparator: string
+            }[]
         }
         
         constructor (opts: FxOrmModel.Class_ModelConstructOptions & {
@@ -301,7 +292,7 @@ declare namespace FxOrmModel {
             target: Class_MergeModel['targetModel']
             targetJoinKey?: Class_MergeModel['targetJoinKey']
             
-            matchKeys: FxOrmAssociation.AssociationMatchCondition[]
+            matchKeys: Class_MergeModel['associationInfo']['andMatchKeys']
         })
 
         isSourceModel (model: Class_Model): boolean

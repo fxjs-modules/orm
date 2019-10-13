@@ -17,7 +17,7 @@ describe("Instance Changes Track", function () {
                 defaultValue: "Mutt"
             }
         });
-        PersonPets = Person.o2m("pets", { model: Pet });
+        PersonPets = Person.hasMany(Pet, { as: "pets" });
 
         Person.drop();
         Pet.drop();

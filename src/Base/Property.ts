@@ -81,7 +81,7 @@ function getNormalizedProperty (
 const PROPERTIES_KEYS = Object.keys(getNormalizedProperty({name: 'fake'}))
 
 function filterComplexPropertyDefinition (
-    input: FxOrmModel.ComplexModelPropertyDefinition,
+    input: any,
     /**
      * @description property key name in properties dictionary
      */
@@ -262,7 +262,7 @@ export default class Property<ConnType = any> implements FxOrmProperty.Class_Pro
     }
 
     constructor (
-        input: FxOrmModel.ComplexModelPropertyDefinition,
+        input: any,
         opts: {
             propertyName: string
             storeType: FxOrmProperty.Class_Property['$storeType']

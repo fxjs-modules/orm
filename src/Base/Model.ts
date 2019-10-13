@@ -254,6 +254,34 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return dialect.hasCollectionColumnsSync(this.dbdriver, this.collection, colname)
     }
 
+    New (
+        input: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['New']>
+    ): any {
+        let base: Fibjs.AnyObject
+
+        switch (typeof input) {
+            case 'string':
+            case 'number':
+                if (this.ids.length >= 2)
+                    throw new Error(`[Model::New] model '${this.name}' has more than one id-type properties: ${this.ids.join(', ')}`)
+
+                base = { [this.id]: input }
+                
+                break
+            case 'object':
+                base = <Fibjs.AnyObject>input
+                break
+            case 'undefined':
+                base = {}
+                break
+            default:
+                throw new Error(`[Model::New] invalid input for model(collection: ${this.collection})!`)
+        }
+
+        // it also maybe array of instance.
+        return new Instance(this, base);
+    }
+
     create (kvItem: Fibjs.AnyObject | Fibjs.AnyObject[]): any {
         if (Array.isArray(kvItem))
             return coroutine.parallel(kvItem, (kv: Fibjs.AnyObject) => {
@@ -315,42 +343,16 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
         this.associations[asKey] = mergeModel
 
-        // console.log(
-        //     'mergeModel.properties',
-        //     mergeModel.properties,
-        //     Object.keys(this.associations)
-        // )
-
         return mergeModel
     }
 
     hasMany (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['hasMany']>) {
-        const [ name, model, opts ] = args;
+        const [ targetModel, opts ] = args;
 
-        const { type = 'o2m', reverse, ...restOpts } = opts || {} as typeof opts;
-        const reverseKey = typeof reverse === 'string' ? reverse : `${this.name}s`
+        const { as: asKey = '' } = opts || {}
 
-        let assoc = null
+        if (!asKey) throw new Error(`[o2m] association name is required`)
 
-        restOpts.model = model || this
-
-        switch (type) {
-            default:
-            case 'o2m':
-                assoc = this.o2m(name, restOpts)
-                break
-            case 'm2m':
-                assoc = this.m2m(name, restOpts)
-                break
-        }
-
-        return assoc
-    }
-
-    o2m (name: string, opts?: FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['o2m']>) {
-        if (!name) throw new Error(`[o2m] association name is required`)
-
-        const { model: targetModel = this } = opts || {}
         const {
             matchKeys = {
                 source: this.id,
@@ -360,7 +362,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         } = opts || {}
 
         const mergeModel: MergeModel = new MergeModel({
-            name: name,
+            name: asKey,
             collection: targetModel.collection,
             /**
              * @import pass {keys: false} to disable auto-fill id key
@@ -377,7 +379,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             target: targetModel,
         })
 
-        this.associations[name] = mergeModel
+        this.associations[asKey] = mergeModel
 
         return mergeModel
     }
@@ -416,34 +418,6 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         targetModel.associations[asKey] = mergeModel
 
         return mergeModel
-    }
-
-    New (
-        input: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['New']>
-    ): any {
-        let base: Fibjs.AnyObject
-
-        switch (typeof input) {
-            case 'string':
-            case 'number':
-                if (this.ids.length >= 2)
-                    throw new Error(`[Model::New] model '${this.name}' has more than one id-type properties: ${this.ids.join(', ')}`)
-
-                base = { [this.id]: input }
-                
-                break
-            case 'object':
-                base = <Fibjs.AnyObject>input
-                break
-            case 'undefined':
-                base = {}
-                break
-            default:
-                throw new Error(`[Model::New] invalid input for model(collection: ${this.collection})!`)
-        }
-
-        // it also maybe array of instance.
-        return new Instance(this, base);
     }
 
     normalizePropertiesToData (data: Fibjs.AnyObject = {}, target: Fibjs.AnyObject = {}) {

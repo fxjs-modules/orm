@@ -27,11 +27,12 @@ describe("Model.sync", function () {
             name: String
         });
 
-        A.hasMany('bees', B, {}, {
-            reverse: 'eighs'
+        A.hasMany(B, {
+            as: 'bees'
         });
-        A.hasMany('cees', C, {}, {
-            reverse: 'eighs'
+        
+        A.hasMany(C, {
+            as: 'cees'
         });
 
         helper.dropSync([A, B, C]);
