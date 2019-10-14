@@ -1,45 +1,5 @@
 declare namespace FxHQLParser {
     interface ParsedNodeBase {
-        type: 'create_view'
-        | 'select'
-        | 'binary_statement'
-        | 'union'
-        | 'from'
-        | 'from_table'
-        | 'all'
-        | 'distinct'
-        | 'group_by'
-        | 'select_all'
-        | 'column'
-        | 'expr_comma_list'
-        | 'table_ref'
-        | 'table'
-        | 'where'
-        | 'having'
-        | 'selection_columns'
-        | 'order'
-        | 'order_statement'
-        | 'operator'
-        | 'is_null'
-        | 'in'
-        | 'between'
-        | 'like'
-        | 'exists'
-        | 'null'
-        | 'true'
-        | 'false'
-        | 'if'
-        | 'case'
-        | 'when'
-        | 'convert'
-        | 'interval'
-        | 'cast'
-        | 'data_type'
-        | 'date_unit'
-        | 'function_call'
-        | 'string'
-        | 'identifier'
-        | 'decimal'
     }
 
     type IParsedNode<EXT extends Fibjs.AnyObject> = EXT & ParsedNodeBase
@@ -55,23 +15,7 @@ declare namespace FxHQLParser {
         top: boolean,
         all_distinct: boolean,
         selection: SelectionNode,
-        table_exp: {
-            "type": "from_table",
-            "from": {
-                "type": "from",
-                "table_refs": [
-                    {
-                    "type": "table",
-                    "table": "b"
-                    }
-                ]
-            },
-            "where": undefined,
-            "groupby": undefined,
-            "having": undefined,
-            "order": undefined,
-            "limit": undefined
-        }
+        table_exp: FromTableExpNode
     }>
 
     type Statement_Binary = IParsedNode<{
@@ -91,13 +35,17 @@ declare namespace FxHQLParser {
         subquery: string
     }>
 
-    type FromTableNode = IParsedNode<{
-        type: "from_table"
-        from?: string
-        where?: string
-        groupby?: string
-        having?: string
-        order?: string
+    type FromTableExpNode = IParsedNode<{
+        type: "from_table",
+        from: {
+            type: "from",
+            table_refs: TableRefNode[]
+        },
+        where: WhereNode
+        groupby: GroupByNode
+        having: HavingNode
+        order: OrderNode
+        limit: LimitStatementNode
     }>
 
     type AllNode = IParsedNode<{
@@ -181,6 +129,11 @@ declare namespace FxHQLParser {
     type OrderNode = IParsedNode<{
         type: "order",
         order: OrderStatementNode[]
+    }>
+
+    type LimitStatementNode = IParsedNode<{
+        type: "limit_statement"
+        limit: number
     }>
 
     type OrderStatementNode = IParsedNode<{

@@ -631,7 +631,7 @@ JOIN -> [Jj] [Oo] [Ii] [Nn]
 
 LEFT -> [Ll] [Ee] [Ff] [Tt] {% d => 'left' %}
 LIKE -> [Ll] [Ii] [Kk] [Ee]
-LIMIT -> L I M I T
+LIMIT -> [Ll] [Ii] [Mm] [Ii] [Tt]
 
 MOD -> [Mm] [Oo] [Dd]
 

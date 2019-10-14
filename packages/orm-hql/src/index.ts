@@ -77,6 +77,7 @@ function parserDefinition(
           if (parsed.groupby) sql += " " + this.toSql(parsed.groupby);
           if (parsed.having) sql += " " + this.toSql(parsed.having);
           if (parsed.order) sql += " " + this.toSql(parsed.order);
+          if (parsed.limit) sql += " " + this.toSql(parsed.limit);
           return sql;
         }
         case "all":
@@ -150,6 +151,9 @@ function parserDefinition(
           let sql = "order by (";
           sql += parsed.order.map(x => this.toSql(x)).join(", ") + ")";
           return sql;
+        }
+        case "limit_statement": {
+          return "limit " + parsed.limit;
         }
         case "order_statement": {
           const value = this.toSql(parsed.value);
@@ -341,7 +345,7 @@ function parserDefinition(
       }
 
       const returnColumns = <FxHQLParser.ParsedResult['returnColumns']>[];
-      if (result.type == "select") {
+      if (result.type === "select") {
         if (result.selection && result.selection.columns) {
           result.selection.columns.forEach(column => {
             const sourceColumns = <FxHQLParser.ParsedResult['returnColumns'][any]['sourceColumns']>[];

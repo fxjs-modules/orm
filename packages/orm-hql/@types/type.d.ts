@@ -10,7 +10,7 @@ declare namespace FxHQLParser {
         | Statement_Binary
         | UnionNode
         | FromNode
-        | FromTableNode
+        | FromTableExpNode
         | AllNode
         | DistinctNode
         | GroupByNode
@@ -20,6 +20,7 @@ declare namespace FxHQLParser {
         | WhereNode
         | HavingNode
         | SelectionColumnNode
+        | LimitStatementNode
         | OrderNode
         | OrderStatementNode
         | OperatorNode
@@ -49,7 +50,7 @@ declare namespace FxHQLParser {
         createdTables: string[] | undefined
         sourceTables: string[]
         aliases: { [t: string]: string }
-        operation: ParsedNodeBase['type']
+        operation: ActionNode__CreateView['type'] | StatementNode__Select['type']
         parsed: IParsedNode<any>
         joins: JoinInfoItem[]
         returnColumns: {
