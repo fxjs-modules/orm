@@ -1,0 +1,31 @@
+{
+  "name": "@fxjs/orm-hql",
+  "version": "0.0.1",
+  "description": "",
+  "main": "lib",
+  "types": "@types/index.d.ts",
+  "repository": {
+    "type": "https",
+    "url": "https://github.com/fxjs-modules/orm/tree/master/packages/core"
+  },
+  "homepage": "https://github.com/fxjs-modules/orm/tree/master/packages/core",
+  "scripts": {
+    "compile-orig": "nearleyc ./sql-orig.ne -o ./lib/sql-parse-orig.js",
+    "compile": "nearleyc ./sql.ne -o ./lib/sql-parse.js",
+    "build": "fib-typify ./src -o ./lib",
+    "test": "fibjs test",
+    "ci": "npm run compile && npm run test",
+    "prepublishOnly": "npm run ci"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/nearley": "^2.11.0",
+    "nearley": "^2.19.0"
+  },
+  "devDependencies": {
+    "@fibjs/types": "^0.27.1",
+    "fib-typify": "^0.6.0"
+  },
+  "peerDependencies": {}
+}
