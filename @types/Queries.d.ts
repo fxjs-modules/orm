@@ -69,7 +69,15 @@ declare namespace FxOrmQueries {
 
         readonly isSelectAll: boolean
         readonly isEmptyWhere: boolean
-        readonly crossCollection: boolean
+        readonly isJoined: boolean
+
+        join: {
+            type: 'left' | 'right' | 'inner'
+            /**
+             * one joined normalizer cannot join with other normalizer
+             */
+            normalizer: Class_QueryNormalizer
+        }[]
 
         orderBy: {
             collection: string
@@ -119,6 +127,9 @@ declare namespace FxOrmQueries {
                 where?: any
                 limit?: number
                 offset?: number
+                leftJoin?: Class_QueryNormalizer
+                rightJoin?: Class_QueryNormalizer
+                innerJoin?: Class_QueryNormalizer
             }
         )
     }

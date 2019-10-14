@@ -40,7 +40,7 @@ function normalizeOffset (
     return input
 }
 
-export default class Class_QueryNormalizer implements FxOrmQueries.Class_QueryNormalizer {
+export default class QueryNormalizer implements FxOrmQueries.Class_QueryNormalizer {
     collection: string
     select: FxOrmQueries.Class_QueryNormalizer['select']
     selectableFields: FxOrmQueries.Class_QueryNormalizer['selectableFields']
@@ -51,9 +51,11 @@ export default class Class_QueryNormalizer implements FxOrmQueries.Class_QueryNo
     orderBy: FxOrmQueries.Class_QueryNormalizer['orderBy'] = []
     groupBy: FxOrmQueries.Class_QueryNormalizer['groupBy'] = []
 
+    join: FxOrmQueries.Class_QueryNormalizer['join'] = []
+
     get isSelectAll () { return this.select === SYM_SELECT_ALL }
     get isEmptyWhere () { return !this.where || isEmptyPlainObject(this.where) }
-    get crossCollection () { return false }
+    get isJoined () { return false }
 
     constructor (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmQueries.Class_QueryNormalizer>) {
         const [collection, opts] = args

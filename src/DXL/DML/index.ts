@@ -1,9 +1,9 @@
 import { default as sqlite } from './sqlite'
 import { default as mysql } from './mysql'
 
-export function getDML<CONN_TYPE = any> (
+export function getDML (
     type: FxDbDriverNS.Driver['type'],
-): FxOrmDML.DMLDriver<CONN_TYPE> {
+): (typeof FxOrmDML.DMLDriver) {
     switch (type) {
         case 'sqlite':
             return sqlite as (typeof FxOrmDML.DMLDriver) as any

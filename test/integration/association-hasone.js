@@ -1,7 +1,7 @@
 var ORM = require('../../');
 var helper = require('../support/spec_helper');
 
-odescribe("hasOne", function () {
+describe("hasOne", function () {
     var db = null;
     var Tree = null;
     var Stalk = null;
@@ -289,7 +289,7 @@ odescribe("hasOne", function () {
         });
     });
 
-    describe("if not passing another Model", function () {
+    xdescribe("if not passing another Model", function () {
         it("should use same model", function () {
             db.settings.set('instance.identityCache', false);
             db.settings.set('instance.returnAllErrors', true);

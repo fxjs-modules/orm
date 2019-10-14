@@ -14,6 +14,7 @@ import { configurable } from '../Decorators/accessor';
 import { buildDescriptor } from '../Decorators/property';
 import { getDML } from '../DXL/DML';
 import { getDDL } from '../DXL/DDL';
+import QueryNormalizer from './Query/Normalizer';
 
 class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
     static Op = Operators;
@@ -32,6 +33,10 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
         orm.driver.open();
 
         return orm;
+    }
+
+    static normalizeQuery (...args: FxOrmTypeHelpers.Parameters<(typeof FxOrmNS.Class_ORM)['normalizeQuery']>): FxOrmQueries.Class_QueryNormalizer {
+        return new QueryNormalizer(...args);
     }
 
     settings = new Setting({
@@ -67,9 +72,9 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
     };
 
     @buildDescriptor({ configurable: false, enumerable: false })
-    $dml: FxOrmTypeHelpers.InstanceOf<FxOrmTypeHelpers.ReturnType<typeof getDML>> = null;
+    $dml: FxOrmTypeHelpers.InstanceOf<FxOrmTypeHelpers.ReturnType<typeof getDML>>;
     @buildDescriptor({ configurable: false, enumerable: false })
-    $ddl: FxOrmTypeHelpers.InstanceOf<FxOrmTypeHelpers.ReturnType<typeof getDDL>> = null;
+    $ddl: FxOrmTypeHelpers.InstanceOf<FxOrmTypeHelpers.ReturnType<typeof getDDL>>;
 
     driver: FxDbDriverNS.Driver<ConnType>;
 

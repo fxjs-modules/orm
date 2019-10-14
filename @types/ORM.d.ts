@@ -39,6 +39,11 @@ declare namespace FxOrmNS {
          */
         static connect (connection: string | FxDbDriverNS.DBConnectionConfig): Class_ORM
 
+        /**
+         * @description return one query normalizer
+         */
+        static normalizeQuery (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmQueries.Class_QueryNormalizer>): FxOrmQueries.Class_QueryNormalizer
+
         driver: FxDbDriverNS.Driver<ConnType>
 
         settings: any
