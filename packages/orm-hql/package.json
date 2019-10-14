@@ -14,7 +14,7 @@
     "compile": "nearleyc ./sql.ne -o ./lib/sql-parse.js",
     "build": "fib-typify ./src -o ./lib",
     "test": "fibjs test",
-    "ci": "npm run compile && npm run test",
+    "ci": "npm run build && npm run compile && npm run test",
     "prepublishOnly": "npm run ci"
   },
   "author": "",

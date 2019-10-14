@@ -1,28 +1,35 @@
-const nearley = require("nearley");
-const grammar = require("./sql-parse");
+import nearley = require("nearley");
+const grammar: nearley.CompiledRules & nearley.Grammar = require("./sql-parse");
 
-function walk(obj, fn) {
+function walk(
+  obj: FxHQLTypeHelpers.ItOrListOfIt<{[k: string]: any} | any>,
+  fn: (
+    input: any
+  ) => false | any
+): void {
   if (!obj) return;
   const result = fn(obj);
   if (result == false) return;
-  if (typeof obj == "object") {
-    for (i in obj) {
+  if (typeof obj === "object") {
+    for (let i in obj) {
       walk(obj[i], fn);
     }
   }
 }
 
-function parserDefinition(options) {
+function parserDefinition(
+  options: FxHQLTypeHelpers.ConstructorParams<typeof FxHQL.Parser>[0]
+) {
   options = options || {};
   options.stringEscape = options.stringEscape || (x => '"' + x + '"');
   options.identifierEscape = options.identifierEscape || (x => "`" + x + "`");
 
   return {
-    toSql(parsed) {
+    toSql(parsed: FxHQLParser.ParsedNode) {
       if (!parsed) return "";
       if (!parsed.type) return "";
-      const spacing = options.spacing || "";
-
+      
+      // const spacing = options.spacing || "";
       // console.notice('parsed', parsed)
 
       options = options || {};
@@ -146,7 +153,7 @@ function parserDefinition(options) {
         }
         case "order_statement": {
           const value = this.toSql(parsed.value);
-          sql = value;
+          let sql = value;
           if (parsed.direction) sql += " " + parsed.direction;
           return sql;
         }
@@ -175,7 +182,7 @@ function parserDefinition(options) {
           if (parsed.not) sql += "not";
           sql += "in ";
           if (parsed.subquery) sql += "(" + this.toSql(parsed.subquery) + ")";
-          else if (parsed.expressions)
+          else if (parsed.expressions) // TODO: check it
             sql +=
               "(" + parsed.expressions.map(x => this.toSql(x)).join(", ") + ")";
           return sql + ")";
@@ -210,7 +217,7 @@ function parserDefinition(options) {
         case "if": {
           const condition = this.toSql(parsed.condition);
           const then = this.toSql(parsed.then);
-          const elseExpr = this.toSql(parsed["else"]);
+          const elseExpr = this.toSql(parsed['else']);
           return "if(" + condition + ", " + then + ", " + elseExpr + ")";
         }
         case "case": {
@@ -272,18 +279,18 @@ function parserDefinition(options) {
           return parsed.value;
         }
       }
-      return "-- Invalid sql.type: " + parsed.type + "\n";
+      return "-- Invalid sql.type: " + (<any>parsed).type + "\n";
     },
-    parse(sql) {
+    parse(sql: string) {
       sql += "\n";
 
       const parser = new nearley.Parser(
-        grammar.ParserRules,
-        grammar.ParserStart
+        grammar.ParserRules as any,
+        grammar.ParserStart as any
       );
       const parsed = parser.feed(sql);
 
-      const parsedResult = parsed.results;
+      const parsedResult: FxHQLParser.ParsedNode[] = parsed.results;
       if (!parsedResult.length) throw "Invalid sql: " + sql;
       if (parsedResult.length > 1) {
         // console.error(JSON.stringify(parsedResult, null, 2));
@@ -292,17 +299,17 @@ function parserDefinition(options) {
 
       const result = parsedResult[0];
 
-      const referencedTables = {};
-      const joins = [];
-      const allTableReferences = [];
-      walk(result, node => {
-        if (node.type == "table") {
+      const referencedTables = <{[k: string]: FxHQLParser.TableNode}>{};
+      const joins = <FxHQLParser.JoinInfoItem[]>[];
+      const allTableReferences = <(FxHQLParser.TableNode)[]>[];
+      walk(result, (node: FxHQLParser.ParsedNode) => {
+        if (node.type === "table") {
           referencedTables[node.table] = node;
           allTableReferences.push(node);
         }
         if (node.type == "table_ref" && node.on) {
-          const columns = [];
-          walk(node.on, n => {
+          const columns = <FxHQLParser.ColumnNode[]>[];
+          walk(node.on, (n: FxHQLParser.TableRefNode['on'][any]) => {
             if (n.type == "table_ref") return false;
             if (n.type == "column") {
               columns.push(n);
@@ -310,15 +317,13 @@ function parserDefinition(options) {
             }
           });
 
-          var join = {
+          joins.push({
             side: node.side,
             outer: node.outer,
             columns: columns,
             op_left: node.op_left,
             op_right: node.op_right,
-          };
-
-          joins.push(join);
+          });
           // console.notice('joins[joins.length - 1]', joins[joins.length - 1]);
         }
       });
@@ -326,7 +331,7 @@ function parserDefinition(options) {
       const operation = result.type;
 
       let createdTables, sourceTables;
-      if (operation == "create_view") {
+      if (result.type === "create_view") {
         createdTables = [result.table.table];
         sourceTables = Object.keys(referencedTables).filter(
           x => x != result.table.table
@@ -335,11 +340,11 @@ function parserDefinition(options) {
         sourceTables = Object.keys(referencedTables);
       }
 
-      const returnColumns = [];
-      if (operation == "select") {
+      const returnColumns = <FxHQLParser.ParsedResult['returnColumns']>[];
+      if (result.type == "select") {
         if (result.selection && result.selection.columns) {
           result.selection.columns.forEach(column => {
-            const sourceColumns = [];
+            const sourceColumns = <FxHQLParser.ParsedResult['returnColumns'][any]['sourceColumns']>[];
             walk(column.expression, n => {
               if (n.type == "column") {
                 sourceColumns.push(n);
@@ -378,7 +383,7 @@ function parserDefinition(options) {
         }
       }
 
-      const aliases = {};
+      const aliases = <{[k: string]: string}>{};
       allTableReferences.forEach(x => {
         if (x.alias) aliases[x.alias] = x.table;
         else aliases[x.table] = x.table;
@@ -398,27 +403,30 @@ function parserDefinition(options) {
   };
 }
 
-class HQL {
+class HQLParser implements FxHQL.Parser {
+  static singleton: HQLParser;
+  _parser: FxHQL.Parser['_parser'] = null
+
   constructor (options = {}) {
     this._parser = parserDefinition(options);
   }
 
-  get HQL () { return HQL }
+  get HQLParser () { return HQLParser }
 
-  parse (parsed) {
-    return this._parser.parse(parsed);
+  parse (sql: string) {
+    return this._parser.parse(sql);
   };
 
-  toSql (parsed) {
+  toSql (parsed: FxHQLParser.ParsedResult) {
     return this._parser.toSql(parsed);
   };
 }
 
-Object.defineProperty(HQL, 'singleton', {
-  value: new HQL(),
+Object.defineProperty(HQLParser, 'singleton', {
+  value: new HQLParser(),
   writable: false,
   configurable: false,
   enumerable: false
 })
 
-module.exports = HQL.singleton;
+export = HQLParser.singleton;
