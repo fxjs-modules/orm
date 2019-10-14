@@ -16,7 +16,9 @@
 main -> sql (_ ";" _| _) {% id %}
 
 sql ->
+    # definitive_statement {% id %}
     manipulative_statement {% id %}
+    # | access_control_statement {% id %}
   | create_view {% id %}
 
 create_view ->
@@ -121,8 +123,8 @@ table_ref_commalist ->
     const ref = {
       type: 'table_ref',
       side: d[1].side,
-      op_left: d[0],
-      op_right: d[4],
+      ref_left: d[0],
+      ref_right: d[4],
       on: d[onOffset+8],
       inner: d[1].inner,
       specific_outer: d[1].specific_outer,
@@ -133,7 +135,7 @@ table_ref_commalist ->
   }
 %}
 
-join_statement -> 
+join_statement ->
     __ {% x=>({ side: undefined, specific_outer: false, inner: false }) %}
   | __ LEFT __ {% x=>({ side: 'left', specific_outer: false, inner: false }) %}
   | __ LEFT __ OUTER __ {% x=>({ side: 'left', specific_outer: true, inner: false }) %}

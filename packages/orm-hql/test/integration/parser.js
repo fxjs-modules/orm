@@ -9,7 +9,8 @@ const tests = [
       operation: 'select',
     },
     toSql: '(select * from (`test`))'
-  },{
+  },
+  {
     sql: 'select x from test',
     toSql: '(select `x` from (`test`))',
 		expected: {
@@ -102,8 +103,8 @@ const tests = [
             {name: 'foo', type: 'column', table:'a'},
             {name: 'foo', type: 'column', table:'b'}
           ],
-          op_left: {type: 'table', table: 'y'},
-          op_right: {type: 'table', table: 'x'},
+          ref_left: {type: 'table', table: 'y'},
+          ref_right: {type: 'table', table: 'x'},
         }
       ]
     }
@@ -121,8 +122,8 @@ const tests = [
             {name: 'foo', type: 'column', table:'a'},
             {name: 'foo', type: 'column', table:'b'}
           ],
-          op_left: {type: 'table', table: 'y'},
-          op_right: {type: 'table', table: 'x'},
+          ref_left: {type: 'table', table: 'y'},
+          ref_right: {type: 'table', table: 'x'},
         }
       ]
     }
@@ -140,8 +141,8 @@ const tests = [
             {name: 'bar', type: 'column', table:'a'},
             {name: 'bar', type: 'column', table:'b'}
           ],
-          op_left: {type: 'table', table: 'y'},
-          op_right: {type: 'table', table: 'x'},
+          ref_left: {type: 'table', table: 'y'},
+          ref_right: {type: 'table', table: 'x'},
         }
       ]
     }
@@ -428,6 +429,7 @@ const tests = [
 		toSql: '(select `a` from (`b`) where ((((`c` or (not `d`)) and (`e` is not null)) and `f`)))'
 	},
 	{
+    exclude: true,
 		sql: 'select a.x from b',
 		toSql: '(select `a`.`x` from (`b`))',
 		expected: {
@@ -485,50 +487,7 @@ where task.checked = 1 and user.name = 'Jack'
 const parser = require('../../');
 
 describe('parse', function() {
-  tests.map(t => {
-    let describeFunc = describe;
-
-    if (t.only) describeFunc = odescribe;
-    
-    if (t.exclude) return ;
-
-    const description = t.description || t.error || t.sql.slice(0,100)
-
-    describeFunc(description, function() {
-      try {
-        let parsed
-
-        if (t.error) {
-          it('parse error', function () {
-            assert.throws(() => {
-              parser.parse(t.sql)
-            })
-          })
-          return ;
-        }
-
-        it('parse', function() {
-          parsed = parser.parse(t.sql);
-        });
-
-        for(let e in t.expected) {
-          it(e + " = " + JSON.stringify(t.expected[e]), function() {
-            assert.deepEqual(t.expected[e], parsed[e]);
-          });
-        }
-
-        it('toSql = ' + t.toSql, function() {
-          const toSql=parser.toSql(parsed.parsed);
-          assert.equal(t.toSql, toSql);
-        });
-      } catch(e) {
-        it('parse error', function() {
-          // console.error(e)
-          throw e
-        });
-      }
-    });
-  })
+  require('../helpers').dotest(tests, parser)
 });
 
 if (require.main === module) {

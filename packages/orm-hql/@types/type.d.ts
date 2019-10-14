@@ -52,7 +52,14 @@ declare namespace FxHQLParser {
         aliases: { [t: string]: string }
         operation: ParsedResult['parsed']['type']
         parsed: ActionNode__CreateView | StatementNode__Select
-        joins: JoinInfoItem[]
+        joins: {
+          side: TableRefNode['side']
+          specific_outer: TableRefNode['specific_outer']
+          inner: TableRefNode['inner']
+          columns: ColumnNode[]
+          ref_left: TableRefNode['ref_left']
+          ref_right: TableRefNode['ref_right']
+      }[]
         returnColumns: {
             name: string
             expression: ColumnNode['expression']
@@ -74,7 +81,7 @@ declare namespace FxHQL {
             stringEscape?: (...args: any[]) => string
             identifierEscape?: (...args: any[]) => string
         })
-        
+
         parse (sql: string): FxHQLParser.ParsedResult
         toSql (parsed: FxHQLParser.ParsedResult['parsed']): string
     }

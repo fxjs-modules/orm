@@ -28,7 +28,7 @@ function parserDefinition(
     toSql(parsed: FxHQLParser.ParsedNode) {
       if (!parsed) return "";
       if (!parsed.type) return "";
-      
+
       // const spacing = options.spacing || "";
       // console.notice('parsed', parsed)
 
@@ -107,14 +107,14 @@ function parserDefinition(
           return parsed.exprs.map(x => this.toSql(x)).join(", ");
         }
         case "table_ref": {
-          let sql = "(" + this.toSql(parsed.op_left);
+          let sql = "(" + this.toSql(parsed.ref_left);
           if (!parsed.inner) {
             if (parsed.side) sql += " " + parsed.side + (parsed.specific_outer ? " outer" : "") + " ";
             else sql += " ";
           } else {
             sql += " inner ";
           }
-          sql += "join " + this.toSql(parsed.op_right); 
+          sql += "join " + this.toSql(parsed.ref_right);
 
           if (parsed.alias) sql += " as " + this.toSql(parsed.alias);
 
@@ -304,7 +304,7 @@ function parserDefinition(
       const result = parsedResult[0];
 
       const referencedTables = <{[k: string]: FxHQLParser.TableNode}>{};
-      const joins = <FxHQLParser.JoinInfoItem[]>[];
+      const joins = <FxHQLParser.ParsedResult['joins']>[];
       const allTableReferences = <(FxHQLParser.TableNode)[]>[];
       walk(result, (node: FxHQLParser.ParsedNode) => {
         if (node.type === "table") {
@@ -326,8 +326,8 @@ function parserDefinition(
             specific_outer: node.specific_outer,
             inner: node.inner,
             columns: columns,
-            op_left: node.op_left,
-            op_right: node.op_right,
+            ref_left: node.ref_left,
+            ref_right: node.ref_right,
           });
         }
       });

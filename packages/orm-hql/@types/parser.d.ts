@@ -89,15 +89,6 @@ declare namespace FxHQLParser {
         exprs: ConditionExprNode[]
     }>
 
-    interface JoinInfoItem {
-        side: 'left' | 'right' | undefined
-        specific_outer: boolean
-        inner: boolean
-        columns: ColumnNode[]
-        op_left: ConditionExprNode
-        op_right: ConditionExprNode
-    }
-
     type TableNode = IParsedNode<{
         type: "table"
         table: string
@@ -106,11 +97,11 @@ declare namespace FxHQLParser {
 
     type TableRefNode = IParsedNode<{
         type: "table_ref"
-        side: JoinInfoItem['side']
-        inner: JoinInfoItem['inner']
-        specific_outer: JoinInfoItem['specific_outer']
-        op_left: JoinInfoItem['op_left']
-        op_right: JoinInfoItem['op_right']
+        side: 'left' | 'right' | 'full' | undefined
+        specific_outer: boolean
+        inner: boolean
+        ref_left: ConditionExprNode
+        ref_right: ConditionExprNode
         alias?: string
         using?: string
         on: IdentifierNode[] | ConditionExprNode | ExprCommaListNode
@@ -125,8 +116,8 @@ declare namespace FxHQLParser {
     } | {
         type: "operator"
         operator: "="
-        op_left: ColumnNode
-        op_right: ColumnNode
+        op_left: IdentifierNode | ColumnNode
+        op_right: IdentifierNode | ColumnNode
     } | {
         type: "operator"
         operator: "not"
@@ -218,22 +209,22 @@ declare namespace FxHQLParser {
     type Statement_If = IParsedNode<{
         type: "if"
         condition: ConditionExprNode
-        then: string
-        else: string
+        then: ValueTypeStringNode
+        else: ValueTypeStringNode
     }>
 
     type Statement_When = {
         type: "when"
         condition: ConditionExprNode
-        then: string
+        then: ValueTypeStringNode
+        else: ValueTypeStringNode
     }
 
     type Statement_Case = IParsedNode<{
         type: "case"
-        op_left: string
-        op_right: string
+        op_right: IdentifierNode
         when_statements: Statement_When[]
-        else: string
+        else: ValueTypeStringNode
     }>
 
     type ConvertNode = IParsedNode<{
