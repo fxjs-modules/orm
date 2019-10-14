@@ -569,10 +569,14 @@ function_identifier ->
 
 ### Copied & modified from builtin
 
+# Double-quoted string
 dqstring -> "\"" dstrchar:* "\"" {% function(d) {return d[1].join(""); } %}
+# Single-quoted string
 sqstring -> "'"  sstrchar:* "'"  {% function(d) {return d[1].join(""); } %}
+# Back-quoted string
 btstring -> "`"  [^`]:*    "`"  {% function(d) {return d[1].join(""); } %}
 
+# Double-quote
 dstrchar -> [^\\"\n] {% id %}
     | "\\" strescape {%
       function(d) {
@@ -580,6 +584,7 @@ dstrchar -> [^\\"\n] {% id %}
       }
       %}
 
+# Single-quote
 sstrchar -> [^\\'\n] {% id %}
     | "\\" strescape {%
       function(d) {

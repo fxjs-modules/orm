@@ -402,7 +402,19 @@ const tests = [
 	{
 		sql: `select a from x where (z or not b)`,
 		toSql: '(select `a` from (`x`) where ((`z` or (not `b`))))'
-	},
+  },
+	{
+    sql: `select a from x where (id = 1)`,
+		toSql: '(select `a` from (`x`) where ((`id` = 1)))'
+  },
+	{
+    sql: `select a from x where (name = 'Jack')`,
+		toSql: "(select `a` from (`x`) where ((`name` = \"Jack\")))"
+  },
+	{
+    sql: `select a from x where name = 'Jack' and id > 19`,
+		toSql: "(select `a` from (`x`) where (((`name` = \"Jack\") and (`id` > 19))))"
+  },
 	{
 		sql: `select not a or b from x`,
 		toSql: '(select ((not `a`) or `b`) from (`x`))'
