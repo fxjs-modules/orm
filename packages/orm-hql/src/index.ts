@@ -148,8 +148,8 @@ function parserDefinition(
           return parsed.columns.map(x => this.toSql(x)).join(", ");
         }
         case "order": {
-          let sql = "order by (";
-          sql += parsed.order.map(x => this.toSql(x)).join(", ") + ")";
+          let sql = "order by ";
+          sql += parsed.order.map(x => this.toSql(x)).join(", ") + "";
           return sql;
         }
         case "limit_statement": {

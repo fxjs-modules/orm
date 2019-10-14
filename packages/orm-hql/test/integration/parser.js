@@ -184,6 +184,68 @@ const tests = [
 		}
   },
   {
+    sql: 'select * from foo group by foo.x',
+    toSql: '(select * from (`foo`) group by (`foo`.`x`))',
+    expected: {
+      parsed: {
+        "type": "select",
+        "top": undefined,
+        "all_distinct": undefined,
+        "selection": {
+          "type": "select_all"
+        },
+        "table_exp": {
+          "type": "from_table",
+          "from": {
+            "type": "from",
+            "table_refs": [
+              {
+                "type": "table",
+                "table": "foo"
+              }
+            ]
+          },
+          "where": undefined,
+          "groupby": {
+            "type": "group_by",
+            "columns": {
+              "type": "selection_columns",
+              "columns": [
+                {
+                  "type": "column",
+                  "expression": {
+                    "type": "column",
+                    "table": "foo",
+                    "name": "x"
+                  }
+                }
+              ]
+            }
+          },
+          "having": undefined,
+          "order": undefined,
+          "limit": undefined
+        }
+      },
+		}
+  },
+  {
+    sql: 'select * from foo group by foo.x limit 1',
+    toSql: '(select * from (`foo`) group by (`foo`.`x`) limit 1)',
+  },
+  {
+    sql: 'select * from foo group by foo.x limit -1',
+    toSql: '(select * from (`foo`) group by (`foo`.`x`) limit -1)',
+  },
+  {
+    sql: 'select * from foo group by foo.x order by foo.x desc limit -1',
+    toSql: '(select * from (`foo`) group by (`foo`.`x`) order by `foo`.`x` desc limit -1)',
+  },
+  {
+    error: `it's not allowed to place 'limit' before 'order by'`,
+    sql: 'select * from foo group by foo.x limit -1 order by foo.x desc',
+  },
+  {
     sql: 'select `a`.`b` AS `c`,(`x`.`y` - interval (dayofmonth(`a`.`b`) - 1) day) AS `month`,sum(`a`.`b`) AS `a`,sum(`a`.`b`) AS `c`,cast(substr(max(concat(`x`.`y`,`x`.`total`)),11) as signed) AS `a` from `b` group by `a`.`a`,(`a`.`b` - interval (dayofmonth(`x`.`y`) - 1) day)',
     toSql: '(select `a`.`b` as `c`, '+
       '(`x`.`y` - interval (dayofmonth(`a`.`b`) - 1) day) as `month`, '+
@@ -206,7 +268,7 @@ const tests = [
   },
   {
     sql: 'select * from x order by a, b asc',
-    toSql: '(select * from (`x`) order by (`a`, `b` asc))'
+    toSql: '(select * from (`x`) order by `a`, `b` asc)'
   },
   {
     sql: 'select * from x limit 1',
@@ -214,7 +276,7 @@ const tests = [
   },
   {
     sql: 'select * from x order by c desc limit 1',
-    toSql: '(select * from (`x`) order by (`c` desc) limit 1)'
+    toSql: '(select * from (`x`) order by `c` desc limit 1)'
   },
   // handle different cases in function identifiers, and regular identifiers
   {
@@ -397,10 +459,24 @@ describe('parse', function() {
     
     if (t.exclude) return ;
 
-    describeFunc(t.sql.slice(0,100), function() {
+    const description = t.description || t.error || t.sql.slice(0,100)
+
+    describeFunc(description, function() {
       try {
-        const parsed = parser.parse(t.sql);
-        it('parse', function() { });
+        let parsed
+
+        if (t.error) {
+          it('parse error', function () {
+            assert.throws(() => {
+              parser.parse(t.sql)
+            })
+          })
+          return ;
+        }
+
+        it('parse', function() {
+          parsed = parser.parse(t.sql);
+        });
 
         for(let e in t.expected) {
           it(e + " = " + JSON.stringify(t.expected[e]), function() {

@@ -1,22 +1,22 @@
 declare namespace FxHQLParser {
-    interface ParsedNodeBase {
-    }
+    type Undefineable<T> = T | undefined
+    interface ParsedNodeBase {}
 
     type IParsedNode<EXT extends Fibjs.AnyObject> = EXT & ParsedNodeBase
 
-    type SelectionNode = IParsedNode<{
-        type: "selection_columns"
-        columns: ColumnNode[]
-    }>
-
     type StatementNode__Select = IParsedNode<{
-        type: "select",
-        all: boolean
-        top: boolean,
-        all_distinct: boolean,
-        selection: SelectionNode,
+        type: "select"
+        all: Undefineable<boolean>
+        top: Undefineable<boolean>
+        all_distinct: Undefineable<boolean>
+        selection: IParsedNode<{
+            type: "selection_columns"
+            columns: ColumnNode[]
+        }>
         table_exp: FromTableExpNode
     }>
+
+    type SelectionNode = StatementNode__Select['selection']
 
     type Statement_Binary = IParsedNode<{
         type: "binary_statement"
@@ -36,16 +36,16 @@ declare namespace FxHQLParser {
     }>
 
     type FromTableExpNode = IParsedNode<{
-        type: "from_table",
+        type: "from_table"
         from: {
-            type: "from",
+            type: "from"
             table_refs: TableRefNode[]
-        },
-        where: WhereNode
-        groupby: GroupByNode
-        having: HavingNode
-        order: OrderNode
-        limit: LimitStatementNode
+        }
+        where: Undefineable<WhereNode>
+        groupby: Undefineable<GroupByNode>
+        having: Undefineable<HavingNode>
+        order: Undefineable<OrderNode>
+        limit: Undefineable<LimitStatementNode>
     }>
 
     type AllNode = IParsedNode<{
@@ -67,10 +67,10 @@ declare namespace FxHQLParser {
     }>
 
     type ColumnNode = IParsedNode<{
-        type: "column",
+        type: "column"
         expression: {
-            type: "column" | "identifier",
-            table: string,
+            type: "column" | "identifier"
+            table: string
             name: string
             value?: string
         }
@@ -127,7 +127,7 @@ declare namespace FxHQLParser {
     }>
 
     type OrderNode = IParsedNode<{
-        type: "order",
+        type: "order"
         order: OrderStatementNode[]
     }>
 
@@ -252,7 +252,7 @@ declare namespace FxHQLParser {
         select_all: boolean
         parameters: string[]
         distinct: boolean
-        all: boolean
+        all: Undefineable<boolean>
     }>
     type ValueTypeStringNode = IParsedNode<{
         type: "string"
