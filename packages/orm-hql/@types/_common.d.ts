@@ -27,4 +27,7 @@ declare namespace FxHQLTypeHelpers {
     }
 
     type ItOrListOfIt<T> = T | T[]
+
+    type IndexInArrayOrKeyInObject<T> = T extends any[] ? number : keyof T
+    type ItemInArrayOrValueInObject<T> = T extends any[] ? T[number] : T[keyof T]
 }

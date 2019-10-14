@@ -2,14 +2,14 @@ import nearley = require("nearley");
 const grammar: nearley.CompiledRules & nearley.Grammar = require("./sql-parse");
 
 function walk(
-  obj: FxHQLTypeHelpers.ItOrListOfIt<{[k: string]: any} | any>,
+  obj: (Fibjs.AnyObject | any[]) | FxHQLTypeHelpers.ItemInArrayOrValueInObject<Fibjs.AnyObject | any[]>,
   fn: (
-    input: any
+    input: typeof obj
   ) => false | any
 ): void {
   if (!obj) return;
   const result = fn(obj);
-  if (result == false) return;
+  if (result === false) return;
   if (typeof obj === "object") {
     for (let i in obj) {
       walk(obj[i], fn);
@@ -120,7 +120,7 @@ function parserDefinition(
 
           if (parsed.using)
             sql +=
-              " using (" + parsed.on.map(x => this.toSql(x)).join(",") + ")";
+              " using (" + (<FxHQLParser.IdentifierNode[]>parsed.on).map(x => this.toSql(x)).join(",") + ")";
           else if (parsed.on) sql += " on " + this.toSql(parsed.on);
 
           sql += ")";
@@ -163,7 +163,7 @@ function parserDefinition(
         }
         case "operator": {
           let sql = "(";
-          if (parsed.operator == "not") {
+          if (parsed.operator === "not") {
             const operand = this.toSql(parsed.operand);
             sql += "not " + operand;
           } else {
@@ -311,11 +311,11 @@ function parserDefinition(
           referencedTables[node.table] = node;
           allTableReferences.push(node);
         }
-        if (node.type == "table_ref" && node.on) {
+        if (node.type === "table_ref" && node.on) {
           const columns = <FxHQLParser.ColumnNode[]>[];
-          walk(node.on, (n: FxHQLParser.TableRefNode['on'][any]) => {
-            if (n.type == "table_ref") return false;
-            if (n.type == "column") {
+          walk(node.on, (n: FxHQLTypeHelpers.ItemInArrayOrValueInObject<FxHQLParser.TableRefNode['on']>) => {
+            if (n.type === "table_ref") return false;
+            if (n.type === "column") {
               columns.push(n);
               return false;
             }
@@ -329,7 +329,6 @@ function parserDefinition(
             op_left: node.op_left,
             op_right: node.op_right,
           });
-          // console.notice('joins[joins.length - 1]', joins[joins.length - 1]);
         }
       });
 
@@ -351,27 +350,27 @@ function parserDefinition(
           result.selection.columns.forEach(column => {
             const sourceColumns = <FxHQLParser.ParsedResult['returnColumns'][any]['sourceColumns']>[];
             walk(column.expression, n => {
-              if (n.type == "column") {
+              if (n.type === "column") {
                 sourceColumns.push(n);
                 return false;
               }
-              if (n.type == "identifier") {
+              if (n.type === "identifier") {
                 sourceColumns.push(n);
                 return false;
               }
             });
             let name;
             if (column.alias) name = column.alias.value;
-            else if (column.expression.type == "identifier")
+            else if (column.expression.type === "identifier")
               name = column.expression.value;
-            else if (column.expression.type == "column")
+            else if (column.expression.type === "column")
               name = column.expression.name;
             else name = this.toSql(column.expression);
 
             let mappedTo;
-            if (column.expression.type == "identifier") {
+            if (column.expression.type === "identifier") {
               mappedTo = { column: column.expression.value };
-            } else if (column.expression.type == "column") {
+            } else if (column.expression.type === "column") {
               mappedTo = {
                 column: column.expression.name,
                 table: column.expression.table
@@ -418,11 +417,11 @@ class HQLParser implements FxHQL.Parser {
 
   get HQLParser () { return HQLParser }
 
-  parse (sql: string) {
+  parse (sql: FxHQLTypeHelpers.FirstParameter<FxHQL.Parser['parse']>) {
     return this._parser.parse(sql);
   };
 
-  toSql (parsed: FxHQLParser.ParsedResult) {
+  toSql (parsed: FxHQLTypeHelpers.FirstParameter<FxHQL.Parser['toSql']>) {
     return this._parser.toSql(parsed);
   };
 }

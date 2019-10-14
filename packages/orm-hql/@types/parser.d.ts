@@ -69,10 +69,13 @@ declare namespace FxHQLParser {
     type ColumnNode = IParsedNode<{
         type: "column"
         expression: {
-            type: "column" | "identifier"
+            type: "column"
             table: string
             name: string
             value?: string
+        } | {
+            type: "identifier"
+            value: "a"
         }
         name?: string
         table?: string
@@ -83,7 +86,7 @@ declare namespace FxHQLParser {
 
     type ExprCommaListNode = IParsedNode<{
         type: "expr_comma_list"
-        exprs: string[]
+        exprs: ConditionExprNode[]
     }>
 
     interface JoinInfoItem {
@@ -91,8 +94,8 @@ declare namespace FxHQLParser {
         specific_outer: boolean
         inner: boolean
         columns: ColumnNode[]
-        op_left: ColumnNode
-        op_right: ColumnNode
+        op_left: ConditionExprNode
+        op_right: ConditionExprNode
     }
 
     type TableNode = IParsedNode<{
@@ -110,17 +113,38 @@ declare namespace FxHQLParser {
         op_right: JoinInfoItem['op_right']
         alias?: string
         using?: string
-        on?: (TableRefNode | ColumnNode)[]
+        on: IdentifierNode[] | ConditionExprNode | ExprCommaListNode
+    }>
+
+    type ConditionExprNode = IParsedNode<{
+        type: "operator"
+        operator: "and" | "xor" | "or"
+        operand: Undefineable<IdentifierNode>
+        op_left: ConditionExprNode | IdentifierNode | ColumnNode
+        op_right: ConditionExprNode | IdentifierNode | ColumnNode
+    } | {
+        type: "operator"
+        operator: "="
+        op_left: ColumnNode
+        op_right: ColumnNode
+    } | {
+        type: "operator"
+        operator: "not"
+        operand: IdentifierNode
+    } | {
+        type: "is_null"
+        not: any
+        value: IdentifierNode
     }>
 
     type WhereNode = IParsedNode<{
         type: "where"
-        condition: string
+        condition: ConditionExprNode
     }>
 
     type HavingNode = IParsedNode<{
         type: "having"
-        condition: string
+        condition: ConditionExprNode
     }>
 
     type SelectionColumnNode = IParsedNode<{
@@ -142,14 +166,6 @@ declare namespace FxHQLParser {
         type: "order_statement"
         value: string
         direction: 'asc' | 'desc'
-    }>
-
-    type OperatorNode = IParsedNode<{
-        type: "operator"
-        operator: "not" | string
-        operand: string
-        op_left: ColumnNode
-        op_right: ColumnNode
     }>
 
     type IsNullNode = IParsedNode<{
@@ -201,14 +217,14 @@ declare namespace FxHQLParser {
 
     type Statement_If = IParsedNode<{
         type: "if"
-        condition: string
+        condition: ConditionExprNode
         then: string
         else: string
     }>
 
     type Statement_When = {
         type: "when"
-        condition: string
+        condition: ConditionExprNode
         then: string
     }
 

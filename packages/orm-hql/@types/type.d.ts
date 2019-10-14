@@ -23,7 +23,7 @@ declare namespace FxHQLParser {
         | LimitStatementNode
         | OrderNode
         | OrderStatementNode
-        | OperatorNode
+        | ConditionExprNode
         | IsNullNode
         | InNode
         | OpNode__Between
@@ -47,21 +47,19 @@ declare namespace FxHQLParser {
 
     interface ParsedResult {
         referencedTables: string[]
-        createdTables: string[] | undefined
+        createdTables: Undefineable<string[]>
         sourceTables: string[]
         aliases: { [t: string]: string }
-        operation: ActionNode__CreateView['type'] | StatementNode__Select['type']
-        parsed: IParsedNode<any>
+        operation: ParsedResult['parsed']['type']
+        parsed: ActionNode__CreateView | StatementNode__Select
         joins: JoinInfoItem[]
         returnColumns: {
             name: string
             expression: ColumnNode['expression']
             sourceColumns: ColumnNode[]
             mappedTo: {
-                column: ColumnNode['expression']['value']
-            } | {
-                column: ColumnNode['expression']['name']
-                table: ColumnNode['expression']['table']
+                column: string
+                table?: string
             }
         }[]
     }
