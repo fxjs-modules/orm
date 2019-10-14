@@ -96,7 +96,27 @@ const tests = [
       joins: [
         {
           side: 'left',
-          outer: true,
+          inner: false,
+          specific_outer: false,
+          columns: [
+            {name: 'foo', type: 'column', table:'a'},
+            {name: 'foo', type: 'column', table:'b'}
+          ],
+          op_left: {type: 'table', table: 'y'},
+          op_right: {type: 'table', table: 'x'},
+        }
+      ]
+    }
+  },
+  {
+    sql: 'select x, sum(1) AS \`count\` from y left outer join x on (a.foo=b.foo)',
+    toSql: '(select `x`, sum(1) as `count` from ((`y` left outer join `x` on (`a`.`foo` = `b`.`foo`))))',
+    expected: {
+      joins: [
+        {
+          side: 'left',
+          inner: false,
+          specific_outer: true,
           columns: [
             {name: 'foo', type: 'column', table:'a'},
             {name: 'foo', type: 'column', table:'b'}
@@ -114,7 +134,8 @@ const tests = [
       joins: [
         {
           side: 'right',
-          outer: true,
+          inner: false,
+          specific_outer: false,
           columns: [
             {name: 'bar', type: 'column', table:'a'},
             {name: 'bar', type: 'column', table:'b'}

@@ -88,7 +88,8 @@ declare namespace FxHQLParser {
 
     interface JoinInfoItem {
         side: 'left' | 'right' | undefined
-        outer: boolean
+        specific_outer: boolean
+        inner: boolean
         columns: ColumnNode[]
         op_left: ColumnNode
         op_right: ColumnNode
@@ -103,7 +104,8 @@ declare namespace FxHQLParser {
     type TableRefNode = IParsedNode<{
         type: "table_ref"
         side: JoinInfoItem['side']
-        outer: JoinInfoItem['outer']
+        inner: JoinInfoItem['inner']
+        specific_outer: JoinInfoItem['specific_outer']
         op_left: JoinInfoItem['op_left']
         op_right: JoinInfoItem['op_right']
         alias?: string

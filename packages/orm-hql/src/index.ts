@@ -108,8 +108,8 @@ function parserDefinition(
         }
         case "table_ref": {
           let sql = "(" + this.toSql(parsed.op_left);
-          if (parsed.outer) {
-            if (parsed.side) sql += " " + parsed.side + " ";
+          if (!parsed.inner) {
+            if (parsed.side) sql += " " + parsed.side + (parsed.specific_outer ? " outer" : "") + " ";
             else sql += " ";
           } else {
             sql += " inner ";
@@ -323,7 +323,8 @@ function parserDefinition(
 
           joins.push({
             side: node.side,
-            outer: node.outer,
+            specific_outer: node.specific_outer,
+            inner: node.inner,
             columns: columns,
             op_left: node.op_left,
             op_right: node.op_right,

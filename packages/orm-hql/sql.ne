@@ -117,32 +117,42 @@ table_ref_commalist ->
 @{%
   function tableRef(d, onOffset, alias, using) {
 		if(!onOffset) onOffset = 0;
-    const inner = d[2] && d[2].indexOf('inner') === 1
 
     const ref = {
       type: 'table_ref',
-      side: ((d[1]||[])[1]),
+      side: d[1].side,
       op_left: d[0],
-      op_right: d[5],
-      on: d[onOffset+9],
-      outer: !inner,
+      op_right: d[4],
+      on: d[onOffset+8],
+      inner: d[1].inner,
+      specific_outer: d[1].specific_outer,
 			using
     };
-		if(alias) ref.alias = d[7];
+		if(alias) ref.alias = d[6];
 		return ref;
   }
 %}
 
+join_statement -> 
+    __ {% x=>({ side: undefined, specific_outer: false, inner: false }) %}
+  | __ LEFT __ {% x=>({ side: 'left', specific_outer: false, inner: false }) %}
+  | __ LEFT __ OUTER __ {% x=>({ side: 'left', specific_outer: true, inner: false }) %}
+  | __ RIGHT __ {% x=>({ side: 'right', specific_outer: false, inner: false }) %}
+  | __ RIGHT __ OUTER __ {% x=>({ side: 'right', specific_outer: true, inner: false }) %}
+  | __ FULL __ {% x=>({ side: 'full', specific_outer: false, inner: false }) %}
+  | __ FULL __ OUTER __ {% x=>({ side: 'full', specific_outer: true, inner: false }) %}
+  | __ INNER __ {% x=>({ side: undefined, specific_outer: false, inner: true }) %}
+
 table_ref ->
     "(" _ table_ref _ ")" {% d => d[2] %}
   | table {% id %}
-  | table_ref (__ LEFT __ | __ RIGHT __ | _) (__ OUTER __ | __ INNER __ | _) JOIN __ table __ ON __ expr {% x=>tableRef(x,0) %}
-  | table_ref (__ LEFT __ | __ RIGHT __ | _) (__ OUTER __ | __ INNER __ | _) JOIN __ table __ ON ("(" _ expr _ ")") {% x=>tableRef(x,0) %}
-	| table_ref (__ LEFT __ | __ RIGHT __ | _) (__ OUTER __ | __ INNER __ | _) JOIN __ query_spec (AS __ | __) identifier __ ON __ expr {% x=>tableRef(x,2,true) %}
-	| table_ref (__ LEFT __ | __ RIGHT __ | _) (__ OUTER __ | __ INNER __ | _) JOIN __ query_spec (AS __ | __) identifier __ ON ("(" _ expr _ ")") {% x=>tableRef(x,2,true) %}
+  | table_ref join_statement JOIN __ table __ ON __ expr {% x=>tableRef(x,0) %}
+  | table_ref join_statement JOIN __ table __ ON ("(" _ expr _ ")") {% x=>tableRef(x,0) %}
+	| table_ref join_statement JOIN __ query_spec (AS __ | __) identifier __ ON __ expr {% x=>tableRef(x,2,true) %}
+	| table_ref join_statement JOIN __ query_spec (AS __ | __) identifier __ ON ("(" _ expr _ ")") {% x=>tableRef(x,2,true) %}
 
-	| table_ref (__ LEFT __ | __ RIGHT __ | _) (__ OUTER __ | __ INNER __ | _) JOIN __ table __ USING _ "(" _ identifier_comma_list _ ")" {% x=>tableRef(x,2, false,true) %}
-	| table_ref (__ LEFT __ | __ RIGHT __ | _) (__ OUTER __ | __ INNER __ | _) JOIN __ query_spec (AS __ | __) identifier __ USING _ "(" _ identifier_comma_list _ ")" {% x=>tableRef(x,4, true,true) %}
+	| table_ref join_statement JOIN __ table __ USING _ "(" _ identifier_comma_list _ ")" {% x=>tableRef(x,2, false,true) %}
+	| table_ref join_statement JOIN __ query_spec (AS __ | __) identifier __ USING _ "(" _ identifier_comma_list _ ")" {% x=>tableRef(x,4, true,true) %}
 
 
 identifier_comma_list ->
@@ -622,6 +632,7 @@ HAVING -> [Hh] [Aa] [Vv] [Ii] [Nn] [Gg]
 
 IF -> [Ii] [Ff]
 IN -> [Ii] [Nn]
+FULL -> [Ff] [Uu] [Ll] [Ll] {% d => 'full' %}
 INNER -> [Ii] [Nn] [Nn] [Ee] [Rr] {% d => 'inner' %}
 OUTER -> [Oo] [Uu] [Tt] [Ee] [Rr] {% d => 'outer' %}
 INTERVAL -> [Ii] [Nn] [Tt] [Ee] [Rr] [Vv] [Aa] [Ll]
