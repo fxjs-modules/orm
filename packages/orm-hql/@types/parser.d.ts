@@ -62,8 +62,13 @@ declare namespace FxHQLParser {
         with_rollup?: boolean
     }>
 
+    /**
+     * @description means 'select all fields' from table
+     * if `table` specified, maybe there are multiple tables
+     */
     type SelectAllNode = IParsedNode<{
         type: "select_all"
+        table?: IdentifierNode
     }>
 
     type ColumnRefNode = IParsedNode<{
@@ -77,7 +82,10 @@ declare namespace FxHQLParser {
      */
     type ColumnRealExprNode = IParsedNode<{
         type: "column_expr"
-        expression: ColumnRefNode | IdentifierNode | ConditionExprNode
+        expression: ColumnRefNode | IdentifierNode | ConditionExprNode | {
+          type: SelectAllNode['type']
+          table: SelectAllNode['table']
+        }
         alias?: IdentifierNode
     }>
 

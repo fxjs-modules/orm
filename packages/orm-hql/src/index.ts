@@ -87,8 +87,11 @@ function parserDefinition(
           if (parsed.with_rollup) sql += " with rollup";
           return sql;
         }
-        case "select_all":
-          return "*"
+        case "select_all": {
+          if (!parsed.table) return "*"
+
+          return options.identifierEscape(parsed.table.value) + ".*"
+        }
         case "column_expr":
           let sql = "";
           sql += this.toSql(parsed.expression);

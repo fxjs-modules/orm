@@ -493,8 +493,29 @@ const tests = [
 		sql: 'select a from b where (c or not d) and e is not null and f',
 		toSql: '(select `a` from (`b`) where ((((`c` or (not `d`)) and (`e` is not null)) and `f`)))'
 	},
+  {
+    sql: 'select test.* from test',
+		toSql: '(select `test`.* from (`test`))'
+  },
+  {
+    sql: 'select a.*, b.id as b_id from test a join test b on a.id = b.a_id',
+		toSql: '(select `a`.*, `b`.`id` as `b_id` from ((`test`as `a` join `test`as `b` on (`a`.`id` = `b`.`a_id`))))'
+  },
+  {
+    sql: `\
+select a.*, b.id as b_id, c.id as c_id from test a
+join test b on a.id = b.a_id
+right outer join test2 c on a.id = c.a_id`,
+		toSql: '(select `a`.*, `b`.`id` as `b_id`, `c`.`id` as `c_id` from (((`test`as `a` join `test`as `b` on (`a`.`id` = `b`.`a_id`)) right outer join `test2`as `c` on (`a`.`id` = `c`.`a_id`))))'
+  },
+  {
+    sql: `\
+select a.*, b.id as b_id, c.* from test a
+join test b on a.id = b.a_id
+right outer join test2 c on a.id = c.a_id`,
+		toSql: '(select `a`.*, `b`.`id` as `b_id`, `c`.* from (((`test`as `a` join `test`as `b` on (`a`.`id` = `b`.`a_id`)) right outer join `test2`as `c` on (`a`.`id` = `c`.`a_id`))))'
+  },
 	{
-    exclude: true,
 		sql: 'select a.x from b',
 		toSql: '(select `a`.`x` from (`b`))',
 		expected: {

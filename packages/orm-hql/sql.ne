@@ -111,6 +111,10 @@ selection_column_comma_list ->
 selection_column ->
     expr {% d => ({type: 'column_expr', expression: drill(d[0])}) %}
   | expr __ (AS __| null) identifier {% d => ({type: 'column_expr', expression: drill(d[0]), alias: d[3]}) %}
+  | selection_table_all_columns {% id %}
+
+selection_table_all_columns ->
+  identifier "." "*" {% ([_id]) => ({type: 'column_expr', expression: {type: 'select_all', table: _id}}) %}
 
 table_ref_commalist ->
     table_ref {% d => ({table_refs: [d[0]]}) %}
