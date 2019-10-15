@@ -90,7 +90,8 @@ declare namespace FxHQL {
 }
 
 declare module "@fxjs/orm-hql" {
-    export = FxHQL.Parser
+  const Singleton: FxHQL.Parser
+  export = Singleton
 }
 
 declare module "@fxjs/orm-hql/lib/sql-parser" {
