@@ -10,8 +10,7 @@
   },
   "homepage": "https://github.com/fxjs-modules/orm/tree/master/packages/core",
   "scripts": {
-    "compile-orig": "nearleyc ./sql-orig.ne -o ./lib/sql-parse-orig.js",
-    "compile": "nearleyc ./sql.ne -o ./lib/sql-parse.js",
+    "compile": "fibjs ./build-ne.js",
     "build": "fib-typify ./src -o ./lib",
     "test": "fibjs test",
     "ci": "npm run build && npm run compile && npm run test",

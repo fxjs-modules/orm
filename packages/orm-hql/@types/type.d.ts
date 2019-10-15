@@ -92,3 +92,12 @@ declare namespace FxHQL {
 declare module "@fxjs/orm-hql" {
     export = FxHQL.Parser
 }
+
+declare module "@fxjs/orm-hql/lib/sql-parser" {
+  const compiled: {
+    lexer: nearley.Lexer | undefined
+    ParserRules: nearley.CompiledRules
+    ParserStart: nearley.ParserOptions
+  }
+  export = compiled
+}

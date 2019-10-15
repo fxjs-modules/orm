@@ -1,5 +1,5 @@
 import nearley = require("nearley");
-const grammar: nearley.CompiledRules & nearley.Grammar = require("./sql-parse");
+const grammar: nearley.CompiledRules & nearley.Grammar = require("./sql-parser");
 
 function walk(
   obj: (Fibjs.AnyObject | any[]) | FxHQLTypeHelpers.ItemInArrayOrValueInObject<Fibjs.AnyObject | any[]>,
