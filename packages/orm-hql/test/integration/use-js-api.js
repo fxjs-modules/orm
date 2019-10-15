@@ -103,14 +103,14 @@ describe('parse sql to query structure', function() {
     });
 
     it('join three tables', function () {
+      var samplesql = `\
+        select * from table_a a
+        inner join table_b b on a.id = b.a_id
+        left join table_c c on a.id = c.a_id
+        where 1=1
+      `
       assert.deepEqual(
-        parser.parse(`\
-          select * from table_a a
-          inner join table_b b on a.id = b.a_id
-          left join table_c c on a.id = c.a_id
-          where 1=1
-        `)
-          .parsed.table_exp,
+        parser.parse(samplesql).parsed.table_exp,
         {
           "type": "from_table",
           "from": {
@@ -194,6 +194,109 @@ describe('parse sql to query structure', function() {
           "having": undefined,
           "order": undefined,
           "limit": undefined
+        }
+      )
+
+      assert.deepEqual(
+        parser.parse(samplesql).joins.map(join => (
+          {
+            side: join.side,
+            specific_outer: join.specific_outer,
+            inner: join.inner,
+            columns: join.columns,
+            ref_right: join.ref_right
+          }
+        )),
+        [
+          {
+            "side": "left",
+            "specific_outer": false,
+            "inner": false,
+            "columns": [
+              {
+                "type": "column",
+                "table": "a",
+                "name": "id"
+              },
+              {
+                "type": "column",
+                "table": "c",
+                "name": "a_id"
+              }
+            ],
+            "ref_right": {
+              "type": "table",
+              "table": "table_c",
+              "alias": "c"
+            }
+          },
+          {
+            "side": undefined,
+            "specific_outer": false,
+            "inner": true,
+            "columns": [
+              {
+                "type": "column",
+                "table": "a",
+                "name": "id"
+              },
+              {
+                "type": "column",
+                "table": "b",
+                "name": "a_id"
+              }
+            ],
+            "ref_right": {
+              "type": "table",
+              "table": "table_b",
+              "alias": "b"
+            }
+          }
+        ]
+      )
+
+      assert.deepEqual(
+        parser.parse(samplesql).referencedTables,
+        [
+          'table_a',
+          'table_b',
+          'table_c'
+        ]
+      )
+
+      assert.deepEqual(
+        parser.parse(samplesql).aliases,
+        {
+          "a": "table_a",
+          "b": "table_b",
+          "c": "table_c"
+        }
+      )
+    });
+
+    it('aliases when multiple tables', function () {
+      var samplesql = `\
+        select * from table_a t_a
+        inner join table_b t_b on t_a.id = t_b.a_id
+        left join table_c t_c on t_a.id = t_c.a_id
+        where 1=1
+      `
+
+      assert.deepEqual(
+        parser.parse(samplesql).referencedTables,
+        [
+          'table_a',
+          'table_b',
+          'table_c'
+        ]
+      )
+
+      assert.deepEqual(
+        parser.parse(samplesql).aliases,
+        {
+          "t_a": "table_a",
+          "t_b": "table_b",
+          "t_c": "table_c"
         }
       )
     });

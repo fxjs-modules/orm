@@ -20,7 +20,7 @@ declare namespace FxHQLParser {
 
     type Statement_Binary = IParsedNode<{
         type: "binary_statement"
-        expr: any
+        expr: string
     }>
 
     type UnionNode = IParsedNode<{
@@ -100,6 +100,11 @@ declare namespace FxHQLParser {
         side: 'left' | 'right' | 'full' | undefined
         specific_outer: boolean
         inner: boolean
+        /**
+         * @description syntax ref left for on JOIN...ON statement, in most case, ref_left is useless
+         * because you can determine what you wanna request by 'side', 'inner' and 'ref_right', it's
+         * just field left in parsed tree-node, and ref_left wouldn't passed to item of ParsedResult['joins']
+         */
         ref_left: ConditionExprNode
         ref_right: ConditionExprNode
         alias?: string
@@ -271,14 +276,41 @@ declare namespace FxHQLParser {
         distinct: boolean
         all: Undefineable<boolean>
     }>
+    /**
+     * @description one single-quoted/double-quoted string
+     * @node
+     * @sample
+     *  - "abc"
+     *  - 'foo'
+     */
     type ValueTypeStringNode = IParsedNode<{
         type: "string"
         string: string
     }>
+    /**
+     * @description one integer, float type value
+     * @node
+     * @sample
+     *  - 1
+     *  - -1
+     *  - 1.11
+     *  - 3.1415926
+     */
     type ValueTypeDecimalNode = IParsedNode<{
         type: "decimal"
         value: string
     }>
+    /**
+     * @description one raw string, one back-quoted string, or two back-quoted string concated by '.'
+     * @node
+     * @sample
+     *  - db_val
+     *  - table_val
+     *  - colum_val
+     *  - val
+     *  - `db`.`table`
+     *  - `table`.`column`
+     */
     type IdentifierNode = IParsedNode<{
         type: "identifier"
         value: string

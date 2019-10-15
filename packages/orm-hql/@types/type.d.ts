@@ -51,15 +51,17 @@ declare namespace FxHQLParser {
         sourceTables: string[]
         aliases: { [t: string]: string }
         operation: ParsedResult['parsed']['type']
+        /**
+         * @description parsed syntax tree, you can find all source raw of other information in `ParsedResult`
+         */
         parsed: ActionNode__CreateView | StatementNode__Select
         joins: {
           side: TableRefNode['side']
           specific_outer: TableRefNode['specific_outer']
           inner: TableRefNode['inner']
           columns: ColumnNode[]
-          ref_left: TableRefNode['ref_left']
           ref_right: TableRefNode['ref_right']
-      }[]
+        }[]
         returnColumns: {
             name: string
             expression: ColumnNode['expression']

@@ -326,7 +326,7 @@ function parserDefinition(
             specific_outer: node.specific_outer,
             inner: node.inner,
             columns: columns,
-            ref_left: node.ref_left,
+            // ref_left: node.ref_left,
             ref_right: node.ref_right,
           });
         }

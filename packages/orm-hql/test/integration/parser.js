@@ -103,7 +103,6 @@ const tests = [
             {name: 'foo', type: 'column', table:'a'},
             {name: 'foo', type: 'column', table:'b'}
           ],
-          ref_left: {type: 'table', table: 'y'},
           ref_right: {type: 'table', table: 'x'},
         }
       ]
@@ -122,7 +121,6 @@ const tests = [
             {name: 'foo', type: 'column', table:'a'},
             {name: 'foo', type: 'column', table:'b'}
           ],
-          ref_left: {type: 'table', table: 'y'},
           ref_right: {type: 'table', table: 'x'},
         }
       ]
@@ -141,7 +139,6 @@ const tests = [
             {name: 'bar', type: 'column', table:'a'},
             {name: 'bar', type: 'column', table:'b'}
           ],
-          ref_left: {type: 'table', table: 'y'},
           ref_right: {type: 'table', table: 'x'},
         }
       ]
