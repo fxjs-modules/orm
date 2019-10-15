@@ -15,7 +15,7 @@ declare namespace FxHQLParser {
         | DistinctNode
         | GroupByNode
         | SelectAllNode
-        | ColumnRealExprNode
+        | ColumnExprNode
         | ColumnRefNode
         | ExprCommaListNode
         | WhereNode
@@ -65,9 +65,9 @@ declare namespace FxHQLParser {
         }[]
         returnColumns: {
             name: string
-            expression: ColumnRealExprNode['expression']
+            expression: ColumnExprNode['expression']
             alias?: string
-            alias_expression?: ColumnRealExprNode['alias']
+            alias_expression?: ColumnExprNode['alias']
             sourceColumns: ColumnRefNode[]
             mappedTo: {
                 column: string
