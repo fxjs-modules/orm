@@ -29,7 +29,7 @@ declare namespace FxOrmQueries {
     /**
      * @description `QueryNormalizer` is used to normalize dirty(maybe), incomplete query conditions,
      * it led to get one result formatted as:
-     * 
+     *
      * ```javascript
      * var normalizedQueryBuilder = {
      *      select: [],
@@ -63,7 +63,7 @@ declare namespace FxOrmQueries {
     type OperatorOr = Symbol
     class Class_QueryNormalizer {
         readonly collection: string
-        readonly select: string[] | symbol
+        readonly select: FxHQLParser.ParsedResult['returnColumns'] | symbol
 
         readonly selectableFields: string[]
 
@@ -120,16 +120,19 @@ declare namespace FxOrmQueries {
         offset: number
 
         constructor (
-            collection: string,
+            sql: string,
             opts: {
-                select?: string | string[] | '*',
-                fields?: string[],
-                where?: any
-                limit?: number
-                offset?: number
-                leftJoin?: Class_QueryNormalizer
-                rightJoin?: Class_QueryNormalizer
-                innerJoin?: Class_QueryNormalizer
+              models?: {
+                [k: string]: FxOrmModel.Class_Model
+              }
+              // select?: string | string[] | '*',
+              // fields?: string[],
+              // where?: any
+              // limit?: number
+              // offset?: number
+              // leftJoin?: Class_QueryNormalizer
+              // rightJoin?: Class_QueryNormalizer
+              // innerJoin?: Class_QueryNormalizer
             }
         )
     }
@@ -152,7 +155,7 @@ declare namespace FxOrmQueries {
         last (): T_RETURN
         all (): T_RETURN[]
     }
-    
+
     type WhereObject = {
         [k: string]: any,
     }

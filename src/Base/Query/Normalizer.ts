@@ -1,10 +1,9 @@
 import { isEmptyPlainObject } from "../../Utils/object"
+import hql = require('@fxjs/orm-hql')
 
 const SYM_SELECT_ALL = Symbol('Class_QueryNormalizer#select_all')
 
-function normalizeSelect (
-    select: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmQueries.Class_QueryNormalizer>[1]['select']
-): FxOrmQueries.Class_QueryNormalizer['select'] {
+function normalizeSelect (select: any): FxOrmQueries.Class_QueryNormalizer['select'] {
     if (!select)
         throw new Error('[normalizeSelect] select must be string array')
 
@@ -18,9 +17,7 @@ function normalizeSelect (
         return SYM_SELECT_ALL
 }
 
-function normalizeLimit (
-    input: any
-) {
+function normalizeLimit (input: any) {
     if (typeof input !== 'number' || isNaN(input) || !isFinite(input) || !input)
         input = -1
 
@@ -29,9 +26,7 @@ function normalizeLimit (
     return input
 }
 
-function normalizeOffset (
-    input: any
-) {
+function normalizeOffset (input: any) {
     if (typeof input !== 'number' || isNaN(input) || !isFinite(input) || !input)
         input = 0
 
@@ -58,31 +53,61 @@ export default class QueryNormalizer implements FxOrmQueries.Class_QueryNormaliz
     get isJoined () { return false }
 
     constructor (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmQueries.Class_QueryNormalizer>) {
-        const [collection, opts] = args
+        const [sql, opts] = args
+        if (!sql || typeof sql !== 'string')
+            throw new Error(`[QueryNormalizer::constructor] sql must be non-empty string`)
 
-        if (!collection || typeof collection.toString !== 'function')
-            throw new Error('[Class_QueryNormalizer::constructor] collection is required')
-        
-        this.collection = collection
+        const json = hql.parse(sql);
 
-        const {
-            select = '*',
-            where,
-            limit = -1,
-            offset = 0,
-            fields = []
-        } = opts || {}
+        if (json.parsed.type !== 'select')
+            throw new Error(`[QueryNormalizer::constructor] "select" type hql supported only!`)
 
-        this.select = normalizeSelect(select)
+        const { models = {} } = opts || {};
+        if (models && !isEmptyPlainObject(models)) {
+          this.collection = json.sourceTables.find(table => models.hasOwnProperty(table)) || null
+          if (!this.collection)
+            throw new Error(`[QueryNormalizer::constructor] no any source collection find in passed model dictionary, check your config.`)
+        }
 
-        if (!Array.isArray(fields) || fields.some(x => typeof x !== 'string'))
-            throw new Error(`[Class_QueryNormalizer::constructor] fields must be string array`)
-        this.selectableFields = Array.isArray(fields) ? fields : []
+        make__selectableFields: {
+          if (json.parsed.selection.type === 'select_all') {
+            this.select = SYM_SELECT_ALL
+          } else {
+            this.select = json.returnColumns
 
-        this.limit = normalizeLimit(limit)
-        this.offset = normalizeOffset(offset)
+            const field_inputs = <{
+              type: FxHQLParser.ColumnExprNode['type']
+              expression: FxHQLParser.ColumnRefNode/* FxHQLParser.ColumnExprNode['expression'] */
+              alias?: FxHQLParser.ColumnExprNode['alias']
+            }[]>[]
+            let selectable_fields = <string[]>[]
+            let model = null
+            /**
+             * @couldi deal with field name conflict here?
+             */
+            json.parsed.selection.columns.forEach(selectCol => {
+              if (selectCol.expression.type === 'select_all' && (model = models[selectCol.expression.table.value])) {
+                selectable_fields = selectable_fields.concat(model.propertyList.map(property => property.mapsTo));
+              } else if (selectCol.expression.type === 'column' && (model = models[selectCol.expression.table])) {
+                if (selectCol.alias && selectCol.alias.value) selectable_fields.push(selectCol.alias.value)
+                else selectable_fields.push(selectCol.expression.name)
+              }
+            })
 
-        this.where = where;
+            selectable_fields = Array.from(new Set(selectable_fields))
+
+            // console.warn(
+            //   'selectable_fields',
+            //   selectable_fields
+            // )
+            this.selectableFields = selectable_fields
+          }
+        }
+
+        // console.warn(
+        //   'json.sourceTables[0]',
+        //   json.sourceTables[0]
+        // )
 
         return new Proxy(this, {
             set (target: any, setKey: string, value: any) {
