@@ -15,11 +15,11 @@ declare namespace FxHQLParser {
         | DistinctNode
         | GroupByNode
         | SelectAllNode
-        | ColumnNode
+        | ColumnRefNode
         | ExprCommaListNode
         | WhereNode
         | HavingNode
-        | SelectionColumnNode
+        | SelectionColumnList
         | LimitStatementNode
         | OrderNode
         | OrderStatementNode
@@ -59,13 +59,13 @@ declare namespace FxHQLParser {
           side: TableRefNode['side']
           specific_outer: TableRefNode['specific_outer']
           inner: TableRefNode['inner']
-          columns: ColumnNode[]
+          columns: ColumnRefNode[]
           ref_right: TableRefNode['ref_right']
         }[]
         returnColumns: {
             name: string
-            expression: ColumnNode['expression']
-            sourceColumns: ColumnNode[]
+            expression: ColumnRefNode['expression']
+            sourceColumns: ColumnRefNode[]
             mappedTo: {
                 column: string
                 table?: string

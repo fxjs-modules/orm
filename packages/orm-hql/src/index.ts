@@ -28,9 +28,7 @@ function parserDefinition(
     toSql(parsed: FxHQLParser.ParsedNode) {
       if (!parsed) return "";
       if (!parsed.type) return "";
-
       // const spacing = options.spacing || "";
-      // console.notice('parsed', parsed)
 
       options = options || {};
       switch (parsed.type) {
@@ -312,7 +310,7 @@ function parserDefinition(
           allTableReferences.push(node);
         }
         if (node.type === "table_ref" && node.on) {
-          const columns = <FxHQLParser.ColumnNode[]>[];
+          const columns = <FxHQLParser.ColumnRefNode[]>[];
           walk(node.on, (n: FxHQLTypeHelpers.ItemInArrayOrValueInObject<FxHQLParser.TableRefNode['on']>) => {
             if (n.type === "table_ref") return false;
             if (n.type === "column") {

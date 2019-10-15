@@ -10,8 +10,8 @@ declare namespace FxHQLParser {
         top: Undefineable<boolean>
         all_distinct: Undefineable<boolean>
         selection: IParsedNode<{
-            type: "selection_columns"
-            columns: ColumnNode[]
+          type: "selection_columns" | "select_all"
+          columns?: ColumnRefNode[]
         }>
         table_exp: FromTableExpNode
     }>
@@ -25,8 +25,8 @@ declare namespace FxHQLParser {
 
     type UnionNode = IParsedNode<{
         type: "union"
-        op_left: ColumnNode
-        op_right: ColumnNode
+        op_left: ColumnRefNode
+        op_right: ColumnRefNode
     }>
 
     type FromNode = IParsedNode<{
@@ -58,7 +58,7 @@ declare namespace FxHQLParser {
 
     type GroupByNode = IParsedNode<{
         type: "group_by"
-        columns: ColumnNode
+        columns: ColumnRefNode
         with_rollup?: boolean
     }>
 
@@ -66,17 +66,18 @@ declare namespace FxHQLParser {
         type: "select_all"
     }>
 
-    type ColumnNode = IParsedNode<{
+    type SelectionColumnItemNode = IParsedNode<{
+      type: "column"
+      table: string
+      name: string
+    }>
+
+    /**
+     * @description column ref information
+     */
+    type ColumnRefNode = IParsedNode<{
         type: "column"
-        expression: {
-            type: "column"
-            table: string
-            name: string
-            value?: string
-        } | {
-            type: "identifier"
-            value: "a"
-        } | ConditionExprNode
+        expression: SelectionColumnItemNode | IdentifierNode | ConditionExprNode
         name?: string
         table?: string
         alias?: {
@@ -115,8 +116,8 @@ declare namespace FxHQLParser {
     type ExprOperatorEqNode = IParsedNode<{
         type: "operator"
         operator: "="
-        op_left: ValueTypeDecimalNode | IdentifierNode | ColumnNode
-        op_right: ValueTypeDecimalNode | IdentifierNode | ColumnNode
+        op_left: ValueTypeDecimalNode | IdentifierNode | ColumnRefNode
+        op_right: ValueTypeDecimalNode | IdentifierNode | ColumnRefNode
     }>
 
     type ExprOperatorNotNode = IParsedNode<{
@@ -135,8 +136,8 @@ declare namespace FxHQLParser {
         type: "operator"
         operator: "and" | "xor" | "or"
         operand?: IdentifierNode
-        op_left: ExprCommaListNode | ConditionExprNode | IdentifierNode | ColumnNode
-        op_right: ExprCommaListNode | ConditionExprNode | IdentifierNode | ColumnNode
+        op_left: ExprCommaListNode | ConditionExprNode | IdentifierNode | ColumnRefNode
+        op_right: ExprCommaListNode | ConditionExprNode | IdentifierNode | ColumnRefNode
     }>
 
     type ConditionExprNode = IParsedNode<ExprOperatorConjNode | ExprOperatorEqNode | ExprOperatorNotNode | ExprOperatorIsNullNode>
@@ -151,9 +152,9 @@ declare namespace FxHQLParser {
         condition: ConditionExprNode
     }>
 
-    type SelectionColumnNode = IParsedNode<{
+    type SelectionColumnList = IParsedNode<{
         type: "selection_columns"
-        columns: string[]
+        columns: ColumnRefNode[]
     }>
 
     type OrderNode = IParsedNode<{

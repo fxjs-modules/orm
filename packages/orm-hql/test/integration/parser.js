@@ -29,7 +29,8 @@ const tests = [
 				}]
 			}]
 		}
-  },{
+  },
+  {
     sql: [
 			'select * # comments!',
 			'from -- more comments!',
@@ -60,6 +61,70 @@ const tests = [
       sourceTables: ['x', 'y']
     },
     toSql: 'create or replace view `test` as (select * from ((`x` left join `y` on (`x`.`a` = `y`.`a`))))'
+  },
+  {
+    only: true,
+    sql: 'select a, b, c from test',
+    expected: {
+      aliases: {
+        "test": "test"
+      },
+      returnColumns: [
+        ['a'],
+        ['b'],
+        ['c']
+      ].map(([identifier]) => {
+        return {
+          "name": identifier,
+          "expression": {
+            "type": "identifier",
+            "value": identifier
+          },
+          "sourceColumns": [
+            {
+              "type": "identifier",
+              "value": identifier
+            }
+          ],
+          "mappedTo": {
+            "column": identifier
+          }
+        }
+      })
+    },
+    toSql: '(select `a`, `b`, `c` from (`test`))'
+  },
+  {
+    only: true,
+    sql: 'select a aa, b bb, c as cc from test',
+    expected: {
+      aliases: {
+        "test": "test"
+      },
+      returnColumns: [
+        ['a', 'aa'],
+        ['b', 'bb'],
+        ['c', 'cc']
+      ].map(([identifier, alias]) => {
+        return {
+          "name": alias,
+          "expression": {
+            "type": "identifier",
+            "value": identifier,
+          },
+          "sourceColumns": [
+            {
+              "type": "identifier",
+              "value": identifier,
+            }
+          ],
+          "mappedTo": {
+            "column": identifier
+          }
+        }
+      })
+    },
+    toSql: '(select `a` as `aa`, `b` as `bb`, `c` as `cc` from (`test`))'
   },
   {
     sql: 'select * from x inner join y on x.a=y.a',
