@@ -88,17 +88,19 @@ function parserDefinition(
           return sql;
         }
         case "select_all":
-          return "*";
+          return "*"
+        case "column_expr":
+          let sql = "";
+          sql += this.toSql(parsed.expression);
+          if (parsed.alias) sql += " as " + this.toSql(parsed.alias);
+          return sql
         case "column": {
           let sql = "";
-          if (parsed.expression) {
-            sql += this.toSql(parsed.expression);
-          } else if (parsed.name) {
+          if (parsed.name) {
             if (parsed.table)
               sql += options.identifierEscape(parsed.table) + ".";
             sql += options.identifierEscape(parsed.name);
           }
-          if (parsed.alias) sql += " as " + this.toSql(parsed.alias);
           return sql;
         }
         case "expr_comma_list": {

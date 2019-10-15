@@ -63,7 +63,6 @@ const tests = [
     toSql: 'create or replace view `test` as (select * from ((`x` left join `y` on (`x`.`a` = `y`.`a`))))'
   },
   {
-    only: true,
     sql: 'select a, b, c from test',
     expected: {
       aliases: {
@@ -95,7 +94,6 @@ const tests = [
     toSql: '(select `a`, `b`, `c` from (`test`))'
   },
   {
-    only: true,
     sql: 'select a aa, b bb, c as cc from test',
     expected: {
       aliases: {
@@ -296,7 +294,7 @@ const tests = [
               "type": "selection_columns",
               "columns": [
                 {
-                  "type": "column",
+                  "type": "column_expr",
                   "expression": {
                     "type": "column",
                     "table": "foo",

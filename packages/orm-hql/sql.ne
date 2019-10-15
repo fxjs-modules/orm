@@ -109,8 +109,8 @@ selection_column_comma_list ->
     %}
 
 selection_column ->
-    expr {% d => ({type: 'column', expression: drill(d[0])}) %}
-  | expr __ (AS __| null) identifier {% d => ({type: 'column', expression: drill(d[0]), alias: d[3]}) %}
+    expr {% d => ({type: 'column_expr', expression: drill(d[0])}) %}
+  | expr __ (AS __| null) identifier {% d => ({type: 'column_expr', expression: drill(d[0]), alias: d[3]}) %}
 
 table_ref_commalist ->
     table_ref {% d => ({table_refs: [d[0]]}) %}
