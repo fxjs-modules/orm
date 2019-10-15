@@ -455,10 +455,13 @@ const tests = [
   {
     exclude: true,
 		sql: `\
-select user.id as uid, user.name as name, task.checked as finished, imt_form.title as task_title
+select user.id as uid,
+user.name as name,
+task.checked as finished,
+form.title as task_title
 from user
 inner join task on (task.executor_id = user.id)
-left outer join imt_form on (task.task_form_id = imt_form.id)
+left outer join form on (task.task_form_id = form.id)
 where task.checked = 1 and user.name = 'Jack'
     `.split('\n').join('\n'),
 		toSql: '(select `a`.`x` from (`b`))',

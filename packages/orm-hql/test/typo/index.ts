@@ -50,52 +50,45 @@ if (parsedNode.parsed.type === 'select') {
     parsedNode.parsed.table_exp.where = {
         "type": "where",
         "condition": {
+          "type": "operator",
+          "operator": "and",
+          "op_left": {
             "type": "operator",
             "operator": "and",
             "op_left": {
-                "type": "operator",
-                "operator": "and",
-                "op_left": {
-                    "type": "expr_comma_list",
-                    "exprs": [
-                        {
-                            "type": "operator",
-                            "operator": "or",
-                            "op_left": {
-                                "type": "identifier",
-                                "value": "c"
-                            },
-                            "op_right": {
-                                "type": "operator",
-                                "operator": "not",
-                                "operand": {
-                                    "type": "identifier",
-                                    "value": "d"
-                                }
-                            }
-                        }
-                    ]
-                },
-                "op_right": {
-                    "type": "is_null",
-                    "not": [
-                        null,
-                        [
-                            "n",
-                            "o",
-                            "t"
-                        ]
-                    ],
-                    "value": {
-                        "type": "identifier",
-                        "value": "e"
+              "type": "expr_comma_list",
+              "exprs": [
+                {
+                  "type": "operator",
+                  "operator": "or",
+                  "op_left": {
+                    "type": "identifier",
+                    "value": "c"
+                  },
+                  "op_right": {
+                    "type": "operator",
+                    "operator": "not",
+                    "operand": {
+                      "type": "identifier",
+                      "value": "d"
                     }
+                  }
                 }
+              ]
             },
             "op_right": {
+              "type": "is_null",
+              "not": true,
+              "value": {
                 "type": "identifier",
-                "value": "f"
+                "value": "e"
+              }
             }
+          },
+          "op_right": {
+            "type": "identifier",
+            "value": "f"
+          }
         }
     }
 }

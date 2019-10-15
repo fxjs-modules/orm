@@ -76,7 +76,7 @@ declare namespace FxHQLParser {
         } | {
             type: "identifier"
             value: "a"
-        }
+        } | ConditionExprNode
         name?: string
         table?: string
         alias?: {
@@ -110,9 +110,9 @@ declare namespace FxHQLParser {
     type ConditionExprNode = IParsedNode<{
         type: "operator"
         operator: "and" | "xor" | "or"
-        operand: Undefineable<IdentifierNode>
-        op_left: ConditionExprNode | IdentifierNode | ColumnNode
-        op_right: ConditionExprNode | IdentifierNode | ColumnNode
+        operand?: IdentifierNode
+        op_left: ExprCommaListNode | ConditionExprNode | IdentifierNode | ColumnNode
+        op_right: ExprCommaListNode | ConditionExprNode | IdentifierNode | ColumnNode
     } | {
         type: "operator"
         operator: "="
@@ -121,7 +121,7 @@ declare namespace FxHQLParser {
     } | {
         type: "operator"
         operator: "not"
-        operand: IdentifierNode
+        operand?: IdentifierNode
     } | {
         type: "is_null"
         not: any

@@ -264,7 +264,7 @@ mid_expr ->
   | __ expr __ {% d => d[1] %}
 
 boolean_primary ->
-    pre_boolean_primary IS (__ NOT | null) __ NULLX {% d => ({type: 'is_null', not: d[2], value:d[0]}) %}
+    pre_boolean_primary IS (__ NOT | null) __ NULLX {% d => ({type: 'is_null', not: !!d[2], value:d[0]}) %}
   | boolean_primary _ comparison_type _ predicate {% d => (opExpr(d[2]))([d[0], null, d[4]]) %}
   | boolean_primary _ comparison_type _ (ANY | ALL) subquery
   | predicate {% id %}
