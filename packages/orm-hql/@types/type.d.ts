@@ -66,6 +66,8 @@ declare namespace FxHQLParser {
         returnColumns: {
             name: string
             expression: ColumnRealExprNode['expression']
+            alias?: string
+            alias_expression?: ColumnRealExprNode['alias']
             sourceColumns: ColumnRefNode[]
             mappedTo: {
                 column: string

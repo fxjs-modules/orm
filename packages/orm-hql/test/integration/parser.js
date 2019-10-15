@@ -15,6 +15,7 @@ const tests = [
     toSql: '(select `x` from (`test`))',
 		expected: {
 			returnColumns: [{
+				name: 'x',
 				expression: {
 					type: 'identifier',
 					value: 'x'
@@ -22,7 +23,6 @@ const tests = [
 				mappedTo: {
 					column: 'x'
 				},
-				name: 'x',
 				sourceColumns: [{
 					type: 'identifier',
 					value: 'x'
@@ -109,6 +109,11 @@ const tests = [
           "expression": {
             "type": "identifier",
             "value": identifier,
+          },
+          alias: alias,
+          alias_expression: {
+            "type": "identifier",
+            "value": alias,
           },
           "sourceColumns": [
             {
@@ -445,11 +450,11 @@ const tests = [
 		toSql: '(select `a` from (`b`) where (`d`))',
 		expected: {
 			returnColumns: [{
+				name: 'a',
 				expression: {
 					type: 'identifier',
 					value: 'a',
 				},
-				name: 'a',
 				mappedTo: {
 					column: 'a'
 				},

@@ -359,9 +359,11 @@ function parserDefinition(
                 return false;
               }
             });
-            let name;
-            if (column.alias) name = column.alias.value;
-            else if (column.expression.type === "identifier")
+            let name, alias, alias_expression;
+            if (column.alias) {
+              alias_expression = column.alias;
+              alias = name = column.alias.value
+            } else if (column.expression.type === "identifier")
               name = column.expression.value;
             else if (column.expression.type === "column")
               name = column.expression.name;
@@ -377,12 +379,16 @@ function parserDefinition(
               };
             }
 
-            returnColumns.push({
+            const rtnColumn = <typeof returnColumns[any]>{
               name: name,
               expression: column.expression,
               sourceColumns: sourceColumns,
               mappedTo
-            });
+            }
+            if (alias) rtnColumn.alias = alias
+            if (alias_expression) rtnColumn.alias_expression = alias_expression
+
+            returnColumns.push(rtnColumn);
           });
         }
       }
