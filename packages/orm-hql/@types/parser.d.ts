@@ -107,26 +107,34 @@ declare namespace FxHQLParser {
         on: IdentifierNode[] | ConditionExprNode | ExprCommaListNode
     }>
 
-    type ConditionExprNode = IParsedNode<{
+    type ExprOperatorEqNode = IParsedNode<{
+        type: "operator"
+        operator: "="
+        op_left: ValueTypeDecimalNode | IdentifierNode | ColumnNode
+        op_right: ValueTypeDecimalNode | IdentifierNode | ColumnNode
+    }>
+
+    type ExprOperatorNotNode = IParsedNode<{
+        type: "operator"
+        operator: "not"
+        operand?: IdentifierNode
+    }>
+
+    type ExprOperatorIsNullNode = IParsedNode<{
+        type: "is_null"
+        not: any
+        value: IdentifierNode
+    }>
+
+    type ExprOperatorConjNode = IParsedNode<{
         type: "operator"
         operator: "and" | "xor" | "or"
         operand?: IdentifierNode
         op_left: ExprCommaListNode | ConditionExprNode | IdentifierNode | ColumnNode
         op_right: ExprCommaListNode | ConditionExprNode | IdentifierNode | ColumnNode
-    } | {
-        type: "operator"
-        operator: "="
-        op_left: IdentifierNode | ColumnNode
-        op_right: IdentifierNode | ColumnNode
-    } | {
-        type: "operator"
-        operator: "not"
-        operand?: IdentifierNode
-    } | {
-        type: "is_null"
-        not: any
-        value: IdentifierNode
     }>
+
+    type ConditionExprNode = IParsedNode<ExprOperatorConjNode | ExprOperatorEqNode | ExprOperatorNotNode | ExprOperatorIsNullNode>
 
     type WhereNode = IParsedNode<{
         type: "where"
@@ -267,12 +275,12 @@ declare namespace FxHQLParser {
         type: "string"
         string: string
     }>
-    type IdentifierNode = IParsedNode<{
-        type: "identifier"
+    type ValueTypeDecimalNode = IParsedNode<{
+        type: "decimal"
         value: string
     }>
-    type ValueTypeDecimal = IParsedNode<{
-        type: "decimal"
+    type IdentifierNode = IParsedNode<{
+        type: "identifier"
         value: string
     }>
 

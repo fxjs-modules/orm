@@ -17,9 +17,9 @@ main -> sql (_ ";" _| _) {% id %}
 
 sql ->
     # definitive_statement {% id %}
-    manipulative_statement {% id %}
+    (comment:* bkchar:*) manipulative_statement {% d => d[1] %}
     # | access_control_statement {% id %}
-  | create_view {% id %}
+  | (comment:* bkchar:*) create_view {% d => d[1] %}
 
 create_view ->
     CREATE (__ OR __ REPLACE __ | __) VIEW __ table __ AS __ query_spec {%
@@ -124,37 +124,37 @@ table_ref_commalist ->
       type: 'table_ref',
       side: d[1].side,
       ref_left: d[0],
-      ref_right: d[4],
-      on: d[onOffset+8],
+      ref_right: d[2],
+      on: d[onOffset+6],
       inner: d[1].inner,
       specific_outer: d[1].specific_outer,
 			using
     };
-		if(alias) ref.alias = d[6];
+		if(alias) ref.alias = d[4];
 		return ref;
   }
 %}
 
-join_statement ->
-    __ {% x=>({ side: undefined, specific_outer: false, inner: false }) %}
-  | __ LEFT __ {% x=>({ side: 'left', specific_outer: false, inner: false }) %}
-  | __ LEFT __ OUTER __ {% x=>({ side: 'left', specific_outer: true, inner: false }) %}
-  | __ RIGHT __ {% x=>({ side: 'right', specific_outer: false, inner: false }) %}
-  | __ RIGHT __ OUTER __ {% x=>({ side: 'right', specific_outer: true, inner: false }) %}
-  | __ FULL __ {% x=>({ side: 'full', specific_outer: false, inner: false }) %}
-  | __ FULL __ OUTER __ {% x=>({ side: 'full', specific_outer: true, inner: false }) %}
-  | __ INNER __ {% x=>({ side: undefined, specific_outer: false, inner: true }) %}
+join_term ->
+    __ JOIN __ {% x=>({ side: undefined, specific_outer: false, inner: false }) %}
+  | __ LEFT __ JOIN __ {% x=>({ side: 'left', specific_outer: false, inner: false }) %}
+  | __ LEFT __ OUTER __ JOIN __ {% x=>({ side: 'left', specific_outer: true, inner: false }) %}
+  | __ RIGHT __ JOIN __ {% x=>({ side: 'right', specific_outer: false, inner: false }) %}
+  | __ RIGHT __ OUTER __ JOIN __ {% x=>({ side: 'right', specific_outer: true, inner: false }) %}
+  | __ FULL __ JOIN __ {% x=>({ side: 'full', specific_outer: false, inner: false }) %}
+  | __ FULL __ OUTER __ JOIN __ {% x=>({ side: 'full', specific_outer: true, inner: false }) %}
+  | __ INNER __ JOIN __ {% x=>({ side: undefined, specific_outer: false, inner: true }) %}
 
 table_ref ->
     "(" _ table_ref _ ")" {% d => d[2] %}
   | table {% id %}
-  | table_ref join_statement JOIN __ table __ ON __ expr {% x=>tableRef(x,0) %}
-  | table_ref join_statement JOIN __ table __ ON ("(" _ expr _ ")") {% x=>tableRef(x,0) %}
-	| table_ref join_statement JOIN __ query_spec (AS __ | __) identifier __ ON __ expr {% x=>tableRef(x,2,true) %}
-	| table_ref join_statement JOIN __ query_spec (AS __ | __) identifier __ ON ("(" _ expr _ ")") {% x=>tableRef(x,2,true) %}
+  | table_ref join_term table __ ON __ expr {% x=>tableRef(x, 0) %}
+  | table_ref join_term table __ ON ("(" _ expr _ ")") {% x=>tableRef(x, 0) %}
+	| table_ref join_term query_spec (AS __ | __) identifier __ ON __ expr {% x=>tableRef(x, 2, true) %}
+	| table_ref join_term query_spec (AS __ | __) identifier __ ON ("(" _ expr _ ")") {% x=>tableRef(x, 2, true) %}
 
-	| table_ref join_statement JOIN __ table __ USING _ "(" _ identifier_comma_list _ ")" {% x=>tableRef(x,2, false,true) %}
-	| table_ref join_statement JOIN __ query_spec (AS __ | __) identifier __ USING _ "(" _ identifier_comma_list _ ")" {% x=>tableRef(x,4, true,true) %}
+	| table_ref join_term table __ USING _ "(" _ identifier_comma_list _ ")" {% x=>tableRef(x, 2, false, true) %}
+	| table_ref join_term query_spec (AS __ | __) identifier __ USING _ "(" _ identifier_comma_list _ ")" {% x=>tableRef(x, 4, true, true) %}
 
 
 identifier_comma_list ->
@@ -722,3 +722,4 @@ comment ->
 	("#" | "--" wschar) [^\n]:+ ([\n]) {% x => null %}
 
 wschar -> [ \t\n\v\f] {% id %}
+bkchar -> [ \n | \r\n] {% id %}

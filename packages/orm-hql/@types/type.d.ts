@@ -43,7 +43,7 @@ declare namespace FxHQLParser {
         | FunctionCallNode
         | ValueTypeStringNode
         | IdentifierNode
-        | ValueTypeDecimal
+        | ValueTypeDecimalNode
 
     interface ParsedResult {
         referencedTables: string[]
