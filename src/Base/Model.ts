@@ -16,11 +16,11 @@ import Class_QueryNormalizer from './Query/Normalizer';
 
 /**
  * @description Model is meta definition about database-like remote endpoints.
- * 
+ *
  * ```javascript
  * var ORM = require('@fxjs/orm')
  * var endpoint = ORM.create('mysql://localhost:3306/schema')
- * 
+ *
  * var User = function (endpoint) {
  *      endpoint.define('user', {
  *          username: String,
@@ -28,7 +28,7 @@ import Class_QueryNormalizer from './Query/Normalizer';
  *          password: 'password'
  *      })
  * }
- * 
+ *
  * var Role = function (endpoint) {
  *      endpoint.define('role', {
  *          name: String,
@@ -38,7 +38,7 @@ import Class_QueryNormalizer from './Query/Normalizer';
  *          }
  *      })
  * }
- * 
+ *
  * var Jack = endpoint.New('user')
  * var Administrator = endpoint.New('role')
  * // or
@@ -79,7 +79,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     @configurable(false)
     get propertyNames (): string[] {
         return Object.keys(this.properties)
-    }    
+    }
     /**
      * @description all properties
      */
@@ -87,7 +87,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     get propertyList () {
         return Object.values(this.properties)
     }
-    
+
     associations: FxOrmModel.Class_Model['associations'] = {};
     /**
      * @description all association names
@@ -108,7 +108,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         const _ids = []
         if (this.id)
             _ids.push(this.id)
-        
+
         return _ids
     }
     @configurable(false)
@@ -141,6 +141,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     orm: FxOrmModel.Class_Model['orm']
 
     get Op () { return (<any>this.orm.constructor).Op }
+    get OpFns () { return (<any>this.orm.constructor).OpFns }
 
     get storeType () { return this.orm.driver.type }
 
@@ -150,7 +151,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
     @configurable(false)
     get _symbol () { return SYMBOLS.Model };
-    
+
     get $dml (): FxOrmModel.Class_Model['$dml'] { return this.orm.$dml };
     get $ddl (): FxOrmModel.Class_Model['$ddl'] { return this.orm.$ddl };
     get schemaBuilder () { return this.$ddl.sqlQuery.knex.schema }
@@ -184,7 +185,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                         config.properties[prop],
                         { propertyName: prop, storeType: this.storeType, $ctx: this.propertyContext }
                     );
-                    
+
                     if (specKeyPropertyNames)
                         if (property.isKeyProperty() || specKeyPropertyNames.includes(prop))
                             this.keyProperties[prop] = property;
@@ -209,7 +210,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     isAssociationName (name: string): boolean {
         return this.associations.hasOwnProperty(name);
     }
-    
+
     sync (): void {
         if (!this.dbdriver.isSql) return ;
 
@@ -219,7 +220,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         });
 
         /**
-         * some db cannot add column(such as sqlite), so we try best to 
+         * some db cannot add column(such as sqlite), so we try best to
          * create table once
          */
         syncor.defineCollection(this.collection, this.properties)
@@ -239,7 +240,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     // TODO: migrate to ddl
     hasPropertyRemotely (property: string | FxOrmProperty.Class_Property): boolean {
         if (this.dbdriver.isNoSql) return true;
-        
+
         let colname: string
         if (typeof property === 'string') {
             if (this.properties[property]) colname = this.properties[property].mapsTo
@@ -249,7 +250,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         }
 
         const dialect = DDLSync.dialect(this.storeType as any)
-            
+
         return dialect.hasCollectionColumnsSync(this.dbdriver, this.collection, colname)
     }
 
@@ -265,7 +266,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                     throw new Error(`[Model::New] model '${this.name}' has more than one id-type properties: ${this.ids.join(', ')}`)
 
                 base = { [this.id]: input }
-                
+
                 break
             case 'object':
                 base = <Fibjs.AnyObject>input
@@ -286,7 +287,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             return coroutine.parallel(kvItem, (kv: Fibjs.AnyObject) => {
                 return this.create(kv);
             })
-        
+
         const isMultiple = Array.isArray(kvItem);
         const instances = arraify(new Instance(this, snapshot(kvItem)))
             .map(x => x.$save(kvItem));
@@ -298,7 +299,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
     remove (opts?: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['remove']>) {
         const { where = null } = opts || {};
-        
+
         return this.$dml.remove(this.collection, { where })
     }
 
@@ -424,7 +425,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             else if (inputdata.hasOwnProperty(prop.mapsTo))
                 target[prop.mapsTo] = prop.toStoreValue(inputdata[prop.mapsTo])
         })
-    
+
         return target
     }
 
@@ -433,7 +434,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             if (storeData.hasOwnProperty(prop.mapsTo))
                 target[prop.name] = prop.fromStoreValue(storeData[prop.mapsTo])
         })
-    
+
         return target
     }
 
@@ -473,7 +474,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
         if ((property instanceof Property))
             return this.properties[name] = property
-            
+
         return this.properties[name] = new Property({...property, name}, {
             propertyName: name,
             storeType: this.storeType,
@@ -503,7 +504,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     }
 
     defineMergeModel (opts: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['defineMergeModel']>) {
-        return null as any   
+        return null as any
     }
 }
 
@@ -543,7 +544,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
 
         return _ids
     }
-    
+
     associationInfo: FxOrmModel.Class_MergeModel['associationInfo']
 
     @configurable(false)
@@ -561,7 +562,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
             keys,
             ...restOpts
         } = opts
-        
+
         restOpts.collection = restOpts.collection || mergeCollection
         super({...restOpts, keys: false})
 
@@ -575,7 +576,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
         ;(() => {
             switch (this.type) {
                 /**
-                 * for o2o, 
+                 * for o2o,
                  * - this mergeModel has all properties in sourceModel
                  */
                 case 'o2o':
@@ -608,7 +609,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                         })
                     })();
                 /**
-                 * for o2m, 
+                 * for o2m,
                  * - this mergeModel has all properties in targetModel
                  */
                 case 'o2m':
@@ -618,7 +619,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                     ;(() => {
                         if (this.targetModel.fieldInfo(matchKeys.target))
                             return ;
-                        
+
                         const sProperty = this.sourceModel.properties[matchKeys.source]
                         if (!sProperty)
                             throw new Error(`[MergetModel::constructor/o2m] no src property "${matchKeys.source}" in source model, check your definition about 'andMatchKeys'`)
@@ -774,7 +775,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                             [this.sourceJoinKey]: sourceInstance[sourceInstance.$model.id],
                             [this.targetJoinKey]: targetInst[targetInst.$model.id],
                         })
-                        
+
                         if (!mergeInstance.$exists()) mergeInstance.$save()
 
                         return targetInst.toJSON()
@@ -799,7 +800,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                 });
 
                 mergeInst.$fetch();
-                
+
                 const targetInst = this.targetModel.New({
                     [this.targetModel.id]: this[this.targetModel.id]
                 });
@@ -841,7 +842,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
             default:
                 break
         }
-        
+
         return sourceInstance
     }
 }

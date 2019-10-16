@@ -1,7 +1,7 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-describe("Model.find()", function () {
+describe("Model.queryByHQL()", function () {
     var db = null;
     var Person = null;
 
@@ -51,14 +51,19 @@ describe("Model.find()", function () {
         return db.close();
     });
 
-    describe("without arguments", function () {
+    odescribe("query self only", function () {
         before(setup);
 
-        it("should return all items", function () {
-            var people = Person.find();
+        it("normalize input to where object", function () {
+            var people = Person.queryByHQL(`select * from ${Person.collection} where a = 1`);
 
-            assert.isObject(people);
-            assert.propertyVal(people, "length", 5);
+        });
+
+        xit("select all", function () {
+            var people = Person.queryByHQL(`select * from ${Person.collection}`);
+
+            // assert.isObject(people);
+            // assert.propertyVal(people, "length", 5);
         });
     });
 

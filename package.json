@@ -25,6 +25,7 @@
         "ci": "npm run build && npm run test",
         "ci-mysql": "npm run build && cross-env ORM_PROTOCOL=mysql npm run test",
         "ci-sqlite": "npm run build && cross-env ORM_PROTOCOL=sqlite npm run test",
+        "ci-mongodb": "npm run build && cross-env ORM_PROTOCOL=mongodb npm run test",
         "prepublishOnly": "npm run build"
     },
     "ci": {

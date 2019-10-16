@@ -2,7 +2,7 @@ var helper = require("../support/spec_helper");
 var common = require("../common");
 var ORM = require("../../");
 
-odescribe("ORM Normalizer", function() {
+describe("ORM Normalizer", function() {
   var db = null;
   var Person = null;
   var Pet = null;
@@ -73,7 +73,7 @@ odescribe("ORM Normalizer", function() {
     });
   });
 
-  describe("query one collection only", function() {
+  odescribe("query one collection only", function() {
     before(setup);
 
     it("select all", function() {
@@ -149,9 +149,209 @@ odescribe("ORM Normalizer", function() {
         })
       );
     });
+
+    it("where", function () {
+      queryNormalizer = ORM.normalizeQuery(`select a from test where b = 'foo'`);
+
+      assert.deepEqual(
+        queryNormalizer.select,
+        [
+          ['a']
+        ].map(([identifier, alias]) => {
+          return {
+            "name": alias || identifier,
+            ...alias && {
+              alias,
+              alias_expression: {
+                "type": "identifier",
+                "value": alias,
+              }
+            },
+            "expression": {
+              "type": "identifier",
+              "value": identifier,
+            },
+            "sourceColumns": [
+              {
+                "type": "identifier",
+                "value": identifier,
+              }
+            ],
+            "mappedTo": {
+              "column": identifier
+            }
+          }
+        })
+      );
+
+      assert.deepEqual(
+        queryNormalizer.where,
+        {
+          "type": "where",
+          "condition": {
+            "type": "operator",
+            "operator": "=",
+            "op_left": {
+              "type": "identifier",
+              "value": "b"
+            },
+            "op_right": {
+              "type": "string",
+              "string": "foo"
+            }
+          }
+        }
+      );
+    });
+
+    it("having", function () {
+      queryNormalizer = ORM.normalizeQuery(`select a from test having b = 'foo'`);
+
+      assert.deepEqual(
+        queryNormalizer.select,
+        [
+          ['a']
+        ].map(([identifier, alias]) => {
+          return {
+            "name": alias || identifier,
+            ...alias && {
+              alias,
+              alias_expression: {
+                "type": "identifier",
+                "value": alias,
+              }
+            },
+            "expression": {
+              "type": "identifier",
+              "value": identifier,
+            },
+            "sourceColumns": [
+              {
+                "type": "identifier",
+                "value": identifier,
+              }
+            ],
+            "mappedTo": {
+              "column": identifier
+            }
+          }
+        })
+      );
+
+      assert.deepEqual(
+        queryNormalizer.having,
+        {
+          "type": "having",
+          "condition": {
+            "type": "operator",
+            "operator": "=",
+            "op_left": {
+              "type": "identifier",
+              "value": "b"
+            },
+            "op_right": {
+              "type": "string",
+              "string": "foo"
+            }
+          }
+        }
+      );
+    });
+
+    it("group by", function () {
+      queryNormalizer = ORM.normalizeQuery(`select a from test group by foo`);
+
+      assert.deepEqual(
+        queryNormalizer.groupBy,
+        {
+          "type": "group_by",
+          "columns": {
+            "type": "selection_columns",
+            "columns": [
+              {
+                "type": "column_expr",
+                "expression": {
+                  "type": "identifier",
+                  "value": "foo"
+                }
+              }
+            ]
+          }
+        }
+      );
+
+      queryNormalizer = ORM.normalizeQuery(`select a from test group by foo, foo2 having (foo is not null) and (foo2 like "%test1%")`);
+
+      assert.deepEqual(
+        queryNormalizer.groupBy,
+        {
+          "type": "group_by",
+          "columns": {
+            "type": "selection_columns",
+            "columns": [
+              {
+                "type": "column_expr",
+                "expression": {
+                  "type": "identifier",
+                  "value": "foo"
+                }
+              },
+              {
+                "type": "column_expr",
+                "expression": {
+                  "type": "identifier",
+                  "value": "foo2"
+                }
+              }
+            ]
+          }
+        }
+      );
+
+      assert.deepEqual(
+        queryNormalizer.having,
+        {
+          "type": "having",
+          "condition": {
+            "type": "operator",
+            "operator": "and",
+            "op_left": {
+              "type": "expr_comma_list",
+              "exprs": [
+                {
+                  "type": "is_null",
+                  "not": true,
+                  "value": {
+                    "type": "identifier",
+                    "value": "foo"
+                  }
+                }
+              ]
+            },
+            "op_right": {
+              "type": "expr_comma_list",
+              "exprs": [
+                {
+                  "type": "like",
+                  "not": [],
+                  "value": {
+                    "type": "identifier",
+                    "value": "foo2"
+                  },
+                  "comparison": {
+                    "type": "string",
+                    "string": "%test1%"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      );
+    });
   });
 
-  odescribe("join twos collections", function() {
+  describe("join twos collections", function() {
     before(setup);
 
     oit("select all from left and one column from right", function() {
@@ -202,7 +402,7 @@ odescribe("ORM Normalizer", function() {
 
       it("normal usage", function () {
         queryNormalizer = ORM.normalizeQuery(
-          `select ${Person.collection}.*, ${Pet.collection}.id as pet_id from ${Person.collection} join ${Pet.collection} on ${Person.collection}.id = ${Person.collection}.owner_id`,
+          `select ${Person.collection}.*, ${Pet.collection}.id as pet_id from ${Person.collection} join ${Pet.collection} on ${Person.collection}.id = ${Pet.collection}.owner_id`,
           {
             models: {
               [Person.collection]: Person,
@@ -220,7 +420,7 @@ odescribe("ORM Normalizer", function() {
 
       it("allow pass unexisted field though it's not existed", function () {
         queryNormalizer = ORM.normalizeQuery(
-          `select ${Person.collection}.*, ${Pet.collection}.id as pet_id, ${Pet.collection}.non_existed from ${Person.collection} join ${Pet.collection} on ${Person.collection}.id = ${Person.collection}.owner_id`,
+          `select ${Person.collection}.*, ${Pet.collection}.id as pet_id, ${Pet.collection}.non_existed from ${Person.collection} join ${Pet.collection} on ${Person.collection}.id = ${Pet.collection}.owner_id`,
           {
             models: {
               [Person.collection]: Person,

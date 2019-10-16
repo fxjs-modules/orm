@@ -26,6 +26,27 @@ export function filterKnexBuilderBeforeQuery (
 	return builder
 }
 
+// export function filterWhereToKnexActions (
+//   opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>
+// ) {
+//     if (!opts) return
+//     const { where = null } = opts || {}
+//     if (!where) return
+
+//     console.log(
+//       'where.condition',
+//       where.condition
+//     )
+
+//     if (where.condition.type === 'operator') {
+
+//     }
+// }
+
+// export function filterWhereToMongoActions () {
+
+// }
+
 export function filterWhereToKnexActions (
     opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>
 ) {

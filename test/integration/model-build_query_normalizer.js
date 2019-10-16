@@ -7,7 +7,7 @@ var common = require("../common");
 var ORM = require("../../");
 var coroutine = require("coroutine");
 
-describe("Model.buildQueryNormalizer()", function() {
+xdescribe("Model.buildQueryNormalizer()", function() {
   var db = null;
   var Person = null;
   var John;
@@ -51,7 +51,7 @@ describe("Model.buildQueryNormalizer()", function() {
 
     it("default info", function() {
       var queryNormalizer = Person.buildQueryNormalizer();
-      
+
       assert.propertyVal(queryNormalizer, 'collection', Person.collection);
       assert.propertyVal(queryNormalizer, 'offset', 0);
 

@@ -6,6 +6,8 @@ import { configurable } from '../Decorators/accessor';
 import { buildDescriptor } from '../Decorators/property';
 import { arraify } from '../Utils/array';
 import { isEmptyPlainObject } from '../Utils/object';
+import Normalizer from './Query/Normalizer';
+import { dfltWalkWhere } from './Query/WhereObject';
 
 function transformToQCIfModel (
     target: Class_QueryBuilder,
@@ -111,10 +113,10 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
      */
     @transformToQCIfModel
     get (
-        id?: string | number | FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>['where'],
+        id?: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['get']>,
     ): TUPLE_ITEM {
         let where: Fibjs.AnyObject
-        
+
         if (isIdsInput(id))
             where = {[this.model.id]: id}
         else if (typeof id === 'object')
@@ -153,6 +155,28 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
             this.model.collection,
             opts
         )
+    }
+
+    /**
+     * @description build one query from hql
+     */
+    @transformToQCIfModel
+    queryByHQL <T = any> (hql: string): any {
+      const normalizedQ = new Normalizer(hql, {
+        models: {
+          [this.model.collection]: this.model
+        }
+      })
+
+      return normalizedQ
+    }
+
+    /**
+     * @description normalize one input to where
+     */
+    @transformToQCIfModel
+    walkWhere (input: any) {
+      return dfltWalkWhere(input)
     }
 
     first (): TUPLE_ITEM {

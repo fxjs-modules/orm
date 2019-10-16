@@ -26,9 +26,8 @@
 declare namespace FxOrmNS {
     /* next generation :start */
     class Class_ORM<ConnType = any> {
-        static Op: {
-            [k: string]: Symbol
-        }
+        static Op: FxOrmQueries.BuiltInOperators
+        static OpFns: FxOrmQueries.BuiltInOperatorFunctions
         /**
          * @description create one orm, but never do any real connection
          */

@@ -25,12 +25,13 @@ declare namespace FxOrmModel {
         collection: string
 
         readonly orm: FxOrmNS.Class_ORM
-        readonly Op: FxOrmQueries.Operators
+        readonly Op: FxOrmQueries.BuiltInOperators
+        readonly OpFns: FxOrmQueries.BuiltInOperatorFunctions
 
         properties: {[k: string]: ModelProperty}
         readonly propertyNames: string[]
         readonly propertyList: ModelProperty[]
-        
+
         readonly associationNames: string[]
         associations: {[k: string]: FxOrmModel.Class_MergeModel}
 
@@ -59,7 +60,7 @@ declare namespace FxOrmModel {
          * @description all id-type field properties
          */
         readonly idPropertyList: ModelProperty[]
-        
+
         readonly keyPropertyNames: string[]
         readonly keyPropertyList: ModelProperty[]
         readonly keys: string[]
@@ -81,15 +82,15 @@ declare namespace FxOrmModel {
             settings: any
             collection: string
             properties: FxOrmProperty.NormalizedPropertyHash
-            
+
             indexes?: string[]
             /**
              * @description above priorities of properties' specification
-             * 
+             *
              * if keys === false, all properties are not key
              */
             keys?: string[] | false
-            
+
             autoSave?: boolean
             autoFetch?: boolean
             cascadeRemove?: boolean
@@ -102,9 +103,9 @@ declare namespace FxOrmModel {
 
         /**
          * @description create one instance from data input
-         * 
+         *
          * if input is just one instance, New() would create the new one rather than use old one
-         * 
+         *
          * @param input dataset for create one instance
          */
         New: FxOrmTypeHelpers.ReturnItemOrArrayAccordingTo_1stParam<Fibjs.AnyObject | string | number, FxOrmInstance.Class_Instance>
@@ -137,9 +138,9 @@ declare namespace FxOrmModel {
         }
         /**
          * @description remove items corresponding to conditions
-         * 
+         *
          * @param opts.where
-         * 
+         *
          * @return remove count
          */
         remove (
@@ -182,7 +183,7 @@ declare namespace FxOrmModel {
          * @description
          *  filter out association-about key-value in dataset only,
          *  if no key-value about association, would return one empty array
-         * 
+         *
          * @return []
          */
         filterOutAssociatedData (dataset: Fibjs.AnyObject): {
@@ -219,7 +220,7 @@ declare namespace FxOrmModel {
                 as: string
                 collection: string
                 type: 'm2m' | 'o2m'
-                matchKeys?: FxOrmTypeHelpers.ItOrListOfIt<Class_MergeModel['associationInfo']['andMatchKeys'][any]>
+                matchKeys?: Class_MergeModel['associationInfo']['andMatchKeys']
             }
         ): Class_MergeModel
 
@@ -228,7 +229,7 @@ declare namespace FxOrmModel {
             opts?: {
                 as?: string
                 collection: string
-                matchKeys?: FxOrmTypeHelpers.ItOrListOfIt<Class_MergeModel['associationInfo']['andMatchKeys'][any]>
+                matchKeys?: Class_MergeModel['associationInfo']['andMatchKeys']
             }
         ): Class_MergeModel
 
@@ -287,12 +288,12 @@ declare namespace FxOrmModel {
         targetModel: FxOrmModel.Class_Model
         readonly targetKeys: string[]
         targetJoinKey: string
-        
+
         /**
          * @description this is fully determined by `options.matchKeys` in constructor
          */
         readonly associationKeys: string[]
-        
+
         /**
          * @description
          *  association information, used to generate matching
@@ -306,16 +307,16 @@ declare namespace FxOrmModel {
                 comparator: string
             }
         }
-        
+
         constructor (opts: FxOrmModel.Class_ModelConstructOptions & {
             mergeCollection: string
             type: Class_MergeModel['type']
-            
+
             source: Class_MergeModel['sourceModel']
             sourceJoinKey?: Class_MergeModel['sourceJoinKey']
             target: Class_MergeModel['targetModel']
             targetJoinKey?: Class_MergeModel['targetJoinKey']
-            
+
             matchKeys: Class_MergeModel['associationInfo']['andMatchKeys']
         })
 

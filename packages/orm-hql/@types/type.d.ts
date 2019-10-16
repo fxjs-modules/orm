@@ -24,7 +24,7 @@ declare namespace FxHQLParser {
         | LimitStatementNode
         | OrderNode
         | OrderStatementNode
-        | ConditionExprNode
+        | OperatorExprNode
         | IsNullNode
         | InNode
         | OpNode__Between

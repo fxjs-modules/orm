@@ -82,7 +82,7 @@ declare namespace FxHQLParser {
      */
     type ColumnExprNode = IParsedNode<{
         type: "column_expr"
-        expression: ColumnRefNode | IdentifierNode | ConditionExprNode | {
+        expression: ColumnRefNode | IdentifierNode | OperatorExprNode | {
           type: SelectAllNode['type']
           table: SelectAllNode['table']
         }
@@ -91,7 +91,7 @@ declare namespace FxHQLParser {
 
     type ExprCommaListNode = IParsedNode<{
         type: "expr_comma_list"
-        exprs: ConditionExprNode[]
+        exprs: OperatorExprNode[]
     }>
 
     type TableNode = IParsedNode<{
@@ -110,11 +110,11 @@ declare namespace FxHQLParser {
          * because you can determine what you wanna request by 'side', 'inner' and 'ref_right', it's
          * just field left in parsed tree-node, and ref_left wouldn't passed to item of ParsedResult['joins']
          */
-        ref_left: ConditionExprNode
-        ref_right: ConditionExprNode
+        ref_left: OperatorExprNode
+        ref_right: OperatorExprNode
         alias?: string
         using?: string
-        on: IdentifierNode[] | ConditionExprNode | ColumnExprNode | ExprCommaListNode
+        on: IdentifierNode[] | OperatorExprNode | ColumnExprNode | ExprCommaListNode
     }>
 
     type ExprOperatorComparisonNode = IParsedNode<{
@@ -127,8 +127,8 @@ declare namespace FxHQLParser {
           | ">"
           | ">="
           | "!="
-        op_left: ValueTypeDecimalNode | IdentifierNode | ColumnExprNode
-        op_right: ValueTypeDecimalNode | IdentifierNode | ColumnExprNode
+        op_left: ValueTypeRawNode | IdentifierNode | ColumnExprNode
+        op_right: ValueTypeRawNode | IdentifierNode | ColumnExprNode
     }>
 
     type ExprOperatorNotNode = IParsedNode<{
@@ -147,20 +147,20 @@ declare namespace FxHQLParser {
         type: "operator"
         operator: "and" | "xor" | "or"
         operand?: IdentifierNode
-        op_left: ExprCommaListNode | ConditionExprNode | IdentifierNode | ColumnExprNode
-        op_right: ExprCommaListNode | ConditionExprNode | IdentifierNode | ColumnExprNode
+        op_left: ExprCommaListNode | OperatorExprNode | IdentifierNode | ValueTypeRawNode | ColumnExprNode
+        op_right: ExprCommaListNode | OperatorExprNode | IdentifierNode | ValueTypeRawNode | ColumnExprNode
     }>
 
-    type ConditionExprNode = IParsedNode<ExprOperatorConjNode | ExprOperatorComparisonNode | ExprOperatorNotNode | ExprOperatorIsNullNode>
+    type OperatorExprNode = IParsedNode<ExprOperatorConjNode | ExprOperatorComparisonNode | ExprOperatorNotNode | ExprOperatorIsNullNode>
 
     type WhereNode = IParsedNode<{
         type: "where"
-        condition: ConditionExprNode
+        condition: OperatorExprNode
     }>
 
     type HavingNode = IParsedNode<{
         type: "having"
-        condition: ConditionExprNode
+        condition: OperatorExprNode
     }>
 
     type SelectionColumnList = IParsedNode<{
@@ -233,23 +233,23 @@ declare namespace FxHQLParser {
 
     type Statement_If = IParsedNode<{
         type: "if"
-        condition: ConditionExprNode
-        then: ValueTypeStringNode
-        else: ValueTypeStringNode
+        condition: OperatorExprNode
+        then: ValueTypeRawNode
+        else: ValueTypeRawNode
     }>
 
     type Statement_When = {
         type: "when"
-        condition: ConditionExprNode
-        then: ValueTypeStringNode
-        else: ValueTypeStringNode
+        condition: OperatorExprNode
+        then: ValueTypeRawNode
+        else: ValueTypeRawNode
     }
 
     type Statement_Case = IParsedNode<{
         type: "case"
         op_right: IdentifierNode
         when_statements: Statement_When[]
-        else: ValueTypeStringNode
+        else: ValueTypeRawNode
     }>
 
     type ConvertNode = IParsedNode<{
@@ -312,6 +312,8 @@ declare namespace FxHQLParser {
         type: "decimal"
         value: string
     }>
+
+    type ValueTypeRawNode = ValueTypeStringNode | ValueTypeDecimalNode
     /**
      * @description one raw string, one back-quoted string, or two back-quoted string concated by '.'
      * @node

@@ -8,7 +8,7 @@ import * as ORMRuntime from '../Decorators/orm-runtime';
 
 import Setting from './Setting';
 import Model from './Model';
-import { Operators } from './Query/Operator';
+import { Operators, OperatorFunctions } from './Query/Operator';
 import { arraify } from '../Utils/array';
 import { configurable } from '../Decorators/accessor';
 import { buildDescriptor } from '../Decorators/property';
@@ -18,6 +18,8 @@ import QueryNormalizer from './Query/Normalizer';
 
 class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
     static Op = Operators;
+    static OpFns = OperatorFunctions;
+
     static create (connection: string | FxDbDriverNS.ConnectionInputArgs) {
         const dbdriver = FxDbDriver.create(connection);
         const orm = new ORM(dbdriver);
@@ -96,16 +98,16 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
 
     /**
      * @description load plugin, affect all models.
-     * @param pluginConfig 
+     * @param pluginConfig
      */
     use (pluginConfig: string | FxORMPlugin.PluginOptions) {}
 
     /**
      * @description define one model with modelName(name) and properties(props)
-     * 
-     * @param name 
-     * @param properties 
-     * @param config 
+     *
+     * @param name
+     * @param properties
+     * @param config
      */
     define (
         name: string,
@@ -128,7 +130,7 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
             autoSave: false,
             autoFetch: config.autoFetch,
             cascadeRemove: config.cascadeRemove,
-            
+
             methods: {},
             validations: {},
         });

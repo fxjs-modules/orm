@@ -40,11 +40,13 @@ export default class QueryNormalizer implements FxOrmQueries.Class_QueryNormaliz
     select: FxOrmQueries.Class_QueryNormalizer['select']
     selectableFields: FxOrmQueries.Class_QueryNormalizer['selectableFields']
 
-    where: FxOrmQueries.Class_QueryNormalizer['where']
-    limit: FxOrmQueries.Class_QueryNormalizer['limit'] = -1
     offset: FxOrmQueries.Class_QueryNormalizer['offset'] = 0
-    orderBy: FxOrmQueries.Class_QueryNormalizer['orderBy'] = []
-    groupBy: FxOrmQueries.Class_QueryNormalizer['groupBy'] = []
+    from: FxOrmQueries.Class_QueryNormalizer['from']
+    where: FxOrmQueries.Class_QueryNormalizer['where']
+    groupBy: FxOrmQueries.Class_QueryNormalizer['groupBy']
+    having: FxOrmQueries.Class_QueryNormalizer['having']
+    orderBy: FxOrmQueries.Class_QueryNormalizer['orderBy']
+    limit: FxOrmQueries.Class_QueryNormalizer['limit'] = -1
 
     join: FxOrmQueries.Class_QueryNormalizer['join'] = []
 
@@ -104,23 +106,27 @@ export default class QueryNormalizer implements FxOrmQueries.Class_QueryNormaliz
           }
         }
 
-        // console.warn(
-        //   'json.sourceTables[0]',
-        //   json.sourceTables[0]
-        // )
+        make_fromTable: {
+          if (json.parsed.table_exp.type === 'from_table') {
+            this.from = json.parsed.table_exp.from
+            this.where = json.parsed.table_exp.where
+            this.groupBy = json.parsed.table_exp.groupby
+            this.having = json.parsed.table_exp.having
+          }
+        }
 
         return new Proxy(this, {
-            set (target: any, setKey: string, value: any) {
-                if (['collection', 'selectableFields', 'select'].includes(setKey)) {
-                    return false
-                }
-
-                if (!target.hasOwnProperty(setKey))
-                    throw new Error(`[Class_QueryNormalizer::proxy] unknown property is not allowed`)
-
-                target[setKey] = value
-                return true
+          set (target: any, setKey: string, value: any) {
+            if (['collection', 'selectableFields', 'select'].includes(setKey)) {
+                return false
             }
+
+            if (!target.hasOwnProperty(setKey))
+                throw new Error(`[Class_QueryNormalizer::proxy] unknown property is not allowed`)
+
+            target[setKey] = value
+            return true
+          }
         })
     }
 }
