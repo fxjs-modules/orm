@@ -9,6 +9,8 @@ import { isEmptyPlainObject } from '../Utils/object';
 import Normalizer from './Query/Normalizer';
 import { dfltWalkWhere } from './Query/WhereObject';
 
+import * as QG from './Query/QueryGrammar'
+
 function transformToQCIfModel (
     target: Class_QueryBuilder,
     propertyName: string,
@@ -47,6 +49,11 @@ function isIdsInput (id: any) {
 class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBuilder<TUPLE_ITEM> {
     @buildDescriptor({ enumerable: false, configurable: false })
     private _tuples: TUPLE_ITEM[] = [];
+
+    get Op () { return QG.QueryLanguage.Operators }
+    get Opf () { return QG.QueryLanguageFuncs.Operators }
+    get QueryLanguage () { return QG.QueryLanguage }
+    get QueryLanguageFuncs () { return QG.QueryLanguageFuncs }
 
     model: FxOrmModel.Class_Model;
 

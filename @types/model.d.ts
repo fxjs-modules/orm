@@ -25,8 +25,6 @@ declare namespace FxOrmModel {
         collection: string
 
         readonly orm: FxOrmNS.Class_ORM
-        readonly Op: FxOrmQueries.BuiltInOperators
-        readonly OpFns: FxOrmQueries.BuiltInOperatorFunctions
 
         properties: {[k: string]: ModelProperty}
         readonly propertyNames: string[]

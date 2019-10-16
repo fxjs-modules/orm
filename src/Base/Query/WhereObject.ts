@@ -1,4 +1,5 @@
-import { Operators, isOperatorFunction, isConjunctionOperator, isComparisonOperator } from './Operator'
+import { isOperatorFunction } from './Operator'
+import * as QG from './QueryGrammar'
 import { idify, preDestruct } from '../../Utils/array'
 
 function mapComparisonOperatorToSymbol (op: FxOrmQueries.OPERATOR_TYPE_COMPARISON) {
@@ -14,15 +15,16 @@ function mapComparisonOperatorToSymbol (op: FxOrmQueries.OPERATOR_TYPE_COMPARISO
 
 function mapConjunctionOpSymbolToText (op_sym: symbol) {
   switch (op_sym) {
-    case Operators.and: return 'and'
-    case Operators.or: return 'or'
-    // case Operators.xor: return 'xor'
+    case QG.QueryLanguage.Operators.and: return 'and'
+    case QG.QueryLanguage.Operators.or: return 'or'
+    // case QG.QueryLanguage.Operators.xor: return 'xor'
   }
 }
 
 function mapVType (value: any): FxHQLParser.ValueTypeRawNode['type'] | 'identifier' {
   switch (typeof value) {
     default:
+      if (isOperatorFunction(value) && value.operator_name === 'colref') return 'identifier'
     case 'string':
       return 'string'
     case 'number':
@@ -47,9 +49,14 @@ export function dfltWalkWhere (
 ): FxHQLParser.WhereNode['condition'] {
   if (!input) return null
   else if (isOperatorFunction(input)) {
-    return {
-      type: 'expr_comma_list',
-      exprs: [dfltWalkWhere(input().value)]
+    switch (input.operator_name) {
+      case 'bracketRound':
+        return {
+          type: 'expr_comma_list',
+          exprs: [dfltWalkWhere(input().value)]
+        }
+      default:
+        break
     }
   }
 
@@ -82,22 +89,22 @@ export function dfltWalkWhere (
 
   if (topAnd)
     return dfltWalkWhere({
-      [Operators.and]: []
+      [QG.QueryLanguage.Operators.and]: []
                         .concat(inputSyms.map(sym => ({[sym]: input[<any>sym]})))
                         .concat(inputKeys.map(key => ({[key]: input[key]})))
     })
 
   inputSyms.forEach((_sym) => {
     switch (_sym) {
-      case Operators.bracket: {
+      case QG.QueryLanguage.Others.bracketRound: {
         flattenedWhere = {
           type: 'expr_comma_list',
           exprs: [dfltWalkWhere(input[<any>_sym])]
         }
         break
       }
-      case Operators.or:
-      case Operators.and: {
+      case QG.QueryLanguage.Operators.or:
+      case QG.QueryLanguage.Operators.and: {
         const [pres, last] = preDestruct(mapObjectToTupleList(input[<any>_sym]))
         const op_name = mapConjunctionOpSymbolToText(_sym)
 
@@ -120,10 +127,17 @@ export function dfltWalkWhere (
     const payv = v()
 
     switch (payv.op_name) {
-      case 'bracket': {
+      case 'bracketRound': {
         flattenedWhere = {
           type: 'expr_comma_list',
           exprs: [dfltWalkWhere(payv)]
+        }
+        break
+      }
+      case 'colref': {
+        flattenedWhere = {
+          type: 'identifier',
+          value: payv.value
         }
         break
       }
@@ -136,6 +150,8 @@ export function dfltWalkWhere (
       case 'lte':
       {
         const vtype = mapVType(payv.value)
+        let value = payv.value
+        if (isOperatorFunction(value)) value = value().value
 
         flattenedWhere = {
           type: 'operator',
@@ -144,13 +160,13 @@ export function dfltWalkWhere (
             type: 'identifier',
             value: fieldName,
           },
-          op_right: vtype === 'decimal' ? {
-            type: 'decimal',
-            value: payv.value,
-          } : {
-            type: <any>vtype,
-            string: payv.value,
-          }
+          op_right: (() => {
+            switch (vtype) {
+              case 'identifier': return { type: 'identifier' as 'identifier', value: value }
+              case 'decimal': return { type: 'decimal' as 'decimal', value: value }
+              case 'string': return { type: 'string' as 'string', string: value }
+            }
+          })()
         }
         break
       }

@@ -140,9 +140,6 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
     orm: FxOrmModel.Class_Model['orm']
 
-    get Op () { return (<any>this.orm.constructor).Op }
-    get OpFns () { return (<any>this.orm.constructor).OpFns }
-
     get storeType () { return this.orm.driver.type }
 
     private get dbdriver(): FxDbDriverNS.Driver {

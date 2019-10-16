@@ -30,30 +30,6 @@ declare namespace FxOrmQueries {
 }
 
 declare namespace FxOrmQueries {
-    interface BuiltInOperators {
-      and: symbol
-      or: symbol
-      gt: symbol
-      gte: symbol
-      lt: symbol
-      lte: symbol
-      ne: symbol
-      eq: symbol
-      is: symbol
-      not: symbol
-      between: symbol
-      notBetween: symbol
-      in: symbol
-      notIn: symbol
-      like: symbol
-      notLike: symbol
-      startsWith: symbol
-      endsWith: symbol
-      substring: symbol
-      col: symbol
-      bracket: symbol
-    }
-
     interface OperatorFunction<T_OPNAME = string> {
       (value?: any): {
         value?: typeof value
@@ -69,30 +45,6 @@ declare namespace FxOrmQueries {
     type OPERATOR_TYPE_ASSERT = 'not' | 'is'
     type OPERATOR_TYPE_PREDICATE = 'between'
     type OPERATOR_TYPE_COMPARISON = 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'like'
-
-    interface BuiltInOperatorFunctions {
-      and: (value?: any) => OperatorFunction<'and'>
-      or: (value?: any) => OperatorFunction<'or'>
-      gt: (value?: any) => OperatorFunction<'gt'>
-      gte: (value?: any) => OperatorFunction<'gte'>
-      lt: (value?: any) => OperatorFunction<'lt'>
-      lte: (value?: any) => OperatorFunction<'lte'>
-      ne: (value?: any) => OperatorFunction<'ne'>
-      eq: (value?: any) => OperatorFunction<'eq'>
-      is: (value?: any) => OperatorFunction<'is'>
-      not: (value?: any) => OperatorFunction<'not'>
-      between: (value?: any) => OperatorFunction<'between'>
-      notBetween: (value?: any) => OperatorFunction<'notBetween'>
-      in: (value?: any) => OperatorFunction<'in'>
-      notIn: (value?: any) => OperatorFunction<'notIn'>
-      like: (value?: any) => OperatorFunction<'like'>
-      notLike: (value?: any) => OperatorFunction<'notLike'>
-      startsWith: (value?: any) => OperatorFunction<'startsWith'>
-      endsWith: (value?: any) => OperatorFunction<'endsWith'>
-      substring: (value?: any) => OperatorFunction<'substring'>
-      col: (value?: any) => OperatorFunction<'col'>
-      bracket: (value?: any) => OperatorFunction<'bracket'>
-    }
 }
 
 declare namespace FxOrmQueries {
@@ -174,20 +126,78 @@ declare namespace FxOrmQueries {
               models?: {
                 [k: string]: FxOrmModel.Class_Model
               }
-              // select?: string | string[] | '*',
-              // fields?: string[],
-              // where?: any
-              // limit?: number
-              // offset?: number
-              // leftJoin?: Class_QueryNormalizer
-              // rightJoin?: Class_QueryNormalizer
-              // innerJoin?: Class_QueryNormalizer
             }
         )
     }
     // next generation model :start
     class Class_QueryBuilder<T_RETURN = any> {
         readonly notQueryBuilder: boolean
+        readonly Op: Class_QueryBuilder['QueryLanguage']['Operators']
+        readonly Opf: Class_QueryBuilder['QueryLanguageFuncs']['Operators']
+        readonly QueryLanguage: {
+          Operators: {
+            and: symbol
+            or: symbol
+            gt: symbol
+            gte: symbol
+            lt: symbol
+            lte: symbol
+            ne: symbol
+            eq: symbol
+            is: symbol
+            not: symbol
+            between: symbol
+            notBetween: symbol
+            in: symbol
+            notIn: symbol
+            like: symbol
+            notLike: symbol
+            startsWith: symbol
+            endsWith: symbol
+            substring: symbol
+            colref: symbol
+          }
+          Others: {
+            bracketRound: symbol
+            bracketSquare: symbol
+            bracketBrace: symbol
+            quoteSingle: symbol
+            quoteDouble: symbol
+            quoteBack: symbol
+          }
+        }
+        readonly QueryLanguageFuncs: {
+          Operators: {
+            and: (value?: any) => OperatorFunction<'and'>
+            or: (value?: any) => OperatorFunction<'or'>
+            gt: (value?: any) => OperatorFunction<'gt'>
+            gte: (value?: any) => OperatorFunction<'gte'>
+            lt: (value?: any) => OperatorFunction<'lt'>
+            lte: (value?: any) => OperatorFunction<'lte'>
+            ne: (value?: any) => OperatorFunction<'ne'>
+            eq: (value?: any) => OperatorFunction<'eq'>
+            is: (value?: any) => OperatorFunction<'is'>
+            not: (value?: any) => OperatorFunction<'not'>
+            between: (value?: any) => OperatorFunction<'between'>
+            notBetween: (value?: any) => OperatorFunction<'notBetween'>
+            in: (value?: any) => OperatorFunction<'in'>
+            notIn: (value?: any) => OperatorFunction<'notIn'>
+            like: (value?: any) => OperatorFunction<'like'>
+            notLike: (value?: any) => OperatorFunction<'notLike'>
+            startsWith: (value?: any) => OperatorFunction<'startsWith'>
+            endsWith: (value?: any) => OperatorFunction<'endsWith'>
+            substring: (value?: any) => OperatorFunction<'substring'>
+            colref: (value?: any) => OperatorFunction<'colref'>
+          }
+          Others: {
+            bracketRound: (value?: any) => OperatorFunction<'bracketRound'>
+            bracketSquare: (value?: any) => OperatorFunction<'bracketSquare'>
+            bracketBrace: (value?: any) => OperatorFunction<'bracketBrace'>
+            quoteSingle: (value?: any) => OperatorFunction<'quoteSingle'>
+            quoteDouble: (value?: any) => OperatorFunction<'quoteDouble'>
+            quoteBack: (value?: any) => OperatorFunction<'quoteBack'>
+          }
+        }
 
         model: FxOrmModel.Class_Model;
         conditions: any;
