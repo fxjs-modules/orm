@@ -156,7 +156,9 @@ function parserDefinition(
           return sql;
         }
         case "limit_statement": {
-          return "limit " + parsed.limit;
+          let sql = "limit " + parsed.limit;
+          if (parsed.offset && parsed.offset > 0) sql += " " + "offset " + parsed.offset
+          return sql;
         }
         case "order_statement": {
           const value = this.toSql(parsed.value);

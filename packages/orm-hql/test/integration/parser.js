@@ -317,8 +317,29 @@ const tests = [
 		}
   },
   {
+    only: true,
     sql: 'select * from foo group by foo.x limit 1',
     toSql: '(select * from (`foo`) group by (`foo`.`x`) limit 1)',
+  },
+  {
+    only: true,
+    sql: 'select * from foo group by foo.x limit -1',
+    toSql: '(select * from (`foo`) group by (`foo`.`x`) limit -1)',
+  },
+  {
+    only: true,
+    sql: 'select * from foo group by foo.x order by foo.x desc limit -1',
+    toSql: '(select * from (`foo`) group by (`foo`.`x`) order by `foo`.`x` desc limit -1)',
+  },
+  {
+    only: true,
+    sql: 'select * from foo group by foo.x limit 1, 4',
+    toSql: '(select * from (`foo`) group by (`foo`.`x`) limit 4 offset 1)',
+  },
+  {
+    only: true,
+    sql: 'select * from foo group by foo.x limit 1 offset 6',
+    toSql: '(select * from (`foo`) group by (`foo`.`x`) limit 1 offset 6)',
   },
   {
     sql: 'select * from foo group by foo.x limit -1',

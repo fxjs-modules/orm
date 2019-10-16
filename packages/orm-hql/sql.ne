@@ -193,7 +193,10 @@ order_statement ->
   | expr __ ASC {% d => ({type: 'order_statement', value: d[0], direction: 'asc'}) %}
   | expr __ DESC {% d => ({type: 'order_statement', value: d[0], direction: 'desc'}) %}
 
-limit_clause -> LIMIT __ decimal {% d => ({type: 'limit_statement', limit: d[2]}) %}
+limit_clause ->
+    LIMIT __ decimal {% d => ({type: 'limit_statement', limit: d[2], offset: -1}) %}
+  | LIMIT __ decimal "," _ decimal {% d => ({type: 'limit_statement', limit: d[5], offset: d[2]}) %}
+  | LIMIT __ decimal __ OFFSET __ decimal {% d => ({type: 'limit_statement', limit: d[2], offset: d[6]}) %}
 
 column_ref ->
     expr {% d => ({type: 'column', expression: d[0]}) %}
@@ -662,6 +665,7 @@ NULLX -> [Nn] [Uu] [Ll] [Ll] [Xx]
   | [Nn] [Uu] [Ll] [Ll]
 
 ON -> [Oo] [Nn]
+OFFSET -> [Oo] [Ff] [Ff] [Ss] [Ee] [Tt]
 OR -> [Oo] [Rr]
 ORDER -> [Oo] [Rr] [Dd] [Ee] [Rr]
 

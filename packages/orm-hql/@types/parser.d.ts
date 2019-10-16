@@ -176,6 +176,7 @@ declare namespace FxHQLParser {
     type LimitStatementNode = IParsedNode<{
         type: "limit_statement"
         limit: number
+        offset: number
     }>
 
     type OrderStatementNode = IParsedNode<{
