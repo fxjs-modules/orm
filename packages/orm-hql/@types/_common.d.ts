@@ -32,4 +32,7 @@ declare namespace FxHQLTypeHelpers {
 
     type IndexInArrayOrKeyInObject<T> = T extends any[] ? number : keyof T
     type ItemInArrayOrValueInObject<T> = T extends any[] ? T[number] : T[keyof T]
+
+    type T_OBJ_ONLY<T> = T extends object ? T : never
+    type T_RECURSIVE_OBJ_ONLY<T> = T extends object ? T[keyof T] : never
 }

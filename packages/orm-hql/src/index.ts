@@ -2,7 +2,7 @@ import nearley = require("nearley");
 const grammar: nearley.CompiledRules & nearley.Grammar = require("./sql-parser");
 
 function walk(
-  obj: (Fibjs.AnyObject | any[]) | FxHQLTypeHelpers.ItemInArrayOrValueInObject<Fibjs.AnyObject | any[]>,
+  obj: FxHQLTypeHelpers.T_OBJ_ONLY<(Fibjs.AnyObject | any[]) | FxHQLTypeHelpers.ItemInArrayOrValueInObject<Fibjs.AnyObject | any[]>>,
   fn: (
     input: typeof obj
   ) => false | any
@@ -316,10 +316,10 @@ function parserDefinition(
         }
         if (node.type === "table_ref" && node.on) {
           const columns = <FxHQLParser.ColumnRefNode[]>[];
-          walk(node.on, (n: FxHQLTypeHelpers.ItemInArrayOrValueInObject<FxHQLParser.TableRefNode['on']>) => {
-            if (n.type === "table_ref") return false;
-            if (n.type === "column") {
-              columns.push(n);
+          walk(node.on, (n: FxHQLTypeHelpers.T_OBJ_ONLY<FxHQLTypeHelpers.ItemInArrayOrValueInObject<FxHQLParser.TableRefNode['on']>>) => {
+            if ((<any>n).type === "table_ref") return false;
+            if ((<any>n).type === "column") {
+              columns.push(<any>n);
               return false;
             }
           });
