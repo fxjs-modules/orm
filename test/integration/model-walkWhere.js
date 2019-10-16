@@ -316,7 +316,7 @@ odescribe("Model.walkWhere()", function () {
               ])
             ],
           ].filter(x => x).forEach(([desc, getter]) => {
-            it(`${desc}`, function () {
+            oit(`${desc}`, function () {
               const [whereInput, hql] = getter()
               var walked = Person.walkWhere(whereInput);
 
@@ -324,6 +324,11 @@ odescribe("Model.walkWhere()", function () {
 
               assert.deepEqual(
                 walked,
+                struct.where.condition
+              )
+
+              console.log(
+                'struct.where.condition',
                 struct.where.condition
               )
             });

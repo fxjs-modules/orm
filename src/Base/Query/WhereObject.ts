@@ -178,12 +178,3 @@ export function dfltWalkWhere (
 
   return flattenedWhere
 }
-
-// export default class Class_WhereWalker implements FxOrmQueries.Class_WhereWalker {
-//   where: FxOrmQueries.Class_WhereWalker['where'] = {};
-//   walker: any = dfltWalkWhere;
-
-//   constructor (input: any) {
-//     dfltWalkWhere(input)
-//   }
-// }

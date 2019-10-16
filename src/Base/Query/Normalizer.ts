@@ -77,11 +77,6 @@ export default class QueryNormalizer implements FxOrmQueries.Class_QueryNormaliz
           } else {
             this.select = json.returnColumns
 
-            const field_inputs = <{
-              type: FxHQLParser.ColumnExprNode['type']
-              expression: FxHQLParser.ColumnRefNode/* FxHQLParser.ColumnExprNode['expression'] */
-              alias?: FxHQLParser.ColumnExprNode['alias']
-            }[]>[]
             let selectable_fields = <string[]>[]
             let model = null
             /**
@@ -112,6 +107,13 @@ export default class QueryNormalizer implements FxOrmQueries.Class_QueryNormaliz
             this.where = json.parsed.table_exp.where
             this.groupBy = json.parsed.table_exp.groupby
             this.having = json.parsed.table_exp.having
+          }
+        }
+
+        make_offsetlimit: {
+          if (json.parsed.table_exp.limit) {
+            this.limit = normalizeLimit(json.parsed.table_exp.limit.limit)
+            this.offset = normalizeLimit(json.parsed.table_exp.limit.offset)
           }
         }
 
