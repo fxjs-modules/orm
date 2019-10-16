@@ -58,7 +58,7 @@ declare namespace FxHQLParser {
 
     type GroupByNode = IParsedNode<{
         type: "group_by"
-        columns: ColumnExprNode
+        columns: SelectionColumnList
         with_rollup?: boolean
     }>
 
