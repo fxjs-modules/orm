@@ -43,7 +43,7 @@ declare namespace FxOrmNS {
         /**
          * @description return one query normalizer
          */
-        static normalizeQuery (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmQueries.Class_QueryNormalizer>): FxOrmQueries.Class_QueryNormalizer
+        static parseHQL (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmQueries.Class_QueryNormalizer>): FxOrmQueries.Class_QueryNormalizer
 
         driver: FxDbDriverNS.Driver<ConnType>
 
@@ -52,6 +52,30 @@ declare namespace FxOrmNS {
         readonly models: {[k: string]: FxOrmModel.Class_Model}
         $dml: any; // FxOrmDML.DMLDriver;
         $ddl: any; // FxOrmDDL.DDLDriver;
+        /**
+         * @description define one model with modelName(name) and properties(props)
+         *
+         * @param name
+         * @param properties
+         * @param config
+         */
+        define (
+          name: string,
+          properties: Fibjs.AnyObject,
+          config: FxOrmModel.Class_ModelDefinitionOptions
+        ): FxOrmModel.Class_Model
+
+        defineFromHQLQuery (hql: string): FxOrmModel.Class_Model
+        /**
+         * @description sync all model in this.models to remote endpoints
+         */
+        sync (): void
+        /**
+         * @description sync all model in this.models from remote endpoints
+         */
+        drop (): void
+
+        close (): void
     }
     /* next generation :end */
 }

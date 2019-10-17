@@ -57,18 +57,18 @@ describe("ORM Normalizer", function() {
     before(setup);
 
     it("has", function() {
-      assert.isFunction(ORM.normalizeQuery);
+      assert.isFunction(ORM.parseHQL);
     });
 
     xit("collection is required", function() {
       assert.throws(() => {
-        ORM.normalizeQuery();
+        ORM.parseHQL();
       });
     });
 
     it("sql is required", function() {
       assert.throws(() => {
-        ORM.normalizeQuery();
+        ORM.parseHQL();
       });
     });
   });
@@ -77,13 +77,13 @@ describe("ORM Normalizer", function() {
     before(setup);
 
     it("select all", function() {
-      queryNormalizer = ORM.normalizeQuery(`select * from test`);
+      queryNormalizer = ORM.parseHQL(`select * from test`);
 
       assert.strictEqual(queryNormalizer.isSelectAll, true);
     });
 
     it("select field", function() {
-      queryNormalizer = ORM.normalizeQuery(`select a, b, c from test`);
+      queryNormalizer = ORM.parseHQL(`select a, b, c from test`);
 
       assert.strictEqual(queryNormalizer.isSelectAll, false);
       assert.deepEqual(
@@ -114,7 +114,7 @@ describe("ORM Normalizer", function() {
     });
 
     it("aliases", function () {
-      queryNormalizer = ORM.normalizeQuery(`select a as af, b, c as cf from test`);
+      queryNormalizer = ORM.parseHQL(`select a as af, b, c as cf from test`);
 
       assert.deepEqual(
         queryNormalizer.select,
@@ -151,7 +151,7 @@ describe("ORM Normalizer", function() {
     });
 
     it("where", function () {
-      queryNormalizer = ORM.normalizeQuery(`select a from test where b = 'foo'`);
+      queryNormalizer = ORM.parseHQL(`select a from test where b = 'foo'`);
 
       assert.deepEqual(
         queryNormalizer.select,
@@ -205,7 +205,7 @@ describe("ORM Normalizer", function() {
     });
 
     it("having", function () {
-      queryNormalizer = ORM.normalizeQuery(`select a from test having b = 'foo'`);
+      queryNormalizer = ORM.parseHQL(`select a from test having b = 'foo'`);
 
       assert.deepEqual(
         queryNormalizer.select,
@@ -259,7 +259,7 @@ describe("ORM Normalizer", function() {
     });
 
     it("group by", function () {
-      queryNormalizer = ORM.normalizeQuery(`select a from test group by foo`);
+      queryNormalizer = ORM.parseHQL(`select a from test group by foo`);
 
       assert.deepEqual(
         queryNormalizer.groupBy,
@@ -280,7 +280,7 @@ describe("ORM Normalizer", function() {
         }
       );
 
-      queryNormalizer = ORM.normalizeQuery(`select a from test group by foo, foo2 having (foo is not null) and (foo2 like "%test1%")`);
+      queryNormalizer = ORM.parseHQL(`select a from test group by foo, foo2 having (foo is not null) and (foo2 like "%test1%")`);
 
       assert.deepEqual(
         queryNormalizer.groupBy,
@@ -355,13 +355,13 @@ describe("ORM Normalizer", function() {
     before(setup);
 
     oit("select all from left and one column from right", function() {
-      queryNormalizer = ORM.normalizeQuery(`select a.*, b.id as b_id from test a join test b on a.id = b.a_id`);
+      queryNormalizer = ORM.parseHQL(`select a.*, b.id as b_id from test a join test b on a.id = b.a_id`);
 
       assert.strictEqual(queryNormalizer.isSelectAll, false);
     });
 
     it("aliases", function () {
-      queryNormalizer = ORM.normalizeQuery(`select a as af, b, c as cf from test`);
+      queryNormalizer = ORM.parseHQL(`select a as af, b, c as cf from test`);
 
       assert.deepEqual(
         queryNormalizer.select,
@@ -401,7 +401,7 @@ describe("ORM Normalizer", function() {
       before(setup);
 
       it("normal usage", function () {
-        queryNormalizer = ORM.normalizeQuery(
+        queryNormalizer = ORM.parseHQL(
           `select ${Person.collection}.*, ${Pet.collection}.id as pet_id from ${Person.collection} join ${Pet.collection} on ${Person.collection}.id = ${Pet.collection}.owner_id`,
           {
             models: {
@@ -419,7 +419,7 @@ describe("ORM Normalizer", function() {
       })
 
       it("allow pass unexisted field though it's not existed", function () {
-        queryNormalizer = ORM.normalizeQuery(
+        queryNormalizer = ORM.parseHQL(
           `select ${Person.collection}.*, ${Pet.collection}.id as pet_id, ${Pet.collection}.non_existed from ${Person.collection} join ${Pet.collection} on ${Person.collection}.id = ${Pet.collection}.owner_id`,
           {
             models: {
@@ -443,7 +443,7 @@ describe("ORM Normalizer", function() {
     before(setup);
 
     it("basic", function() {
-      queryNormalizer = ORM.normalizeQuery("person", {});
+      queryNormalizer = ORM.parseHQL("person", {});
 
       assert.isTrue(queryNormalizer.isEmptyWhere);
       assert.isTrue(queryNormalizer.isSelectAll);
@@ -454,7 +454,7 @@ describe("ORM Normalizer", function() {
     });
 
     it("with where condition", function() {
-      queryNormalizer = ORM.normalizeQuery("person", {
+      queryNormalizer = ORM.parseHQL("person", {
         where: {
           a: 1
         }
@@ -467,7 +467,7 @@ describe("ORM Normalizer", function() {
 
     describe("where transformer", function() {
       it("basic", function() {
-        queryNormalizer = ORM.normalizeQuery("person", {
+        queryNormalizer = ORM.parseHQL("person", {
           where: {
             foo1: { [ORM.Op.eq]: 1 },
             foo2: { [ORM.Op.ne]: 1 }

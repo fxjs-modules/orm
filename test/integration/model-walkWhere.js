@@ -326,11 +326,6 @@ odescribe("Model.walkWhere()", function () {
                 walked,
                 struct.where.condition
               )
-
-              console.log(
-                'struct.where.condition',
-                struct.where.condition
-              )
             });
           })
         });

@@ -5,28 +5,6 @@
 
 declare namespace FxOrmQueries {
   type WhereObjectInput = null | undefined | Fibjs.AnyObject
-  class Class_WhereWalker {
-    where: {
-      [fname: string]: {
-        /**
-         * @for
-         * - `[Op.gt]: 1
-         * - `[Op.lt]: 2
-         * - `[Op.ne]: 'foo'
-         */
-        [Symbol.toStringTag]: any
-      } | {
-        /**
-         * @for
-         * - `[Op.and]: [{...}, {...}]`,
-         * - `[Op.or]: [{...}, {...}]`
-         */
-        [Symbol.toStringTag]: any[]
-      }
-    }
-
-    constructor (input: any)
-  }
 }
 
 declare namespace FxOrmQueries {

@@ -39,7 +39,7 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
         return orm;
     }
 
-    static normalizeQuery (...args: FxOrmTypeHelpers.Parameters<(typeof FxOrmNS.Class_ORM)['normalizeQuery']>): FxOrmQueries.Class_QueryNormalizer {
+    static parseHQL (...args: FxOrmTypeHelpers.Parameters<(typeof FxOrmNS.Class_ORM)['parseHQL']>): FxOrmQueries.Class_QueryNormalizer {
         return new QueryNormalizer(...args);
     }
 
@@ -104,13 +104,6 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
      */
     use (pluginConfig: string | FxORMPlugin.PluginOptions) {}
 
-    /**
-     * @description define one model with modelName(name) and properties(props)
-     *
-     * @param name
-     * @param properties
-     * @param config
-     */
     define (
         name: string,
         properties: Fibjs.AnyObject,
@@ -136,6 +129,12 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
             methods: {},
             validations: {},
         });
+    }
+
+    defineFromHQLQuery (
+      hql: string
+    ) {
+      return null as any
     }
 
     /**

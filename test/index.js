@@ -6,13 +6,12 @@ test.setup();
 function t() {
     run('./integration/orm-exports.js');
     run('./integration/orm-operator.js');
-    run('./integration/orm-normalizer.js');
+    run('./integration/orm-parseHQL.js');
 
     run('./integration/utils-linked-list.js');
 
     run('./integration/model-property.js');
     run('./integration/model-apis.js');
-    // run('./integration/model-build_query_normalizer.js');
 
     // run('./integration/model-aggregate.js');
     run('./integration/model-clear.js');

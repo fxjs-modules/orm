@@ -216,10 +216,6 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             syncStrategy: 'mixed'
         });
 
-        /**
-         * some db cannot add column(such as sqlite), so we try best to
-         * create table once
-         */
         syncor.defineCollection(this.collection, this.properties)
 
         syncor.sync()

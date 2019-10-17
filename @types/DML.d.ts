@@ -17,7 +17,7 @@ declare namespace FxOrmDML {
             <T=Fibjs.AnyObject[]>(
                 collection: string,
                 opts?: {
-                    where?: Fibjs.AnyObject, // FxOrmQueries.Class_QueryNormalizer['where'],
+                    where?: Fibjs.AnyObject,
                     fields?: string[],// FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['select']>,
 
                     offset?: FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['offset']>
@@ -32,7 +32,7 @@ declare namespace FxOrmDML {
             <T=number>(
                 collection: string,
                 opts?: {
-                    where?: Fibjs.AnyObject, // FxOrmQueries.Class_QueryNormalizer['where'],
+                    where?: Fibjs.AnyObject,
                     countParams?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['count']>
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                     filterQueryResult?: <T2 = any>(result: any) => T2
@@ -43,7 +43,7 @@ declare namespace FxOrmDML {
             <T=boolean>(
                 collection: string,
                 opts?: {
-                    where?: Fibjs.AnyObject, // FxOrmQueries.Class_QueryNormalizer['where'],
+                    where?: Fibjs.AnyObject,
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                     filterQueryResult?: <T2 = any>(result: any) => T2
                 }
@@ -64,7 +64,7 @@ declare namespace FxOrmDML {
                 collection: string,
                 changes: FxSqlQuerySql.DataToSet,
                 opts?: {
-                    where?: Fibjs.AnyObject, // FxOrmQueries.Class_QueryNormalizer['where'],
+                    where?: Fibjs.AnyObject,
                     idPropertyList?: FxOrmProperty.NormalizedProperty[],
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                 }
@@ -74,7 +74,7 @@ declare namespace FxOrmDML {
             <T=number>(
                 collection: string,
                 opts?: {
-                    where: Fibjs.AnyObject, // FxOrmQueries.Class_QueryNormalizer['where'],
+                    where: Fibjs.AnyObject,
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                 }
             ): T
