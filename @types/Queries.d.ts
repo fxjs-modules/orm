@@ -4,6 +4,18 @@
 /// <reference path="property.d.ts" />
 
 declare namespace FxOrmQueries {
+  /**
+   * @sample for model `Person`
+    {
+      where: {
+        a: ORM.Opf.ne(1),
+        b: ORM.Opf.ne(2),
+        [ORM.Op.or]: {...}
+        // ref another model `Pet`'s property id, match it with Person.Prop.id
+        [Pet.fieldSymbol('pet_id')]: ORM.Opf.eq(Person.fieldSymbol('id'))
+      }
+    }
+   */
   type WhereObjectInput = null | undefined | Fibjs.AnyObject
 }
 
@@ -70,13 +82,13 @@ declare namespace FxOrmQueries {
         readonly isEmptyWhere: boolean
         readonly isJoined: boolean
 
-        join: {
-            type: 'left' | 'right' | 'inner'
-            /**
-             * one joined normalizer cannot join with other normalizer
-             */
-            normalizer: Class_QueryNormalizer
-        }[]
+        // joins: {
+        //     type: 'left' | 'right' | 'inner'
+        //     /**
+        //      * one joined normalizer cannot join with other normalizer
+        //      */
+        //     normalizer: Class_QueryNormalizer
+        // }[]
         /**
          * @integer
          */
@@ -86,6 +98,9 @@ declare namespace FxOrmQueries {
         where: FxHQLParser.FromTableExpNode['where']
         groupBy: FxHQLParser.FromTableExpNode['groupby']
         having: FxHQLParser.FromTableExpNode['having']
+
+        joins: FxHQLParser.ParsedResult['joins']
+
         orderBy: {
             collection: string
             colname: string
@@ -110,9 +125,9 @@ declare namespace FxOrmQueries {
     // next generation model :start
     class Class_QueryBuilder<T_RETURN = any> {
         readonly notQueryBuilder: boolean
-        readonly Op: Class_QueryBuilder['QueryLanguage']['Operators']
-        readonly Opf: Class_QueryBuilder['QueryLanguageFuncs']['Operators']
-        readonly QueryLanguage: {
+        readonly Op: Class_QueryBuilder['Ql']['Operators']
+        readonly Opf: Class_QueryBuilder['Qlfn']['Operators']
+        readonly Ql: {
           Operators: {
             and: symbol
             or: symbol
@@ -144,7 +159,7 @@ declare namespace FxOrmQueries {
             quoteBack: symbol
           }
         }
-        readonly QueryLanguageFuncs: {
+        readonly Qlfn: {
           Operators: {
             and: (value?: any) => OperatorFunction<'and'>
             or: (value?: any) => OperatorFunction<'or'>
@@ -174,6 +189,8 @@ declare namespace FxOrmQueries {
             quoteSingle: (value?: any) => OperatorFunction<'quoteSingle'>
             quoteDouble: (value?: any) => OperatorFunction<'quoteDouble'>
             quoteBack: (value?: any) => OperatorFunction<'quoteBack'>
+
+            refTableCol: (value?: any) => OperatorFunction<'refTableCol'>
           }
         }
 

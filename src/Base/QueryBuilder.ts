@@ -7,9 +7,9 @@ import { buildDescriptor } from '../Decorators/property';
 import { arraify } from '../Utils/array';
 import { isEmptyPlainObject } from '../Utils/object';
 import Normalizer from './Query/Normalizer';
-import { dfltWalkWhere } from './Query/WhereObject';
+import { dfltWalkWhere, dfltWalkOn } from './Query/WhereObject';
 
-import * as QG from './Query/QueryGrammar'
+import * as QueryGrammers from './Query/QueryGrammar'
 
 function transformToQCIfModel (
     target: Class_QueryBuilder,
@@ -50,10 +50,10 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
     @buildDescriptor({ enumerable: false, configurable: false })
     private _tuples: TUPLE_ITEM[] = [];
 
-    get Op () { return QG.QueryLanguage.Operators }
-    get Opf () { return QG.QueryLanguageFuncs.Operators }
-    get QueryLanguage () { return QG.QueryLanguage }
-    get QueryLanguageFuncs () { return QG.QueryLanguageFuncs }
+    get Op () { return QueryGrammers.Ql.Operators }
+    get Opf () { return QueryGrammers.Qlfn.Operators }
+    get Ql () { return QueryGrammers.Ql }
+    get Qlfn () { return QueryGrammers.Qlfn }
 
     model: FxOrmModel.Class_Model;
 
@@ -182,8 +182,25 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
      * @description normalize one input to where
      */
     @transformToQCIfModel
-    walkWhere (input: any) {
-      return dfltWalkWhere(input)
+    walkWhere (...args: FxOrmTypeHelpers.Parameters<typeof dfltWalkWhere>) {
+      const [input, opts] = args || []
+      return dfltWalkWhere(input, {
+        source_collection: undefined/* this.model.collection */,
+        parent_conjunction_op: undefined,
+        ...opts
+      })
+    }
+
+    /**
+     * @description normalize one input to on conditions
+     */
+    @transformToQCIfModel
+    walkOn (...args: FxOrmTypeHelpers.Parameters<typeof dfltWalkOn>) {
+      const [input] = args || []
+      return dfltWalkOn(input, {
+        source_collection: this.model.collection,
+        is_joins: true
+      })
     }
 
     first (): TUPLE_ITEM {

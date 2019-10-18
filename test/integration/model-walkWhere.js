@@ -4,6 +4,7 @@ var ORM = require('../../');
 odescribe("Model.walkWhere()", function () {
     var db = null;
     var Person = null;
+    var Pet = null;
 
     var setup = function () {
         Person = db.define("person", {
@@ -11,6 +12,11 @@ odescribe("Model.walkWhere()", function () {
             surname: String,
             age: Number,
             male: Boolean
+        });
+
+        Pet = db.define("pet", {
+            name: String,
+            age: Number,
         });
 
         return helper.dropSync(Person, function () {
@@ -51,49 +57,67 @@ odescribe("Model.walkWhere()", function () {
         return db.close();
     });
 
-    describe("query ONE collection ONLY", function () {
+    describe("[where] query ONE collection ONLY", function () {
         before(setup);
 
-        describe("only comparator", function () {
+        odescribe("only comparator", function () {
           ;[
             [
-              'eq', () => ([ ({ a: Person.Opf.eq(1) }), `select * from ${Person.collection} where a = 1` ])
+              'eq', () => ([ ({ a: ORM.Opf.eq(1) }), `select * from ${Person.collection} where a = 1` ])
             ],
             [
-              'ne', () => ([ ({ a: Person.Opf.ne(1) }), `select * from ${Person.collection} where a <> 1` ])
+              'ne', () => ([ ({ a: ORM.Opf.ne(1) }), `select * from ${Person.collection} where a <> 1` ])
             ],
             [
-              'gt', () => ([ ({ a: Person.Opf.gt(1) }), `select * from ${Person.collection} where a > 1` ])
+              'gt', () => ([ ({ a: ORM.Opf.gt(1) }), `select * from ${Person.collection} where a > 1` ])
             ],
             [
-              'gte', () => ([ ({ a: Person.Opf.gte(1) }), `select * from ${Person.collection} where a >= 1` ])
+              'gte', () => ([ ({ a: ORM.Opf.gte(1) }), `select * from ${Person.collection} where a >= 1` ])
             ],
             [
-              'lt', () => ([ ({ a: Person.Opf.lt(1) }), `select * from ${Person.collection} where a < 1` ])
+              'lt', () => ([ ({ a: ORM.Opf.lt(1) }), `select * from ${Person.collection} where a < 1` ])
             ],
             [
-              'lte', () => ([ ({ a: Person.Opf.lte(1) }), `select * from ${Person.collection} where a <= 1` ]),
+              'lte', () => ([ ({ a: ORM.Opf.lte(1) }), `select * from ${Person.collection} where a <= 1` ]),
             ],
             [
-              'colref x eq', () => ([ ({ a: Person.Opf.eq(Person.Opf.colref("b")) }), `select * from ${Person.collection} where a = b` ])
+              'colref x eq', () => ([ ({ a: ORM.Opf.eq(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where a = b` ])
             ],
             [
-              'colref x ne', () => ([ ({ a: Person.Opf.ne(Person.Opf.colref("b")) }), `select * from ${Person.collection} where a <> b` ])
+              'colref x ne', () => ([ ({ a: ORM.Opf.ne(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where a <> b` ])
             ],
             [
-              'colref x gt', () => ([ ({ a: Person.Opf.gt(Person.Opf.colref("b")) }), `select * from ${Person.collection} where a > b` ])
+              'colref x gt', () => ([ ({ a: ORM.Opf.gt(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where a > b` ])
             ],
             [
-              'colref x gte', () => ([ ({ a: Person.Opf.gte(Person.Opf.colref("b")) }), `select * from ${Person.collection} where a >= b` ])
+              'colref x gte', () => ([ ({ a: ORM.Opf.gte(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where a >= b` ])
             ],
             [
-              'colref x lt', () => ([ ({ a: Person.Opf.lt(Person.Opf.colref("b")) }), `select * from ${Person.collection} where a < b` ])
+              'colref x lt', () => ([ ({ a: ORM.Opf.lt(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where a < b` ])
             ],
             [
-              'colref x lte', () => ([ ({ a: Person.Opf.lte(Person.Opf.colref("b")) }), `select * from ${Person.collection} where a <= b` ])
+              'colref x lte', () => ([ ({ a: ORM.Opf.lte(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where a <= b` ])
+            ],
+            [
+              'refTableCol x eq', () => ([ ({ a: ORM.Opf.eq( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where a = ${Person.collection}.b` ])
+            ],
+            [
+              'refTableCol x ne', () => ([ ({ a: ORM.Opf.ne( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where a <> ${Person.collection}.b` ])
+            ],
+            [
+              'refTableCol x gt', () => ([ ({ a: ORM.Opf.gt( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where a > ${Person.collection}.b` ])
+            ],
+            [
+              'refTableCol x gte', () => ([ ({ a: ORM.Opf.gte( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where a >= ${Person.collection}.b` ])
+            ],
+            [
+              'refTableCol x lt', () => ([ ({ a: ORM.Opf.lt( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where a < ${Person.collection}.b` ])
+            ],
+            [
+              'refTableCol x lte', () => ([ ({ a: ORM.Opf.lte( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where a <= ${Person.collection}.b` ])
             ],
           ].filter(x => x).forEach(([desc, getter]) => {
-            oit(`${desc}`, function () {
+            it(`just comparator: ${desc}`, function () {
               const [whereInput, hql] = getter()
               var walked = Person.walkWhere(whereInput);
 
@@ -108,12 +132,84 @@ odescribe("Model.walkWhere()", function () {
           })
         });
 
-        describe("comparator/conjunction", function () {
+        odescribe("table column ref", function () {
+          ;[
+            [
+              'eq', () => ([ ({ id: ORM.Opf.eq(1) }), `select * from ${Person.collection} where ${Person.collection}.id = 1` ])
+            ],
+            [
+              'ne', () => ([ ({ a: ORM.Opf.ne(1) }), `select * from ${Person.collection} where ${Person.collection}.a <> 1` ])
+            ],
+            [
+              'gt', () => ([ ({ a: ORM.Opf.gt(1) }), `select * from ${Person.collection} where ${Person.collection}.a > 1` ])
+            ],
+            [
+              'gte', () => ([ ({ a: ORM.Opf.gte(1) }), `select * from ${Person.collection} where ${Person.collection}.a >= 1` ])
+            ],
+            [
+              'lt', () => ([ ({ a: ORM.Opf.lt(1) }), `select * from ${Person.collection} where ${Person.collection}.a < 1` ])
+            ],
+            [
+              'lte', () => ([ ({ a: ORM.Opf.lte(1) }), `select * from ${Person.collection} where ${Person.collection}.a <= 1` ]),
+            ],
+            [
+              'colref x eq', () => ([ ({ a: ORM.Opf.eq(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where ${Person.collection}.a = b` ])
+            ],
+            [
+              'colref x ne', () => ([ ({ a: ORM.Opf.ne(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where ${Person.collection}.a <> b` ])
+            ],
+            [
+              'colref x gt', () => ([ ({ a: ORM.Opf.gt(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where ${Person.collection}.a > b` ])
+            ],
+            [
+              'colref x gte', () => ([ ({ a: ORM.Opf.gte(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where ${Person.collection}.a >= b` ])
+            ],
+            [
+              'colref x lt', () => ([ ({ a: ORM.Opf.lt(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where ${Person.collection}.a < b` ])
+            ],
+            [
+              'colref x lte', () => ([ ({ a: ORM.Opf.lte(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where ${Person.collection}.a <= b` ])
+            ],
+            [
+              'refTableCol x eq', () => ([ ({ a: ORM.Opf.eq( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where ${Person.collection}.a = ${Person.collection}.b` ])
+            ],
+            [
+              'refTableCol x ne', () => ([ ({ a: ORM.Opf.ne( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where ${Person.collection}.a <> ${Person.collection}.b` ])
+            ],
+            [
+              'refTableCol x gt', () => ([ ({ a: ORM.Opf.gt( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where ${Person.collection}.a > ${Person.collection}.b` ])
+            ],
+            [
+              'refTableCol x gte', () => ([ ({ a: ORM.Opf.gte( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where ${Person.collection}.a >= ${Person.collection}.b` ])
+            ],
+            [
+              'refTableCol x lt', () => ([ ({ a: ORM.Opf.lt( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where ${Person.collection}.a < ${Person.collection}.b` ])
+            ],
+            [
+              'refTableCol x lte', () => ([ ({ a: ORM.Opf.lte( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where ${Person.collection}.a <= ${Person.collection}.b` ])
+            ],
+          ].filter(x => x).forEach(([desc, getter]) => {
+            it(`${desc}`, function () {
+              const [whereInput, hql] = getter()
+              var walked = Person.walkWhere(whereInput, { source_collection: Person.collection });
+
+              var struct = Person.queryByHQL(hql);
+
+              assert.deepEqual(
+                walked,
+                struct.where.condition
+              )
+              // console.notice('struct', struct);
+            });
+          })
+        });
+
+        odescribe("comparator/conjunction", function () {
           ;[
             [
               '(default top as) and',
               () => ([
-                ({ a: Person.Opf.eq(1), b: Person.Opf.eq("bar") }),
+                ({ a: ORM.Opf.eq(1), b: ORM.Opf.eq("bar") }),
                 `\
                   select * from ${Person.collection}
                   where a = 1 and b = "bar"
@@ -124,9 +220,9 @@ odescribe("Model.walkWhere()", function () {
               'multiple and',
               () => ([
                 ({
-                  a: Person.Opf.eq(1),
-                  b: Person.Opf.eq("bar"),
-                  c: Person.Opf.eq(-1),
+                  a: ORM.Opf.eq(1),
+                  b: ORM.Opf.eq("bar"),
+                  c: ORM.Opf.eq(-1),
                 }),
                 `\
                   select * from ${Person.collection}
@@ -139,9 +235,9 @@ odescribe("Model.walkWhere()", function () {
               () => ([
                 ({
                   [Person.Op.and]: {
-                    a: Person.Opf.eq(1),
-                    b: Person.Opf.eq("bar"),
-                    c: Person.Opf.eq(-1),
+                    a: ORM.Opf.eq(1),
+                    b: ORM.Opf.eq("bar"),
+                    c: ORM.Opf.eq(-1),
                   }
                 }),
                 `\
@@ -155,8 +251,8 @@ odescribe("Model.walkWhere()", function () {
               () => ([
                 ({
                   [Person.Op.or]: [
-                    { a: Person.Opf.ne(1) },
-                    { b: Person.Opf.eq(1) },
+                    { a: ORM.Opf.ne(1) },
+                    { b: ORM.Opf.eq(1) },
                   ]
                 }),
                 `\
@@ -170,9 +266,9 @@ odescribe("Model.walkWhere()", function () {
               () => ([
                 ({
                   [Person.Op.or]: [
-                    { a: Person.Opf.ne(1) },
-                    { b: Person.Opf.eq(1) },
-                    { c: Person.Opf.gte(12) },
+                    { a: ORM.Opf.ne(1) },
+                    { b: ORM.Opf.eq(1) },
+                    { c: ORM.Opf.gte(12) },
                   ]
                 }),
                 `\
@@ -185,13 +281,13 @@ odescribe("Model.walkWhere()", function () {
               'mixed 2',
               () => ([
                 ({
-                  [Person.QueryLanguage.Others.bracketRound]: {
+                  [Person.Ql.Others.bracketRound]: {
                     [Person.Op.or]: [
-                      { a: Person.Opf.gt(5) },
-                      { b: Person.Opf.lt(3) },
+                      { a: ORM.Opf.gt(5) },
+                      { b: ORM.Opf.lt(3) },
                     ],
                   },
-                  a: Person.Opf.lte(3)
+                  a: ORM.Opf.lte(3)
                 }),
                 `\
                   select * from ${Person.collection}
@@ -204,18 +300,18 @@ odescribe("Model.walkWhere()", function () {
               () => ([
                 ([
                   {
-                    [Person.QueryLanguage.Others.bracketRound]: {
+                    [Person.Ql.Others.bracketRound]: {
                       [Person.Op.or]: [
-                        { a: Person.Opf.lte(3) },
-                        { b: Person.Opf.gte(5) },
+                        { a: ORM.Opf.lte(3) },
+                        { b: ORM.Opf.gte(5) },
                       ],
                     }
                   },
                   {
-                    [Person.QueryLanguage.Others.bracketRound]: {
+                    [Person.Ql.Others.bracketRound]: {
                       [Person.Op.or]: [
-                        { a: Person.Opf.gt(5) },
-                        { b: Person.Opf.lt(3) },
+                        { a: ORM.Opf.gt(5) },
+                        { b: ORM.Opf.lt(3) },
                       ]
                     }
                   }
@@ -236,15 +332,15 @@ odescribe("Model.walkWhere()", function () {
                 ([
                   {
                     [Person.Op.and]: [
-                      { a: Person.Opf.lte(3) },
-                      { b: Person.Opf.gte(5) },
+                      { a: ORM.Opf.lte(3) },
+                      { b: ORM.Opf.gte(5) },
                     ],
                   },
                   {
-                    [Person.QueryLanguage.Others.bracketRound]: {
+                    [Person.Ql.Others.bracketRound]: {
                       [Person.Op.or]: [
-                        { a: Person.Opf.gt(5) },
-                        { b: Person.Opf.lt(3) },
+                        { a: ORM.Opf.gt(5) },
+                        { b: ORM.Opf.lt(3) },
                       ]
                     }
                   }
@@ -261,16 +357,16 @@ odescribe("Model.walkWhere()", function () {
               'mixed 5',
               () => ([
                 ([
-                  Person.QueryLanguageFuncs.Others.bracketRound({
+                  ORM.Qlfn.Others.bracketRound({
                     [Person.Op.and]: [
-                      { a: Person.Opf.lte(3) },
-                      { b: Person.Opf.gte(5) },
+                      { a: ORM.Opf.lte(3) },
+                      { b: ORM.Opf.gte(5) },
                     ],
                   }),
-                  Person.QueryLanguageFuncs.Others.bracketRound({
+                  ORM.Qlfn.Others.bracketRound({
                     [Person.Op.or]: [
-                      { a: Person.Opf.gt(5) },
-                      { b: Person.Opf.lt(3) },
+                      { a: ORM.Opf.gt(5) },
+                      { b: ORM.Opf.lt(3) },
                     ]
                   })
                 ]),
@@ -287,18 +383,18 @@ odescribe("Model.walkWhere()", function () {
               () => ([
                 ([
                   {
-                    a: Person.Opf.eq(1)
+                    a: ORM.Opf.eq(1)
                   },
-                  Person.QueryLanguageFuncs.Others.bracketRound({
-                    b: Person.Opf.ne(2)
+                  ORM.Qlfn.Others.bracketRound({
+                    b: ORM.Opf.ne(2)
                   }),
-                  Person.QueryLanguageFuncs.Others.bracketRound({
-                    c: Person.Opf.eq(1)
+                  ORM.Qlfn.Others.bracketRound({
+                    c: ORM.Opf.eq(1)
                   }),
-                  Person.QueryLanguageFuncs.Others.bracketRound({
+                  ORM.Qlfn.Others.bracketRound({
                     [Person.Op.or]: [
-                      { foo: Person.Opf.eq(1) },
-                      { bar: Person.Opf.eq(2) },
+                      { foo: ORM.Opf.eq(1) },
+                      { bar: ORM.Opf.eq(2) },
                     ],
                   })
                 ]),
@@ -315,8 +411,33 @@ odescribe("Model.walkWhere()", function () {
                 `
               ])
             ],
+            [
+              'mixed 7',
+              () => ([
+                ([
+                  ORM.Qlfn.Others.bracketRound({
+                    [Person.Op.and]: [
+                      { a: ORM.Opf.lte(ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: 'c' })) },
+                      { b: ORM.Opf.gte(5) },
+                    ],
+                  }),
+                  ORM.Qlfn.Others.bracketRound({
+                    [Person.Op.or]: [
+                      { a: ORM.Opf.gt(5) },
+                      { b: ORM.Opf.lt(3) },
+                    ]
+                  })
+                ]),
+                `\
+                  select * from ${Person.collection}
+                  where (a <= ${Person.collection}.c and b >= 5) and (
+                    a > 5 or b < 3
+                  )
+                `
+              ])
+            ],
           ].filter(x => x).forEach(([desc, getter]) => {
-            oit(`${desc}`, function () {
+            it(`${desc}`, function () {
               const [whereInput, hql] = getter()
               var walked = Person.walkWhere(whereInput);
 
@@ -326,6 +447,50 @@ odescribe("Model.walkWhere()", function () {
                 walked,
                 struct.where.condition
               )
+            });
+          })
+        });
+    });
+
+    describe("[on] join two collections", function () {
+        before(setup);
+
+        describe("outer join", function () {
+          ;[
+            [
+              'default [outer] join',
+              () => ([
+                ({ id: ORM.Qlfn.Others.refTableCol({ table: Pet.collection, column: 'owner_id' }) }),
+                `\
+                  select ${Pet.collection}.name pet_name, ${Person.collection}.* from ${Person.collection}
+                  join ${Pet.collection}
+                  on ${Person.collection}.id = ${Pet.collection}.owner_id
+                  where ${Person.collection}.a = 1
+                `
+              ])
+            ],
+            // [
+            //   'multiple joins',
+            //   () => ([
+            //     ({ id: ORM.Qlfn.Others.refTableCol({ table: Pet.collection, column: 'owner_id' }) }),
+            //     `\
+            //       select ${Pet.collection}.name pet_name, ${Person.collection}.* from ${Person.collection}
+            //       join ${Pet.collection}
+            //       on ${Person.collection}.id = ${Pet.collection}.owner_id
+            //       where ${Person.collection}.a = 1
+            //     `
+            //   ])
+            // ],
+          ].filter(x => x).forEach(([desc, getter]) => {
+            it(`${desc}`, function () {
+              const [whereInput, hql] = getter()
+              var walked = Person.walkOn(whereInput);
+
+              var struct = Person.queryByHQL(hql);
+
+              // console.log('struct', struct.joins);
+
+              assert.deepEqual(walked, struct.joins)
             });
           })
         });

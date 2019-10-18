@@ -1,6 +1,6 @@
 import { isOperatorFunction } from './Operator'
-import * as QG from './QueryGrammar'
-import { idify, preDestruct } from '../../Utils/array'
+import * as QueryGrammers from './QueryGrammar'
+import { idify, preDestruct, arraify } from '../../Utils/array'
 
 function mapComparisonOperatorToSymbol (op: FxOrmQueries.OPERATOR_TYPE_COMPARISON) {
   switch (op) {
@@ -15,20 +15,41 @@ function mapComparisonOperatorToSymbol (op: FxOrmQueries.OPERATOR_TYPE_COMPARISO
 
 function mapConjunctionOpSymbolToText (op_sym: symbol) {
   switch (op_sym) {
-    case QG.QueryLanguage.Operators.and: return 'and'
-    case QG.QueryLanguage.Operators.or: return 'or'
-    // case QG.QueryLanguage.Operators.xor: return 'xor'
+    case QueryGrammers.Ql.Operators.and: return 'and'
+    case QueryGrammers.Ql.Operators.or: return 'or'
+    // case QueryGrammers.Ql.Operators.xor: return 'xor'
   }
 }
 
-function mapVType (value: any): FxHQLParser.ValueTypeRawNode['type'] | 'identifier' {
+function mapVType (value: any): FxHQLParser.ValueTypeRawNode['type'] | 'identifier' | 'column' {
   switch (typeof value) {
     default:
       if (isOperatorFunction(value) && value.operator_name === 'colref') return 'identifier'
+      else if (isOperatorFunction(value) && value.operator_name === 'refTableCol') return 'column'
     case 'string':
       return 'string'
     case 'number':
       return 'decimal'
+  }
+}
+
+function parseOperatorFunctionAsValue (opFnValue: FxOrmQueries.OperatorFunction): any {
+  switch (opFnValue.operator_name) {
+    case 'refTableCol': {
+      const payload = opFnValue().value
+      if (Array.isArray(payload))
+        return { table: payload[0], column: payload[0] }
+      else if (typeof payload === 'object')
+        return { table: payload.table, column: payload.column }
+      else if (typeof payload === 'string' && payload.indexOf('.') > 0) {
+        const [table, column] = payload.split('.')
+        return { table, column }
+      }
+    }
+    case 'colref':
+      return opFnValue().value
+    default:
+      throw new Error('[parseOperatorFunctionAsValue] unsupported operator function as value! check your input')
   }
 }
 
@@ -44,6 +65,7 @@ function mapObjectToTupleList (input: object | any[]) {
 export function dfltWalkWhere (
   input: FxOrmTypeHelpers.ItOrListOfIt<null | undefined | FxOrmQueries.WhereObjectInput | FxOrmQueries.OperatorFunction>,
   opts?: {
+    source_collection?: string
     parent_conjunction_op?: FxOrmQueries.OPERATOR_TYPE_CONJUNCTION
   }
 ): FxHQLParser.WhereNode['condition'] {
@@ -62,7 +84,7 @@ export function dfltWalkWhere (
 
   if (typeof input !== 'object') return null
 
-  let flattenedWhere = <FxOrmTypeHelpers.ReturnType<typeof dfltWalkWhere>>{};
+  let parsedNode = <FxOrmTypeHelpers.ReturnType<typeof dfltWalkWhere>>{};
 
   if (Array.isArray(input)) {
     if (!input.length) return null
@@ -89,36 +111,41 @@ export function dfltWalkWhere (
 
   if (topAnd)
     return dfltWalkWhere({
-      [QG.QueryLanguage.Operators.and]: []
+      [QueryGrammers.Ql.Operators.and]: []
                         .concat(inputSyms.map(sym => ({[sym]: input[<any>sym]})))
                         .concat(inputKeys.map(key => ({[key]: input[key]})))
     })
 
   inputSyms.forEach((_sym) => {
     switch (_sym) {
-      case QG.QueryLanguage.Others.bracketRound: {
-        flattenedWhere = {
+      case QueryGrammers.Ql.Others.bracketRound: {
+        parsedNode = {
           type: 'expr_comma_list',
           exprs: [dfltWalkWhere(input[<any>_sym])]
         }
         break
       }
-      case QG.QueryLanguage.Operators.or:
-      case QG.QueryLanguage.Operators.and: {
+      case QueryGrammers.Ql.Operators.or:
+      case QueryGrammers.Ql.Operators.and: {
         const [pres, last] = preDestruct(mapObjectToTupleList(input[<any>_sym]))
         const op_name = mapConjunctionOpSymbolToText(_sym)
 
-        flattenedWhere = {
+        parsedNode = {
           type: 'operator',
           operator: op_name,
-          op_left: dfltWalkWhere(pres, { parent_conjunction_op: op_name }),
-          op_right: dfltWalkWhere(last, { parent_conjunction_op: op_name }),
+          op_left: dfltWalkWhere(pres, { ...opts, parent_conjunction_op: op_name }),
+          op_right: dfltWalkWhere(last, { ...opts, parent_conjunction_op: op_name }),
         }
 
         break
       }
+      // case QueryGrammers.Ql.Others.refTableCol: {
+      //   break
+      // }
     }
   })
+
+  const { source_collection } = opts || {}
 
   inputKeys.forEach((fieldName: string) => {
     const v = input[fieldName]
@@ -128,14 +155,22 @@ export function dfltWalkWhere (
 
     switch (payv.op_name) {
       case 'bracketRound': {
-        flattenedWhere = {
+        parsedNode = {
           type: 'expr_comma_list',
           exprs: [dfltWalkWhere(payv)]
         }
         break
       }
+      case 'tableColRef': {
+       parsedNode = {
+         type: 'column',
+         table: payv.value.table,
+         column: payv.value.column,
+       }
+       break
+      }
       case 'colref': {
-        flattenedWhere = {
+        parsedNode = {
           type: 'identifier',
           value: payv.value
         }
@@ -151,20 +186,27 @@ export function dfltWalkWhere (
       {
         const vtype = mapVType(payv.value)
         let value = payv.value
-        if (isOperatorFunction(value)) value = value().value
 
-        flattenedWhere = {
+
+        if (isOperatorFunction(value)) value = parseOperatorFunctionAsValue(value)
+
+        parsedNode = {
           type: 'operator',
           operator: mapComparisonOperatorToSymbol(payv.op_name),
-          op_left: {
+          op_left: !!source_collection ? {
+            type: 'column',
+            table: source_collection,
+            name: fieldName,
+          } : {
             type: 'identifier',
-            value: fieldName,
+            value: fieldName
           },
           op_right: (() => {
             switch (vtype) {
               case 'identifier': return { type: 'identifier' as 'identifier', value: value }
               case 'decimal': return { type: 'decimal' as 'decimal', value: value }
               case 'string': return { type: 'string' as 'string', string: value }
+              case 'column': return { type: 'column' as 'column', table: value.table, name: value.column }
             }
           })()
         }
@@ -176,5 +218,51 @@ export function dfltWalkWhere (
     }
   })
 
-  return flattenedWhere
+  return parsedNode
+}
+
+export function dfltWalkOn (
+  input: FxOrmTypeHelpers.ItOrListOfIt<FxOrmQueries.WhereObjectInput>,
+  opts: {
+    source_collection: string,
+    is_joins?: boolean
+  }
+): FxOrmTypeHelpers.ItOrListOfIt<FxOrmQueries.Class_QueryNormalizer['joins'][any]> {
+  if (!input) return null
+  else if (isOperatorFunction(input)) return null
+
+  if (typeof input !== 'object') return null
+
+  const { source_collection, is_joins = false } = opts || {}
+
+  let jonNode: FxOrmQueries.Class_QueryNormalizer['joins'][any] = null
+
+  Object.keys(input).forEach((fieldName: string) => {
+    const v = input[fieldName]
+    if (!isOperatorFunction(v)) return
+
+    const payv = v()
+
+    jonNode = {
+      side: undefined,
+      specific_outer: false,
+      inner: false,
+      columns: [{ type: 'column', table: source_collection, name: fieldName }],
+      ref_right: {
+        type: 'table',
+        table: payv.value.table
+      }
+    }
+
+    switch (payv.op_name) {
+      case 'refTableCol': {
+        jonNode.columns.push({ type: 'column', table: payv.value.table, name: payv.value.column })
+        break
+      }
+      default:
+        throw new Error(`[dfltWalkOn::] unsupported op_name ${payv.op_name}`)
+    }
+  })
+
+  return is_joins ? [jonNode] : jonNode
 }

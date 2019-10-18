@@ -8,7 +8,7 @@ import * as ORMRuntime from '../Decorators/orm-runtime';
 
 import Setting from './Setting';
 import Model from './Model';
-import * as QG from './Query/QueryGrammar';
+import * as QueryGrammers from './Query/QueryGrammar';
 import { arraify } from '../Utils/array';
 import { configurable } from '../Decorators/accessor';
 import { buildDescriptor } from '../Decorators/property';
@@ -17,10 +17,10 @@ import { getDDL } from '../DXL/DDL';
 import QueryNormalizer from './Query/Normalizer';
 
 class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
-    static Op = QG.QueryLanguage.Operators
-    static Opf = QG.QueryLanguageFuncs.Operators
-    static QueryLanguage = QG.QueryLanguage
-    static QueryLanguageFuncs = QG.QueryLanguageFuncs
+    static Op = QueryGrammers.Ql.Operators
+    static Opf = QueryGrammers.Qlfn.Operators
+    static Ql = QueryGrammers.Ql
+    static Qlfn = QueryGrammers.Qlfn
 
     static create (connection: string | FxDbDriverNS.ConnectionInputArgs) {
         const dbdriver = FxDbDriver.create(connection);

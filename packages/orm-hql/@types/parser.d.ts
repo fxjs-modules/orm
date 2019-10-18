@@ -1,5 +1,5 @@
 declare namespace FxHQLParser {
-    type Undefineable<T> = T | undefined
+    type Undefineable<T> = void | T
     interface ParsedNodeBase {}
 
     type IParsedNode<EXT extends Fibjs.AnyObject> = EXT & ParsedNodeBase
@@ -102,7 +102,7 @@ declare namespace FxHQLParser {
 
     type TableRefNode = IParsedNode<{
         type: "table_ref"
-        side: 'left' | 'right' | 'full' | undefined
+        side: Undefineable<'left' | 'right' | 'full'>
         specific_outer: boolean
         inner: boolean
         /**

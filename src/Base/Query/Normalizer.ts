@@ -48,7 +48,7 @@ export default class QueryNormalizer implements FxOrmQueries.Class_QueryNormaliz
     orderBy: FxOrmQueries.Class_QueryNormalizer['orderBy']
     limit: FxOrmQueries.Class_QueryNormalizer['limit'] = -1
 
-    join: FxOrmQueries.Class_QueryNormalizer['join'] = []
+    joins: FxOrmQueries.Class_QueryNormalizer['joins'] = []
 
     get isSelectAll () { return this.select === SYM_SELECT_ALL }
     get isEmptyWhere () { return !this.where || isEmptyPlainObject(this.where) }
@@ -115,6 +115,10 @@ export default class QueryNormalizer implements FxOrmQueries.Class_QueryNormaliz
             this.limit = normalizeLimit(json.parsed.table_exp.limit.limit)
             this.offset = normalizeLimit(json.parsed.table_exp.limit.offset)
           }
+        }
+
+        make_joins: {
+          if (json.joins) this.joins = json.joins
         }
 
         return new Proxy(this, {

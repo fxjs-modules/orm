@@ -2,7 +2,7 @@ import {
   OperatorFuncWrapper
 } from './Operator'
 
-export const QueryLanguage: FxOrmQueries.Class_QueryBuilder['QueryLanguage'] = {
+export const Ql: FxOrmQueries.Class_QueryBuilder['Ql'] = {
   Operators: {
     and: Symbol('OPERATOR#and'),
     or: Symbol('OPERATOR#or'),
@@ -40,7 +40,7 @@ export const QueryLanguage: FxOrmQueries.Class_QueryBuilder['QueryLanguage'] = {
   }
 }
 
-export const QueryLanguageFuncs: FxOrmQueries.Class_QueryBuilder['QueryLanguageFuncs'] = {
+export const Qlfn: FxOrmQueries.Class_QueryBuilder['Qlfn'] = {
   Operators: {
     and: OperatorFuncWrapper('and'),
     or: OperatorFuncWrapper('or'),
@@ -71,5 +71,7 @@ export const QueryLanguageFuncs: FxOrmQueries.Class_QueryBuilder['QueryLanguageF
     quoteSingle: OperatorFuncWrapper('quoteSingle'),
     quoteDouble: OperatorFuncWrapper('quoteDouble'),
     quoteBack: OperatorFuncWrapper('quoteBack'),
+
+    refTableCol: OperatorFuncWrapper('refTableCol'),
   }
 }

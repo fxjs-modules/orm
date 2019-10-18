@@ -560,7 +560,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
         super({...restOpts, keys: false})
 
         this.type = opts.type
-        this.associationInfo = { collection: mergeCollection, andMatchKeys: matchKeys }
+        this.associationInfo = { collection: mergeCollection, matchKeys: matchKeys }
 
         this.sourceModel = source
         this.targetModel = target
@@ -579,7 +579,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
                     ;(() => {
                         const tProperty = this.targetModel.properties[matchKeys.target]
                         if (!tProperty)
-                            throw new Error(`[MergetModel::constructor/o2o] no target property "${matchKeys.target}" in target model, check your definition about 'andMatchKeys'`)
+                            throw new Error(`[MergetModel::constructor/o2o] no target property "${matchKeys.target}" in target model, check your definition about 'matchKeys'`)
 
                         this.addProperty(
                             matchKeys.source,
@@ -615,7 +615,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
 
                         const sProperty = this.sourceModel.properties[matchKeys.source]
                         if (!sProperty)
-                            throw new Error(`[MergetModel::constructor/o2m] no src property "${matchKeys.source}" in source model, check your definition about 'andMatchKeys'`)
+                            throw new Error(`[MergetModel::constructor/o2m] no src property "${matchKeys.source}" in source model, check your definition about 'matchKeys'`)
 
                         this.addProperty(
                             matchKeys.target,
@@ -704,7 +704,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     }: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['saveForSource']>) {
         let inputs = <FxOrmInstance.Class_Instance[]>[]
         let targetInstances = []
-        const matchCond = this.associationInfo.andMatchKeys
+        const matchCond = this.associationInfo.matchKeys
 
         switch (this.type) {
             case 'o2o':
@@ -784,7 +784,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
         sourceInstance = null
     }: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['saveForSource']>) {
         const whereCond = <any>{};
-        const matchCond = this.associationInfo.andMatchKeys
+        const matchCond = this.associationInfo.matchKeys
 
         switch (this.type) {
             case 'o2o':
@@ -819,7 +819,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
         sourceInstance = null
     }: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['saveForSource']>) {
         const whereCond = <any>{};
-        const matchCond = this.associationInfo.andMatchKeys
+        const matchCond = this.associationInfo.matchKeys
 
         switch (this.type) {
             case 'o2o':

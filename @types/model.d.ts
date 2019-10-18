@@ -218,7 +218,7 @@ declare namespace FxOrmModel {
                 as: string
                 collection: string
                 type: 'm2m' | 'o2m'
-                matchKeys?: Class_MergeModel['associationInfo']['andMatchKeys']
+                matchKeys?: Class_MergeModel['associationInfo']['matchKeys']
             }
         ): Class_MergeModel
 
@@ -227,7 +227,7 @@ declare namespace FxOrmModel {
             opts?: {
                 as?: string
                 collection: string
-                matchKeys?: Class_MergeModel['associationInfo']['andMatchKeys']
+                matchKeys?: Class_MergeModel['associationInfo']['matchKeys']
             }
         ): Class_MergeModel
 
@@ -299,7 +299,7 @@ declare namespace FxOrmModel {
          */
         associationInfo: {
             collection: string
-            andMatchKeys: {
+            matchKeys: {
                 source: string,
                 target: string,
                 comparator: string
@@ -315,7 +315,7 @@ declare namespace FxOrmModel {
             target: Class_MergeModel['targetModel']
             targetJoinKey?: Class_MergeModel['targetJoinKey']
 
-            matchKeys: Class_MergeModel['associationInfo']['andMatchKeys']
+            matchKeys: Class_MergeModel['associationInfo']['matchKeys']
         })
 
         isSourceModel (model: Class_Model): boolean

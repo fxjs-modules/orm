@@ -2,8 +2,8 @@ const OPERATOR_FUN_SYMBOL = Symbol('OPERATOR#FUNC')
 
 export function OperatorFuncWrapper<T> (
   operator_name: T extends (
-    keyof FxOrmQueries.Class_QueryBuilder['QueryLanguageFuncs']['Operators']
-    | keyof FxOrmQueries.Class_QueryBuilder['QueryLanguageFuncs']['Others']
+    keyof FxOrmQueries.Class_QueryBuilder['Qlfn']['Operators']
+    | keyof FxOrmQueries.Class_QueryBuilder['Qlfn']['Others']
   ) ? T : string
 ) {
   const wrapper = (function(value: any) {

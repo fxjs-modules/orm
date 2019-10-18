@@ -4,7 +4,7 @@
 declare namespace FxOrmNS {
     type IdType = string | number
     type Arraible<T> = T | T[]
-    
+
     interface VoidCallback<T_RESULT = any, T_THIS = any> {
         (this: T_THIS, err?: FxOrmError.ExtendedError | null): T_RESULT
     }
@@ -49,12 +49,12 @@ declare namespace FxOrmNS {
 }
 
 declare namespace FxOrmTypeHelpers {
-    type Parameters<T> = T extends (...args: infer T) => any ? T : never; 
-    type FirstParameter<T> = T extends (arg: infer T, ...args: any[]) => any ? T : never; 
-    type SecondParameter<T> = T extends (arg1: any, arg: infer T, ...args: any[]) => any ? T : never; 
-    type _3rdParameter<T> = T extends (arg1: any, arg2: any, arg: infer T, ...args: any[]) => any ? T : never; 
+    type Parameters<T> = T extends (...args: infer T) => any ? T : never;
+    type FirstParameter<T> = T extends (arg: infer T, ...args: any[]) => any ? T : never;
+    type SecondParameter<T> = T extends (arg1: any, arg: infer T, ...args: any[]) => any ? T : never;
+    type _3rdParameter<T> = T extends (arg1: any, arg2: any, arg: infer T, ...args: any[]) => any ? T : never;
 
-    type ReturnType<T> = T extends (...args: any[]) => infer T ? T : never; 
+    type ReturnType<T> = T extends (...args: any[]) => infer T ? T : never;
 
     type InstanceOf<T> = T extends new (...args: any[]) => infer T ? T : never;
 
@@ -77,4 +77,5 @@ declare namespace FxOrmTypeHelpers {
     }
 
     type ItOrListOfIt<T> = T | T[]
+    type ELEOFARRAY<T> = T extends any[] ? T[any] : T
 }

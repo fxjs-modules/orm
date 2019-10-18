@@ -27,8 +27,8 @@ declare namespace FxOrmNS {
     /* next generation :start */
     class Class_ORM<ConnType = any> {
         static Op: FxOrmQueries.Class_QueryBuilder['Op']
-        static QueryLanguage: FxOrmQueries.Class_QueryBuilder['QueryLanguage']
-        static QueryLanguageFuncs: FxOrmQueries.Class_QueryBuilder['QueryLanguageFuncs']
+        static Ql: FxOrmQueries.Class_QueryBuilder['Ql']
+        static Qlfn: FxOrmQueries.Class_QueryBuilder['Qlfn']
 
         /**
          * @description create one orm, but never do any real connection

@@ -57,7 +57,7 @@ declare namespace FxHQLParser {
          */
         parsed: ActionNode__CreateView | StatementNode__Select
         joins: {
-          side: TableRefNode['side']
+          side?: TableRefNode['side']
           specific_outer: TableRefNode['specific_outer']
           inner: TableRefNode['inner']
           columns: ColumnRefNode[]
