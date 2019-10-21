@@ -118,10 +118,13 @@ export function gnrWalkWhere<T extends FxHQLParser.WhereNode['condition']> ({
   onNode = noOp,
 }: {
   onNode?: (nodeInfo: {
+    /**
+     * @shouldit be symbol?
+     */
     scene: 'inputIs:opfn:bracketRound'
     | 'inputAs:conjunctionAsAnd'
     | 'walkOn:opfn:bracketRound'
-    | 'walkOn:opfn:tableColRef'
+    | 'walkOn:opfn:refTableCol'
     | 'walkOn:opfn:colref'
     | 'walkOn:opfn:like'
     | 'walkOn:opfn:between'
@@ -148,8 +151,8 @@ export function gnrWalkWhere<T extends FxHQLParser.WhereNode['condition']> ({
     const staticOnNodeParams = <FxOrmTypeHelpers.FirstParameter<typeof onNode>>{ input, walk_fn, walk_fn_options: opts, payload: undefined }
     if (!input) return null
     else if (isOperatorFunction(input)) {
-      switch (input.operator_name) {
-        case 'bracketRound':
+      switch (input.$wrapper) {
+        case QueryGrammers.Qlfn.Others.bracketRound:
           const state = onNode({ scene: 'inputIs:opfn:bracketRound', ...staticOnNodeParams })
           if (state && state.isReturn)
             return state.result
@@ -202,9 +205,6 @@ export function gnrWalkWhere<T extends FxHQLParser.WhereNode['condition']> ({
 
           break
         }
-        // case QueryGrammers.Ql.Others.refTableCol: {
-        //   break
-        // }
       }
     })
 
@@ -220,35 +220,35 @@ export function gnrWalkWhere<T extends FxHQLParser.WhereNode['condition']> ({
       // for some special operator: like, between
       let isNot = false
 
-      switch (payv.op_name) {
-        case 'bracketRound': {
-          parsedNode = onNode({
-            scene: 'walkOn:opfn:bracketRound',
-            ...staticOnNodeParams,
-            payload: { opfn_value: payv }
-          }).result
+      switch (payv.func_ref) {
+        // case QueryGrammers.Qlfn.Others.bracketRound: {
+        //   parsedNode = onNode({
+        //     scene: 'walkOn:opfn:bracketRound',
+        //     ...staticOnNodeParams,
+        //     payload: { opfn_value: payv }
+        //   }).result
 
-          break
-        }
-        case 'tableColRef': {
-          parsedNode = onNode({
-            scene: 'walkOn:opfn:tableColRef',
-            ...staticOnNodeParams,
-            payload: { opfn_value: payv }
-          }).result
-          break
-        }
-        case 'colref': {
-          parsedNode = onNode({
-            scene: 'walkOn:opfn:colref',
-            ...staticOnNodeParams,
-            payload: { opfn_value: payv }
-          }).result
-          break
-        }
+        //   break
+        // }
+        // case QueryGrammers.Qlfn.Others.refTableCol: {
+        //   parsedNode = onNode({
+        //     scene: 'walkOn:opfn:refTableCol',
+        //     ...staticOnNodeParams,
+        //     payload: { opfn_value: payv }
+        //   }).result
+        //   break
+        // }
+        // case QueryGrammers.Qlfn.Operators.colref: {
+        //   parsedNode = onNode({
+        //     scene: 'walkOn:opfn:colref',
+        //     ...staticOnNodeParams,
+        //     payload: { opfn_value: payv }
+        //   }).result
+        //   break
+        // }
         /* comparison verb :start */
-        case 'notLike': isNot = true
-        case 'like': {
+        case QueryGrammers.Qlfn.Operators.notLike: isNot = true
+        case QueryGrammers.Qlfn.Operators.like: {
           parsedNode = onNode({
             scene: 'walkOn:opfn:like',
             ...staticOnNodeParams,
@@ -256,8 +256,8 @@ export function gnrWalkWhere<T extends FxHQLParser.WhereNode['condition']> ({
           }).result
           break
         }
-        case 'notBetween': isNot = true
-        case 'between': {
+        case QueryGrammers.Qlfn.Operators.notBetween: isNot = true
+        case QueryGrammers.Qlfn.Operators.between: {
           parsedNode = onNode({
             scene: 'walkOn:opfn:between',
             ...staticOnNodeParams,
@@ -267,12 +267,12 @@ export function gnrWalkWhere<T extends FxHQLParser.WhereNode['condition']> ({
         }
         /* comparison verb :end */
         /* comparison operator :start */
-        case 'ne':
-        case 'eq':
-        case 'gt':
-        case 'gte':
-        case 'lt':
-        case 'lte':
+        case QueryGrammers.Qlfn.Operators.ne:
+        case QueryGrammers.Qlfn.Operators.eq:
+        case QueryGrammers.Qlfn.Operators.gt:
+        case QueryGrammers.Qlfn.Operators.gte:
+        case QueryGrammers.Qlfn.Operators.lt:
+        case QueryGrammers.Qlfn.Operators.lte:
         {
           parsedNode = onNode({
             scene: 'walkOn:opfn:comparator',
@@ -317,7 +317,7 @@ export const dfltWalkWhere = gnrWalkWhere({
             exprs: [walk_fn(payload.opfn_value)]
           }
         }
-      case 'walkOn:opfn:tableColRef':
+      case 'walkOn:opfn:refTableCol':
         return {
           isReturn: false,
           result: {

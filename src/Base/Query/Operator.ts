@@ -19,8 +19,13 @@ export function OperatorFuncWrapper<T> (
         }
       }
 
+      /**
+       * @shouldit use proxy to get better performance?
+       * @ifreally use proxy, only set, no get?
+       */
       return {
-        op_name: fun.operator_name,
+        get op_name () { return fun.operator_name },
+        get func_ref () { return <any>fun.$wrapper },
         value: value,
         op_left,
         op_right,
@@ -28,6 +33,7 @@ export function OperatorFuncWrapper<T> (
     })
 
     fun.operator_name = operator_name
+    fun.$wrapper = wrapper
     Object.defineProperty(fun, 'op_symbol', { value: OPERATOR_FUN_SYMBOL, enumerable: false, configurable: false, writable: false })
 
     return fun

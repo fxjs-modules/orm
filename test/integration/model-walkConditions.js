@@ -487,7 +487,7 @@ odescribe("Model.walkWhere()", function () {
         });
     });
 
-    describe("[on] join two collections", function () {
+    odescribe("[on] join two collections", function () {
         before(setup);
 
         describe("outer join", function () {

@@ -22,11 +22,13 @@ declare namespace FxOrmQueries {
 declare namespace FxOrmQueries {
     interface OperatorFunction<T_OPNAME = string> {
       (value?: any): {
+        readonly op_name: T_OPNAME
+        readonly func_ref: OperatorFunction['$wrapper']
         value?: typeof value
-        op_name: T_OPNAME
         op_left?: any
         op_right?: any
       }
+      $wrapper: (value: any) => OperatorFunction<T_OPNAME>
       operator_name: T_OPNAME
       op_symbol: symbol
     }
