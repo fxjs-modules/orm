@@ -188,12 +188,14 @@ function parserDefinition(
         case "in": {
           const value = this.toSql(parsed.value);
           let sql = "(" + value + " ";
-          if (parsed.not) sql += "not";
-          sql += "in ";
+          if (parsed.not) sql += "not in ";
+          else sql += "in ";
+
           if (parsed.subquery) sql += "(" + this.toSql(parsed.subquery) + ")";
           else if (parsed.expressions) // TODO: check it
             sql +=
               "(" + parsed.expressions.map(x => this.toSql(x)).join(", ") + ")";
+
           return sql + ")";
         }
         case "between": {

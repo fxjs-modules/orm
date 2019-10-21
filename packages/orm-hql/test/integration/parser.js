@@ -626,6 +626,81 @@ const tests = [
     }
   },
 	{
+    only: true,
+    sql: `select a from x where id in (11, 12, 14)`,
+		toSql: "(select `a` from (`x`) where ((`id` in (11, 12, 14))))"
+  },
+	{
+    only: true,
+    sql: `select a from x where id not in (11, 14, 17)`,
+		toSql: "(select `a` from (`x`) where ((`id` not in (11, 14, 17))))"
+  },
+	{
+    only: true,
+    sql: `select a from x where id not in (11, 999, 10000)`,
+		toSql: "(select `a` from (`x`) where ((`id` not in (11, 999, 10000))))",
+    expected: {
+			parsed: {
+        "type": "select",
+        "top": undefined,
+        "all_distinct": undefined,
+        "selection": {
+          "type": "selection_columns",
+          "columns": [
+            {
+              "type": "column_expr",
+              "expression": {
+                "type": "identifier",
+                "value": "a"
+              }
+            }
+          ]
+        },
+        "table_exp": {
+          "type": "from_table",
+          "from": {
+            "type": "from",
+            "table_refs": [
+              {
+                "type": "table",
+                "table": "x"
+              }
+            ]
+          },
+          "where": {
+            "type": "where",
+            "condition": {
+              "type": "in",
+              "value": {
+                "type": "identifier",
+                "value": "id"
+              },
+              "not": true,
+              "expressions": [
+                {
+                  "type": "decimal",
+                  "value": 11
+                },
+                {
+                  "type": "decimal",
+                  "value": 999
+                },
+                {
+                  "type": "decimal",
+                  "value": 10000
+                }
+              ]
+            }
+          },
+          "groupby": undefined,
+          "having": undefined,
+          "order": undefined,
+          "limit": undefined
+        }
+      }
+    }
+  },
+	{
 		sql: `select not a or b from x`,
 		toSql: '(select ((not `a`) or `b`) from (`x`))'
 	},

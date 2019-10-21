@@ -311,7 +311,7 @@ in_predicate ->
       type: 'in',
       value: d[0],
       not: !!d[1] && !!d[1].length,
-      expressions: (d[6].expressions || [])
+      expressions: (d[6].exprs || [])
     }) %}
 
 between_predicate ->
@@ -397,7 +397,6 @@ expr_comma_list ->
     expr {% d => ({type:'expr_comma_list', exprs: [d[0]]}) %}
   | expr_comma_list _ "," _ expr {% d => ({type:'expr_comma_list', exprs: (d[0].exprs||[]).concat(d[4])}) %}
 
-
 if_statement ->
     IF _ "(" _ expr _ "," _ expr _ "," _ expr _ ")" {%
       d => ({
@@ -407,8 +406,6 @@ if_statement ->
         'else': d[12]
       })
     %}
-
-
 
 case_statement ->
     CASE (__ | mid_expr) when_statement_list (__ ELSE __ expr __ | __) END {%
