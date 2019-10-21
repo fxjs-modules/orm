@@ -317,27 +317,22 @@ const tests = [
 		}
   },
   {
-    only: true,
     sql: 'select * from foo group by foo.x limit 1',
     toSql: '(select * from (`foo`) group by (`foo`.`x`) limit 1)',
   },
   {
-    only: true,
     sql: 'select * from foo group by foo.x limit -1',
     toSql: '(select * from (`foo`) group by (`foo`.`x`) limit -1)',
   },
   {
-    only: true,
     sql: 'select * from foo group by foo.x order by foo.x desc limit -1',
     toSql: '(select * from (`foo`) group by (`foo`.`x`) order by `foo`.`x` desc limit -1)',
   },
   {
-    only: true,
     sql: 'select * from foo group by foo.x limit 1, 4',
     toSql: '(select * from (`foo`) group by (`foo`.`x`) limit 4 offset 1)',
   },
   {
-    only: true,
     sql: 'select * from foo group by foo.x limit 1 offset 6',
     toSql: '(select * from (`foo`) group by (`foo`.`x`) limit 1 offset 6)',
   },
@@ -501,6 +496,134 @@ const tests = [
 	{
     sql: `select a from x where name = 'Jack' and id > 19`,
 		toSql: "(select `a` from (`x`) where (((`name` = \"Jack\") and (`id` > 19))))"
+  },
+	{
+    sql: `select a from x where name like '%Jack'`,
+		toSql: "(select `a` from (`x`) where ((`name` like \"%Jack\")))"
+  },
+	{
+    sql: `select a from x where name like '%Jack'`,
+		toSql: "(select `a` from (`x`) where ((`name` like \"%Jack\")))"
+  },
+	{
+    sql: `select a from x where name like 'Jack1%'`,
+		toSql: "(select `a` from (`x`) where ((`name` like \"Jack1%\")))",
+    expected: {
+			parsed: {
+        "type": "select",
+        "top": undefined,
+        "all_distinct": undefined,
+        "selection": {
+          "type": "selection_columns",
+          "columns": [
+            {
+              "type": "column_expr",
+              "expression": {
+                "type": "identifier",
+                "value": "a"
+              }
+            }
+          ]
+        },
+        "table_exp": {
+          "type": "from_table",
+          "from": {
+            "type": "from",
+            "table_refs": [
+              {
+                "type": "table",
+                "table": "x"
+              }
+            ]
+          },
+          "where": {
+            "type": "where",
+            "condition": {
+              "type": "like",
+              "not": false,
+              "value": {
+                "type": "identifier",
+                "value": "name"
+              },
+              "comparison": {
+                "type": "string",
+                "string": "Jack1%"
+              }
+            }
+          },
+          "groupby": undefined,
+          "having": undefined,
+          "order": undefined,
+          "limit": undefined
+        }
+      }
+    }
+  },
+	{
+    sql: `select a from x where id between 19 and 28`,
+		toSql: "(select `a` from (`x`) where ((`id` between 19 and 28)))"
+  },
+	{
+    sql: `select a from x where id not between 19 and 28`,
+		toSql: "(select `a` from (`x`) where ((`id` not between 19 and 28)))"
+  },
+	{
+    sql: `select a from x where id between 22 and 28`,
+		toSql: "(select `a` from (`x`) where ((`id` between 22 and 28)))",
+    expected: {
+			parsed: {
+        "type": "select",
+        "top": undefined,
+        "all_distinct": undefined,
+        "selection": {
+          "type": "selection_columns",
+          "columns": [
+            {
+              "type": "column_expr",
+              "expression": {
+                "type": "identifier",
+                "value": "a"
+              }
+            }
+          ]
+        },
+        "table_exp": {
+          "type": "from_table",
+          "from": {
+            "type": "from",
+            "table_refs": [
+              {
+                "type": "table",
+                "table": "x"
+              }
+            ]
+          },
+          "where": {
+            "type": "where",
+            "condition": {
+              "type": "between",
+              "value": {
+                "type": "identifier",
+                "value": "id"
+              },
+              "not": false,
+              "lower": {
+                "type": "decimal",
+                "value": 22
+              },
+              "upper": {
+                "type": "decimal",
+                "value": 28
+              }
+            }
+          },
+          "groupby": undefined,
+          "having": undefined,
+          "order": undefined,
+          "limit": undefined
+        }
+      }
+    }
   },
 	{
 		sql: `select not a or b from x`,

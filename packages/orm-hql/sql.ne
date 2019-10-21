@@ -271,7 +271,7 @@ mid_expr ->
   | __ expr __ {% d => d[1] %}
 
 boolean_primary ->
-    pre_boolean_primary IS (__ NOT | null) __ NULLX {% d => ({type: 'is_null', not: !!d[2], value:d[0]}) %}
+    pre_boolean_primary IS (__ NOT | null) __ NULLX {% d => ({type: 'is_null', not: !!d[2] && !!d[2].length, value:d[0]}) %}
   | boolean_primary _ comparison_type _ predicate {% d => (opExpr(d[2]))([d[0], null, d[4]]) %}
   | boolean_primary _ comparison_type _ (ANY | ALL) subquery
   | predicate {% id %}
@@ -304,13 +304,13 @@ in_predicate ->
     pre_bit_expr (NOT __ | null) IN _ subquery {% d => ({
       type:'in',
       value: d[0],
-      not: d[1],
+      not: !!d[1] && !!d[1].length,
       subquery: d[4]
     }) %}
   | pre_bit_expr (NOT __ | null) IN _ "(" _ expr_comma_list _ ")" {% d => ({
       type: 'in',
       value: d[0],
-      not: d[1],
+      not: !!d[1] && !!d[1].length,
       expressions: (d[6].expressions || [])
     }) %}
 
@@ -319,7 +319,7 @@ between_predicate ->
       d => ({
         type: 'between',
         value: d[0],
-        not: d[1],
+        not: !!d[1] && !!d[1].length,
         lower: d[3],
         upper: d[5]
       })
@@ -335,7 +335,7 @@ like_predicate ->
     pre_bit_expr (NOT __ | null) LIKE post_bit_expr {%
       d => ({
         type: 'like',
-        not: d[1],
+        not: !!d[1] && !!d[1].length,
         value: d[0],
         comparison: d[3]
       })
