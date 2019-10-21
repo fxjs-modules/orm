@@ -33,6 +33,27 @@ function mapVType (value: any): FxHQLParser.ValueTypeRawNode['type'] | 'identifi
   }
 }
 
+function getComparisionNodeByValueNodeType (
+  vtype: FxOrmTypeHelpers.ReturnType<typeof mapVType>,
+  value: any
+) {
+  switch (vtype) {
+    case 'identifier': return { type: 'identifier' as 'identifier', value: value }
+    case 'decimal': return { type: 'decimal' as 'decimal', value: value }
+    case 'string': return { type: 'string' as 'string', string: value }
+    case 'column': return { type: 'column' as 'column', table: value.table, name: value.column }
+  }
+}
+
+function normalizeWhereInput (input: any) {
+  if (Array.isArray(input))
+    return { lower: input[0], higher: input[1] }
+  else if (typeof input === 'object')
+    return { lower: input.lower, higher: input.higher }
+
+  throw new Error(`[normalizeWhereInput] input must be tuple[lower, higher] or object{lower, higher}, check your input`)
+}
+
 function parseOperatorFunctionAsValue (opFnValue: FxOrmQueries.OperatorFunction): any {
   switch (opFnValue.operator_name) {
     case 'refTableCol': {
@@ -48,8 +69,14 @@ function parseOperatorFunctionAsValue (opFnValue: FxOrmQueries.OperatorFunction)
     }
     case 'colref':
       return opFnValue().value
+    case 'like':
+      return opFnValue().value
+    case 'between': {
+      const payload = opFnValue().value
+      return normalizeWhereInput(payload)
+    }
     default:
-      throw new Error('[parseOperatorFunctionAsValue] unsupported operator function as value! check your input')
+      throw new Error('[parseOperatorFunctionAsValue] unsupported operator function as value! check your input!')
   }
 }
 
@@ -57,6 +84,33 @@ function mapObjectToTupleList (input: object | any[]) {
   if (!input || typeof input !== 'object') return null
 
   return Array.isArray(input) ? input : Object.entries(input).map(([k, v]) => ({[k]: v}))
+}
+
+function isRawEqValue (input: any): input is (string | number | null | boolean) {
+  const _t = typeof input
+  return (_t === 'number')
+  || (_t === 'string')
+  || (_t === 'boolean')
+  || input === null
+}
+function filterRawEqValue (input: any): string | number | null {
+  const ty = typeof input
+  switch (ty) {
+    case 'string':
+      if (!input) return ''
+      return input
+    case 'number':
+      if (isNaN(input)) return 0
+      if (!Number.isFinite(input)) return 0
+      return input
+    case 'undefined':
+      return null
+    case 'object':
+      if (!input)
+      return null
+  }
+
+  return null
 }
 
 const noOp = function () { return null as any };
@@ -69,6 +123,8 @@ export function gnrWalkWhere<T extends FxHQLParser.WhereNode['condition']> ({
     | 'walkOn:opfn:bracketRound'
     | 'walkOn:opfn:tableColRef'
     | 'walkOn:opfn:colref'
+    | 'walkOn:opfn:like'
+    | 'walkOn:opfn:between'
     | 'walkOn:opfn:comparator'
     | 'walkOn:opsymbol:bracketRound'
     | 'walkOn:opsymbol:conjunction'
@@ -153,10 +209,16 @@ export function gnrWalkWhere<T extends FxHQLParser.WhereNode['condition']> ({
     })
 
     inputKeys.forEach((fieldName: string) => {
-      const v = (<any>input)[fieldName]
+      let v = (<any>input)[fieldName]
+      if (isRawEqValue(v))
+        v = QueryGrammers.Qlfn.Operators.eq(filterRawEqValue(v))
+
       if (!isOperatorFunction(v)) return
 
       const payv = v()
+
+      // for some special operator: like, between
+      let isNot = false
 
       switch (payv.op_name) {
         case 'bracketRound': {
@@ -184,7 +246,27 @@ export function gnrWalkWhere<T extends FxHQLParser.WhereNode['condition']> ({
           }).result
           break
         }
-        /* comparision operator :start */
+        /* comparison verb :start */
+        case 'notLike': isNot = true
+        case 'like': {
+          parsedNode = onNode({
+            scene: 'walkOn:opfn:like',
+            ...staticOnNodeParams,
+            payload: { opfn_value: payv, not: isNot, fieldName }
+          }).result
+          break
+        }
+        case 'notBetween': isNot = true
+        case 'between': {
+          parsedNode = onNode({
+            scene: 'walkOn:opfn:between',
+            ...staticOnNodeParams,
+            payload: { opfn_value: payv, not: isNot, fieldName }
+          }).result
+          break
+        }
+        /* comparison verb :end */
+        /* comparison operator :start */
         case 'ne':
         case 'eq':
         case 'gt':
@@ -195,10 +277,7 @@ export function gnrWalkWhere<T extends FxHQLParser.WhereNode['condition']> ({
           parsedNode = onNode({
             scene: 'walkOn:opfn:comparator',
             ...staticOnNodeParams,
-            payload: {
-              opfn_value: payv,
-              fieldName,
-            }
+            payload: { opfn_value: payv, fieldName, }
           }).result
           break
         }
@@ -255,35 +334,64 @@ export const dfltWalkWhere = gnrWalkWhere({
             value: payload.opfn_value.value
           }
         }
-      case 'walkOn:opfn:comparator': {
-        const vtype = mapVType(payload.opfn_value.value)
+      case 'walkOn:opfn:comparator':
+      case 'walkOn:opfn:like':
+      case 'walkOn:opfn:between': {
         let value = payload.opfn_value.value
 
         const { source_collection } = walk_fn_options || {};
+        const varNode = !!source_collection ? {
+          type: 'column',
+          table: source_collection,
+          name: payload.fieldName,
+        } : {
+          type: 'identifier',
+          value: payload.fieldName
+        }
 
-        if (isOperatorFunction(value)) value = parseOperatorFunctionAsValue(value)
+        switch (scene) {
+          case 'walkOn:opfn:comparator': {
+            const vtype = mapVType(payload.opfn_value.value)
+            if (isOperatorFunction(value)) value = parseOperatorFunctionAsValue(value)
 
-        return {
-          isReturn: false,
-          result: {
-            type: 'operator',
-            operator: mapComparisonOperatorToSymbol(payload.opfn_value.op_name),
-            op_left: !!source_collection ? {
-              type: 'column',
-              table: source_collection,
-              name: payload.fieldName,
-            } : {
-              type: 'identifier',
-              value: payload.fieldName
-            },
-            op_right: (() => {
-              switch (vtype) {
-                case 'identifier': return { type: 'identifier' as 'identifier', value: value }
-                case 'decimal': return { type: 'decimal' as 'decimal', value: value }
-                case 'string': return { type: 'string' as 'string', string: value }
-                case 'column': return { type: 'column' as 'column', table: value.table, name: value.column }
+            return {
+              isReturn: false,
+              result: {
+                type: 'operator',
+                operator: mapComparisonOperatorToSymbol(payload.opfn_value.op_name),
+                op_left: varNode,
+                op_right: getComparisionNodeByValueNodeType(vtype, value)
               }
-            })()
+            }
+          }
+          case 'walkOn:opfn:like': {
+            const vtype = mapVType(payload.opfn_value.value)
+            if (isOperatorFunction(value)) value = parseOperatorFunctionAsValue(value)
+
+            return {
+              isReturn: false,
+              result: {
+                type: "like",
+                not: payload.not,
+                value: varNode,
+                comparison: getComparisionNodeByValueNodeType(vtype, value)
+              }
+            }
+          }
+          case 'walkOn:opfn:between': {
+            if (isOperatorFunction(value)) value = parseOperatorFunctionAsValue(value)
+            else value = normalizeWhereInput(value)
+
+            return {
+              isReturn: false,
+              result: {
+                type: "between",
+                value: varNode,
+                not: payload.not,
+                lower: getComparisionNodeByValueNodeType(mapVType(value.lower), value.lower),
+                upper: getComparisionNodeByValueNodeType(mapVType(value.higher), value.higher),
+              }
+            }
           }
         }
       }

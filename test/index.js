@@ -28,7 +28,7 @@ function t() {
     run('./integration/model-save.js');
     run('./integration/model-sync.js');
 
-    run('./integration/model-walkWhere.js');
+    run('./integration/model-walkConditions.js');
     run('./integration/model-queryByHQL.js');
 
     // // run('./integration/predefined-validators.js');

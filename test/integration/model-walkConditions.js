@@ -57,68 +57,90 @@ odescribe("Model.walkWhere()", function () {
         return db.close();
     });
 
-    describe("[where] query ONE collection ONLY", function () {
+    odescribe("[where] query ONE collection ONLY", function () {
         before(setup);
 
         odescribe("only comparator", function () {
-          ;[
+          // TODO: add more edge case, especially using malicious SQL injection
+          const testors = [
             [
-              'eq', () => ([ ({ a: ORM.Opf.eq(1) }), `select * from ${Person.collection} where a = 1` ])
+              'eq(default)', ({source_collection: sc}) => ([ ({ a: 1 }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a = 1` ])
             ],
             [
-              'ne', () => ([ ({ a: ORM.Opf.ne(1) }), `select * from ${Person.collection} where a <> 1` ])
+              'eq', ({source_collection: sc}) => ([ ({ a: ORM.Opf.eq(1) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a = 1` ])
             ],
             [
-              'gt', () => ([ ({ a: ORM.Opf.gt(1) }), `select * from ${Person.collection} where a > 1` ])
+              'ne', ({source_collection: sc}) => ([ ({ a: ORM.Opf.ne(1) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a <> 1` ])
             ],
             [
-              'gte', () => ([ ({ a: ORM.Opf.gte(1) }), `select * from ${Person.collection} where a >= 1` ])
+              'gt', ({source_collection: sc}) => ([ ({ a: ORM.Opf.gt(1) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a > 1` ])
             ],
             [
-              'lt', () => ([ ({ a: ORM.Opf.lt(1) }), `select * from ${Person.collection} where a < 1` ])
+              'gte', ({source_collection: sc}) => ([ ({ a: ORM.Opf.gte(1) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a >= 1` ])
             ],
             [
-              'lte', () => ([ ({ a: ORM.Opf.lte(1) }), `select * from ${Person.collection} where a <= 1` ]),
+              'lt', ({source_collection: sc}) => ([ ({ a: ORM.Opf.lt(1) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a < 1` ])
             ],
             [
-              'colref x eq', () => ([ ({ a: ORM.Opf.eq(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where a = b` ])
+              'lte', ({source_collection: sc}) => ([ ({ a: ORM.Opf.lte(1) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a <= 1` ]),
             ],
             [
-              'colref x ne', () => ([ ({ a: ORM.Opf.ne(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where a <> b` ])
+              'like', ({source_collection: sc}) => ([ ({ a: ORM.Opf.like('%Jack') }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a like '%Jack'` ]),
             ],
             [
-              'colref x gt', () => ([ ({ a: ORM.Opf.gt(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where a > b` ])
+              'notLike', ({source_collection: sc}) => ([ ({ a: ORM.Opf.notLike('%Jack') }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a not like '%Jack'` ]),
             ],
             [
-              'colref x gte', () => ([ ({ a: ORM.Opf.gte(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where a >= b` ])
+              'between', ({source_collection: sc}) => ([ ({ a: ORM.Opf.between([1, 9]) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a between 1 and 9` ]),
             ],
             [
-              'colref x lt', () => ([ ({ a: ORM.Opf.lt(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where a < b` ])
+              'notBetween', ({source_collection: sc}) => ([ ({ a: ORM.Opf.notBetween({ lower: 1, higher: 9 }) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a not between 1 and 9` ]),
             ],
             [
-              'colref x lte', () => ([ ({ a: ORM.Opf.lte(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where a <= b` ])
+              'colref x eq', ({source_collection: sc}) => ([ ({ a: ORM.Opf.eq(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a = b` ])
             ],
             [
-              'refTableCol x eq', () => ([ ({ a: ORM.Opf.eq( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where a = ${Person.collection}.b` ])
+              'colref x ne', ({source_collection: sc}) => ([ ({ a: ORM.Opf.ne(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a <> b` ])
             ],
             [
-              'refTableCol x ne', () => ([ ({ a: ORM.Opf.ne( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where a <> ${Person.collection}.b` ])
+              'colref x gt', ({source_collection: sc}) => ([ ({ a: ORM.Opf.gt(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a > b` ])
             ],
             [
-              'refTableCol x gt', () => ([ ({ a: ORM.Opf.gt( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where a > ${Person.collection}.b` ])
+              'colref x gte', ({source_collection: sc}) => ([ ({ a: ORM.Opf.gte(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a >= b` ])
             ],
             [
-              'refTableCol x gte', () => ([ ({ a: ORM.Opf.gte( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where a >= ${Person.collection}.b` ])
+              'colref x lt', ({source_collection: sc}) => ([ ({ a: ORM.Opf.lt(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a < b` ])
             ],
             [
-              'refTableCol x lt', () => ([ ({ a: ORM.Opf.lt( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where a < ${Person.collection}.b` ])
+              'colref x lte', ({source_collection: sc}) => ([ ({ a: ORM.Opf.lte(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a <= b` ])
             ],
             [
-              'refTableCol x lte', () => ([ ({ a: ORM.Opf.lte( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where a <= ${Person.collection}.b` ])
+              'refTableCol x eq', ({source_collection: sc}) => ([ ({ a: ORM.Opf.eq( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a = ${Person.collection}.b` ])
             ],
-          ].filter(x => x).forEach(([desc, getter]) => {
+            [
+              'refTableCol x ne', ({source_collection: sc}) => ([ ({ a: ORM.Opf.ne( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a <> ${Person.collection}.b` ])
+            ],
+            [
+              'refTableCol x gt', ({source_collection: sc}) => ([ ({ a: ORM.Opf.gt( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a > ${Person.collection}.b` ])
+            ],
+            [
+              'refTableCol x gte', ({source_collection: sc}) => ([ ({ a: ORM.Opf.gte( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a >= ${Person.collection}.b` ])
+            ],
+            [
+              'refTableCol x lt', ({source_collection: sc}) => ([ ({ a: ORM.Opf.lt( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a < ${Person.collection}.b` ])
+            ],
+            [
+              'refTableCol x lte', ({source_collection: sc}) => ([ ({ a: ORM.Opf.lte( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a <= ${Person.collection}.b` ])
+            ],
+            /**
+             * @isitvalie refTableCol(as var) x like?
+             * @isitvalie refTableCol(as var) x between?
+             */
+          ].filter(x => x)
+
+          testors.forEach(([desc, getter]) => {
             it(`just comparator: ${desc}`, function () {
-              const [whereInput, hql] = getter()
+              const [whereInput, hql] = getter({})
               var walked = Person.walkWhere(whereInput);
 
               var struct = Person.queryByHQL(hql);
@@ -127,12 +149,25 @@ odescribe("Model.walkWhere()", function () {
                 walked,
                 struct.where.condition
               )
-              // console.notice('struct', struct);
             });
+          })
+
+          testors.forEach(([desc, getter]) => {
+            it(`provide source collection: ${desc}`, function () {
+              const [whereInput, hql] = getter({ source_collection: Person.collection })
+              var walked = Person.walkWhere(whereInput, { source_collection: Person.collection });
+
+              var struct = Person.queryByHQL(hql);
+
+              assert.deepEqual(
+                walked,
+                struct.where.condition
+              )
+            })
           })
         });
 
-        odescribe("table column ref", function () {
+        xdescribe("provide souce collection", function () {
           ;[
             [
               'eq', () => ([ ({ id: ORM.Opf.eq(1) }), `select * from ${Person.collection} where ${Person.collection}.id = 1` ])
