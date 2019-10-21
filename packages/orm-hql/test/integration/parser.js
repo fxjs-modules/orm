@@ -626,17 +626,14 @@ const tests = [
     }
   },
 	{
-    only: true,
     sql: `select a from x where id in (11, 12, 14)`,
 		toSql: "(select `a` from (`x`) where ((`id` in (11, 12, 14))))"
   },
 	{
-    only: true,
     sql: `select a from x where id not in (11, 14, 17)`,
 		toSql: "(select `a` from (`x`) where ((`id` not in (11, 14, 17))))"
   },
 	{
-    only: true,
     sql: `select a from x where id not in (11, 999, 10000)`,
 		toSql: "(select `a` from (`x`) where ((`id` not in (11, 999, 10000))))",
     expected: {
