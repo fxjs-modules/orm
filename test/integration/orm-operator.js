@@ -71,74 +71,61 @@ describe("ORM Operators", function () {
                 assert.propertyVal(people[0], Person.id, 1);
             });
 
-            describe("Operator eq, nq, gt(e), lt(e), is, not", function () {
+            describe("Comparison-Operator eq, nq, gt(e), lt(e), is, not", function () {
                 before(setup);
-                
+
                 it('complex', function () {
                     var people = Person.find({
                         where: {
-                            id: {
-                                [ORM.Op.gt]: 1
-                            },
-                            name: {
-                                [ORM.Op.eq]: 'John Doe'
-                            }
+                            id: ORM.Opf.gt(1),
+                            name: ORM.Opf.eq('John Doe'),
                         }
                     });
                     assert.propertyVal(people, 'length', 1);
                     assert.propertyVal(people[0], Person.id, 3);
                 });
-                
-                it('is', function () {
-                    var people = Person.find({
-                        where: {
-                            id: {
-                                [ORM.Op.is]: 1
-                            }
-                        }
-                    });
-                    assert.propertyVal(people, 'length', 1);
-                    assert.propertyVal(people[0], Person.id, 1);
 
+                it('no support Comparison `is`', function () {
+                  assert.throws(() => {
                     var people = Person.find({
                         where: {
-                            id: {
-                                [ORM.Op.is]: null
-                            }
+                            id: ORM.Opf.is(1)
                         }
                     });
-                    assert.propertyVal(people, 'length', 0);
+                  })
+
+                  assert.throws(() => {
+                    var people = Person.find({
+                        where: {
+                            id: ORM.Opf.is(null)
+                        }
+                    });
+                  })
                 });
-                
-                it('not', function () {
-                    var people = Person.find({
-                        where: {
-                            id: {
-                                [ORM.Op.not]: 1
-                            }
-                        }
-                    });
-                    assert.propertyVal(people, 'length', 2);
-                    assert.propertyVal(people[0], Person.id, 2);
 
+                it('no support Comparison `not`', function () {
+                  assert.throws(() => {
                     var people = Person.find({
                         where: {
-                            id: {
-                                [ORM.Op.not]: null
-                            }
+                            id: ORM.Opf.not(1)
                         }
                     });
-                    assert.propertyVal(people, 'length', 3);
-                    assert.propertyVal(people[0], Person.id, 1);
+                  })
+
+                  assert.throws(() => {
+                    var people = Person.find({
+                        where: {
+                            id: ORM.Opf.not(null)
+                        }
+                    });
+                  })
                 });
             });
 
             it("Operator in, notIn", function () {
                 var people = Person.find({
                     where: {
-                        id: {
-                            [ORM.Op.in]: [1]
-                        }
+                        id: ORM.Opf.in(1)
                     }
                 });
                 assert.propertyVal(people, 'length', 1);
@@ -146,9 +133,7 @@ describe("ORM Operators", function () {
 
                 var people = Person.find({
                     where: {
-                        id: {
-                            [ORM.Op.notIn]: [2]
-                        }
+                        id: ORM.Opf.notIn(2)
                     }
                 });
                 assert.propertyVal(people, 'length', 2);
@@ -159,9 +144,7 @@ describe("ORM Operators", function () {
             it("Operator between, notBetween", function () {
                 var people = Person.find({
                     where: {
-                        id: {
-                            [ORM.Op.between]: [1, 2]
-                        }
+                        id: ORM.Opf.between([1, 2])
                     }
                 });
                 assert.propertyVal(people, 'length', 2);
@@ -170,9 +153,7 @@ describe("ORM Operators", function () {
 
                 var people = Person.find({
                     where: {
-                        id: {
-                            [ORM.Op.notBetween]: [1, 4]
-                        }
+                        id: ORM.Opf.notBetween([1, 4])
                     }
                 });
                 assert.propertyVal(people, 'length', 0);
@@ -181,9 +162,7 @@ describe("ORM Operators", function () {
             it("Operator like, notLike", function () {
                 var people = Person.find({
                     where: {
-                        name: {
-                            [ORM.Op.like]: 'John %'
-                        }
+                        name: ORM.Opf.like('John %')
                     }
                 });
                 assert.propertyVal(people, 'length', 2);
@@ -191,9 +170,7 @@ describe("ORM Operators", function () {
 
                 var people = Person.find({
                     where: {
-                        name: {
-                            [ORM.Op.notLike]: 'John %'
-                        }
+                        name: ORM.Opf.notLike('John %')
                     }
                 });
                 assert.propertyVal(people, 'length', 1);
@@ -215,79 +192,31 @@ describe("ORM Operators", function () {
                 assert.equal(count, 2);
             });
 
-            describe("Operator eq, nq, gt(e), lt(e), is, not", function () {
+            describe("Operator eqComparison-, nq, gt(e), lt(e), is, not", function () {
                 before(setup);
-                
+
                 it('complex', function () {
                     var count = Person.count({
                         where: {
-                            id: {
-                                [ORM.Op.gt]: 1
-                            },
-                            name: {
-                                [ORM.Op.eq]: 'John Doe'
-                            }
+                            id: ORM.Opf.gt(1),
+                            name: ORM.Opf.eq('John Doe'),
                         }
                     });
                     assert.equal(count, 1);
-                });
-                
-                it('is', function () {
-                    var count = Person.count({
-                        where: {
-                            id: {
-                                [ORM.Op.is]: 1
-                            }
-                        }
-                    });
-                    assert.equal(count, 1);
-
-                    var count = Person.count({
-                        where: {
-                            id: {
-                                [ORM.Op.is]: null
-                            }
-                        }
-                    });
-                    assert.equal(count, 0);
-                });
-                
-                it('not', function () {
-                    var count = Person.count({
-                        where: {
-                            id: {
-                                [ORM.Op.not]: 1
-                            }
-                        }
-                    });
-                    assert.equal(count, 2);
-
-                    var count = Person.count({
-                        where: {
-                            id: {
-                                [ORM.Op.not]: null
-                            }
-                        }
-                    });
-                    assert.equal(count, 3);
                 });
             });
-            
+
             it("Operator in, notIn", function () {
                 var count = Person.count({
                     where: {
-                        id: {
-                            [ORM.Op.in]: [1]
-                        }
+                        id: ORM.Opf.in([1])
                     }
                 });
                 assert.equal(count, 1);
 
                 var count = Person.count({
                     where: {
-                        id: {
-                            [ORM.Op.notIn]: [2]
-                        }
+                        id: ORM.Opf.notIn([2])
                     }
                 });
                 assert.equal(count, 2);
@@ -296,18 +225,14 @@ describe("ORM Operators", function () {
             it("Operator between, notBetween", function () {
                 var count = Person.count({
                     where: {
-                        id: {
-                            [ORM.Op.between]: [1, 2]
-                        }
+                        id: ORM.Opf.between([1, 2])
                     }
                 });
                 assert.equal(count, 2);
 
                 var count = Person.count({
                     where: {
-                        id: {
-                            [ORM.Op.notBetween]: [1, 4]
-                        }
+                        id: ORM.Opf.notBetween([1, 4])
                     }
                 });
                 assert.equal(count, 0);
@@ -316,18 +241,14 @@ describe("ORM Operators", function () {
             it("Operator like, notLike", function () {
                 var count = Person.count({
                     where: {
-                        name: {
-                            [ORM.Op.like]: 'John %'
-                        }
+                        name: ORM.Opf.like('John %')
                     }
                 });
                 assert.equal(count, 2);
 
                 var count = Person.count({
                     where: {
-                        name: {
-                            [ORM.Op.notLike]: 'John %'
-                        }
+                        name: ORM.Opf.notLike('John %')
                     }
                 });
                 assert.equal(count, 1);

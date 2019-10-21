@@ -1,13 +1,14 @@
 const OPERATOR_FUN_SYMBOL = Symbol('OPERATOR#FUNC')
+const OPERATOR_FUN_RESULT_SYMBOL = Symbol('OPERATOR#FUNC_RESULT')
 
 export function OperatorFuncWrapper<T> (
-  operator_name: T extends (
+  $op_name: T extends (
     keyof FxOrmQueries.Class_QueryBuilder['Qlfn']['Operators']
     | keyof FxOrmQueries.Class_QueryBuilder['Qlfn']['Others']
   ) ? T : string
 ) {
   const wrapper = (function(value: any) {
-    const fun = <FxOrmQueries.OperatorFunction<typeof operator_name>>(function () {
+    const fun = <FxOrmQueries.OperatorFunction<typeof $op_name>>(function () {
       let op_left, op_right
       if (value && typeof value === 'object') {
         if (Array.isArray(value)) {
@@ -24,15 +25,16 @@ export function OperatorFuncWrapper<T> (
        * @ifreally use proxy, only set, no get?
        */
       return {
-        get op_name () { return fun.operator_name },
+        get op_name () { return fun.$op_name },
         get func_ref () { return <any>fun.$wrapper },
+        get symbol () { return OPERATOR_FUN_RESULT_SYMBOL },
         value: value,
         op_left,
         op_right,
       }
     })
 
-    fun.operator_name = operator_name
+    fun.$op_name = $op_name
     fun.$wrapper = wrapper
     Object.defineProperty(fun, 'op_symbol', { value: OPERATOR_FUN_SYMBOL, enumerable: false, configurable: false, writable: false })
 
@@ -44,6 +46,10 @@ export function OperatorFuncWrapper<T> (
 
 export function isOperatorFunction (input: any): input is FxOrmQueries.OperatorFunction {
   return typeof input === 'function' && input['op_symbol'] === OPERATOR_FUN_SYMBOL
+}
+
+export function isOperatorResult (input: any): input is FxOrmQueries.OperatorFunctionResult {
+  return input && typeof input === 'object' && input.symbol === OPERATOR_FUN_RESULT_SYMBOL
 }
 
 export function isConjunctionOperator (op_name: string): op_name is FxOrmQueries.OPERATOR_TYPE_CONJUNCTION {

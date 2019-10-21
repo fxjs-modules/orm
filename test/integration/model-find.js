@@ -80,9 +80,7 @@ describe("Model.find()", function () {
         it("should accept comparison objects", function () {
             var people = Person.find({
                 where: {
-                    age: {
-                        [Person.Op.gt]: 18
-                    }
+                    age: Person.Opf.gt(18)
                 }
             });
 
@@ -158,7 +156,7 @@ describe("Model.find()", function () {
                     var people = Person.find({
                         where: {
                             surname: "Doe",
-                            age: {[Person.Op.lt]: 20}
+                            age: Person.Opf.lt(20)
                         },
                         orderBy: ["age", "desc"]
                     });

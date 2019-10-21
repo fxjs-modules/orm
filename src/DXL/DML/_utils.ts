@@ -1,7 +1,10 @@
 import util = require('util');
 
 import * as QueryGrammers from '../../Base/Query/QueryGrammar';
-import { arraify } from '../../Utils/array';
+import { arraify, preDestruct } from '../../Utils/array';
+import { gnrWalkWhere, parseOperatorFunctionAsValue, mapConjunctionOpSymbolToText, normalizeInInput, normalizeWhereInput } from '../../Base/Query/onWalkConditions';
+import { isOperatorFunction } from '../../Base/Query/Operator';
+import { mapObjectToTupleList } from '../../Utils/object';
 
 export function filterKnexBuilderBeforeQuery (
 	builder: any,
@@ -26,6 +29,102 @@ export function filterKnexBuilderBeforeQuery (
 	return builder
 }
 
+const filterWhereToKnexActionsInternal = gnrWalkWhere<
+  null,
+  {
+    bQList: FxOrmDML.BeforeQueryItem[],
+    restWhere: {[k: string]: any}
+  }
+>({
+  onNode: ({ scene, nodeFrame, walk_fn, walk_fn_context, input }) => {
+    const dfltReturn = { isReturn: false, result: <any>null }
+    const { bQList } = walk_fn_context || {}
+
+    switch (scene) {
+      case 'inputAs:conjunctionAsAnd': {
+        return dfltReturn
+      }
+      case 'walkOn:opsymbol:conjunction': {
+        const [pres, last] = preDestruct(mapObjectToTupleList((<any>input)[nodeFrame.symbol]))
+        const op_name = mapConjunctionOpSymbolToText(nodeFrame.symbol)
+
+        walk_fn(pres, { ...walk_fn_context, parent_conjunction_op: op_name })
+        walk_fn(last, { ...walk_fn_context, parent_conjunction_op: op_name })
+
+        return dfltReturn
+      }
+      case 'walkOn:opfn:in':
+      case 'walkOn:opfn:between':
+      case 'walkOn:opfn:like':
+      case 'walkOn:opfn:comparator': {
+        const cmpr_opfn_result = <FxOrmQueries.OperatorFunctionResult>nodeFrame.cmpr_opfn_result
+        const field_name = nodeFrame.field_name
+
+        if (field_name) {
+          let fValue = cmpr_opfn_result.value
+          if (isOperatorFunction(fValue)) fValue = parseOperatorFunctionAsValue(fValue)
+          else
+            switch (scene) {
+              case 'walkOn:opfn:in': fValue = normalizeInInput(fValue); break
+              case 'walkOn:opfn:between': fValue = normalizeWhereInput(fValue); break
+            }
+
+          // console.log('field_name', field_name);
+          // console.log('fValue', fValue);
+          // console.log(
+          //   'func_ref',
+          //   QueryGrammers.Qlfn.Operators.between === cmpr_opfn_result.func_ref,
+          //   QueryGrammers.Qlfn.Operators.notBetween === cmpr_opfn_result.func_ref
+          // );
+
+          switch (cmpr_opfn_result.func_ref) {
+            case QueryGrammers.Qlfn.Operators.eq:
+              bQList.push((builder) => { builder.where(field_name, '=', fValue) }); break
+            case QueryGrammers.Qlfn.Operators.ne:
+              bQList.push((builder) => { builder.whereNot(field_name, '=', fValue) }); break
+            case QueryGrammers.Qlfn.Operators.gt:
+              bQList.push((builder) => { builder.where(field_name, '>', fValue) }); break
+            case QueryGrammers.Qlfn.Operators.gte:
+              bQList.push((builder) => { builder.where(field_name, '>=', fValue) }); break
+            case QueryGrammers.Qlfn.Operators.lt:
+              bQList.push((builder) => { builder.where(field_name, '<', fValue) }); break
+            case QueryGrammers.Qlfn.Operators.lte:
+              bQList.push((builder) => { builder.where(field_name, '<=', fValue) }); break
+            // case QueryGrammers.Qlfn.Operators.is:
+            //   bQList.push((builder) => { builder.where(field_name, fValue) }); break
+            // case QueryGrammers.Qlfn.Operators.not:
+            //   bQList.push((builder) => { builder.whereNot(field_name, fValue) }); break
+            case QueryGrammers.Qlfn.Operators.in:
+              bQList.push((builder) => { builder.whereIn(field_name, fValue) }); break
+            case QueryGrammers.Qlfn.Operators.notIn:
+              bQList.push((builder) => { builder.whereNotIn(field_name, fValue) }); break
+            case QueryGrammers.Qlfn.Operators.between:
+              bQList.push((builder) => { builder.whereBetween(field_name, [fValue.lower, fValue.higher]) }); break
+            case QueryGrammers.Qlfn.Operators.notBetween:
+              bQList.push((builder) => { builder.whereNotBetween(field_name, [fValue.lower, fValue.higher]) }); break
+            case QueryGrammers.Qlfn.Operators.like:
+              bQList.push((builder) => { builder.where(field_name, 'like', fValue) }); break
+            case QueryGrammers.Qlfn.Operators.notLike:
+              bQList.push((builder) => { builder.whereNot(field_name, 'like', fValue) }); break
+            case QueryGrammers.Qlfn.Operators.startsWith:
+              bQList.push((builder) => { builder.where(field_name, 'like', `${fValue}%`) }); break
+            case QueryGrammers.Qlfn.Operators.endsWith:
+              bQList.push((builder) => { builder.where(field_name, 'like', `%${fValue}`) }); break
+            case QueryGrammers.Qlfn.Operators.substring:
+              bQList.push((builder) => { builder.where(field_name, 'like', `%${fValue}%`) }); break
+            default:
+              throw new Error(`[filterWhereToKnexActions::unsupported_scene]`)
+          }
+        }
+
+        return dfltReturn
+      }
+      default:
+        new Error(`[filterWhereToKnexActions::unsupported_scene]`)
+    }
+  }
+})
+
 export function filterWhereToKnexActions (
     opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>
 ) {
@@ -33,98 +132,14 @@ export function filterWhereToKnexActions (
     const { where = null } = opts || {}
     if (!where) return
 
-    const flattenedWhere: {[k: string]: Exclude<any, symbol>} = {};
-
     const bQList = (opts.beforeQuery ? arraify(opts.beforeQuery) : []).filter(x => typeof x === 'function')
+    const restWhere: {[k: string]: Exclude<any, symbol>} = {};
 
+    filterWhereToKnexActionsInternal(where, {bQList, restWhere});
     opts.beforeQuery = bQList
+    opts.where = restWhere
 
-    // @todo: deal with case fieldName is symbol, which woudnt' read by Object.keys(where)
-    Object.keys(where).forEach((fieldName: string) => {
-        if (!util.isObject(where[fieldName])) {
-            flattenedWhere[fieldName] = where[fieldName];
-            return ;
-        }
-        // @todo: deal with array-type where[fieldName]
-        if (Array.isArray(where[fieldName])) {
-            const values = where[fieldName];
-            bQList.push((builder) => {
-                builder.whereIn(fieldName, values)
-            })
-            return
-        }
-
-        /**
-         * @notice all non-operator symbol-index(string, number) would be ignored
-         */
-        const fieldOpSyms = Object.getOwnPropertySymbols(where[fieldName])
-
-        const v = where[fieldName];
-
-        // const oldBeforeQuery = opts.beforeQuery
-        bQList.push(function (builder, ctx) {
-            // if (typeof oldBeforeQuery === 'function') oldBeforeQuery.apply(null, arguments)
-
-            fieldOpSyms.forEach(symbol => {
-                switch (symbol) {
-                    case QueryGrammers.Ql.Operators.eq:
-                        builder.where(fieldName, '=', v[QueryGrammers.Ql.Operators.eq])
-                        break
-                    case QueryGrammers.Ql.Operators.ne:
-                        // builder.whereNot(fieldName, '<>', v[QueryGrammers.Ql.Operators.ne])
-                        builder.whereNot(fieldName, '=', v[QueryGrammers.Ql.Operators.ne])
-                        break
-                    case QueryGrammers.Ql.Operators.gt:
-                        builder.where(fieldName, '>', v[QueryGrammers.Ql.Operators.gt])
-                        break
-                    case QueryGrammers.Ql.Operators.gte:
-                        builder.where(fieldName, '>=', v[QueryGrammers.Ql.Operators.gte])
-                        break
-                    case QueryGrammers.Ql.Operators.lt:
-                        builder.where(fieldName, '<', v[QueryGrammers.Ql.Operators.lt])
-                        break
-                    case QueryGrammers.Ql.Operators.lte:
-                        builder.where(fieldName, '<=', v[QueryGrammers.Ql.Operators.lte])
-                        break
-                    case QueryGrammers.Ql.Operators.is:
-                        builder.where(fieldName, v[QueryGrammers.Ql.Operators.is])
-                        break
-                    case QueryGrammers.Ql.Operators.not:
-                        builder.whereNot(fieldName, v[QueryGrammers.Ql.Operators.not])
-                        break
-                    case QueryGrammers.Ql.Operators.in:
-                        builder.whereIn(fieldName, v[QueryGrammers.Ql.Operators.in])
-                        break
-                    case QueryGrammers.Ql.Operators.notIn:
-                        builder.whereNotIn(fieldName, v[QueryGrammers.Ql.Operators.notIn])
-                        break
-                    case QueryGrammers.Ql.Operators.between:
-                        builder.whereBetween(fieldName, v[QueryGrammers.Ql.Operators.between])
-                        break
-                    case QueryGrammers.Ql.Operators.notBetween:
-                        builder.whereNotBetween(fieldName, v[QueryGrammers.Ql.Operators.notBetween])
-                        break
-                    case QueryGrammers.Ql.Operators.like:
-                        builder.where(fieldName, 'like', v[QueryGrammers.Ql.Operators.like])
-                        break
-                    case QueryGrammers.Ql.Operators.startsWith:
-                        builder.where(fieldName, 'like', `${v[QueryGrammers.Ql.Operators.like]}%`)
-                        break
-                    case QueryGrammers.Ql.Operators.endsWith:
-                        builder.where(fieldName, 'like', `%${v[QueryGrammers.Ql.Operators.like]}`)
-                        break
-                    case QueryGrammers.Ql.Operators.substring:
-                        builder.where(fieldName, 'like', `%${v[QueryGrammers.Ql.Operators.like]}%`)
-                        break
-                    case QueryGrammers.Ql.Operators.notLike:
-                        builder.whereNot(fieldName, 'like', v[QueryGrammers.Ql.Operators.notLike])
-                        break
-                }
-            });
-        })
-    });
-
-    opts.where = flattenedWhere
+    return
 }
 
 export function getFindOptionValueIfNotFunc (optValue: Function | any) {

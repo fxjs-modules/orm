@@ -24,14 +24,17 @@ declare namespace FxOrmQueries {
       (value?: any): {
         readonly op_name: T_OPNAME
         readonly func_ref: OperatorFunction['$wrapper']
+        readonly symbol: symbol
         value?: typeof value
         op_left?: any
         op_right?: any
       }
       $wrapper: (value: any) => OperatorFunction<T_OPNAME>
-      operator_name: T_OPNAME
+      $op_name: T_OPNAME
       op_symbol: symbol
     }
+
+    type OperatorFunctionResult = FxOrmTypeHelpers.ReturnType<OperatorFunction>
 
     type OPERATOR_TYPE_CONJUNCTION = 'and' | 'or' | 'xor'
     type OPERATOR_TYPE_ASSERT = 'not' | 'is'

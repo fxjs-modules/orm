@@ -2,7 +2,7 @@ var helper = require("../support/spec_helper");
 var common = require("../common");
 var ORM = require("../../");
 
-describe("ORM Normalizer", function() {
+describe("ORM parseHQL", function() {
   var db = null;
   var Person = null;
   var Pet = null;
@@ -73,7 +73,7 @@ describe("ORM Normalizer", function() {
     });
   });
 
-  odescribe("query one collection only", function() {
+  describe("query one collection only", function() {
     before(setup);
 
     it("select all", function() {
@@ -333,7 +333,7 @@ describe("ORM Normalizer", function() {
               "exprs": [
                 {
                   "type": "like",
-                  "not": [],
+                  "not": false,
                   "value": {
                     "type": "identifier",
                     "value": "foo2"
@@ -397,7 +397,7 @@ describe("ORM Normalizer", function() {
       );
     });
 
-    odescribe('pratical models', function () {
+    describe('pratical models', function () {
       before(setup);
 
       it("normal usage", function () {

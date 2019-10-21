@@ -48,9 +48,7 @@ describe("Model.remove()", function() {
 
       Person.remove({
         where: {
-          id: {
-            [Person.Op.gt]: 1
-          }
+          id: Person.Opf.gt(1)
         }
       });
       assert.equal(Person.count(), 1);
