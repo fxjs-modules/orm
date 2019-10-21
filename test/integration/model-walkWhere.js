@@ -460,7 +460,9 @@ odescribe("Model.walkWhere()", function () {
             [
               'default [outer] join',
               () => ([
-                ({ id: ORM.Qlfn.Others.refTableCol({ table: Pet.collection, column: 'owner_id' }) }),
+                ({
+                  id: ORM.Qlfn.Others.refTableCol({ table: Pet.collection, column: 'owner_id' })
+                }),
                 `\
                   select ${Pet.collection}.name pet_name, ${Person.collection}.* from ${Person.collection}
                   join ${Pet.collection}

@@ -7,7 +7,7 @@ import { buildDescriptor } from '../Decorators/property';
 import { arraify } from '../Utils/array';
 import { isEmptyPlainObject } from '../Utils/object';
 import Normalizer from './Query/Normalizer';
-import { dfltWalkWhere, dfltWalkOn } from './Query/WhereObject';
+import { dfltWalkWhere, dfltWalkOn } from './Query/walkConditions';
 
 import * as QueryGrammers from './Query/QueryGrammar'
 

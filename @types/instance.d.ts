@@ -16,9 +16,9 @@ declare namespace FxOrmInstance {
 
         /**
          * @description create one instance from data input
-         * 
+         *
          * if input is just one instance, New() would create the new one rather than use old one
-         * 
+         *
          * @param input dataset for creating one instance
          */
         constructor (
@@ -29,21 +29,21 @@ declare namespace FxOrmInstance {
         $on: Class_EventEmitter['on']
         $off: Class_EventEmitter['off']
         $emit: Class_EventEmitter['emit']
-         
+
         $set (prop: string | string[], value: any): this
         /**
          * @description
-         *  fetch all properties(not all fields, not includes associations) from remote endpoints,
+         *  fetch all properties(not all fields, not including associations) from remote endpoints,
          *  update instance automatically
          */
         $fetch (): this
         /**
-         * 
+         *
          * @description just fetch field name (list) from remote endpoints, but never update local instance,
          * just return field-value object
          */
         $get (fieldName: string | string[]): Fibjs.AnyObject
-        
+
         /**
          * @description
          *  fetch all references(associations) from remote endpoints,
@@ -51,13 +51,13 @@ declare namespace FxOrmInstance {
          */
         $fetchReference (): this
         /**
-         * 
+         *
          * @description just fetch reference name (list) from remote endpoints, but never update local instance,
          * just return ref-value object
          */
         $getReference: FxOrmTypeHelpers.ReturnItemOrArrayAccordingTo_1stParam<string, Class_Instance>
         /**
-         * 
+         *
          * @description just check if reference name (list) exist(s) in remote endpoints, but never update local instance,
          * just return check result
          */
@@ -72,7 +72,7 @@ declare namespace FxOrmInstance {
          */
         $remove (): void
         /**
-         * 
+         *
          * @description remove reference with `name` in remote endpoints, update local instance
          */
         $removeReference (refName: string | string[]): this

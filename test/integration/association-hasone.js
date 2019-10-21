@@ -1,7 +1,7 @@
 var ORM = require('../../');
 var helper = require('../support/spec_helper');
 
-describe("hasOne", function () {
+odescribe("hasOne", function () {
     var db = null;
     var Tree = null;
     var Stalk = null;
@@ -167,7 +167,7 @@ describe("hasOne", function () {
             assert.exist(leaf.stalk);
             leaf.$removeReference('stalk');
             assert.equal(leaf.stalk, null);
-            
+
             var leaf = Leaf.one({
                 size: 14
             });

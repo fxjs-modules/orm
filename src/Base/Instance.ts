@@ -12,7 +12,7 @@ import { arraify } from '../Utils/array';
 const { EventEmitter } = events
 
 const REVERSE_KEYS = [
-    'toJSON'
+  'toJSON'
 ];
 
 function pushChange (
@@ -45,13 +45,13 @@ function clearChanges(
 class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
     // @DecoratorsProperty.buildDescriptor({ enumerable: false })
     $model: FxOrmModel.Class_Model
-    
+
     /**
      * only allow settting fields of Model.properties into it.
      */
     $kvs: FxOrmInstance.Class_Instance['$kvs'] = {};
     $refs: FxOrmInstance.Class_Instance['$refs'] = {};
-    
+
     @DecoratorsProperty.buildDescriptor({ enumerable: false })
     $changes: {
         [filed_name: string]: LinkedList<{
@@ -82,7 +82,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
             this.$model.isAssociationName(x) && this.$refs[x] !== undefined
         )
     }
-    
+
     $clearChanges (fieldName?: string | string[]) {
         if (!fieldName)
             fieldName = Object.keys(this.$changes);
@@ -109,7 +109,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
     }
 
     get $isInstance () { return true };
-    
+
     get $dml () { return this.$model.$dml }
 
     constructor (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmInstance.Class_Instance>) {
@@ -124,7 +124,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
 
         if (instanceBase instanceof Instance)
             instanceBase = instanceBase.toJSON()
-        
+
         instanceBase = {...instanceBase}
         this.$kvs = this.$model.normlizePropertyData(instanceBase, this.$kvs)
         this.$refs = this.$model.normlizeAssociationData(instanceBase, this.$refs)
@@ -175,7 +175,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
             throw new Error(`[Instance::$get] invalid field names given`)
 
         const kvs = <any>{};
-        
+
         const whereCond = <any>{};
         this.$model.idPropertyList.forEach((property) => {
             whereCond[property.name] = this[property.name];
@@ -225,7 +225,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
             throw new Error(`[Instance::$getReference] invalid reference names given`)
 
         const refs = <any>[];
-        
+
         coroutine.parallel(
             associationInfos,
             (associationInfo: typeof associationInfos[any]) => {
@@ -245,7 +245,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
     $hasReference (refName: string | string[]): any {
         if (Array.isArray(refName))
             return refName.map(_ref => this.$hasReference(_ref)) as any
-            
+
         if (!this.$model.isAssociationName(refName))
             throw new Error(`[Instance::$hasReference] "${refName}" is not reference of this instance, with model(collection: ${this.$model.collection})`)
 
@@ -257,7 +257,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
     ): any {
         if (dataset !== undefined && typeof dataset !== 'object')
             throw new Error(`[Instance::save] invalid save arguments ${dataset}, it should be non-empty object or undefined`)
-            
+
         if (Array.isArray(dataset))
             return coroutine.parallel(dataset, (prop: Fibjs.AnyObject) => {
                 return this.save(prop)
@@ -376,7 +376,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
 
         if (!refNames.length)
             throw new Error(`[Instance::$removeReference] no any valid reference names provided!`)
-            
+
         this.$model.filterOutAssociatedData(this.$refs)
             .filter(item => refNames.includes(item.association.name))
             .forEach(item => {
@@ -393,7 +393,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         if (!this.$model.idPropertyList.length) {
             if (this.$model.isMergeModel)
                 throw new Error(
-                    `[Instance::exists] merge-model(name: ${this.$model.name}, ` + 
+                    `[Instance::exists] merge-model(name: ${this.$model.name}, ` +
                     `type: ${(<FxOrmModel.Class_MergeModel>this.$model).type})` +
                     `has no any property as id, check your definitions`
                 )
@@ -408,10 +408,10 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
                 withIdFilled = true
             }
         })
-        
+
         // if no any id filled, return false directly
         if (!withIdFilled) return false
-        
+
         return this.$dml.exists(
             this.$model.collection,
             { where }
@@ -473,7 +473,7 @@ const getInstance = function (
                         });
                         delete target[prop];
                     }
-                        
+
                     return true;
                 },
                 set: function(target: any, prop: string, value: any) {
@@ -498,15 +498,15 @@ const getInstance = function (
                 }
             }
         }
-        
+
         return {
             get (target: typeof instance, prop: string): any {
                 if (REVERSE_KEYS.includes(prop) || isInternalProp(prop))
                     return target[prop];
-                
+
                 if (target.$model.isAssociationName(prop))
                     return target.$refs[prop];
-                    
+
                 if (target.$kvs[prop] && typeof target.$kvs[prop] === 'object') {
                     return new Proxy(target.$kvs[prop], getPhHandler({ parent_path: prop }))
                 }
@@ -540,7 +540,7 @@ const getInstance = function (
                     });
                     delete target.$kvs[prop];
                 }
-                    
+
                 return true;
             },
             set: function(target: typeof instance, prop: string, value: any) {

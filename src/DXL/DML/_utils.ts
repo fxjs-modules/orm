@@ -1,6 +1,6 @@
 import util = require('util');
 
-import { Operators } from '../../Base/Query/Operator';
+import * as QueryGrammers from '../../Base/Query/QueryGrammar';
 import { arraify } from '../../Utils/array';
 
 export function filterKnexBuilderBeforeQuery (
@@ -26,27 +26,6 @@ export function filterKnexBuilderBeforeQuery (
 	return builder
 }
 
-// export function filterWhereToKnexActions (
-//   opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>
-// ) {
-//     if (!opts) return
-//     const { where = null } = opts || {}
-//     if (!where) return
-
-//     console.log(
-//       'where.condition',
-//       where.condition
-//     )
-
-//     if (where.condition.type === 'operator') {
-
-//     }
-// }
-
-// export function filterWhereToMongoActions () {
-
-// }
-
 export function filterWhereToKnexActions (
     opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>
 ) {
@@ -55,8 +34,6 @@ export function filterWhereToKnexActions (
     if (!where) return
 
     const flattenedWhere: {[k: string]: Exclude<any, symbol>} = {};
-
-    // if (where[Operators.or])
 
     const bQList = (opts.beforeQuery ? arraify(opts.beforeQuery) : []).filter(x => typeof x === 'function')
 
@@ -90,57 +67,57 @@ export function filterWhereToKnexActions (
 
             fieldOpSyms.forEach(symbol => {
                 switch (symbol) {
-                    case Operators.eq:
-                        builder.where(fieldName, '=', v[Operators.eq])
+                    case QueryGrammers.Ql.Operators.eq:
+                        builder.where(fieldName, '=', v[QueryGrammers.Ql.Operators.eq])
                         break
-                    case Operators.ne:
-                        // builder.whereNot(fieldName, '<>', v[Operators.ne])
-                        builder.whereNot(fieldName, '=', v[Operators.ne])
+                    case QueryGrammers.Ql.Operators.ne:
+                        // builder.whereNot(fieldName, '<>', v[QueryGrammers.Ql.Operators.ne])
+                        builder.whereNot(fieldName, '=', v[QueryGrammers.Ql.Operators.ne])
                         break
-                    case Operators.gt:
-                        builder.where(fieldName, '>', v[Operators.gt])
+                    case QueryGrammers.Ql.Operators.gt:
+                        builder.where(fieldName, '>', v[QueryGrammers.Ql.Operators.gt])
                         break
-                    case Operators.gte:
-                        builder.where(fieldName, '>=', v[Operators.gte])
+                    case QueryGrammers.Ql.Operators.gte:
+                        builder.where(fieldName, '>=', v[QueryGrammers.Ql.Operators.gte])
                         break
-                    case Operators.lt:
-                        builder.where(fieldName, '<', v[Operators.lt])
+                    case QueryGrammers.Ql.Operators.lt:
+                        builder.where(fieldName, '<', v[QueryGrammers.Ql.Operators.lt])
                         break
-                    case Operators.lte:
-                        builder.where(fieldName, '<=', v[Operators.lte])
+                    case QueryGrammers.Ql.Operators.lte:
+                        builder.where(fieldName, '<=', v[QueryGrammers.Ql.Operators.lte])
                         break
-                    case Operators.is:
-                        builder.where(fieldName, v[Operators.is])
+                    case QueryGrammers.Ql.Operators.is:
+                        builder.where(fieldName, v[QueryGrammers.Ql.Operators.is])
                         break
-                    case Operators.not:
-                        builder.whereNot(fieldName, v[Operators.not])
+                    case QueryGrammers.Ql.Operators.not:
+                        builder.whereNot(fieldName, v[QueryGrammers.Ql.Operators.not])
                         break
-                    case Operators.in:
-                        builder.whereIn(fieldName, v[Operators.in])
+                    case QueryGrammers.Ql.Operators.in:
+                        builder.whereIn(fieldName, v[QueryGrammers.Ql.Operators.in])
                         break
-                    case Operators.notIn:
-                        builder.whereNotIn(fieldName, v[Operators.notIn])
+                    case QueryGrammers.Ql.Operators.notIn:
+                        builder.whereNotIn(fieldName, v[QueryGrammers.Ql.Operators.notIn])
                         break
-                    case Operators.between:
-                        builder.whereBetween(fieldName, v[Operators.between])
+                    case QueryGrammers.Ql.Operators.between:
+                        builder.whereBetween(fieldName, v[QueryGrammers.Ql.Operators.between])
                         break
-                    case Operators.notBetween:
-                        builder.whereNotBetween(fieldName, v[Operators.notBetween])
+                    case QueryGrammers.Ql.Operators.notBetween:
+                        builder.whereNotBetween(fieldName, v[QueryGrammers.Ql.Operators.notBetween])
                         break
-                    case Operators.like:
-                        builder.where(fieldName, 'like', v[Operators.like])
+                    case QueryGrammers.Ql.Operators.like:
+                        builder.where(fieldName, 'like', v[QueryGrammers.Ql.Operators.like])
                         break
-                    case Operators.startsWith:
-                        builder.where(fieldName, 'like', `${v[Operators.like]}%`)
+                    case QueryGrammers.Ql.Operators.startsWith:
+                        builder.where(fieldName, 'like', `${v[QueryGrammers.Ql.Operators.like]}%`)
                         break
-                    case Operators.endsWith:
-                        builder.where(fieldName, 'like', `%${v[Operators.like]}`)
+                    case QueryGrammers.Ql.Operators.endsWith:
+                        builder.where(fieldName, 'like', `%${v[QueryGrammers.Ql.Operators.like]}`)
                         break
-                    case Operators.substring:
-                        builder.where(fieldName, 'like', `%${v[Operators.like]}%`)
+                    case QueryGrammers.Ql.Operators.substring:
+                        builder.where(fieldName, 'like', `%${v[QueryGrammers.Ql.Operators.like]}%`)
                         break
-                    case Operators.notLike:
-                        builder.whereNot(fieldName, 'like', v[Operators.notLike])
+                    case QueryGrammers.Ql.Operators.notLike:
+                        builder.whereNot(fieldName, 'like', v[QueryGrammers.Ql.Operators.notLike])
                         break
                 }
             });

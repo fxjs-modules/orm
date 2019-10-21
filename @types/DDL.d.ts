@@ -3,6 +3,8 @@
 /// <reference path="DXL.d.ts" />
 
 declare namespace FxOrmDDL {
+  type KnexSchemaBuilder = FXJSKnex.FXJSKnexModule.KnexInstance['schema'];
+
     class DDLDriver<ConnType = any> extends FxOrmDXL.DXLDriver<ConnType> {
         // uid: string
         createCollection: <T = Fibjs.AnyObject[]>(collection: string) => T
