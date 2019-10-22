@@ -289,7 +289,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         /* fill default value :end */
 
         if (isEmptyPlainObject(kvs) && isEmptyPlainObject(refs))
-            throw new Error(`[Instance::save] at least one of "kvs" and "refs" must be non-empty object!`)
+            throw new Error(`[Instance::save] at least one of "kvs" and "refs" should be non-empty object!`)
 
         this.$dml
             .toSingleton()

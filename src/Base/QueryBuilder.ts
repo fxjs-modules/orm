@@ -27,17 +27,6 @@ function transformToQCIfModel (
             return qc[propertyName].apply(qc, arguments)
         }
 
-        // just in Class_QueryBuilder
-        switch (this.model.dbdriver.type) {
-            case 'mysql':
-            case 'mssql':
-            case 'sqlite':
-                this.sqlQuery = new SqlQuery.Query({
-                    dialect: this.model.dbdriver.type,
-                });
-                break
-        }
-
         return method.apply(this, arguments);
     }
 }
@@ -58,7 +47,13 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
     model: FxOrmModel.Class_Model;
 
     conditions: any;
-    sqlQuery: FxSqlQuery.Class_Query
+    get sqlQuery (): FxSqlQuery.Class_Query {
+      switch (this.model.$ddl.dbdriver.type) {
+          case 'mysql':
+          case 'sqlite':
+              return this.model.$ddl.sqlQuery
+      }
+    }
 
     [k: string]: any;
 

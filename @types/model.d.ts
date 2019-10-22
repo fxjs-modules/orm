@@ -200,8 +200,6 @@ declare namespace FxOrmModel {
             type: 'association'
             association: Class_Model['associations'][any]
         } | null
-
-        buildQueryNormalizer(opts: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmQueries.Class_QueryNormalizer>[1]): FxOrmQueries.Class_QueryNormalizer
         /* utils :end */
 
         hasOne(

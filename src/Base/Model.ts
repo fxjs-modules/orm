@@ -12,7 +12,6 @@ import Property from './Property';
 import { configurable } from '../Decorators/accessor';
 
 import { arraify } from '../Utils/array';
-import Class_QueryNormalizer from './Query/Normalizer';
 
 /**
  * @description Model is meta definition about database-like remote endpoints.
@@ -300,6 +299,93 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         this.$dml.clear(this.collection)
     }
 
+    normalizePropertiesToData (inputdata: Fibjs.AnyObject = {}, target: Fibjs.AnyObject = {}) {
+        this.propertyList.forEach((prop: FxOrmProperty.NormalizedProperty) => {
+            if (inputdata.hasOwnProperty(prop.name))
+                target[prop.mapsTo] = prop.toStoreValue(inputdata[prop.name])
+            else if (inputdata.hasOwnProperty(prop.mapsTo))
+                target[prop.mapsTo] = prop.toStoreValue(inputdata[prop.mapsTo])
+        })
+
+        return target
+    }
+
+    normalizeDataToProperties (storeData: Fibjs.AnyObject = {}, target: Fibjs.AnyObject = {}) {
+        this.propertyList.forEach((prop: FxOrmProperty.NormalizedProperty) => {
+            if (storeData.hasOwnProperty(prop.mapsTo))
+                target[prop.name] = prop.fromStoreValue(storeData[prop.mapsTo])
+        })
+
+        return target
+    }
+
+    normlizePropertyData (dataset: Fibjs.AnyObject = {}, kvs: Fibjs.AnyObject = {}) {
+        this.propertyList.forEach(property => {
+            if (dataset.hasOwnProperty(property.name)) kvs[property.name] = dataset[property.name]
+        })
+
+        return kvs
+    }
+
+    normlizeAssociationData (dataset: Fibjs.AnyObject = {}, refs: Fibjs.AnyObject = {}) {
+        this.associationNames.forEach(assocName => {
+            if (dataset.hasOwnProperty(assocName)) refs[assocName] = dataset[assocName]
+        })
+
+        return refs
+    }
+
+    filterOutAssociatedData (dataset: Fibjs.AnyObject = {}) {
+        const kvs = []
+        for (let assoc_name in this.associations) {
+            const fInfo = this.fieldInfo(assoc_name)
+            if (dataset.hasOwnProperty(assoc_name) && fInfo && fInfo.type === 'association')
+                kvs.push({
+                    association: fInfo.association,
+                    dataset: dataset[assoc_name]
+                })
+        }
+
+        return kvs
+    }
+
+    addProperty (name: string, property: FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['addProperty']>) {
+        if (this.fieldInfo(name))
+            throw new Error(`[Model] property '${name}' existed in model '${this.name}'`)
+
+        if ((property instanceof Property))
+            return this.properties[name] = property
+
+        return this.properties[name] = new Property({...property, name}, {
+            propertyName: name,
+            storeType: this.storeType,
+            $ctx: this.propertyContext
+        })
+    }
+
+    fieldInfo (propertyName: string) {
+        if (this.properties.hasOwnProperty(propertyName))
+            return {
+                type: 'self' as 'self',
+                property: this.properties[propertyName]
+            }
+        if (this.associations.hasOwnProperty(propertyName))
+            return {
+                type: 'association' as 'association',
+                association: this.associations[propertyName]
+            }
+
+        return null
+    }
+
+    defineMergeModel (opts: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['defineMergeModel']>) {
+        return null as any
+    }
+
+    joinAndSelect () {
+
+    }
+
     hasOne (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['hasOne']>) {
         const [ targetModel = this, opts ] = args;
 
@@ -409,95 +495,6 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         targetModel.associations[asKey] = mergeModel
 
         return mergeModel
-    }
-
-    normalizePropertiesToData (inputdata: Fibjs.AnyObject = {}, target: Fibjs.AnyObject = {}) {
-        this.propertyList.forEach((prop: FxOrmProperty.NormalizedProperty) => {
-            if (inputdata.hasOwnProperty(prop.name))
-                target[prop.mapsTo] = prop.toStoreValue(inputdata[prop.name])
-            else if (inputdata.hasOwnProperty(prop.mapsTo))
-                target[prop.mapsTo] = prop.toStoreValue(inputdata[prop.mapsTo])
-        })
-
-        return target
-    }
-
-    normalizeDataToProperties (storeData: Fibjs.AnyObject = {}, target: Fibjs.AnyObject = {}) {
-        this.propertyList.forEach((prop: FxOrmProperty.NormalizedProperty) => {
-            if (storeData.hasOwnProperty(prop.mapsTo))
-                target[prop.name] = prop.fromStoreValue(storeData[prop.mapsTo])
-        })
-
-        return target
-    }
-
-    normlizePropertyData (dataset: Fibjs.AnyObject = {}, kvs: Fibjs.AnyObject = {}) {
-        this.propertyList.forEach(property => {
-            if (dataset.hasOwnProperty(property.name)) kvs[property.name] = dataset[property.name]
-        })
-
-        return kvs
-    }
-
-    normlizeAssociationData (dataset: Fibjs.AnyObject = {}, refs: Fibjs.AnyObject = {}) {
-        this.associationNames.forEach(assocName => {
-            if (dataset.hasOwnProperty(assocName)) refs[assocName] = dataset[assocName]
-        })
-
-        return refs
-    }
-
-    filterOutAssociatedData (dataset: Fibjs.AnyObject = {}) {
-        const kvs = []
-        for (let assoc_name in this.associations) {
-            const fInfo = this.fieldInfo(assoc_name)
-            if (dataset.hasOwnProperty(assoc_name) && fInfo && fInfo.type === 'association')
-                kvs.push({
-                    association: fInfo.association,
-                    dataset: dataset[assoc_name]
-                })
-        }
-
-        return kvs
-    }
-
-    addProperty (name: string, property: FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['addProperty']>) {
-        if (this.fieldInfo(name))
-            throw new Error(`[Model] property '${name}' existed in model '${this.name}'`)
-
-        if ((property instanceof Property))
-            return this.properties[name] = property
-
-        return this.properties[name] = new Property({...property, name}, {
-            propertyName: name,
-            storeType: this.storeType,
-            $ctx: this.propertyContext
-        })
-    }
-
-    fieldInfo (propertyName: string) {
-        if (this.properties.hasOwnProperty(propertyName))
-            return {
-                type: 'self' as 'self',
-                property: this.properties[propertyName]
-            }
-        if (this.associations.hasOwnProperty(propertyName))
-            return {
-                type: 'association' as 'association',
-                association: this.associations[propertyName]
-            }
-
-        return null
-    }
-
-    buildQueryNormalizer(
-        opts: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['buildQueryNormalizer']>
-    ): FxOrmTypeHelpers.ReturnType<FxOrmModel.Class_Model['buildQueryNormalizer']> {
-        return new Class_QueryNormalizer(this.collection, opts)
-    }
-
-    defineMergeModel (opts: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['defineMergeModel']>) {
-        return null as any
     }
 }
 
