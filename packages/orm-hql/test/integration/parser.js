@@ -441,7 +441,7 @@ const tests = [
 	},
 	{
 		sql: `select a.x, b.y from c as a left join d as b using (z)`,
-		toSql: '(select `a`.`x`, `b`.`y` from ((`c`as `a` left join `d`as `b` using (`z`))))',
+		toSql: '(select `a`.`x`, `b`.`y` from ((`c` as `a` left join `d` as `b` using (`z`))))',
 		expected: {
 			aliases: {
 				a:'c',
@@ -715,21 +715,25 @@ const tests = [
   },
   {
     sql: 'select a.*, b.id as b_id from test a join test b on a.id = b.a_id',
-		toSql: '(select `a`.*, `b`.`id` as `b_id` from ((`test`as `a` join `test`as `b` on (`a`.`id` = `b`.`a_id`))))'
+		toSql: '(select `a`.*, `b`.`id` as `b_id` from ((`test` as `a` join `test` as `b` on (`a`.`id` = `b`.`a_id`))))'
+  },
+  {
+    sql: 'select a.*, b.id as b_id from test a join test b on a.id = b.a_id and a.id2 = b.a_id2',
+		toSql: '(select `a`.*, `b`.`id` as `b_id` from ((`test` as `a` join `test` as `b` on ((`a`.`id` = `b`.`a_id`) and (`a`.`id2` = `b`.`a_id2`)))))'
   },
   {
     sql: `\
 select a.*, b.id as b_id, c.id as c_id from test a
 join test b on a.id = b.a_id
 right outer join test2 c on a.id = c.a_id`,
-		toSql: '(select `a`.*, `b`.`id` as `b_id`, `c`.`id` as `c_id` from (((`test`as `a` join `test`as `b` on (`a`.`id` = `b`.`a_id`)) right outer join `test2`as `c` on (`a`.`id` = `c`.`a_id`))))'
+		toSql: '(select `a`.*, `b`.`id` as `b_id`, `c`.`id` as `c_id` from (((`test` as `a` join `test` as `b` on (`a`.`id` = `b`.`a_id`)) right outer join `test2` as `c` on (`a`.`id` = `c`.`a_id`))))'
   },
   {
     sql: `\
 select a.*, b.id as b_id, c.* from test a
 join test b on a.id = b.a_id
 right outer join test2 c on a.id = c.a_id`,
-		toSql: '(select `a`.*, `b`.`id` as `b_id`, `c`.* from (((`test`as `a` join `test`as `b` on (`a`.`id` = `b`.`a_id`)) right outer join `test2`as `c` on (`a`.`id` = `c`.`a_id`))))'
+		toSql: '(select `a`.*, `b`.`id` as `b_id`, `c`.* from (((`test` as `a` join `test` as `b` on (`a`.`id` = `b`.`a_id`)) right outer join `test2` as `c` on (`a`.`id` = `c`.`a_id`))))'
   },
 	{
 		sql: 'select a.x from b',

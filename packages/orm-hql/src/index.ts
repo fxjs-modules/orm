@@ -131,8 +131,7 @@ function parserDefinition(
         }
         case "table": {
           let sql = options.identifierEscape(parsed.table);
-          if (parsed.alias)
-            sql += "as " + options.identifierEscape(parsed.alias);
+          if (parsed.alias) sql += " as " + options.identifierEscape(parsed.alias);
           return sql;
         }
         case "where": {
