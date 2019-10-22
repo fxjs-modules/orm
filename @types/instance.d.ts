@@ -10,6 +10,10 @@ declare namespace FxOrmInstance {
         readonly $isPersisted: boolean
         readonly $changes: any
         readonly $changedFieldsCount: number
+        /**
+         * @description json format snapshot when instance creation
+         */
+        readonly $bornsnapshot: string
 
         readonly $model: FxOrmModel.Class_Model
 

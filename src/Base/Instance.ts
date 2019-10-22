@@ -52,6 +52,9 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
     $kvs: FxOrmInstance.Class_Instance['$kvs'] = {};
     $refs: FxOrmInstance.Class_Instance['$refs'] = {};
 
+    @DecoratorsProperty.buildDescriptor({ enumerable: false, writable: false })
+    $bornsnapshot: FxOrmInstance.Class_Instance['$bornsnapshot'] = null;
+
     @DecoratorsProperty.buildDescriptor({ enumerable: false })
     $changes: {
         [filed_name: string]: LinkedList<{
@@ -125,7 +128,9 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         if (instanceBase instanceof Instance)
             instanceBase = instanceBase.toJSON()
 
-        instanceBase = {...instanceBase}
+        this.$bornsnapshot = JSON.stringify(instanceBase)
+
+        instanceBase = this.$model.normalizeDataToProperties({...instanceBase})
         this.$kvs = this.$model.normlizePropertyData(instanceBase, this.$kvs)
         this.$refs = this.$model.normlizeAssociationData(instanceBase, this.$refs)
 

@@ -86,7 +86,7 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
         const results = this.model.$dml.find(this.model.collection, _opts)
 
         this._tuples = results.map((x: TUPLE_ITEM) => {
-            const inst = this.model.New(this.model.normalizeDataToProperties(x))
+            const inst = this.model.New(x)
             return inst as any
         });
 

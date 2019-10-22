@@ -43,10 +43,24 @@ odescribe("Model.find() - advanced", function () {
             })
 
             helper.dropSync([Person, Post, Tag, Category, PostTagRel], function () {
-              var [ _Tag1, _Tag2 ] = Tag.create([
-                { name: 'tag1', description: 'first tag' },
-                { name: 'tag2', description: 'second tag' }
-              ])
+              var [ _Tag1, _Tag2 ] = Tag.create(
+                /**
+                 * @TODO if could, use transaction to speed it.
+                 */
+                Array(20).fill(undefined).map((_, idx) => {
+                  var c = idx + 1
+                  switch (c) {
+                    case 1:
+                      return { name: `tag${c}`, description: 'first tag' }
+                    case 2:
+                      return { name: `tag${c}`, description: 'second tag' }
+                    case 3:
+                      return { name: `tag${c}`, description: 'second tag' }
+                    default:
+                      return { name: `tag${c}`, description: `${idx}th tag`}
+                  }
+                })
+              )
 
               var [_Jack, _Joe] = Person.create([
                 { name: 'Jack', email: 'Jack@gmail.com' },
@@ -109,6 +123,7 @@ odescribe("Model.find() - advanced", function () {
 
           assert.deepEqual(_JackPost.author_id, Jack.id)
           assert.notExist(_JackPost.author_name)
+          assert.property(JSON.parse(_JackPost.$bornsnapshot), 'author_name')
         });
 
         it("leftJoin", function () {
@@ -132,6 +147,7 @@ odescribe("Model.find() - advanced", function () {
 
           assert.deepEqual(_JackPost.author_id, Jack.id)
           assert.notExist(_JackPost.author_name)
+          assert.property(JSON.parse(_JackPost.$bornsnapshot), 'author_name')
         });
     });
 });
