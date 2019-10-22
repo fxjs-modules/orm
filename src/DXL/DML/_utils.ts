@@ -131,11 +131,10 @@ export function filterWhereToKnexActions (
     if (!where) return
 
     const bQList = (opts.beforeQuery ? arraify(opts.beforeQuery) : []).filter(x => typeof x === 'function')
-    // const restWhere: {[k: string]: Exclude<any, symbol>} = {};
 
     filterWhereToKnexActionsInternal(where, {bQList});
     opts.beforeQuery = bQList
-    opts.where = {}
+    opts.where = undefined
 }
 
 export const filterJoinOnConditionToClauseBuilderActions = gnrWalkWhere<
@@ -225,6 +224,7 @@ export const filterJoinOnConditionToClauseBuilderActions = gnrWalkWhere<
   }
 })
 
+const SQLITE_CANNOT = `[filterJoinsToKnexActionsInternal::onwalk] sqlite doesn't support right/full/outer join now, just use left join`
 const filterJoinsToKnexActionsInternal = gnrWalkJoinOn<
   null,
   {
@@ -237,43 +237,38 @@ const filterJoinsToKnexActionsInternal = gnrWalkJoinOn<
     const { bQList, source_collection } = walk_fn_context
 
     switch (scene) {
-      case 'inputIs:joinList': {
-        return dfltReturn
-      }
       case 'inputIs:opfn:joinVerb': {
         const condInput = input().value
         const target_collection = condInput.collection
 
-        switch (input.$wrapper) {
-          case QueryGrammers.Qlfn.Selects.join:
-            bQList.push((builder) => { builder.join(target_collection, function () {
-              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection, target_collection})
-            }) }); break
-          case QueryGrammers.Qlfn.Selects.leftJoin:
-            bQList.push((builder) => { builder.leftJoin(target_collection, function () {
-              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection, target_collection})
-            }) }); break
-          case QueryGrammers.Qlfn.Selects.leftOuterJoin:
-            bQList.push((builder) => { builder.leftOuterJoin(target_collection, function () {
-              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection, target_collection})
-            }) }); break
-          case QueryGrammers.Qlfn.Selects.rightJoin:
-            bQList.push((builder) => { builder.rightJoin(target_collection, function () {
-              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection, target_collection})
-            }) }); break
-          case QueryGrammers.Qlfn.Selects.rightOuterJoin:
-            bQList.push((builder) => { builder.rightOuterJoin(target_collection, function () {
-              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection, target_collection})
-            }) }); break
-          case QueryGrammers.Qlfn.Selects.fullOuterJoin:
-            bQList.push((builder) => { builder.fullOuterJoin(target_collection, function () {
-              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection, target_collection})
-            }) }); break
-          case QueryGrammers.Qlfn.Selects.innerJoin:
-            bQList.push((builder) => { builder.innerJoin(target_collection, function () {
-              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection, target_collection})
-            }) }); break
+        const jcallback = function () {
+          /**
+           * @note `this` is  JoinClause, never use jcallback as arrow-function or change call it by other `this`
+           */
+          filterJoinOnConditionToClauseBuilderActions(condInput.on, {
+            jbuilder: this,
+            source_collection,
+            target_collection
+          })
         }
+
+        switch (input.$wrapper) {
+          case QueryGrammers.Qlfn.Selects.join: bQList.push((builder) => { builder.join(target_collection, jcallback) }); break
+          case QueryGrammers.Qlfn.Selects.leftJoin: bQList.push((builder) => { builder.leftJoin(target_collection, jcallback) }); break
+          case QueryGrammers.Qlfn.Selects.leftOuterJoin: bQList.push((builder) => { builder.leftOuterJoin(target_collection, jcallback) }); break
+          case QueryGrammers.Qlfn.Selects.rightJoin: bQList.push((builder) => {
+            if ((<any>builder).client.config.client === 'sqlite') throw new Error(SQLITE_CANNOT)
+            builder.rightJoin(target_collection, jcallback)
+          }); break
+          case QueryGrammers.Qlfn.Selects.rightOuterJoin: bQList.push((builder) => {
+            if ((<any>builder).client.config.client === 'sqlite') throw new Error(SQLITE_CANNOT)
+            builder.rightOuterJoin(target_collection, jcallback)
+          }); break
+          case QueryGrammers.Qlfn.Selects.fullOuterJoin: bQList.push((builder) => { builder.fullOuterJoin(target_collection, jcallback) }); break
+          case QueryGrammers.Qlfn.Selects.innerJoin: bQList.push((builder) => { builder.innerJoin(target_collection, jcallback) }); break
+        }
+
+        return dfltReturn
       }
       default:
         new Error(`[filterJoinsToKnexActionsInternal::unsupported_scene] `)

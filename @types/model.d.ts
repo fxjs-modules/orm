@@ -101,6 +101,9 @@ declare namespace FxOrmModel {
         isPropertyName (name: string): boolean
         isAssociationName (name: string): boolean
 
+        prop (propertyname: string): Class_Model['properties'][any]
+        assoc (propertyname: string): Class_Model['associations'][any]
+
         /**
          * @description create one instance from data input
          *

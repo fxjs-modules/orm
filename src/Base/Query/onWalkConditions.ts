@@ -305,7 +305,7 @@ export function gnrWalkWhere<
 type WalkJoinOnOnNodeCallback<T_CTX> = WalkThroughNodeCallback<
   T_CTX,
   any,
-  'inputIs:joinList' | 'inputIs:opfn:joinVerb'
+  'inputIs:opfn:joinVerb'
 >
 export function gnrWalkJoinOn<
   T_NODE extends FxOrmQueries.Class_QueryNormalizer['joins'][any],
@@ -398,10 +398,8 @@ export function gnrWalkJoinOn<
     if (Array.isArray(input)) {
       if (!input.length) return null
       if (input.length === 1) return walk_fn(idify(input), context)
-
-      const state = onJoinNode({ ...staticOnNodeParams, scene: 'inputIs:joinList' })
-      if (state && state.isReturn)
-        return state.result
+      
+      return input.map(item => walk_fn(item, context))
     }
 
     return walk_fn(QueryGrammers.Qlfn.Selects.join({ collection: undefined, on: input }), context)

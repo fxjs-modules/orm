@@ -6,6 +6,8 @@ odescribe("hasOne", function () {
     var Tree = null;
     var Stalk = null;
     var Leaf = null;
+    var Hole = null;
+
     var leafId = null;
     var treeId = null;
     var stalkId = null;
@@ -26,7 +28,7 @@ odescribe("hasOne", function () {
                     type: 'integer'
                 }
             });
-            var Hole = db.define("hole", {
+            Hole = db.define("hole", {
                 width: {
                     type: 'integer'
                 }
@@ -107,7 +109,13 @@ odescribe("hasOne", function () {
                     Leaf.leftJoin({
                         collection: Tree.collection,
                         on: {
-                            tree_id: Tree.Opf.colref("id")
+                            [Leaf.assoc('tree').prop('id').mapsTo]: Tree.Opf.colref(Tree.prop('id').mapsTo)
+                        }
+                    }),
+                    Leaf.leftJoin({
+                        collection: Hole.collection,
+                        on: {
+                            [Leaf.assoc('tree').prop('id').mapsTo]: Hole.Opf.colref(Hole.prop('id').mapsTo)
                         }
                     })
                 ]

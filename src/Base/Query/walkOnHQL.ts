@@ -256,11 +256,6 @@ export const dfltWalkOn = gnrWalkJoinOn({
                     result: nodeFrame.use_list ? arraify(jonNode) : jonNode
                 }
             }
-            case 'inputIs:joinList':
-                return {
-                    isReturn: true,
-                    result: input.map((x: any) => walk_fn(x, walk_fn_context))
-                }
         }
     },
     walkerWhereConditions: dfltWalkWhere,

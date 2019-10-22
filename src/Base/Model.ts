@@ -214,6 +214,19 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     isAssociationName (name: string): boolean {
         return this.associations.hasOwnProperty(name);
     }
+    prop (propname: string): ReturnType<FxOrmModel.Class_Model['prop']> {
+        if (!this.isPropertyName(propname))
+            throw new Error(`[Model:prop] property ${propname} doesn't exist in model(collection: ${this.collection})`)
+        
+        return this.properties[propname]
+    }
+    assoc (assocname: string): ReturnType<FxOrmModel.Class_Model['assoc']> {
+        if (!this.isAssociationName(assocname))
+            throw new Error(`[Model:assoc] association ${assocname} doesn't exist in model(collection: ${this.collection})`)
+        
+        return this.associations[assocname]
+    }
+    
 
     sync (): void {
         if (!this.dbdriver.isSql) return ;
