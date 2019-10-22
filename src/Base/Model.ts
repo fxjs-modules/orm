@@ -324,10 +324,37 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return target
     }
 
-    normalizeDataToProperties (storeData: Fibjs.AnyObject = {}, target: Fibjs.AnyObject = {}) {
+    normalizeDataIntoInstance (
+        storeData: Fibjs.AnyObject = {},
+        opts?: FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['normalizeDataIntoInstance']>
+    ) {
+        const {
+            onPropertyField = undefined,
+            onAssociationField = undefined,
+        } = opts || {}
+        const call_prop = typeof onPropertyField === 'function'
+        const call_assoc = typeof onAssociationField === 'function'
+
+        const target: Fibjs.AnyObject = {}
         this.propertyList.forEach((prop: FxOrmProperty.NormalizedProperty) => {
-            if (storeData.hasOwnProperty(prop.mapsTo))
+            if (storeData.hasOwnProperty(prop.mapsTo)) {
                 target[prop.name] = prop.fromStoreValue(storeData[prop.mapsTo])
+                if (call_prop) onPropertyField({
+                    origValue: storeData[prop.mapsTo], transformedValue: target[prop.name],
+                    fieldname: prop.name, mapsTo: prop.mapsTo
+                })
+            }
+        })
+
+        this.associationNames.forEach(assocName => {
+            if (storeData.hasOwnProperty(assocName)) {
+                target[assocName] = storeData[assocName]
+
+                if (call_assoc) onAssociationField({
+                    origValue: storeData[assocName], transformedValue: target[assocName],
+                    fieldname: assocName
+                })
+            }
         })
 
         return target
@@ -341,7 +368,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return kvs
     }
 
-    normlizeAssociationData (dataset: Fibjs.AnyObject = {}, refs: Fibjs.AnyObject = {}) {
+    normalizeAssociationData (dataset: Fibjs.AnyObject = {}, refs: Fibjs.AnyObject = {}) {
         this.associationNames.forEach(assocName => {
             if (dataset.hasOwnProperty(assocName)) refs[assocName] = dataset[assocName]
         })
@@ -703,6 +730,13 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     }
     isTarget (model: FxOrmModel.Class_Model): boolean {
         return model === this.targetModel
+    }
+
+    checkExistenceForSource (mergeInst: FxOrmInstance.Class_Instance) {
+        switch (this.type) {
+            case 'o2o':
+                return this.sourceModel.idPropertyList.every(prop => mergeInst.$isFieldFilled(prop.name))
+        }
     }
 
     saveForSource ({

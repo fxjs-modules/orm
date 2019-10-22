@@ -1,3 +1,8 @@
 export function snapshot(input: any) {
-    return JSON.parse(JSON.stringify(input));
+    switch (input) {
+        case undefined:
+            return undefined
+        default:
+            return JSON.parse(JSON.stringify(input));
+    }
 }

@@ -127,12 +127,12 @@ describe("Model APIs", function () {
             });
         });
 
-        describe("#normalizeDataToProperties", function () {
+        describe("#normalizeDataIntoInstance", function () {
             before(setup);
 
             it("simple", function () {
                 assert.deepEqual(
-                    Person.normalizeDataToProperties({
+                    Person.normalizeDataIntoInstance({
                         id: 1,
                         name: 'Jane',
                         emailaddress: 'Jane@gmail.com'
@@ -145,7 +145,7 @@ describe("Model APIs", function () {
                 )
 
                 assert.deepEqual(
-                    Pet.normalizeDataToProperties({
+                    Pet.normalizeDataIntoInstance({
                         id: 1,
                         pet_name: 'Deco',
                         pet_age: undefined
@@ -160,7 +160,7 @@ describe("Model APIs", function () {
 
             it("leave out invalid input", function () {
                 assert.deepEqual(
-                    Person.normalizeDataToProperties({
+                    Person.normalizeDataIntoInstance({
                         id: 1,
                         name: 'Jane',
                     }),
@@ -171,7 +171,7 @@ describe("Model APIs", function () {
                 )
 
                 assert.deepEqual(
-                    Pet.normalizeDataToProperties({
+                    Pet.normalizeDataIntoInstance({
                         id: 1,
                         name: 'Deco',
                         age: 10
@@ -184,7 +184,7 @@ describe("Model APIs", function () {
 
             it("defaultValue not work here", function () {
                 assert.deepEqual(
-                    Person.normalizeDataToProperties({
+                    Person.normalizeDataIntoInstance({
                         id: 1,
                         name: 'Jane',
                         emailaddress: undefined

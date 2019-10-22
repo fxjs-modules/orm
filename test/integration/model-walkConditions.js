@@ -1,7 +1,7 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-odescribe("Model -- walkConditions", function () {
+describe("Model -- walkConditions", function () {
     var db = null;
     var Person = null;
     var Pet = null;

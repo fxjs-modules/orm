@@ -1,7 +1,7 @@
 var ORM = require('../../');
 var helper = require('../support/spec_helper');
 
-odescribe("Model.find() - advanced", function () {
+describe("Model.find() - advanced", function () {
     var db = null;
     var Person = null;
     var Jack = Joe = null;
@@ -90,7 +90,7 @@ odescribe("Model.find() - advanced", function () {
         db.close();
     });
 
-    odescribe("$dml.find", function () {
+    describe("$dml.find - join one table", function () {
         before(setup());
 
         it("no where", function () {

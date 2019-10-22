@@ -125,14 +125,24 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
 
         this.$model = model
 
-        if (instanceBase instanceof Instance)
-            instanceBase = instanceBase.toJSON()
+        if (instanceBase instanceof Instance) instanceBase = instanceBase.toJSON()
 
         this.$bornsnapshot = JSON.stringify(instanceBase)
+        this.$kvs = {};
+        this.$refs = {};
 
-        instanceBase = this.$model.normalizeDataToProperties({...instanceBase})
-        this.$kvs = this.$model.normlizePropertyData(instanceBase, this.$kvs)
-        this.$refs = this.$model.normlizeAssociationData(instanceBase, this.$refs)
+        this.$model.normalizeDataIntoInstance({...instanceBase}, {
+            onPropertyField: ({ fieldname, transformedValue }) => {
+                // dont use $set, never leave change history now.
+                this.$kvs[fieldname] = transformedValue
+            },
+            onAssociationField: ({ fieldname, transformedValue }) => {
+                this.$refs[fieldname] = transformedValue
+            }
+        })
+
+        // this.$kvs = this.$model.normlizePropertyData(instanceBase, this.$kvs)
+        // this.$refs = this.$model.normalizeAssociationData(instanceBase, this.$refs)
 
         return getInstance(this) as any;
     }
@@ -215,7 +225,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
     $fetchReference () {
         const refs = this.$getReference(this.$model.associationNames);
 
-        this.$model.normlizeAssociationData(refs, this.$refs);
+        this.$model.normalizeAssociationData(refs, this.$refs);
 
         return this
     }
@@ -264,7 +274,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
             throw new Error(`[Instance::save] invalid save arguments ${dataset}, it should be non-empty object or undefined`)
 
         const kvs = {...this.$kvs, ...this.$model.normlizePropertyData(dataset)}
-        const refs = {...this.$refs, ...this.$model.normlizeAssociationData(dataset)}
+        const refs = {...this.$refs, ...this.$model.normalizeAssociationData(dataset)}
 
         /* fill default value :start */
         this.$model.propertyList.forEach(property => {
@@ -294,16 +304,21 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         this.$dml
             .toSingleton()
             .useTrans((dml: any) => {
-                if (this.$isPersisted && (!this.$model.noKey && this.$exists())) {
+                if (this.$isPersisted && this.$exists()) {
                     const changes = this.$model.normalizePropertiesToData(kvs);
                     const whereCond = <typeof changes>{};
 
+                    let hasWhere = false
                     Object.values(this.$model.idPropertyList).forEach(property => {
                         if (changes.hasOwnProperty(property.mapsTo)) {
                             whereCond[property.mapsTo] = changes[property.mapsTo]
                             delete changes[property.mapsTo];
+                            hasWhere = true
                         }
                     });
+
+                    if (!hasWhere)
+                        throw new Error(`[Instance::save] update in $save must have specific where conditions, check your instance`)
 
                     dml.update(
                         this.$model.collection,
@@ -319,9 +334,13 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
                     );
 
                     if (insertResult)
-                        this.$model.normalizeDataToProperties(
-                            Object.assign(insertResult),
-                            this.$kvs
+                        this.$model.normalizeDataIntoInstance(
+                            insertResult,
+                            {
+                                onPropertyField: ({ fieldname, transformedValue }) => {
+                                    this.$kvs[fieldname] = transformedValue
+                                }
+                            }
                         )
                     this.$model.normlizePropertyData(kvs, this.$kvs)
                 }
@@ -388,6 +407,14 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
     }
 
     $exists (): boolean {
+        if (this.$model.noKey) {
+            // const fn = this.$model.settings.get('instance.checkExists')
+            // if (typeof fn === 'function') return fn(this)
+            if (this.$model.isMergeModel) return (<FxOrmModel.Class_MergeModel>this.$model).checkExistenceForSource(this)
+
+            return false
+        }
+        
         const where: Fibjs.AnyObject = {};
 
         if (!this.$model.idPropertyList.length) {
@@ -412,10 +439,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         // if no any id filled, return false directly
         if (!withIdFilled) return false
 
-        return this.$dml.exists(
-            this.$model.collection,
-            { where }
-        )
+        return this.$dml.exists(this.$model.collection, { where })
     }
 
     toJSON () {
@@ -426,7 +450,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
                 json[k] = this.$kvs[k];
         })
 
-        this.$model.normlizeAssociationData(this.$refs, json);
+        this.$model.normalizeAssociationData(this.$refs, json);
 
         return json;
     }

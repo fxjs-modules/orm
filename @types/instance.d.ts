@@ -83,6 +83,7 @@ declare namespace FxOrmInstance {
         $exists (): boolean
         $clearChanges(fieldName?: string | string[]): void
 
+        $isFieldFilled (fieldname: string): boolean
 
         toString (): string
         toJSON (): Class_Instance['$kvs'];

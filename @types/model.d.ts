@@ -160,7 +160,13 @@ declare namespace FxOrmModel {
          *  filter out properties-about key-value in dataset only,
          *  and transform [key] to correspoding `mapsTo` field in property
          */
-        normalizeDataToProperties (dataset: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        normalizeDataIntoInstance (
+            dataset: Fibjs.AnyObject,
+            opts?: {
+                onPropertyField?: (payload: { origValue: any, transformedValue: any, fieldname: string, mapsTo: string }) => void
+                onAssociationField?: (payload: { origValue: any, transformedValue: any, fieldname: string }) => void
+            }
+        ): any
         /**
          * @description
          *  filter out properties-about key-value in datastore only,
@@ -178,7 +184,7 @@ declare namespace FxOrmModel {
          *  filter out association-about key-value in `mixed` only,
          *  and transform [key] to correspoding `name` field in property
          */
-        normlizeAssociationData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        normalizeAssociationData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
         /**
          * @description
          *  filter out association-about key-value in dataset only,
@@ -320,6 +326,8 @@ declare namespace FxOrmModel {
 
         isSourceModel (model: Class_Model): boolean
         isTarget (model: Class_Model): boolean
+
+        checkExistenceForSource (mergeInstance: FxOrmInstance.Class_Instance): boolean
 
         saveForSource (opts: {
             targetDataSet: Fibjs.AnyObject | FxOrmInstance.Class_Instance,
