@@ -208,6 +208,14 @@ declare namespace FxOrmQueries {
           }
         }
 
+        readonly join: Class_QueryBuilder['Qlfn']['Selects']['join']
+        readonly leftJoin: Class_QueryBuilder['Qlfn']['Selects']['leftJoin']
+        readonly leftOuterJoin: Class_QueryBuilder['Qlfn']['Selects']['leftOuterJoin']
+        readonly rightJoin: Class_QueryBuilder['Qlfn']['Selects']['rightJoin']
+        readonly rightOuterJoin: Class_QueryBuilder['Qlfn']['Selects']['rightOuterJoin']
+        readonly innerJoin: Class_QueryBuilder['Qlfn']['Selects']['innerJoin']
+        readonly fullOuterJoin: Class_QueryBuilder['Qlfn']['Selects']['fullOuterJoin']
+
         model: FxOrmModel.Class_Model;
         conditions: any;
 

@@ -44,7 +44,7 @@ const filterWhereToKnexActionsInternal = gnrWalkWhere<
 >({
   onNode: ({ scene, nodeFrame, walk_fn, walk_fn_context, input }) => {
     const dfltReturn = { isReturn: false, result: <any>null }
-    const { bQList } = walk_fn_context || {}
+    const { bQList } = walk_fn_context
 
     switch (scene) {
       case 'inputAs:conjunctionAsAnd': {
@@ -142,13 +142,13 @@ export const filterJoinOnConditionToClauseBuilderActions = gnrWalkWhere<
   null,
   {
     source_collection: string,
-    // target_collection: string,
+    target_collection: string,
     jbuilder: FKnexNS.Knex.JoinClause
   }
 >({
   onNode: ({ scene, nodeFrame, walk_fn, walk_fn_context, input }) => {
     const dfltReturn = { isReturn: false, result: <any>null }
-    const { jbuilder, source_collection } = walk_fn_context || {}
+    const { jbuilder, source_collection, target_collection } = walk_fn_context
 
     if (!jbuilder) throw new Error(`[filterJoinOnConditionToClauseBuilderActions] jbuilder required!`)
     if (!source_collection) throw new Error(`[filterJoinOnConditionToClauseBuilderActions] source_collection required!`)
@@ -182,8 +182,7 @@ export const filterJoinOnConditionToClauseBuilderActions = gnrWalkWhere<
             switch (cmpr_opfn_result.value.$wrapper) {
               case QueryGrammers.Qlfn.Others.refTableCol: fValue = `${fValue.table}.${fValue.column}`
                 break
-              case QueryGrammers.Qlfn.Operators.colref :
-                // TODO check it? fValue = fValue.value ;
+              case QueryGrammers.Qlfn.Operators.colref: fValue = `${target_collection}.${fValue}`
                 break
               case QueryGrammers.Qlfn.Operators.between: fValue = parseOperatorFunctionAsValue(fValue)
                 break
@@ -235,7 +234,7 @@ const filterJoinsToKnexActionsInternal = gnrWalkJoinOn<
 >({
   onJoinNode: ({ scene, nodeFrame, walk_fn, walk_fn_context, input }) => {
     const dfltReturn = { isReturn: false, result: <any>null }
-    const { bQList, source_collection } = walk_fn_context || {}
+    const { bQList, source_collection } = walk_fn_context
 
     switch (scene) {
       case 'inputIs:joinList': {
@@ -248,31 +247,31 @@ const filterJoinsToKnexActionsInternal = gnrWalkJoinOn<
         switch (input.$wrapper) {
           case QueryGrammers.Qlfn.Selects.join:
             bQList.push((builder) => { builder.join(target_collection, function () {
-              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection/* , target_collection */})
+              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection, target_collection})
             }) }); break
           case QueryGrammers.Qlfn.Selects.leftJoin:
             bQList.push((builder) => { builder.leftJoin(target_collection, function () {
-              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection/* , target_collection */})
+              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection, target_collection})
             }) }); break
           case QueryGrammers.Qlfn.Selects.leftOuterJoin:
             bQList.push((builder) => { builder.leftOuterJoin(target_collection, function () {
-              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection/* , target_collection */})
+              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection, target_collection})
             }) }); break
           case QueryGrammers.Qlfn.Selects.rightJoin:
             bQList.push((builder) => { builder.rightJoin(target_collection, function () {
-              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection/* , target_collection */})
+              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection, target_collection})
             }) }); break
           case QueryGrammers.Qlfn.Selects.rightOuterJoin:
             bQList.push((builder) => { builder.rightOuterJoin(target_collection, function () {
-              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection/* , target_collection */})
+              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection, target_collection})
             }) }); break
           case QueryGrammers.Qlfn.Selects.fullOuterJoin:
             bQList.push((builder) => { builder.fullOuterJoin(target_collection, function () {
-              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection/* , target_collection */})
+              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection, target_collection})
             }) }); break
           case QueryGrammers.Qlfn.Selects.innerJoin:
             bQList.push((builder) => { builder.innerJoin(target_collection, function () {
-              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection/* , target_collection */})
+              filterJoinOnConditionToClauseBuilderActions(condInput.on, {jbuilder: this, source_collection, target_collection})
             }) }); break
         }
       }

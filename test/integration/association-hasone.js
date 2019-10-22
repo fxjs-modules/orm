@@ -1,7 +1,7 @@
 var ORM = require('../../');
 var helper = require('../support/spec_helper');
 
-describe("hasOne", function () {
+odescribe("hasOne", function () {
     var db = null;
     var Tree = null;
     var Stalk = null;
@@ -90,6 +90,30 @@ describe("hasOne", function () {
     after(function () {
         db.close();
     });
+
+    odescribe("manual find", function () {
+        before(setup());
+
+        oit("left join", function () {
+            var leaf = Leaf.one({
+                select: (() => {
+                    const fmap = {}
+                    Leaf.propertyList.forEach(property => {
+                        fmap[property.mapsTo] = `${Leaf.collection}.${property.mapsTo}`
+                    })
+                    return fmap
+                })(),
+                joins: [
+                    Leaf.leftJoin({
+                        collection: Tree.collection,
+                        on: {
+                            tree_id: Tree.Opf.colref("id")
+                        }
+                    })
+                ]
+            })
+        });
+    })
 
     odescribe("accessors", function () {
         before(setup());
@@ -390,7 +414,7 @@ describe("hasOne", function () {
         });
     });
 
-    odescribe("association name letter case", function () {
+    describe("association name letter case", function () {
         it("should be kept", function () {
             db.settings.set('instance.identityCache', false);
             db.settings.set('instance.returnAllErrors', true);
@@ -445,7 +469,6 @@ describe("hasOne", function () {
             assert.isFunction(ChainFind.runSync);
         });
     });
-
 
     describe("mapsTo", function () {
         describe("with `mapsTo` set via `hasOne`", function () {

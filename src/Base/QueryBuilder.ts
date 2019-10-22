@@ -7,7 +7,7 @@ import { buildDescriptor } from '../Decorators/property';
 import { arraify } from '../Utils/array';
 import { isEmptyPlainObject } from '../Utils/object';
 import Normalizer from './Query/Normalizer';
-import { dfltWalkWhere, dfltWalkOn } from './Query/onWalkConditions';
+import { dfltWalkWhere, dfltWalkOn } from './Query/walkOnHQL';
 
 import * as QueryGrammers from './Query/QueryGrammar'
 
@@ -44,6 +44,14 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
     get Ql () { return QueryGrammers.Ql }
     get Qlfn () { return QueryGrammers.Qlfn }
 
+    get join () { return QueryGrammers.Qlfn.Selects.join }
+    get leftJoin () { return QueryGrammers.Qlfn.Selects.leftJoin }
+    get leftOuterJoin () { return QueryGrammers.Qlfn.Selects.leftOuterJoin }
+    get rightJoin () { return QueryGrammers.Qlfn.Selects.rightJoin }
+    get rightOuterJoin () { return QueryGrammers.Qlfn.Selects.rightOuterJoin }
+    get innerJoin () { return QueryGrammers.Qlfn.Selects.innerJoin }
+    get fullOuterJoin () { return QueryGrammers.Qlfn.Selects.fullOuterJoin }
+
     model: FxOrmModel.Class_Model;
 
     conditions: any;
@@ -58,9 +66,7 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
      * @description find tuples from remote endpoints
      */
     @transformToQCIfModel
-    getQueryBuilder () {
-        return this
-    }
+    getQueryBuilder () { return this }
 
     /**
      * @description find tuples from remote endpoints
@@ -171,7 +177,7 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
      */
     @transformToQCIfModel
     walkWhere (...args: FxOrmTypeHelpers.Parameters<typeof dfltWalkWhere>) {
-      const [input, opts] = args || []
+      const [input, opts] = args
       return dfltWalkWhere(input, {
         source_collection: undefined/* this.model.collection */,
         parent_conjunction_op: undefined,
@@ -184,7 +190,7 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
      */
     @transformToQCIfModel
     walkJoinOn (...args: FxOrmTypeHelpers.Parameters<typeof dfltWalkOn>) {
-      const [input] = args || []
+      const [input] = args
       return dfltWalkOn(input, {
         source_collection: this.model.collection,
         is_top_output: true

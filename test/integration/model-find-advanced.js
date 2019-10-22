@@ -1,7 +1,7 @@
 var ORM = require('../../');
 var helper = require('../support/spec_helper');
 
-describe("Model.find() - advanced", function () {
+odescribe("Model.find() - advanced", function () {
     var db = null;
     var Person = null;
     var Jack = Joe = null;
