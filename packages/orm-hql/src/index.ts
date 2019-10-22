@@ -319,7 +319,7 @@ function parserDefinition(
         }
         if (node.type === "table_ref" && node.on) {
           // const simple_eq_columns = <FxHQLParser.ColumnRefNode[]>[];
-          const conditions = <FxHQLParser.OperatorExprNode[]>[];
+          const conditions = <FxHQLParser.ExprOperatorEqNodeInJoin[]>[];
           // console.log('node.on', node.on);
           walk(node.on, (n: FxHQLTypeHelpers.T_OBJ_ONLY<FxHQLTypeHelpers.ItemInArrayOrValueInObject<FxHQLParser.TableRefNode['on']>>) => {
             switch ((<any>n).type) {

@@ -127,9 +127,13 @@ declare namespace FxHQLParser {
           | ">"
           | ">="
           | "!="
-        op_left: ValueTypeRawNode | IdentifierNode | ColumnExprNode
-        op_right: ValueTypeRawNode | IdentifierNode | ColumnExprNode
+        op_left: ValueTypeRawNode | IdentifierNode | ColumnExprNode | ColumnRefNode
+        op_right: ValueTypeRawNode | IdentifierNode | ColumnExprNode | ColumnRefNode
     }>
+
+    interface ExprOperatorEqNodeInJoin extends ExprOperatorComparisonNode {
+      operator: '='
+    }
 
     type ExprOperatorNotNode = IParsedNode<{
         type: "operator"
