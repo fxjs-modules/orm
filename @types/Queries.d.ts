@@ -210,7 +210,6 @@ declare namespace FxOrmQueries {
 
         model: FxOrmModel.Class_Model;
         conditions: any;
-        readonly sqlQuery: FxSqlQuery.Class_Query
 
         getQueryBuilder (): Class_QueryBuilder<T_RETURN>
 

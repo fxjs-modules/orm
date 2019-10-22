@@ -10,7 +10,7 @@ declare namespace FxOrmProperty {
             (propertyValue?: any, prop?: FxOrmProperty.NormalizedProperty): any
         }
     }
-    
+
     /**
      * @description useful when pass property's option(such as type, big, ...etc) internally, useless for exposed api.
      */
@@ -36,7 +36,7 @@ declare namespace FxOrmProperty {
         time: FxOrmSqlDDLSync__Column.Property['time']
         big: FxOrmSqlDDLSync__Column.Property['big']
         values: FxOrmSqlDDLSync__Column.Property['values']
-        
+
         lazyload: boolean
         lazyname: string
         enumerable: boolean
@@ -46,7 +46,9 @@ declare namespace FxOrmProperty {
         [ext_k: string]: any
     }
 
-    class Class_Property<T_CTX = any> implements NormalizedProperty {
+    class Class_Property<
+      T_CTX extends Fibjs.AnyObject & { sqlQuery?: FxSqlQuery.Class_Query } = any
+    > implements NormalizedProperty {
         $storeType: FxDbDriverNS.Driver<any>['type']
         $ctx: T_CTX
 
@@ -71,7 +73,7 @@ declare namespace FxOrmProperty {
         time: FxOrmSqlDDLSync__Column.Property['time']
         big: FxOrmSqlDDLSync__Column.Property['big']
         values: FxOrmSqlDDLSync__Column.Property['values']
-        
+
         lazyload: boolean
         lazyname: string
         enumerable: boolean
@@ -90,7 +92,7 @@ declare namespace FxOrmProperty {
         // static create (...args: FxOrmTypeHelpers.ConstructorParams<Class_Property>): Class_Property
         constructor (
             input: any,
-            opts?: 
+            opts?:
             {
                 propertyName: string
                 storeType: FxOrmProperty.Class_Property['$storeType']

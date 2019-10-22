@@ -35,9 +35,9 @@ function getNormalizedProperty (
 
     let isPrimary = !!overwrite.primary
     const isSerial = type === 'serial'
-    
+
     let isUnsigned = !!overwrite.unsigned
-    
+
     let isUnique = !!overwrite.unique
 
     // TODO: should use serial always primary?
@@ -49,7 +49,7 @@ function getNormalizedProperty (
     if (!size && isSerial) size = 4
 
     if (isPrimary || isSerial) required = true
-    
+
     return {
         key: false,
         index: false,
@@ -59,7 +59,7 @@ function getNormalizedProperty (
         big: false,
         values: null,
         lazyload: false,
-        
+
         ...overwrite,
         type,
         name,
@@ -167,10 +167,10 @@ function filterComplexPropertyDefinition (
 
     if (!input || typeof input !== 'object')
         throw new Error('property must be valid descriptor or built-in type')
-    
+
     if (input instanceof Function)
         throw new Error(`invalid property type 'function'`)
-    
+
     return getNormalizedProperty({
         ...normalizedNameStruct,
         ...input,
@@ -179,9 +179,9 @@ function filterComplexPropertyDefinition (
 
 /**
  * @from @fxjs/sql-ddl-sync Utils.ts `filterPropertyDefaultValue`
- * 
- * @param property 
- * @param ctx 
+ *
+ * @param property
+ * @param ctx
  */
 function filterDefaultValue (
     property: FxOrmSqlDDLSync__Column.Property,
@@ -204,7 +204,7 @@ function filterDefaultValue (
 function isValidCustomizedType(
     customType?: FxOrmProperty.Class_Property['customType']
 ) {
-    if (!customType) return 
+    if (!customType) return
 
     return (
         typeof customType.datastoreType === 'function'
@@ -213,7 +213,9 @@ function isValidCustomizedType(
     )
 }
 
-export default class Property<T_CTX = any> implements FxOrmProperty.Class_Property<T_CTX> {
+export default class Property<
+  T_CTX extends Fibjs.AnyObject & { sqlQuery?: FxSqlQuery.Class_Query } = any
+> implements FxOrmProperty.Class_Property<T_CTX> {
     static filterDefaultValue = filterDefaultValue;
 
     $storeType: FxDbDriverNS.Driver<any>['type'];
@@ -248,10 +250,10 @@ export default class Property<T_CTX = any> implements FxOrmProperty.Class_Proper
     lazyname: FxOrmProperty.Class_Property['lazyname']
     enumerable: FxOrmProperty.Class_Property['enumerable']
     /* meta :end */
-    
+
     @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
     $definition: FxOrmProperty.NormalizedProperty
-    
+
     // @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
     // $remote: FxOrmProperty.NormalizedProperty
 
@@ -265,15 +267,13 @@ export default class Property<T_CTX = any> implements FxOrmProperty.Class_Proper
     }
 
     toStoreValue (value: any): any {
-        return this.transformer.propertyToValue(
+        let raw = this.transformer.propertyToValue(
             value, this as any,
             this.customType ? {[this.$definition.type]: this.customType} : {}
         )
-    }
 
-    // static create (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmProperty.Class_Property>) {
-    //     return new Property(...args);
-    // }
+        return raw
+    }
 
     constructor (
         input: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmProperty.Class_Property>[0],
@@ -294,8 +294,8 @@ export default class Property<T_CTX = any> implements FxOrmProperty.Class_Proper
 
         this.$storeType = storeType
 
-        const $definition = this.$definition = <Property['$definition']>filterComplexPropertyDefinition(input, propertyName);
-        
+        const $definition = this.$definition = <Property<T_CTX>['$definition']>filterComplexPropertyDefinition(input, propertyName);
+
         const self = this as any
         PROPERTIES_KEYS.forEach((k: any) => self[k] = $definition[k])
 

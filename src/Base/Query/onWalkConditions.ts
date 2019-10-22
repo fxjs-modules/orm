@@ -119,46 +119,57 @@ function getComparisionNodeByValueNodeType (
 }
 
 const noOp = function () { return null as any };
-export function gnrWalkWhere<
-  T_NODE extends FxHQLParser.WhereNode['condition'],
-  T_CTX extends Fibjs.AnyObject
-> ({
-  onNode = noOp,
-}: {
-  onNode?: (nodeInfo: {
+type WalkThroughNodeCallback<T_CTX = any, T_FN = any, T_EVENTS = any> = (
+  nodeInfo: {
     /**
      * @shouldit be symbol?
      */
-    scene: 'inputIs:opfn:bracketRound'
-    | 'inputAs:conjunctionAsAnd'
-    | 'walkJoinOn:opfn:bracketRound'
-    | 'walkJoinOn:opfn:refTableCol'
-    | 'walkJoinOn:opfn:colref'
-    | 'walkJoinOn:opfn:like'
-    | 'walkJoinOn:opfn:between'
-    | 'walkJoinOn:opfn:in'
-    | 'walkJoinOn:opfn:comparator'
-    | 'walkJoinOn:opsymbol:bracketRound'
-    | 'walkJoinOn:opsymbol:conjunction'
-    ,
-    walk_fn: FxOrmTypeHelpers.ReturnType<typeof gnrWalkWhere>,
+    scene: T_EVENTS,
+    walk_fn: T_FN,
     /**
      * walk_fn_context must be immutable
      */
     walk_fn_context: T_CTX
     input: any,
     nodeFrame: any
-  }) => {
-    isReturn: Boolean,
-    result: any
   }
-} = {}): ((
-  input: FxOrmTypeHelpers.ItOrListOfIt<null | undefined | FxOrmQueries.WhereObjectInput | FxOrmQueries.OperatorFunction>,
-  context: {
-    source_collection?: string
-    parent_conjunction_op?: FxOrmQueries.OPERATOR_TYPE_CONJUNCTION
-  } & T_CTX
-) => T_NODE) {
+) => {
+  isReturn: Boolean,
+  result: any
+}
+
+type WalkWhereOnNodeCallback<T_CTX> = WalkThroughNodeCallback<
+  T_CTX,
+  any,
+  'inputIs:opfn:bracketRound'
+  | 'inputAs:conjunctionAsAnd'
+  | 'walkWhere:opfn:bracketRound'
+  | 'walkWhere:opfn:refTableCol'
+  | 'walkWhere:opfn:colref'
+  | 'walkWhere:opfn:like'
+  | 'walkWhere:opfn:between'
+  | 'walkWhere:opfn:in'
+  | 'walkWhere:opfn:comparator'
+  | 'walkJoinOn:opsymbol:bracketRound'
+  | 'walkJoinOn:opsymbol:conjunction'
+>
+export function gnrWalkWhere<
+  T_NODE extends FxHQLParser.WhereNode['condition'],
+  T_CTX extends Fibjs.AnyObject
+> ({
+  onNode = noOp,
+}: {
+  onNode?: WalkWhereOnNodeCallback<T_CTX>
+} = {}): ({
+  (
+    input: FxOrmTypeHelpers.ItOrListOfIt<null | undefined | FxOrmQueries.WhereObjectInput | FxOrmQueries.OperatorFunction>,
+    context: {
+      source_collection?: string
+      parent_conjunction_op?: FxOrmQueries.OPERATOR_TYPE_CONJUNCTION
+    } & T_CTX
+  ): T_NODE,
+  onNode: WalkWhereOnNodeCallback<T_CTX>
+}) {
   const walk_fn: FxOrmTypeHelpers.ReturnType<typeof gnrWalkWhere> = function (input, context) {
     if (!context)
       throw new Error(`[gnrWalkWhere::walk_fn] context missing! report to your administrator that there's walk routing not passing context to it's sub node!`)
@@ -251,7 +262,7 @@ export function gnrWalkWhere<
         case QueryGrammers.Qlfn.Others.refTableCol:
           parsedNode = onNode({
             ...staticOnNodeParams,
-            scene: 'walkJoinOn:opfn:refTableCol',
+            scene: 'walkWhere:opfn:refTableCol',
             nodeFrame: { ref_opfn_result: payv, field_name }
           }).result
           break
@@ -261,7 +272,7 @@ export function gnrWalkWhere<
         case QueryGrammers.Qlfn.Operators.like: {
           parsedNode = onNode({
             ...staticOnNodeParams,
-            scene: 'walkJoinOn:opfn:like',
+            scene: 'walkWhere:opfn:like',
             nodeFrame: { cmpr_opfn_result: payv, not: isNot, field_name }
           }).result
           break
@@ -270,7 +281,7 @@ export function gnrWalkWhere<
         case QueryGrammers.Qlfn.Operators.between: {
           parsedNode = onNode({
             ...staticOnNodeParams,
-            scene: 'walkJoinOn:opfn:between',
+            scene: 'walkWhere:opfn:between',
             nodeFrame: { cmpr_opfn_result: payv, not: isNot, field_name }
           }).result
           break
@@ -281,7 +292,7 @@ export function gnrWalkWhere<
         case QueryGrammers.Qlfn.Operators.in: {
           parsedNode = onNode({
             ...staticOnNodeParams,
-            scene: 'walkJoinOn:opfn:in',
+            scene: 'walkWhere:opfn:in',
             nodeFrame: { cmpr_opfn_result: payv, not: isNot, field_name }
           }).result
           break
@@ -296,7 +307,7 @@ export function gnrWalkWhere<
         {
           parsedNode = onNode({
             ...staticOnNodeParams,
-            scene: 'walkJoinOn:opfn:comparator',
+            scene: 'walkWhere:opfn:comparator',
             nodeFrame: { cmpr_opfn_result: payv, not: isNot, field_name }
           }).result
           break
@@ -310,7 +321,9 @@ export function gnrWalkWhere<
     return parsedNode
   }
 
-  return walk_fn
+  walk_fn.onNode = onNode
+
+  return <any>walk_fn
 }
 
 /**
@@ -329,7 +342,7 @@ export const dfltWalkWhere = gnrWalkWhere({
             exprs: [walk_fn(input().value, walk_fn_context)]
           }
         }
-      case 'walkJoinOn:opfn:bracketRound':
+      case 'walkWhere:opfn:bracketRound':
         return {
           isReturn: false,
           result: {
@@ -337,7 +350,7 @@ export const dfltWalkWhere = gnrWalkWhere({
             exprs: [walk_fn(nodeFrame.cmpr_opfn_result, walk_fn_context)]
           }
         }
-      case 'walkJoinOn:opfn:refTableCol':
+      case 'walkWhere:opfn:refTableCol':
         return {
           isReturn: false,
           result: {
@@ -346,7 +359,7 @@ export const dfltWalkWhere = gnrWalkWhere({
             column: nodeFrame.ref_opfn_result.value.column,
           }
         }
-      case 'walkJoinOn:opfn:colref':
+      case 'walkWhere:opfn:colref':
         return {
           isReturn: false,
           result: {
@@ -354,10 +367,10 @@ export const dfltWalkWhere = gnrWalkWhere({
             value: nodeFrame.cmpr_opfn_result.value
           }
         }
-      case 'walkJoinOn:opfn:comparator':
-      case 'walkJoinOn:opfn:like':
-      case 'walkJoinOn:opfn:between':
-        case 'walkJoinOn:opfn:in': {
+      case 'walkWhere:opfn:comparator':
+      case 'walkWhere:opfn:like':
+      case 'walkWhere:opfn:between':
+      case 'walkWhere:opfn:in': {
         let value = nodeFrame.cmpr_opfn_result.value
 
         const { source_collection } = walk_fn_context || {};
@@ -371,7 +384,7 @@ export const dfltWalkWhere = gnrWalkWhere({
         }
 
         switch (scene) {
-          case 'walkJoinOn:opfn:comparator': {
+          case 'walkWhere:opfn:comparator': {
             const vtype = mapVTypeToHQLNodeType(value)
             if (isOperatorFunction(value)) value = parseOperatorFunctionAsValue(value)
 
@@ -385,7 +398,7 @@ export const dfltWalkWhere = gnrWalkWhere({
               }
             }
           }
-          case 'walkJoinOn:opfn:like': {
+          case 'walkWhere:opfn:like': {
             const vtype = mapVTypeToHQLNodeType(value)
             if (isOperatorFunction(value)) value = parseOperatorFunctionAsValue(value)
             /**
@@ -402,7 +415,7 @@ export const dfltWalkWhere = gnrWalkWhere({
               }
             }
           }
-          case 'walkJoinOn:opfn:between': {
+          case 'walkWhere:opfn:between': {
             if (isOperatorFunction(value)) value = parseOperatorFunctionAsValue(value)
             else value = normalizeWhereInput(value)
 
@@ -417,7 +430,7 @@ export const dfltWalkWhere = gnrWalkWhere({
               }
             }
           }
-          case 'walkJoinOn:opfn:in': {
+          case 'walkWhere:opfn:in': {
             if (isOperatorFunction(value)) value = parseOperatorFunctionAsValue(value)
             else value = normalizeInInput(value)
 
@@ -480,98 +493,94 @@ export const dfltWalkWhere = gnrWalkWhere({
   }
 });
 
-export function gnrWalkOn<
+type WalkJoinOnOnNodeCallback<T_CTX> = WalkThroughNodeCallback<
+  T_CTX,
+  any,
+  'inputIs:joinList' | 'inputIs:opfn:joinVerb'
+>
+export function gnrWalkJoinOn<
   T_NODE extends FxOrmQueries.Class_QueryNormalizer['joins'][any],
-  T_CTX extends {
-    source_collection: string,
-    is_top_output?: boolean
-    joinParams?: {
-      side?: FxOrmQueries.Class_QueryNormalizer['joins'][any]['side']
-      specific_outer?: FxOrmQueries.Class_QueryNormalizer['joins'][any]['specific_outer']
-      inner?: FxOrmQueries.Class_QueryNormalizer['joins'][any]['inner']
-    }
-  }
+  T_CTX extends Fibjs.AnyObject = Fibjs.AnyObject
 > ({
-  onNode = noOp,
+  onJoinNode = noOp,
+  walkerWhereConditions = <any>noOp
 }: {
-  onNode?: (nodeInfo: {
-    /**
-     * @shouldit be symbol?
-     */
-    scene: 'inputIs:joinList'
-    | 'inputIs:opfn:joinVerb'
-    ,
-    walk_fn: FxOrmTypeHelpers.ReturnType<typeof gnrWalkOn>,
-    /**
-     * walk_fn_context must be immutable
-     */
-    walk_fn_context: T_CTX
-    input: any,
-    nodeFrame: any
-  }) => {
-    isReturn: Boolean,
-    result: any
+  onJoinNode?: WalkJoinOnOnNodeCallback<T_CTX>,
+  walkerWhereConditions?: ReturnType<typeof gnrWalkWhere>
+} = {}): (
+  {
+    (
+      input: FxOrmTypeHelpers.ItOrListOfIt<null | undefined | FxOrmQueries.WhereObjectInput | FxOrmQueries.OperatorFunction>,
+      context: T_CTX & {
+        source_collection: string,
+        is_top_output?: boolean
+        joinParams?: {
+          side?: FxOrmQueries.Class_QueryNormalizer['joins'][any]['side']
+          specific_outer?: FxOrmQueries.Class_QueryNormalizer['joins'][any]['specific_outer']
+          inner?: FxOrmQueries.Class_QueryNormalizer['joins'][any]['inner']
+        }
+      }
+    ): FxOrmTypeHelpers.ItOrListOfIt<T_NODE>,
+    onJoinNode: WalkJoinOnOnNodeCallback<T_CTX>
+    walkerWhereConditions: ReturnType<typeof gnrWalkWhere>
   }
-} = {}): ((
-  input: FxOrmTypeHelpers.ItOrListOfIt<null | undefined | FxOrmQueries.WhereObjectInput | FxOrmQueries.OperatorFunction>,
-  context: Fibjs.AnyObject & T_CTX
-) => FxOrmTypeHelpers.ItOrListOfIt<T_NODE>) {
-  const walk_fn: FxOrmTypeHelpers.ReturnType<typeof gnrWalkOn> = function (input, context) {
+) {
+  const walk_fn: FxOrmTypeHelpers.ReturnType<typeof gnrWalkJoinOn> = function (input, context) {
     if (!context)
-      throw new Error(`[gnrWalkOn::walk_fn] context missing! report to your administrator that there's walk routing not passing context to it's sub node!`)
+      throw new Error(`[gnrWalkJoinOn::walk_fn] context missing! report to your administrator that there's walk routing not passing context to it's sub node!`)
 
-    const staticOnNodeParams = <FxOrmTypeHelpers.FirstParameter<typeof onNode>>{ input, walk_fn, walk_fn_context: {...context, is_top_output: false}, nodeFrame: undefined }
+    const staticOnNodeParams = <FxOrmTypeHelpers.FirstParameter<typeof onJoinNode>><unknown>{ input, walk_fn, walk_fn_context: {...context, is_top_output: false}, nodeFrame: undefined }
     if (!input) return null
     else if (isOperatorFunction(input)) {
       switch (input.$wrapper) {
         case QueryGrammers.Qlfn.Selects.join: {
-          const state = onNode({
+          const state = onJoinNode({
             ...staticOnNodeParams, scene: 'inputIs:opfn:joinVerb', nodeFrame: { use_list: !!context.is_top_output ,specific_outer: false }
           })
           if (state && state.isReturn) return state.result
         }
           break
         case QueryGrammers.Qlfn.Selects.leftJoin: {
-          const state = onNode({
+          const state = onJoinNode({
             ...staticOnNodeParams, scene: 'inputIs:opfn:joinVerb', nodeFrame: { use_list: !!context.is_top_output ,side: 'left', specific_outer: false }
           })
           if (state && state.isReturn) return state.result
         }
           break
         case QueryGrammers.Qlfn.Selects.leftOuterJoin: {
-          const state = onNode({
+          const state = onJoinNode({
             ...staticOnNodeParams, scene: 'inputIs:opfn:joinVerb', nodeFrame: { use_list: !!context.is_top_output ,side: 'left', specific_outer: true }
           })
           if (state && state.isReturn) return state.result
         }
           break
         case QueryGrammers.Qlfn.Selects.rightJoin: {
-          const state = onNode({
+          const state = onJoinNode({
             ...staticOnNodeParams, scene: 'inputIs:opfn:joinVerb', nodeFrame: { use_list: !!context.is_top_output ,side: 'right', specific_outer: false }
           })
           if (state && state.isReturn) return state.result
         }
         case QueryGrammers.Qlfn.Selects.rightOuterJoin: {
-          const state = onNode({
+          const state = onJoinNode({
             ...staticOnNodeParams, scene: 'inputIs:opfn:joinVerb', nodeFrame: { use_list: !!context.is_top_output ,side: 'right', specific_outer: true }
           })
           if (state && state.isReturn) return state.result
         }
         case QueryGrammers.Qlfn.Selects.fullOuterJoin: {
-          const state = onNode({
+          const state = onJoinNode({
             ...staticOnNodeParams, scene: 'inputIs:opfn:joinVerb', nodeFrame: { use_list: !!context.is_top_output ,side: 'full', specific_outer: true }
           })
           if (state && state.isReturn) return state.result
         }
         case QueryGrammers.Qlfn.Selects.innerJoin: {
-          const state = onNode({
+          const state = onJoinNode({
             ...staticOnNodeParams, scene: 'inputIs:opfn:joinVerb', nodeFrame: { use_list: !!context.is_top_output ,specific_outer: false, inner: true }
           })
           if (state && state.isReturn) return state.result
         }
           break
         default:
-          throw new Error(`[gnrWalkOn::#main] unsupported Query Language ${input.$op_name}`)
+          throw new Error(`[gnrWalkJoinOn::#main] unsupported Query Language ${input.$op_name}`)
       }
     }
 
@@ -581,7 +590,7 @@ export function gnrWalkOn<
       if (!input.length) return null
       if (input.length === 1) return walk_fn(idify(input), context)
 
-      const state = onNode({ ...staticOnNodeParams, scene: 'inputIs:joinList' })
+      const state = onJoinNode({ ...staticOnNodeParams, scene: 'inputIs:joinList' })
       if (state && state.isReturn)
         return state.result
     }
@@ -589,8 +598,51 @@ export function gnrWalkOn<
     return walk_fn(QueryGrammers.Qlfn.Selects.join({ collection: undefined, on: input }), context)
   }
 
-  return walk_fn
+  walk_fn.onJoinNode = onJoinNode
+  walk_fn.walkerWhereConditions= walkerWhereConditions
+
+  return <any>walk_fn
 }
+
+export const dfltWalkOn = gnrWalkJoinOn({
+  onJoinNode: ({ scene, walk_fn, input, walk_fn_context, nodeFrame }) => {
+    switch (scene) {
+      case 'inputIs:opfn:joinVerb': {
+        const condInput = input().value
+        const conditions = walk_fn.walkerWhereConditions(condInput.on, { source_collection: walk_fn_context.source_collection });
+        if (!conditions || conditions.type !== 'operator')
+          throw new Error(`[dfltWalkOn::onNode] conditions result of join verb must be (type: 'operator'`)
+
+        let targetCollection = condInput.collection
+        if (!targetCollection) {
+          const refNode = findFirstOpRightColumnNodeInConditionResult(conditions)
+          if (refNode) targetCollection = refNode.table
+        }
+
+        const jonNode = {
+          side: nodeFrame.side || undefined,
+          specific_outer: nodeFrame.specific_outer === true,
+          inner: !nodeFrame.specific_outer && nodeFrame.inner === true,
+          conditions: arraify(conditions),
+          ref_right: {
+            type: 'table',
+            table: targetCollection
+          }
+        }
+        return {
+          isReturn: true,
+          result: nodeFrame.use_list ? arraify(jonNode) : jonNode
+        }
+      }
+      case 'inputIs:joinList':
+        return {
+          isReturn: true,
+          result: input.map((x: any) => walk_fn(x, walk_fn_context))
+        }
+    }
+  },
+  walkerWhereConditions: dfltWalkWhere,
+})
 
 export function findFirstOpRightColumnNodeInConditionResult (
   cond_result: ReturnType<typeof dfltWalkWhere>
@@ -622,42 +674,3 @@ export function findFirstOpRightColumnNodeInConditionResult (
 
   return result
 }
-
-export const dfltWalkOn = gnrWalkOn({
-  onNode: ({ scene, walk_fn, input, walk_fn_context, nodeFrame }) => {
-    switch (scene) {
-      case 'inputIs:opfn:joinVerb': {
-        const condInput = input().value
-        const conditions = dfltWalkWhere(condInput.on, { source_collection: walk_fn_context.source_collection });
-        if (!conditions || conditions.type !== 'operator')
-          throw new Error(`[dfltWalkOn::onNode] conditions result of join verb must be (type: 'operator'`)
-
-        let targetCollection = condInput.collection
-        if (!targetCollection) {
-          const refNode = findFirstOpRightColumnNodeInConditionResult(conditions)
-          if (refNode) targetCollection = refNode.table
-        }
-
-        const jonNode = {
-          side: nodeFrame.side || undefined,
-          specific_outer: nodeFrame.specific_outer === true,
-          inner: !nodeFrame.specific_outer && nodeFrame.inner === true,
-          conditions: arraify(conditions),
-          ref_right: {
-            type: 'table',
-            table: targetCollection
-          }
-        }
-        return {
-          isReturn: true,
-          result: nodeFrame.use_list ? arraify(jonNode) : jonNode
-        }
-      }
-      case 'inputIs:joinList':
-        return {
-          isReturn: true,
-          result: input.map((x: any) => walk_fn(x, walk_fn_context))
-        }
-    }
-  }
-})

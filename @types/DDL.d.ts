@@ -3,7 +3,7 @@
 /// <reference path="DXL.d.ts" />
 
 declare namespace FxOrmDDL {
-  type KnexSchemaBuilder = FXJSKnex.FXJSKnexModule.KnexInstance['schema'];
+  type KnexSchemaBuilder = FKnexNS.KnexInstance['schema'];
 
     class DDLDriver<ConnType = any> extends FxOrmDXL.DXLDriver<ConnType> {
         // uid: string

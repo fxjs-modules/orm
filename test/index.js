@@ -24,6 +24,7 @@ function t() {
     run('./integration/model-exists.js');
     // run('./integration/model-find-chain.js');
     run('./integration/model-find-mapsto.js');
+    run('./integration/model-find-advanced.js');
     run('./integration/model-find.js');
     run('./integration/model-get.js');
     run('./integration/model-keys.js');

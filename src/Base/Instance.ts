@@ -288,13 +288,13 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         })
         /* fill default value :end */
 
-        if (isEmptyPlainObject(kvs) && isEmptyPlainObject(refs))
-            throw new Error(`[Instance::save] at least one of "kvs" and "refs" should be non-empty object!`)
+        if (isEmptyPlainObject(kvs) && isEmptyPlainObject(refs) && !this.$model.noKey)
+            throw new Error(`[Instance::save] for instance of model(collection: ${this.$model.collection}), at least one non-empty object in "kvs" and "refs" should be provided!`)
 
         this.$dml
             .toSingleton()
             .useTrans((dml: any) => {
-                if (this.$isPersisted && this.$exists()) {
+                if (this.$isPersisted && (!this.$model.noKey && this.$exists())) {
                     const changes = this.$model.normalizePropertiesToData(kvs);
                     const whereCond = <typeof changes>{};
 

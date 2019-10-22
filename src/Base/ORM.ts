@@ -114,7 +114,7 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
         return this.models[name] = new Model({
             name,
             properties: filteredProps,
-            keys: config.keys ? arraify(config.keys) : undefined,
+            keys: config.keys ? arraify(config.keys) : (config.keys === false ? false : undefined),
 
             orm: this as any,
             settings: this.settings.clone(),

@@ -7,7 +7,7 @@
 /// <reference path="Queries.d.ts" />
 
 declare namespace FxOrmDML {
-  type KnexQueryBuilder = FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>;
+  type KnexQueryBuilder = FxOrmTypeHelpers.ReturnType<FKnexNS.KnexInstance['queryBuilder']>;
 
   type BeforeQueryItem = (
     builer: KnexQueryBuilder,
@@ -20,11 +20,11 @@ declare namespace FxOrmDML {
         collection: string,
         opts?: {
           where?: Fibjs.AnyObject,
-          fields?: string[],// FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['select']>,
+          fields?: string[],// FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['select']>,
 
-          offset?: FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['offset']>
-          limit?: FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['limit']>
-          orderBy?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['orderBy']>
+          offset?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['offset']>
+          limit?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['limit']>
+          orderBy?: FxOrmTypeHelpers.Parameters<FKnexNS.KnexInstance['orderBy']>
 
           having?: Fibjs.AnyObject,
           joins?: FxHQLParser.ParsedResult['joins']
@@ -37,12 +37,15 @@ declare namespace FxOrmDML {
       <T = Fibjs.AnyObject[]>(
         collection: string,
         opts?: {
+          $dml?: FxOrmDML.DMLDriver,
           where?: Fibjs.AnyObject,
-          fields?: string[],// FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['select']>,
+          joins?: Fibjs.AnyObject,
+          fields?: string[],
+          select?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['select']>,
 
-          offset?: FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['offset']>
-          limit?: FxOrmTypeHelpers.FirstParameter<FXJSKnex.FXJSKnexModule.KnexInstance['limit']>
-          orderBy?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['orderBy']>
+          offset?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['offset']>
+          limit?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['limit']>
+          orderBy?: FxOrmTypeHelpers.Parameters<FKnexNS.KnexInstance['orderBy']>
 
           beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
           filterQueryResult?: <T2 = any>(result: any) => T2
@@ -53,8 +56,9 @@ declare namespace FxOrmDML {
       <T = number>(
         collection: string,
         opts?: {
+          joins?: Fibjs.AnyObject,
           where?: Fibjs.AnyObject,
-          countParams?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['count']>
+          countParams?: FxOrmTypeHelpers.Parameters<FKnexNS.KnexInstance['count']>
           beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
           filterQueryResult?: <T2 = any>(result: any) => T2
         }

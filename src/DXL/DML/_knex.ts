@@ -1,6 +1,11 @@
 import Base from "../Base.class";
 import { configurable } from "../../Decorators/accessor";
-import { filterKnexBuilderBeforeQuery, filterResultAfterQuery, filterWhereToKnexActions } from "./_utils"
+import {
+  filterKnexBuilderBeforeQuery,
+  filterResultAfterQuery,
+  filterWhereToKnexActions,
+  filterJoinSelectToKnexActions
+} from "./_utils"
 import { arraify } from "../../Utils/array";
 import { isEmptyPlainObject } from "../../Utils/object";
 
@@ -28,13 +33,15 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
 
     find: FxOrmDML.DMLDriver['find'] = function (
         this: DML_KnexBased,
-        table,
+        collection,
         opts?
     ) {
         filterWhereToKnexActions(opts);
+        filterJoinSelectToKnexActions(opts, collection)
 
         const {
             fields = undefined,
+            select = undefined,
             where = undefined,
             offset = undefined,
             // @todo: use default MAX limit to get better perfomance, such as '9223372036854775807' or '18446744073709551615'
@@ -44,9 +51,10 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
             filterQueryResult = undefined
         } = opts || {};
 
-        let kbuilder = this.sqlQuery.knex(table)
+        let kbuilder = this.sqlQuery.knex(collection)
 
-        if (fields) kbuilder.select(fields)
+        if (select) kbuilder.select(select)
+        else if (fields) kbuilder.select(fields)
         if (offset) kbuilder.offset(offset)
 
         if (limit) kbuilder.limit(limit as number)
@@ -132,9 +140,8 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
             beforeQuery = HOOK_DEFAULT
         } = {}
     ) {
-        let kbuilder = this.sqlQuery.knex(table)
+        let kbuilder = this.sqlQuery.knex.queryBuilder().table(table).insert(data)
 
-        kbuilder.insert(data)
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
 
         const info = this.useConnection(connection =>

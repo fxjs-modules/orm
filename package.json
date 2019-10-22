@@ -44,13 +44,13 @@
         "@fibjs/chalk": "^1.0.0",
         "@fibjs/enforce": "^0.1.1",
         "@fxjs/db-driver": "0.0.5",
-        "@fxjs/knex": "^0.1.1",
+        "@fxjs/knex": "^0.2.0",
         "@fxjs/orm-core": "^0.0.1",
         "@fxjs/orm-hql": "file:packages/orm-hql",
         "@fxjs/sql-ddl-sync": "^0.6.3",
-        "@fxjs/sql-query": "^0.5.1",
+        "@fxjs/sql-query": "^0.6.0",
         "fib-pool": "^1.5.3",
-        "knex": "^0.16.3",
+        "knex": "^0.19.5",
         "reflect-metadata": "^0.1.13"
     },
     "devDependencies": {
@@ -63,8 +63,8 @@
     },
     "peerDependencies": {
         "@fxjs/sql-ddl-sync": ">= 0.6.3 < 7",
-        "@fxjs/sql-query": ">= 0.5 < 0.6",
+        "@fxjs/sql-query": ">= 0.6 < 0.7",
         "@fibjs/enforce": ">= 0.1.1 < 0.2",
-        "@fxjs/knex": ">= 0.1.1 < 0.2"
+        "@fxjs/knex": ">= 0.2 < 0.3"
     }
 }

@@ -66,11 +66,13 @@ declare namespace FxOrmModel {
         readonly _symbol: Symbol
         readonly $dml: FxOrmDML.DMLDriver
         readonly $ddl: FxOrmDDL.DDLDriver
-        readonly schemaBuilder: FXJSKnex.FXJSKnexModule.KnexInstance['schema']
-        readonly queryBuilder: FxOrmTypeHelpers.ReturnType<FXJSKnex.FXJSKnexModule.KnexInstance['queryBuilder']>
+        readonly schemaBuilder: FKnexNS.KnexInstance['schema']
+        readonly queryBuilder: FxOrmTypeHelpers.ReturnType<FKnexNS.KnexInstance['queryBuilder']>
+        readonly sqlQuery: FxSqlQuery.Class_Query
 
         readonly propertyContext: {
             model: FxOrmModel.Class_Model,
+            sqlQuery: FxOrmDML.DMLDriver<any>['sqlQuery']
             knex: FxOrmDXL.DXLDriver<any>['sqlQuery']['knex']
         }
 

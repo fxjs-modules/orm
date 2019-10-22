@@ -16,7 +16,7 @@ export default class DXLBase<ConnType = any> implements FxOrmDXL.DXLDriver<ConnT
             this.singleton_connection = this.dbdriver.getConnection();
 
         if (this.dbdriver.isSql)
-            this.sqlQuery = new SqlQuery.Query();
+            this.sqlQuery = new SqlQuery.Query({ dialect: <any>this.dbdriver.type });
     }
 
     /**

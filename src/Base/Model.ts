@@ -135,7 +135,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return Object.keys(this.keyProperties);
     }
     @configurable(false)
-    get noKey () { return !this.keyPropertyList.length }
+    get noKey () { return !this.keyPropertyNames.length }
 
     orm: FxOrmModel.Class_Model['orm']
 
@@ -152,10 +152,18 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     get $ddl (): FxOrmModel.Class_Model['$ddl'] { return this.orm.$ddl };
     get schemaBuilder () { return this.$ddl.sqlQuery.knex.schema }
     get queryBuilder () { return this.$ddl.sqlQuery.knex.queryBuilder() }
+    get sqlQuery (): FxSqlQuery.Class_Query {
+      switch (this.$ddl.dbdriver.type) {
+          case 'mysql':
+          case 'sqlite':
+              return this.$ddl.sqlQuery
+      }
+    }
 
     get propertyContext() {
         return {
             model: this,
+            sqlQuery: this.sqlQuery,
             knex: this.$ddl.sqlQuery.knex
         }
     }
@@ -276,6 +284,9 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
     create (kvItem: Fibjs.AnyObject | Fibjs.AnyObject[]): any {
         if (Array.isArray(kvItem))
+            /**
+             * @TODO only use parallel when options specified
+             */
             return coroutine.parallel(kvItem, (kv: Fibjs.AnyObject) => {
                 return this.create(kv);
             })
@@ -380,10 +391,6 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
     defineMergeModel (opts: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['defineMergeModel']>) {
         return null as any
-    }
-
-    joinAndSelect () {
-
     }
 
     hasOne (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['hasOne']>) {

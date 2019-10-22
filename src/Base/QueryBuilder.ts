@@ -47,13 +47,6 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
     model: FxOrmModel.Class_Model;
 
     conditions: any;
-    get sqlQuery (): FxSqlQuery.Class_Query {
-      switch (this.model.$ddl.dbdriver.type) {
-          case 'mysql':
-          case 'sqlite':
-              return this.model.$ddl.sqlQuery
-      }
-    }
 
     [k: string]: any;
 
