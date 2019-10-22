@@ -318,12 +318,22 @@ function parserDefinition(
           allTableReferences.push(node);
         }
         if (node.type === "table_ref" && node.on) {
-          const columns = <FxHQLParser.ColumnRefNode[]>[];
+          // const simple_eq_columns = <FxHQLParser.ColumnRefNode[]>[];
+          const conditions = <FxHQLParser.OperatorExprNode[]>[];
+          // console.log('node.on', node.on);
           walk(node.on, (n: FxHQLTypeHelpers.T_OBJ_ONLY<FxHQLTypeHelpers.ItemInArrayOrValueInObject<FxHQLParser.TableRefNode['on']>>) => {
-            if ((<any>n).type === "table_ref") return false;
-            if ((<any>n).type === "column") {
-              columns.push(<any>n);
-              return false;
+            switch ((<any>n).type) {
+              case 'table_ref': return false;
+              case 'operator': {
+                // if (['and', 'or', 'xor'].includes((<any>n).operator)) {
+                  conditions.push(<any>n);
+                  return false;
+                // }
+              }
+              case 'column': {
+                // simple_eq_columns.push(<any>n);
+                return false;
+              }
             }
           });
 
@@ -331,7 +341,8 @@ function parserDefinition(
             side: node.side,
             specific_outer: node.specific_outer,
             inner: node.inner,
-            columns: columns,
+            // simple_eq_columns: simple_eq_columns,
+            conditions: conditions,
             // ref_left: node.ref_left,
             ref_right: node.ref_right,
           });

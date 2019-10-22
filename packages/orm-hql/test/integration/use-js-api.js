@@ -203,7 +203,7 @@ describe('parse sql to query structure', function() {
             side: join.side,
             specific_outer: join.specific_outer,
             inner: join.inner,
-            columns: join.columns,
+            conditions: join.conditions,
             ref_right: join.ref_right
           }
         )),
@@ -212,16 +212,20 @@ describe('parse sql to query structure', function() {
             "side": "left",
             "specific_outer": false,
             "inner": false,
-            "columns": [
+            "conditions": [
               {
-                "type": "column",
-                "table": "a",
-                "name": "id"
-              },
-              {
-                "type": "column",
-                "table": "c",
-                "name": "a_id"
+                "type": "operator",
+                "operator": "=",
+                "op_left": {
+                  "type": "column",
+                  "table": "a",
+                  "name": "id"
+                },
+                "op_right": {
+                  "type": "column",
+                  "table": "c",
+                  "name": "a_id"
+                }
               }
             ],
             "ref_right": {
@@ -234,16 +238,20 @@ describe('parse sql to query structure', function() {
             "side": undefined,
             "specific_outer": false,
             "inner": true,
-            "columns": [
+            "conditions": [
               {
-                "type": "column",
-                "table": "a",
-                "name": "id"
-              },
-              {
-                "type": "column",
-                "table": "b",
-                "name": "a_id"
+                "type": "operator",
+                "operator": "=",
+                "op_left": {
+                  "type": "column",
+                  "table": "a",
+                  "name": "id"
+                },
+                "op_right": {
+                  "type": "column",
+                  "table": "b",
+                  "name": "a_id"
+                }
               }
             ],
             "ref_right": {

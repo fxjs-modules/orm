@@ -167,9 +167,21 @@ const tests = [
           side: 'left',
           inner: false,
           specific_outer: false,
-          columns: [
-            {name: 'foo', type: 'column', table:'a'},
-            {name: 'foo', type: 'column', table:'b'}
+          conditions: [
+            {
+              "type": "operator",
+              "operator": "=",
+              "op_left": {
+                "type": "column",
+                "table": "a",
+                "name": "foo"
+              },
+              "op_right": {
+                "type": "column",
+                "table": "b",
+                "name": "foo"
+              }
+            }
           ],
           ref_right: {type: 'table', table: 'x'},
         }
@@ -185,9 +197,21 @@ const tests = [
           side: 'left',
           inner: false,
           specific_outer: true,
-          columns: [
-            {name: 'foo', type: 'column', table:'a'},
-            {name: 'foo', type: 'column', table:'b'}
+          conditions: [
+            {
+              "type": "operator",
+              "operator": "=",
+              "op_left": {
+                "type": "column",
+                "table": "a",
+                "name": "foo"
+              },
+              "op_right": {
+                "type": "column",
+                "table": "b",
+                "name": "foo"
+              }
+            }
           ],
           ref_right: {type: 'table', table: 'x'},
         }
@@ -203,9 +227,21 @@ const tests = [
           side: 'right',
           inner: false,
           specific_outer: false,
-          columns: [
-            {name: 'bar', type: 'column', table:'a'},
-            {name: 'bar', type: 'column', table:'b'}
+          conditions: [
+            {
+              "type": "operator",
+              "operator": "=",
+              "op_left": {
+                "type": "column",
+                "table": "a",
+                "name": "bar"
+              },
+              "op_right": {
+                "type": "column",
+                "table": "b",
+                "name": "bar"
+              }
+            }
           ],
           ref_right: {type: 'table', table: 'x'},
         }
@@ -720,6 +756,59 @@ const tests = [
   {
     sql: 'select a.*, b.id as b_id from test a join test b on a.id = b.a_id and a.id2 = b.a_id2',
 		toSql: '(select `a`.*, `b`.`id` as `b_id` from ((`test` as `a` join `test` as `b` on ((`a`.`id` = `b`.`a_id`) and (`a`.`id2` = `b`.`a_id2`)))))'
+  },
+  {
+    // only: true,
+    sql: 'select a.*, b.id as b_id from test a join test b on a.id = b.a_id and a.id2 = b.a_id2',
+		toSql: '(select `a`.*, `b`.`id` as `b_id` from ((`test` as `a` join `test` as `b` on ((`a`.`id` = `b`.`a_id`) and (`a`.`id2` = `b`.`a_id2`)))))',
+    expected: {
+      joins: [
+        {
+          "side": undefined,
+          "specific_outer": false,
+          "inner": false,
+          "conditions": [
+            {
+              "type": "operator",
+              "operator": "and",
+              "op_left": {
+                "type": "operator",
+                "operator": "=",
+                "op_left": {
+                  "type": "column",
+                  "table": "a",
+                  "name": "id"
+                },
+                "op_right": {
+                  "type": "column",
+                  "table": "b",
+                  "name": "a_id"
+                }
+              },
+              "op_right": {
+                "type": "operator",
+                "operator": "=",
+                "op_left": {
+                  "type": "column",
+                  "table": "a",
+                  "name": "id2"
+                },
+                "op_right": {
+                  "type": "column",
+                  "table": "b",
+                  "name": "a_id2"
+                }
+              }
+            }
+          ],
+          "ref_right": {
+            "type": "table",
+            "table": "test",
+            "alias": "b"
+          }
+        }
+      ]
+    }
   },
   {
     sql: `\

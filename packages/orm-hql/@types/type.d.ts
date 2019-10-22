@@ -60,7 +60,8 @@ declare namespace FxHQLParser {
           side?: TableRefNode['side']
           specific_outer: TableRefNode['specific_outer']
           inner: TableRefNode['inner']
-          columns: ColumnRefNode[]
+          // simple_eq_columns: ColumnRefNode[]
+          conditions: OperatorExprNode[]
           ref_right: TableRefNode['ref_right']
         }[]
         returnColumns: {
