@@ -23,35 +23,7 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         table,
         opts?
     ) {
-        filterWhereToKnexActions(opts);
-
-        const {
-            fields = undefined,
-            where = undefined,
-            offset = undefined,
-            // @todo: use default MAX limit to get better perfomance, such as '9223372036854775807' or '18446744073709551615'
-            limit = undefined,
-            orderBy = undefined,
-            beforeQuery = HOOK_DEFAULT
-        } = opts || {};
-
-        let kbuilder = this.sqlQuery.knex(table)
-
-        if (fields) kbuilder.select(fields)
-        if (offset) kbuilder.offset(offset)
-
-        if (limit) kbuilder.limit(limit as number)
-        else if (offset && this.dbdriver.type === 'sqlite')
-            kbuilder.limit(-1)
-
-        if (orderBy) kbuilder.orderBy.apply(kbuilder, arraify(orderBy))
-        if (where) kbuilder.where.apply(kbuilder, arraify(where))
-
-        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
-
-        return this.useConnection(connection =>
-            this.execSqlQuery(connection, kbuilder.toString())
-        )
+      return null as any
     }
 
     find: FxOrmDML.DMLDriver['find'] = function (
@@ -68,7 +40,8 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
             // @todo: use default MAX limit to get better perfomance, such as '9223372036854775807' or '18446744073709551615'
             limit = undefined,
             orderBy = undefined,
-            beforeQuery = HOOK_DEFAULT
+            beforeQuery = HOOK_DEFAULT,
+            filterQueryResult = undefined
         } = opts || {};
 
         let kbuilder = this.sqlQuery.knex(table)
@@ -85,8 +58,11 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
 
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
 
-        return this.useConnection(connection =>
+        return filterResultAfterQuery(
+          this.useConnection(connection =>
             this.execSqlQuery(connection, kbuilder.toString())
+          ),
+          filterQueryResult
         )
     }
 

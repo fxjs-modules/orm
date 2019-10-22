@@ -190,11 +190,11 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
      * @description normalize one input to on conditions
      */
     @transformToQCIfModel
-    walkOn (...args: FxOrmTypeHelpers.Parameters<typeof dfltWalkOn>) {
+    walkJoinOn (...args: FxOrmTypeHelpers.Parameters<typeof dfltWalkOn>) {
       const [input] = args || []
       return dfltWalkOn(input, {
         source_collection: this.model.collection,
-        is_joins: true
+        is_top_output: true
       })
     }
 

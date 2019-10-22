@@ -4,39 +4,39 @@ import {
 
 export const Ql: FxOrmQueries.Class_QueryBuilder['Ql'] = {
   Operators: {
-    and: Symbol('OPERATOR#and'),
-    or: Symbol('OPERATOR#or'),
-    gt: Symbol('OPERATOR#gt'),
-    gte: Symbol('OPERATOR#gte'),
-    lt: Symbol('OPERATOR#lt'),
-    lte: Symbol('OPERATOR#lte'),
-    ne: Symbol('OPERATOR#ne'),
-    eq: Symbol('OPERATOR#eq'),
-    is: Symbol('OPERATOR#is'),
-    not: Symbol('OPERATOR#not'),
-    between: Symbol('OPERATOR#between'),
-    notBetween: Symbol('OPERATOR#notBetween'),
-    in: Symbol('OPERATOR#in'),
-    notIn: Symbol('OPERATOR#notIn'),
-    like: Symbol('OPERATOR#like'),
-    notLike: Symbol('OPERATOR#notLike'),
+    and: Symbol('QL#and'),
+    or: Symbol('QL#or'),
+    gt: Symbol('QL#gt'),
+    gte: Symbol('QL#gte'),
+    lt: Symbol('QL#lt'),
+    lte: Symbol('QL#lte'),
+    ne: Symbol('QL#ne'),
+    eq: Symbol('QL#eq'),
+    is: Symbol('QL#is'),
+    not: Symbol('QL#not'),
+    between: Symbol('QL#between'),
+    notBetween: Symbol('QL#notBetween'),
+    in: Symbol('QL#in'),
+    notIn: Symbol('QL#notIn'),
+    like: Symbol('QL#like'),
+    notLike: Symbol('QL#notLike'),
 
     // LIKE 'hat%'
-    startsWith: Symbol('OPERATOR#startsWith'),
+    startsWith: Symbol('QL#startsWith'),
     // LIKE '%hat'
-    endsWith: Symbol('OPERATOR#endsWith'),
+    endsWith: Symbol('QL#endsWith'),
     // LIKE '%hat%'
-    substring: Symbol('OPERATOR#substring'),
+    substring: Symbol('QL#substring'),
 
-    colref: Symbol('OPERATOR#colref'),
+    colref: Symbol('QL#colref'),
   },
   Others: {
-    bracketRound: Symbol('OPERATOR#bracketRound'),
-    bracketSquare: Symbol('OPERATOR#bracketSquare'),
-    bracketBrace: Symbol('OPERATOR#bracketBrace'),
-    quoteSingle: Symbol('OPERATOR#quoteSingle'),
-    quoteDouble: Symbol('OPERATOR#quoteDouble'),
-    quoteBack: Symbol('OPERATOR#quoteBack'),
+    bracketRound: Symbol('QL#bracketRound'),
+    bracketSquare: Symbol('QL#bracketSquare'),
+    bracketBrace: Symbol('QL#bracketBrace'),
+    quoteSingle: Symbol('QL#quoteSingle'),
+    quoteDouble: Symbol('QL#quoteDouble'),
+    quoteBack: Symbol('QL#quoteBack'),
   }
 }
 
@@ -63,6 +63,15 @@ export const Qlfn: FxOrmQueries.Class_QueryBuilder['Qlfn'] = {
     substring: OperatorFuncWrapper('substring'),
 
     colref: OperatorFuncWrapper('colref'),
+  },
+  Selects: {
+    join: OperatorFuncWrapper('join'),
+    leftJoin: OperatorFuncWrapper('leftJoin'),
+    leftOuterJoin: OperatorFuncWrapper('leftOuterJoin'),
+    rightJoin: OperatorFuncWrapper('rightJoin'),
+    rightOuterJoin: OperatorFuncWrapper('rightOuterJoin'),
+    innerJoin: OperatorFuncWrapper('innerJoin'),
+    fullOuterJoin: OperatorFuncWrapper('fullOuterJoin'),
   },
   Others: {
     bracketRound: OperatorFuncWrapper('bracketRound'),

@@ -4,6 +4,7 @@ const OPERATOR_FUN_RESULT_SYMBOL = Symbol('OPERATOR#FUNC_RESULT')
 export function OperatorFuncWrapper<T> (
   $op_name: T extends (
     keyof FxOrmQueries.Class_QueryBuilder['Qlfn']['Operators']
+    | keyof FxOrmQueries.Class_QueryBuilder['Qlfn']['Selects']
     | keyof FxOrmQueries.Class_QueryBuilder['Qlfn']['Others']
   ) ? T : string
 ) {

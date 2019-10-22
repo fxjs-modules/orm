@@ -112,6 +112,9 @@ describe("Model.walkWhere()", function () {
              * @notice no support for comparator-operator is, just use `eq`
              */
             [
+              'colref [default] x eq', ({source_collection: sc}) => ([ ({ a: ORM.Opf.colref("b") }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a = b` ])
+            ],
+            [
               'colref x eq', ({source_collection: sc}) => ([ ({ a: ORM.Opf.eq(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a = b` ])
             ],
             [
@@ -128,6 +131,9 @@ describe("Model.walkWhere()", function () {
             ],
             [
               'colref x lte', ({source_collection: sc}) => ([ ({ a: ORM.Opf.lte(ORM.Opf.colref("b")) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a <= b` ])
+            ],
+            [
+              'refTableCol [default] x eq', ({source_collection: sc}) => ([ ({ a: ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a = ${Person.collection}.b` ])
             ],
             [
               'refTableCol x eq', ({source_collection: sc}) => ([ ({ a: ORM.Opf.eq( ORM.Qlfn.Others.refTableCol({ table: Person.collection, column: "b" }) ) }), `select * from ${Person.collection} where ${sc ? `${sc}.` : ''}a = ${Person.collection}.b` ])
@@ -449,31 +455,149 @@ describe("Model.walkWhere()", function () {
                   select ${Pet.collection}.name pet_name, ${Person.collection}.* from ${Person.collection}
                   join ${Pet.collection}
                   on ${Person.collection}.id = ${Pet.collection}.owner_id
-                  where ${Person.collection}.a = 1
-                `
+                  where ${Person.collection}.a = 1`
               ])
             ],
-            // [
-            //   'multiple joins',
-            //   () => ([
-            //     ({ id: ORM.Qlfn.Others.refTableCol({ table: Pet.collection, column: 'owner_id' }) }),
-            //     `\
-            //       select ${Pet.collection}.name pet_name, ${Person.collection}.* from ${Person.collection}
-            //       join ${Pet.collection}
-            //       on ${Person.collection}.id = ${Pet.collection}.owner_id
-            //       where ${Person.collection}.a = 1
-            //     `
-            //   ])
-            // ],
+            [
+              'full outer join',
+              () => ([
+                ([
+                  ORM.Qlfn.Selects.fullOuterJoin({
+                    collection: Pet.collection,
+                    on: {
+                      id: ORM.Qlfn.Others.refTableCol({ table: Pet.collection, column: 'owner_id' }),
+                    }
+                  })
+                ]),
+                `\
+                  select ${Pet.collection}.name pet_name, ${Person.collection}.* from ${Person.collection}
+                  full outer join ${Pet.collection}
+                  on ${Person.collection}.id = ${Pet.collection}.owner_id
+                  where ${Person.collection}.a = 1`
+              ])
+            ],
+            [
+              'full outer join x multiple conditions',
+              () => ([
+                ([
+                  ORM.Qlfn.Selects.fullOuterJoin({
+                    collection: Pet.collection,
+                    on: {
+                      id1: ORM.Qlfn.Others.refTableCol({ table: Pet.collection, column: 'owner_id1' }),
+                      id2: ORM.Qlfn.Others.refTableCol({ table: Pet.collection, column: 'owner_id2' }),
+                    }
+                  })
+                ]),
+                `\
+                  select ${Pet.collection}.name pet_name, ${Person.collection}.* from ${Person.collection}
+                  full outer join ${Pet.collection}
+                    on ${Person.collection}.id1 = ${Pet.collection}.owner_id1 and
+                      ${Person.collection}.id2 = ${Pet.collection}.owner_id2
+                  where ${Person.collection}.a = 1`
+              ])
+            ],
+            [
+              'left join',
+              () => ([
+                ([
+                  ORM.Qlfn.Selects.leftJoin({
+                    collection: Pet.collection,
+                    on: {
+                      id: ORM.Qlfn.Others.refTableCol({ table: Pet.collection, column: 'owner_id' }),
+                    }
+                  })
+                ]),
+                `\
+                  select ${Pet.collection}.name pet_name, ${Person.collection}.* from ${Person.collection}
+                  left join ${Pet.collection}
+                  on ${Person.collection}.id = ${Pet.collection}.owner_id
+                  where ${Person.collection}.a = 1`
+              ])
+            ],
+            [
+              'left outer join x multiple conditions',
+              () => ([
+                ([
+                  ORM.Qlfn.Selects.leftOuterJoin({
+                    collection: Pet.collection,
+                    on: {
+                      id1: ORM.Qlfn.Others.refTableCol({ table: Pet.collection, column: 'owner_id1' }),
+                      id2: ORM.Qlfn.Others.refTableCol({ table: Pet.collection, column: 'owner_id2' }),
+                    }
+                  })
+                ]),
+                `\
+                  select ${Pet.collection}.name pet_name, ${Person.collection}.* from ${Person.collection}
+                  left outer join ${Pet.collection}
+                    on ${Person.collection}.id1 = ${Pet.collection}.owner_id1 and
+                      ${Person.collection}.id2 = ${Pet.collection}.owner_id2
+                  where ${Person.collection}.a = 1`
+              ])
+            ],
+            [
+              'right join',
+              () => ([
+                ([
+                  ORM.Qlfn.Selects.rightJoin({
+                    collection: Pet.collection,
+                    on: {
+                      id: ORM.Qlfn.Others.refTableCol({ table: Pet.collection, column: 'owner_id' }),
+                    }
+                  })
+                ]),
+                `\
+                  select ${Pet.collection}.name pet_name, ${Person.collection}.* from ${Person.collection}
+                  right join ${Pet.collection}
+                  on ${Person.collection}.id = ${Pet.collection}.owner_id
+                  where ${Person.collection}.a = 1`
+              ])
+            ],
+            [
+              'right outer join x multiple conditions',
+              () => ([
+                ([
+                  ORM.Qlfn.Selects.rightOuterJoin({
+                    collection: Pet.collection,
+                    on: {
+                      id1: ORM.Qlfn.Others.refTableCol({ table: Pet.collection, column: 'owner_id1' }),
+                      id2: ORM.Qlfn.Others.refTableCol({ table: Pet.collection, column: 'owner_id2' }),
+                    }
+                  })
+                ]),
+                `\
+                  select ${Pet.collection}.name pet_name, ${Person.collection}.* from ${Person.collection}
+                  right outer join ${Pet.collection}
+                    on ${Person.collection}.id1 = ${Pet.collection}.owner_id1 and
+                      ${Person.collection}.id2 = ${Pet.collection}.owner_id2
+                  where ${Person.collection}.a = 1`
+              ])
+            ],
+            [
+              'inner join',
+              () => ([
+                ([
+                  ORM.Qlfn.Selects.innerJoin({
+                    collection: Pet.collection,
+                    on: {
+                      id: ORM.Qlfn.Others.refTableCol({ table: Pet.collection, column: 'owner_id' }),
+                    }
+                  })
+                ]),
+                `\
+                  select ${Pet.collection}.name pet_name, ${Person.collection}.* from ${Person.collection}
+                  inner join ${Pet.collection}
+                  on ${Person.collection}.id = ${Pet.collection}.owner_id
+                  where ${Person.collection}.a = 1`
+              ])
+            ],
           ].filter(x => x).forEach(([desc, getter]) => {
             it(`${desc}`, function () {
-              const [whereInput, hql] = getter()
-              var walked = Person.walkOn(whereInput);
+              const [inputConds, hql] = getter()
+              var walked = Person.walkJoinOn(inputConds);
 
               var struct = Person.queryByHQL(hql);
 
-              // console.log('struct', struct.joins);
-
+              // console.notice('struct.joins', struct.joins)
               assert.deepEqual(walked, struct.joins)
             });
           })

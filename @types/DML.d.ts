@@ -45,6 +45,7 @@ declare namespace FxOrmDML {
           orderBy?: FxOrmTypeHelpers.Parameters<FXJSKnex.FXJSKnexModule.KnexInstance['orderBy']>
 
           beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
+          filterQueryResult?: <T2 = any>(result: any) => T2
         }
       ): T
     }

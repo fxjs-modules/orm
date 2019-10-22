@@ -187,6 +187,15 @@ declare namespace FxOrmQueries {
             substring: (value?: any) => OperatorFunction<'substring'>
             colref: (value?: any) => OperatorFunction<'colref'>
           }
+          Selects: {
+            join: (value?: any) => OperatorFunction<'join'>
+            leftJoin: (value?: any) => OperatorFunction<'leftJoin'>
+            leftOuterJoin: (value?: any) => OperatorFunction<'leftOuterJoin'>
+            rightJoin: (value?: any) => OperatorFunction<'rightJoin'>
+            rightOuterJoin: (value?: any) => OperatorFunction<'rightOuterJoin'>
+            innerJoin: (value?: any) => OperatorFunction<'innerJoin'>
+            fullOuterJoin: (value?: any) => OperatorFunction<'fullOuterJoin'>
+          }
           Others: {
             bracketRound: (value?: any) => OperatorFunction<'bracketRound'>
             bracketSquare: (value?: any) => OperatorFunction<'bracketSquare'>

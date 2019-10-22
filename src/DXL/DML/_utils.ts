@@ -44,7 +44,7 @@ const filterWhereToKnexActionsInternal = gnrWalkWhere<
       case 'inputAs:conjunctionAsAnd': {
         return dfltReturn
       }
-      case 'walkOn:opsymbol:conjunction': {
+      case 'walkJoinOn:opsymbol:conjunction': {
         const [pres, last] = preDestruct(mapObjectToTupleList((<any>input)[nodeFrame.symbol]))
         const op_name = mapConjunctionOpSymbolToText(nodeFrame.symbol)
 
@@ -53,10 +53,10 @@ const filterWhereToKnexActionsInternal = gnrWalkWhere<
 
         return dfltReturn
       }
-      case 'walkOn:opfn:in':
-      case 'walkOn:opfn:between':
-      case 'walkOn:opfn:like':
-      case 'walkOn:opfn:comparator': {
+      case 'walkJoinOn:opfn:in':
+      case 'walkJoinOn:opfn:between':
+      case 'walkJoinOn:opfn:like':
+      case 'walkJoinOn:opfn:comparator': {
         const cmpr_opfn_result = <FxOrmQueries.OperatorFunctionResult>nodeFrame.cmpr_opfn_result
         const field_name = nodeFrame.field_name
 
@@ -65,8 +65,8 @@ const filterWhereToKnexActionsInternal = gnrWalkWhere<
           if (isOperatorFunction(fValue)) fValue = parseOperatorFunctionAsValue(fValue)
           else
             switch (scene) {
-              case 'walkOn:opfn:in': fValue = normalizeInInput(fValue); break
-              case 'walkOn:opfn:between': fValue = normalizeWhereInput(fValue); break
+              case 'walkJoinOn:opfn:in': fValue = normalizeInInput(fValue); break
+              case 'walkJoinOn:opfn:between': fValue = normalizeWhereInput(fValue); break
             }
 
           // console.log('field_name', field_name);
@@ -142,11 +142,21 @@ export function filterWhereToKnexActions (
     return
 }
 
-export function getFindOptionValueIfNotFunc (optValue: Function | any) {
-	if (typeof optValue === 'function')
-		return optValue.apply(null, [])
+export function filterJoinSelectToKnexActions (
+    opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>
+) {
+    if (!opts) return
+    const { joins = null } = opts || {}
+    if (!joins) return
 
-	return optValue
+    const bQList = (opts.beforeQuery ? arraify(opts.beforeQuery) : []).filter(x => typeof x === 'function')
+    const restWhere: {[k: string]: Exclude<any, symbol>} = {};
+
+    filterWhereToKnexActionsInternal(joins, {bQList, restWhere});
+    opts.beforeQuery = bQList
+    opts.joins = restWhere
+
+    return
 }
 
 export function filterResultAfterQuery (
