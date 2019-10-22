@@ -282,14 +282,17 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return new Instance(this, base);
     }
 
-    create (kvItem: Fibjs.AnyObject | Fibjs.AnyObject[]): any {
+    create (
+        kvItem: Fibjs.AnyObject | Fibjs.AnyObject[],
+        {
+            parallel = false
+        } = {}
+    ): any {
         if (Array.isArray(kvItem))
-            /**
-             * @TODO only use parallel when options specified
-             */
-            return coroutine.parallel(kvItem, (kv: Fibjs.AnyObject) => {
-                return this.create(kv);
-            })
+            if (parallel)
+                return coroutine.parallel(kvItem, (kv: Fibjs.AnyObject) => this.create(kv))
+            else
+                return kvItem.map((item: Fibjs.AnyObject) => this.create(item))
 
         const isMultiple = Array.isArray(kvItem);
         const instances = arraify(new Instance(this, snapshot(kvItem)))

@@ -133,8 +133,8 @@ declare namespace FxOrmModel {
          * @description create one instance from this model
          */
         create: {
-            (kvItem: Fibjs.AnyObject): FxOrmInstance.Class_Instance
-            (kvItem: Fibjs.AnyObject[]): FxOrmInstance.Class_Instance[]
+            (kvItem: Fibjs.AnyObject, opts?: { parallel?: boolean }): FxOrmInstance.Class_Instance
+            (kvItem: Fibjs.AnyObject[], opts?: { parallel?: boolean }): FxOrmInstance.Class_Instance[]
         }
         /**
          * @description remove items corresponding to conditions

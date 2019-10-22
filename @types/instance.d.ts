@@ -65,7 +65,6 @@ declare namespace FxOrmInstance {
 
         $save: {
             (kvs?: Fibjs.AnyObject): Class_Instance
-            (kvs: Fibjs.AnyObject[]): Class_Instance[]
         }
         /**
          * @description remove instance

@@ -254,14 +254,9 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
 
     $save (
         dataset: Fibjs.AnyObject = this.$kvs
-    ): any {
+    ): this {
         if (dataset !== undefined && typeof dataset !== 'object')
             throw new Error(`[Instance::save] invalid save arguments ${dataset}, it should be non-empty object or undefined`)
-
-        if (Array.isArray(dataset))
-            return coroutine.parallel(dataset, (prop: Fibjs.AnyObject) => {
-                return this.save(prop)
-            })
 
         const kvs = {...this.$kvs, ...this.$model.normlizePropertyData(dataset)}
         const refs = {...this.$refs, ...this.$model.normlizeAssociationData(dataset)}
