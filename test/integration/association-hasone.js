@@ -96,30 +96,67 @@ odescribe("hasOne", function () {
     odescribe("manual find", function () {
         before(setup());
 
-        oit("left join", function () {
+        it("left join", function () {
             var leaf = Leaf.one({
-                select: (() => {
-                    const fmap = {}
-                    Leaf.propertyList.forEach(property => {
-                        fmap[property.mapsTo] = `${Leaf.collection}.${property.mapsTo}`
-                    })
-                    return fmap
-                })(),
-                joins: [
-                    Leaf.leftJoin({
-                        collection: Tree.collection,
-                        on: {
-                            [Leaf.assoc('tree').prop('id').mapsTo]: Tree.Opf.colref(Tree.prop('id').mapsTo)
-                        }
-                    }),
-                    Leaf.leftJoin({
-                        collection: Hole.collection,
-                        on: {
-                            [Leaf.assoc('tree').prop('id').mapsTo]: Hole.Opf.colref(Hole.prop('id').mapsTo)
-                        }
-                    })
-                ]
+              where: {
+                [Leaf.propIdentifier('id')]: leafId
+              },
+              select: (() => {
+                  const fmap = {}
+                  Leaf.propertyList.forEach(property => {
+                      fmap[property.mapsTo] = `${Leaf.collection}.${property.mapsTo}`
+                  })
+
+                  Hole.propertyList.forEach(property => {
+                    fmap[`hole_${property.mapsTo}`] = Hole.propIdentifier(property)
+                  })
+
+                  Tree.propertyList.forEach(property => {
+                    fmap[`tree_${property.mapsTo}`] = Tree.propIdentifier(property)
+                  })
+                  return fmap
+              })(),
+              joins: [
+                  Leaf.leftJoin({
+                      collection: Tree.collection,
+                      on: {
+                          [Leaf.assoc('tree').prop('tree_id').mapsTo]: Tree.Opf.colref(Tree.prop('id').mapsTo)
+                      }
+                  }),
+                  Leaf.leftJoin({
+                      collection: Hole.collection,
+                      on: {
+                          [Leaf.assoc('hole').prop('hole_id').mapsTo]: Hole.Opf.colref(Hole.prop('id').mapsTo)
+                      }
+                  })
+              ],
+              filterQueryResult (list) {
+                return list.map(leaf => {
+                  const { tree_id, tree_type } = leaf
+                  if (tree_id) {
+                    leaf.tree = leaf.tree || {}
+                    leaf.tree.id = tree_id
+                    leaf.tree.type = tree_type
+                  }
+                  // in fact, you dont need delete them, which would be filtered when building association
+                  delete leaf.tree_id
+                  delete leaf.tree_type
+
+                  const { hole_id, hold_width } = leaf
+                  if (hole_id) {
+                    leaf.hole = leaf.hole || {}
+                    leaf.hole.id = hole_id
+                    leaf.hold.width = hold_width
+                  }
+                  delete leaf.hole_id
+                  delete leaf.hole_width
+
+                  return leaf
+                })
+              }
             })
+
+            assert.property(leaf, 'tree')
         });
     })
 

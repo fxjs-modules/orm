@@ -215,11 +215,14 @@ declare namespace FxOrmQueries {
         readonly rightOuterJoin: Class_QueryBuilder['Qlfn']['Selects']['rightOuterJoin']
         readonly innerJoin: Class_QueryBuilder['Qlfn']['Selects']['innerJoin']
         readonly fullOuterJoin: Class_QueryBuilder['Qlfn']['Selects']['fullOuterJoin']
+        readonly refTableCol: Class_QueryBuilder['Qlfn']['Others']['refTableCol']
 
         model: FxOrmModel.Class_Model;
         conditions: any;
 
         getQueryBuilder (): Class_QueryBuilder<T_RETURN>
+        propIdentifier (propname: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['prop']>): string
+        associcatedPropIdentifier (assoc_name: string, propname: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['prop']>): string
 
         find (opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>): T_RETURN[]
         one (opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>): T_RETURN

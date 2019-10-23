@@ -101,7 +101,7 @@ declare namespace FxOrmModel {
         isPropertyName (name: string): boolean
         isAssociationName (name: string): boolean
 
-        prop (propertyname: string): Class_Model['properties'][any]
+        prop (propertyname: string | FxOrmProperty.Class_Property): Class_Model['properties'][any]
         assoc (propertyname: string): Class_Model['associations'][any]
 
         /**
@@ -225,9 +225,10 @@ declare namespace FxOrmModel {
             model: FxOrmModel.Class_Model,
             opts?: {
                 as: string
+                reverseAs?: string
                 collection: string
                 type: 'm2m' | 'o2m'
-                matchKeys?: Class_MergeModel['associationInfo']['matchKeys']
+                on?: Class_MergeModel['associationInfo']['onMatch']
             }
         ): Class_MergeModel
 
@@ -236,7 +237,7 @@ declare namespace FxOrmModel {
             opts?: {
                 as?: string
                 collection: string
-                matchKeys?: Class_MergeModel['associationInfo']['matchKeys']
+                on?: Class_MergeModel['associationInfo']['onMatch']
             }
         ): Class_MergeModel
 
@@ -307,12 +308,48 @@ declare namespace FxOrmModel {
          *  where query-conditions
          */
         associationInfo: {
+            /**
+             * @description merge collection
+             */
             collection: string
-            matchKeys: {
-                source: string,
-                target: string,
-                comparator: string
-            }
+            // matchKeys: {
+            //     source: string,
+            //     target: string,
+            //     comparator: string
+            // }
+            /**
+             * @description one required easy-on conditions input
+             * @see test/model-walkCondtions.js
+             */
+            onMatch: (payload: {
+              sourceProperty: FxOrmModel.Class_Model['properties'][any],
+              sourceModel: FxOrmModel.Class_Model,
+              targetProperty: FxOrmModel.Class_MergeModel['properties'][any]
+              targetModel: FxOrmModel.Class_Model,
+              mergeCollection: string
+            }) => Fibjs.AnyObject
+
+            howToCheckExistenceForSource: (
+                payload: { mergeModel: FxOrmModel.Class_MergeModel }
+                & FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['checkExistenceForSource']>
+            ) => any
+
+            howToSaveForSource: (
+                payload: { mergeModel: FxOrmModel.Class_MergeModel }
+                & FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['saveForSource']>
+            ) => any
+            /**
+             * @retrun source Instance
+             */
+            howToFetchForSource: (
+                payload: { mergeModel: FxOrmModel.Class_MergeModel }
+                & FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['findForSource']>
+            ) => any // FxOrmInstance.Class_Instance
+
+            howToRemoveForSource: (
+                payload: { mergeModel: FxOrmModel.Class_MergeModel }
+                & FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['removeForSource']>
+            ) => any
         }
 
         constructor (opts: FxOrmModel.Class_ModelConstructOptions & {
@@ -324,13 +361,29 @@ declare namespace FxOrmModel {
             target: Class_MergeModel['targetModel']
             targetJoinKey?: Class_MergeModel['targetJoinKey']
 
-            matchKeys: Class_MergeModel['associationInfo']['matchKeys']
+            defineMergeProperties: (
+                payload: {
+                    sourceModel: FxOrmModel.Class_Model,
+                    targetModel: FxOrmModel.Class_Model,
+                    mergeModel: FxOrmModel.Class_MergeModel,
+                }
+            ) => any
+            howToCheckExistenceForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToCheckExistenceForSource']
+            howToSaveForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToSaveForSource']
+            howToFetchForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToFetchForSource']
+            howToRemoveForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToRemoveForSource']
+            // howToFetchForSource: FxOrmModel.Class_MergeModel['_howToFetchForSource']
+            onMatch: Class_MergeModel['associationInfo']['onMatch']
+
+            // matchKeys: Class_MergeModel['associationInfo']['matchKeys']
         })
 
         isSourceModel (model: Class_Model): boolean
         isTarget (model: Class_Model): boolean
 
-        checkExistenceForSource (mergeInstance: FxOrmInstance.Class_Instance): boolean
+        checkExistenceForSource (opts: {
+            mergeInstance: FxOrmInstance.Class_Instance,
+        }): boolean
 
         saveForSource (opts: {
             targetDataSet: Fibjs.AnyObject | FxOrmInstance.Class_Instance,

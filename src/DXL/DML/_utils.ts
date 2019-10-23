@@ -36,6 +36,22 @@ export function filterKnexBuilderBeforeQuery (
 	return builder
 }
 
+export function filterResultAfterQuery (
+	result: any,
+	afterQuery: Function | Function[],
+  ctx?: any
+): any {
+	if (Array.isArray(afterQuery)) {
+		return afterQuery.map(aQ => filterResultAfterQuery(result, afterQuery, ctx))
+	}
+
+	if (typeof afterQuery === 'function') {
+		result = afterQuery(result, ctx)
+	}
+
+	return result
+}
+
 const filterWhereToKnexActionsInternal = gnrWalkWhere<
   null,
   {
@@ -151,6 +167,7 @@ export const filterJoinOnConditionToClauseBuilderActions = gnrWalkWhere<
 
     if (!jbuilder) throw new Error(`[filterJoinOnConditionToClauseBuilderActions] jbuilder required!`)
     if (!source_collection) throw new Error(`[filterJoinOnConditionToClauseBuilderActions] source_collection required!`)
+    if (!target_collection) throw new Error(`[filterJoinOnConditionToClauseBuilderActions] target_collection required!`)
 
     switch (scene) {
       case 'inputAs:conjunctionAsAnd': {
@@ -291,15 +308,4 @@ export function filterJoinSelectToKnexActions (
     delete opts.joins
 
     return
-}
-
-export function filterResultAfterQuery (
-	result: any,
-	afterQuery: Function
-) {
-	if (typeof afterQuery === 'function') {
-		result = afterQuery(result)
-	}
-
-	return result
 }

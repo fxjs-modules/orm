@@ -7,107 +7,110 @@
 /// <reference path="Queries.d.ts" />
 
 declare namespace FxOrmDML {
-  type KnexQueryBuilder = FxOrmTypeHelpers.ReturnType<FKnexNS.KnexInstance['queryBuilder']>;
+    type KnexQueryBuilder = FxOrmTypeHelpers.ReturnType<FKnexNS.KnexInstance['queryBuilder']>;
 
-  type BeforeQueryItem = (
-    builer: KnexQueryBuilder,
-    ctx: { dml: DMLDriver }
-  ) => typeof builer | void
+    type BeforeQueryItem = (
+        builer: KnexQueryBuilder,
+        ctx: { dml: DMLDriver }
+    ) => typeof builer | void
 
-  class DMLDriver<CONN_TYPE = any> extends FxOrmDXL.DXLDriver<CONN_TYPE> {
-    query: {
-      <T=any>(
-        collection: string,
-        opts?: {
-          where?: Fibjs.AnyObject,
-          fields?: string[],// FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['select']>,
+    class DMLDriver<CONN_TYPE = any> extends FxOrmDXL.DXLDriver<CONN_TYPE> {
+        query: {
+            <T = any>(
+                collection: string,
+                opts?: {
+                    where?: Fibjs.AnyObject,
+                    fields?: string[],// FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['select']>,
 
-          offset?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['offset']>
-          limit?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['limit']>
-          orderBy?: FxOrmTypeHelpers.Parameters<FKnexNS.KnexInstance['orderBy']>
+                    offset?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['offset']>
+                    limit?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['limit']>
+                    orderBy?: FxOrmTypeHelpers.Parameters<FKnexNS.KnexInstance['orderBy']>
 
-          having?: Fibjs.AnyObject,
-          joins?: FxHQLParser.ParsedResult['joins']
+                    having?: Fibjs.AnyObject,
+                    joins?: FxHQLParser.ParsedResult['joins']
 
-          beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
+                    beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
+                }
+            ): T
         }
-      ): T
-    }
-    find: {
-      <T = Fibjs.AnyObject[]>(
-        collection: string,
-        opts?: {
-          $dml?: FxOrmDML.DMLDriver,
-          where?: Fibjs.AnyObject,
-          joins?: Fibjs.AnyObject,
-          fields?: string[],
-          select?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['select']>,
+        find: {
+            <T = Fibjs.AnyObject[]>(
+                collection: string,
+                opts?: {
+                    $dml?: FxOrmDML.DMLDriver,
+                    where?: Fibjs.AnyObject,
+                    joins?: Fibjs.AnyObject,
+                    fields?: string[],
+                    select?: {
+                        [k: string]: string,
+                        // FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['select']>,
+                    },
 
-          offset?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['offset']>
-          limit?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['limit']>
-          orderBy?: FxOrmTypeHelpers.Parameters<FKnexNS.KnexInstance['orderBy']>
+                    offset?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['offset']>
+                    limit?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['limit']>
+                    orderBy?: FxOrmTypeHelpers.Parameters<FKnexNS.KnexInstance['orderBy']>
 
-          beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
-          filterQueryResult?: <T2 = any>(result: any) => T2
+                    beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
+                    filterQueryResult?: <T2 = any>(result: any) => T2
+                }
+            ): T
         }
-      ): T
-    }
-    count: {
-      <T = number>(
-        collection: string,
-        opts?: {
-          joins?: Fibjs.AnyObject,
-          where?: Fibjs.AnyObject,
-          countParams?: FxOrmTypeHelpers.Parameters<FKnexNS.KnexInstance['count']>
-          beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
-          filterQueryResult?: <T2 = any>(result: any) => T2
+        count: {
+            <T = number>(
+                collection: string,
+                opts?: {
+                    joins?: Fibjs.AnyObject,
+                    where?: Fibjs.AnyObject,
+                    countParams?: FxOrmTypeHelpers.Parameters<FKnexNS.KnexInstance['count']>
+                    beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
+                    filterQueryResult?: <T2 = any>(result: any) => T2
+                }
+            ): number
         }
-      ): number
-    }
-    exists: {
-      <T = boolean>(
-        collection: string,
-        opts?: {
-          where?: Fibjs.AnyObject,
-          beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
-          filterQueryResult?: <T2 = any>(result: any) => T2
+        exists: {
+            <T = boolean>(
+                collection: string,
+                opts?: {
+                    where?: Fibjs.AnyObject,
+                    beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
+                    filterQueryResult?: <T2 = any>(result: any) => T2
+                }
+            ): boolean
         }
-      ): boolean
-    }
-    insert: {
-      (
-        collection: string,
-        data: FxSqlQuerySql.DataToSet,
-        opts?: {
-          idPropertyList?: FxOrmProperty.NormalizedProperty[],
-          beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
+        insert: {
+            (
+                collection: string,
+                data: FxSqlQuerySql.DataToSet,
+                opts?: {
+                    idPropertyList?: FxOrmProperty.NormalizedProperty[],
+                    beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
+                }
+            ): Fibjs.AnyObject
         }
-      ): Fibjs.AnyObject
-    }
-    update: {
-      <T = any>(
-        collection: string,
-        changes: FxSqlQuerySql.DataToSet,
-        opts?: {
-          where?: Fibjs.AnyObject,
-          idPropertyList?: FxOrmProperty.NormalizedProperty[],
-          beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
+        update: {
+            <T = any>(
+                collection: string,
+                changes: FxSqlQuerySql.DataToSet,
+                opts?: {
+                    where?: Fibjs.AnyObject,
+                    idPropertyList?: FxOrmProperty.NormalizedProperty[],
+                    beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
+                }
+            ): T
         }
-      ): T
-    }
-    remove: {
-      <T = number>(
-        collection: string,
-        opts?: {
-          where: Fibjs.AnyObject,
-          beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
+        remove: {
+            <T = number>(
+                collection: string,
+                opts?: {
+                    where: Fibjs.AnyObject,
+                    beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
+                }
+            ): T
         }
-      ): T
+        clear: {
+            <T = any>(
+                collection: string
+            ): T
+        }
     }
-    clear: {
-      <T = any>(
-        collection: string
-      ): T
-    }
-  }
 }

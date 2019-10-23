@@ -51,6 +51,7 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
     get rightOuterJoin () { return QueryGrammers.Qlfn.Selects.rightOuterJoin }
     get innerJoin () { return QueryGrammers.Qlfn.Selects.innerJoin }
     get fullOuterJoin () { return QueryGrammers.Qlfn.Selects.fullOuterJoin }
+    get refTableCol () { return QueryGrammers.Qlfn.Others.refTableCol }
 
     model: FxOrmModel.Class_Model;
 
@@ -61,6 +62,19 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
     @configurable(false)
     get _symbol () { return SYMBOLS.QueryBuilder };
     get notQueryBuilder () { return this.constructor !== Class_QueryBuilder };
+
+    propIdentifier (propname: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['prop']>) {
+      const model = <FxOrmModel.Class_Model>(this.notQueryBuilder ? this : this.model)
+
+      return `${model.collection}.${model.prop(propname).mapsTo}`
+    }
+
+    associcatedPropIdentifier (assoc_name: string, propname: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['prop']>) {
+      const model = <FxOrmModel.Class_Model>(this.notQueryBuilder ? this : this.model)
+
+      const assoc = model.assoc(assoc_name)
+      return `${assoc.collection}.${assoc.prop(propname).mapsTo}`
+    }
 
     /**
      * @description find tuples from remote endpoints

@@ -55,22 +55,22 @@ function t() {
     // // run('./integration/association-extend.js');
 
     run('./integration/association-hasone.js');
-    // // run('./integration/association-hasone-required.js');
-    // // run('./integration/association-hasone-reverse.js');
-    // // run('./integration/association-hasone-zeroid.js');
+    // run('./integration/association-hasone-required.js');
+    // run('./integration/association-hasone-reverse.js');
+    // run('./integration/association-hasone-zeroid.js');
 
-    // run('./integration/association-hasmany.js');
-    // // run('./integration/association-hasmany-extra.js');
-    // // run('./integration/association-hasmany-hooks.js');
-    // // run('./integration/association-hasmany-mapsto.js');
-    // // run('./integration/event.js');
+    run('./integration/association-hasmany.js');
+    // run('./integration/association-hasmany-extra.js');
+    // run('./integration/association-hasmany-hooks.js');
+    // run('./integration/association-hasmany-mapsto.js');
+    // run('./integration/event.js');
 
-    // // run('./integration/hook.js');
-    // // run('./integration/hook-ref.js');
-    // // run('./integration/association-hook.js');
+    // run('./integration/hook.js');
+    // run('./integration/hook-ref.js');
+    // run('./integration/association-hook.js');
 
-    // run('./integration/instance.js');
-    // run('./integration/instance-changes-track.js');
+    run('./integration/instance.js');
+    run('./integration/instance-changes-track.js');
 
     test.run(console.DEBUG);
 }

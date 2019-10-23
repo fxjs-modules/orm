@@ -17,7 +17,7 @@ function assertModelInstanceWithHasMany(instance) {
     assert.property(instance.__opts, 'associations')
 }
 
-xdescribe("hasMany", function () {
+odescribe("hasMany", function () {
     var db = null;
     var Person = null;
     var Pet = null;
@@ -47,16 +47,21 @@ xdescribe("hasMany", function () {
                     name: String
                 });
                 Person.hasMany(Pet, {
-                    as: 'pets'
-                }, {
+                    as: 'pets',
+                    reverseAs: 'owner'
+                }/* , {
                     reverse: opts.reversePets,
                     autoFetch: opts.autoFetchPets
-                });
+                } */);
+                /**
+                 * here should be m2m
+                 */
                 Person.hasMany(Person, {
-                    as: 'friends'
-                }, {}, {});
+                    as: 'friends',
+                    reverseAs: 'friend'
+                }/* , {}, {} */);
 
-                helper.dropSync([Person, Pet], function () {
+                helper.dropSync([Pet, Person], function () {
                     Pet.create([{
                         name: "Cat"
                     }, {
@@ -65,7 +70,7 @@ xdescribe("hasMany", function () {
 
                     /**
                      * @relationship
-                     * 
+                     *
                      * John --+---> Deco
                      *        '---> Mutt <----- Jane <---- Bob
                      *
@@ -94,20 +99,23 @@ xdescribe("hasMany", function () {
                         age: 18
                     }]);
 
-                    var Jane = Person.find({
-                        name: "Jane"
-                    }).firstSync();
-
-                    var pets = Pet.find({
-                        name: "Mutt"
+                    var Jane = Person.one({
+                        where: { name: "Jane" }
                     });
 
-                    Jane.addPetsSync(pets);
-                    Jane.addFriendsSync(
-                        Person.find({
-                            name: "Bob",
-                        })
-                    );
+                    var pets = Pet.find({
+                        where: { name: "Mutt" }
+                    });
+
+                    Jane.$set('pets', pets);
+                    Jane.$set(
+                      'friends',
+                      Person.find({
+                        where: { name: 'Bob'}
+                      })
+                    )
+                    Jane.$save();
+
                     done();
                 });
             };
@@ -116,31 +124,40 @@ xdescribe("hasMany", function () {
         describe("getAccessor", function () {
             before(setup());
 
-            it("should allow to specify order as string", function () {
+            oit("should allow to specify order as string", function () {
                 var people = Person.find({
-                    name: "John"
+                    where: {
+                      name: "John"
+                    }
                 });
 
-                var pets = people[0].getPetsSync("-name");
+                // var pets = people[0].getPetsSync("-name");
+                var pets = people[0].$getReference("pets", {
+                  orderBy: ['name', 'desc']
+                });
 
-                assert.ok(Array.isArray(pets));
+                assert.isArray(pets);
                 assert.equal(pets.length, 2);
-                assert.equal(pets[0].model(), Pet);
+                assert.equal(pets[0].$model, Pet);
                 assert.equal(pets[0].name, "Mutt");
                 assert.equal(pets[1].name, "Deco");
             });
 
             it("should return proper instance model", function () {
                 var people = Person.find({
-                    name: "John"
+                    where: {
+                      name: "John"
+                    }
                 });
                 var pets = people[0].getPetsSync("-name");
-                assert.equal(pets[0].model(), Pet);
+                assert.equal(pets[0].$model, Pet);
             });
 
             it("should allow to specify order as Array", function () {
                 var people = Person.find({
-                    name: "John"
+                    where: {
+                      name: "John"
+                    }
                 });
 
                 var pets = people[0].getPetsSync(["name", "Z"]);
@@ -153,7 +170,9 @@ xdescribe("hasMany", function () {
 
             it("should allow to specify a limit", function () {
                 var John = Person.find({
-                    name: "John"
+                    where: {
+                      name: "John"
+                    }
                 }).firstSync();
 
                 var pets = John.getPetsSync(1);
@@ -164,11 +183,15 @@ xdescribe("hasMany", function () {
 
             it("should allow to specify conditions", function () {
                 var John = Person.find({
-                    name: "John"
+                    where: {
+                      name: "John"
+                    }
                 }).firstSync();
 
                 var pets = John.getPetsSync({
-                    name: "Mutt"
+                    where: {
+                      name: "Mutt"
+                    }
                 });
 
                 assert.ok(Array.isArray(pets));
@@ -178,10 +201,14 @@ xdescribe("hasMany", function () {
 
             it("should return a chain if no callback defined", function () {
                 var people = Person.find({
-                    name: "John"
+                    where: {
+                      name: "John"
+                    }
                 });
                 var chain = people[0].getPets({
-                    name: "Mutt"
+                    where: {
+                      name: "Mutt"
+                    }
                 });
 
                 assert.isObject(chain);
@@ -203,7 +230,7 @@ xdescribe("hasMany", function () {
             });
         });
 
-        describe("hasAccessor", function () {
+        xdescribe("hasAccessor", function () {
             before(setup());
 
             it("should return true if instance has associated item", function () {
@@ -273,7 +300,7 @@ xdescribe("hasMany", function () {
             });
         });
 
-        describe("delAccessor", function () {
+        xdescribe("delAccessor", function () {
             before(setup());
 
             it("should remove specific associations if passed", function () {
@@ -307,7 +334,7 @@ xdescribe("hasMany", function () {
             });
         });
 
-        describe("addAccessor", function () {
+        xdescribe("addAccessor", function () {
             before(setup());
 
             it("might add duplicates", function () {
@@ -395,7 +422,7 @@ xdescribe("hasMany", function () {
             });
         });
 
-        describe("setAccessor", function () {
+        xdescribe("setAccessor", function () {
             before(setup());
 
             it("should accept several arguments as associations", function () {
@@ -464,50 +491,50 @@ xdescribe("hasMany", function () {
             });
         });
 
-        describe("findBy*()", function () {
+        xdescribe("findBy*()", function () {
             function assertion_people_for_findby (people) {
                 assert.equal(people.length, 2);
-                
+
                 var Jane = people.find(person => person.name === "Jane")
                 var JanePets = Jane.getPetsSync("-name");
-                
+
                 assert.ok(Array.isArray(JanePets));
                 assert.equal(JanePets.length, 1);
-                assert.equal(JanePets[0].model(), Pet);
+                assert.equal(JanePets[0].$model, Pet);
                 assert.equal(JanePets[0].name, "Mutt");
-                
+
                 var John = people.find(person => person.name === "John")
                 var JohnPets = John.getPetsSync("-name");
-                
+
                 assert.ok(Array.isArray(JohnPets));
                 assert.equal(JohnPets.length, 2);
-                assert.equal(JohnPets[0].model(), Pet);
+                assert.equal(JohnPets[0].$model, Pet);
                 assert.equal(JohnPets[0].name, "Mutt");
                 assert.equal(JohnPets[1].name, "Deco");
             }
 
             function assertion_pets_for_findby (pets) {
                 assert.equal(pets.length, 2);
-                
+
                 var Mutt = pets.find(pet => pet.name === "Mutt")
                 var MuttOwners = Mutt.getOwnersSync("-name");
-                
+
                 assert.ok(Array.isArray(MuttOwners));
                 assert.equal(MuttOwners.length, 2);
-                assert.equal(MuttOwners[0].model(), Person);
+                assert.equal(MuttOwners[0].$model, Person);
                 assert.equal(MuttOwners[0].name, "John");
                 assert.equal(MuttOwners[1].name, "Jane");
-                
+
                 var Deco = pets.find(pet => pet.name === "Deco")
                 var DecoOwners = Deco.getOwnersSync("-name");
-                
+
                 assert.ok(Array.isArray(DecoOwners));
                 assert.equal(DecoOwners.length, 1);
-                assert.equal(DecoOwners[0].model(), Person);
+                assert.equal(DecoOwners[0].$model, Person);
                 assert.equal(DecoOwners[0].name, "John");
             }
 
-            describe("findBy() - A hasMany B, with reverse", function () {
+            xdescribe("findBy() - A hasMany B, with reverse", function () {
                 before(setup({
                     reversePets: 'owners',
                     autoFetchPets: false
@@ -649,7 +676,7 @@ xdescribe("hasMany", function () {
                 })
             });
 
-            describe("findBy() - A hasMany B, without reverse", function () {
+            xdescribe("findBy() - A hasMany B, without reverse", function () {
                 before(setup({
                     autoFetchPets: false
                 }));
@@ -693,7 +720,7 @@ xdescribe("hasMany", function () {
             });
         });
 
-        describe("with autoFetch turned on", function () {
+        xdescribe("with autoFetch turned on", function () {
             before(setup({
                 autoFetchPets: true
             }));

@@ -410,11 +410,13 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         if (this.$model.noKey) {
             // const fn = this.$model.settings.get('instance.checkExists')
             // if (typeof fn === 'function') return fn(this)
-            if (this.$model.isMergeModel) return (<FxOrmModel.Class_MergeModel>this.$model).checkExistenceForSource(this)
+            if (this.$model.isMergeModel) return (<FxOrmModel.Class_MergeModel>this.$model).checkExistenceForSource({
+                mergeInstance: this
+            })
 
             return false
         }
-        
+
         const where: Fibjs.AnyObject = {};
 
         if (!this.$model.idPropertyList.length) {
