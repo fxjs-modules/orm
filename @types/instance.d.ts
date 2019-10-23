@@ -46,39 +46,63 @@ declare namespace FxOrmInstance {
          * @description just fetch field name (list) from remote endpoints, but never update local instance,
          * just return field-value object
          */
-        $get (fieldName: string | string[]): Fibjs.AnyObject
+        $get: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaElementIdx0<
+            (fieldName: string) => Fibjs.AnyObject
+        >
 
         /**
          * @description
          *  fetch all references(associations) from remote endpoints,
          *  update instance automatically
          */
-        $fetchReference (): this
+        $fetchRef (): this
         /**
          *
          * @description just fetch reference name (list) from remote endpoints, but never update local instance,
          * just return ref-value object
          */
-        $getReference: FxOrmTypeHelpers.ReturnItemOrArrayAccordingTo_1stParam<string, Class_Instance>
+        $getRef: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaElementIdx0<
+            (fieldName: string, opts?: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['find']>) => Class_Instance
+        >
         /**
          *
          * @description just check if reference name (list) exist(s) in remote endpoints, but never update local instance,
          * just return check result
          */
-        $hasReference: FxOrmTypeHelpers.ReturnItemOrArrayAccordingTo_1stParam<string, boolean>
+        $hasRef: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaElementIdx0<
+            (fieldName: string) => boolean
+        >
 
-        $save: {
-            (kvs?: Fibjs.AnyObject): Class_Instance
-        }
+        $save: (kvs?: Fibjs.AnyObject) => this
+        $saveRef: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaElementIdx1<
+            (refName: string, dataset: Fibjs.AnyObject | FxOrmInstance.Class_Instance) => Class_Instance
+        >
+        /**
+         * @description only valid for reference(with name `refName`) 'x2m', such as hasMany, hasManyExclusively
+         */
+        $addRef: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaElementIdx1<
+            (refName: string, dataset: Fibjs.AnyObject | FxOrmInstance.Class_Instance) => Class_Instance
+        >
+
         /**
          * @description remove instance
+         *
+         * @warning this just unlink all references about it, but never delete any references-related records in remote enpoints
+         * automatically --- this only delete instance itself
          */
         $remove (): void
         /**
          *
-         * @description remove reference with `name` in remote endpoints, update local instance
+         * @description unlink reference with `name` in remote endpoints, update local instance
+         *
+         * @notice
+         * - for `x2m` type reference's instance, this action would unlink ALL references of it
+         * if no any specific instances/conditions specified, but NEVER DELETE records in remote
+         * endpoints by default
+         *
+         * - for `x2o` type reference's instance, this action would unlink the only reference of it.
          */
-        $removeReference (refName: string | string[]): this
+        $unlinkRef (refName: string | string[]): this
 
         $exists (): boolean
         $clearChanges(fieldName?: string | string[]): void

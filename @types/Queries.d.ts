@@ -224,11 +224,34 @@ declare namespace FxOrmQueries {
         propIdentifier (propname: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['prop']>): string
         associcatedPropIdentifier (assoc_name: string, propname: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['prop']>): string
 
-        find (opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>): T_RETURN[]
-        one (opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>): T_RETURN
-        get (
-          id?: string | number | (string|number)[] | FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>['where']
+        /**
+         * @description find tuples from remote endpoints
+         */
+        find (
+            opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']> & { return_raw?: boolean }
+        ): T_RETURN[]
+        /**
+         * @description get first tuple from remote endpoints
+         */
+        one (
+            opts?: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['find']>
         ): T_RETURN
+        /**
+         * @description get first tuple from remote endpoints
+         */
+        get (
+          id?: string | number | (string|number)[] | FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['find']>['where']
+        ): T_RETURN
+
+        /**
+         * @description check if one item existed in remote endpoints
+         */
+        exists (
+            id?: string | number | FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['count']>['where']
+        ): boolean
+        /**
+         * @description count tuples from remote endpoints
+         */
         count (opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['count']>): number
 
         first (): T_RETURN

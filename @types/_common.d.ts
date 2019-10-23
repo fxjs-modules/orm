@@ -62,20 +62,23 @@ declare namespace FxOrmTypeHelpers {
         new (...args: infer U): any
     } ? U : never
 
-    type ReturnItemOrArrayAccordingTo_1stParam<T, RETURN_T, EXTRA_T = void> = {
-        (
-            arg1: EXTRA_T extends void ? T : (T | EXTRA_T),
-            ...args: any[]): T extends any[] ? RETURN_T[] : RETURN_T
-    }
-
-    type ReturnItemOrArrayAccordingTo_2ndParam<T, RETURN_T, EXTRA_T = void> = {
-        (
-            arg1: any,
-            arg2: EXTRA_T extends void ? T : (T | EXTRA_T),
-            ...args: any[]
-        ): T extends any[] ? RETURN_T[] : RETURN_T
-    }
-
     type ItOrListOfIt<T> = T | T[]
-    type ELEOFARRAY<T> = T extends any[] ? T[any] : T
+    type EleOrListAccordingTo<T, U = T, T2 = FlattenIfArray<T>> = T extends T2[] ? U[] : U
+    type FlattenIfArray<T> = T extends (infer R)[] ? R : T
+    type TransformArrayOrItsEle<T1, T2> = T1 extends any[] ? FlattenIfArray<T2>[] : FlattenIfArray<T2>
+
+    type FuncReturnArrayOrItEleViaElementIdx0<FUNC> =
+        FUNC extends (arg0: infer ARG, ...args: infer OTHERS) => infer RTN ? (
+            {
+                (arg0: FlattenIfArray<ARG>[], ...args: OTHERS): RTN[]
+                (arg0: FlattenIfArray<ARG>, ...args: OTHERS): RTN
+            }
+        ) : never
+    type FuncReturnArrayOrItEleViaElementIdx1<FUNC> =
+        FUNC extends (arg0: infer ARG0, arg1: infer ARG, ...args: infer OTHERS) => infer RTN ? (
+            {
+                (arg0: ARG0, arg1: FlattenIfArray<ARG>[], ...args: OTHERS): RTN[]
+                (arg0: ARG0, arg1: FlattenIfArray<ARG>, ...args: OTHERS): RTN
+            }
+        ) : never
 }

@@ -31,6 +31,9 @@ declare namespace FxOrmModel {
         readonly propertyList: ModelProperty[]
 
         readonly associationNames: string[]
+        /**
+         * @notice all instance refered by associations is just instance of merge model, not target model
+         */
         associations: {[k: string]: FxOrmModel.Class_MergeModel}
 
         settings: any
@@ -111,7 +114,12 @@ declare namespace FxOrmModel {
          *
          * @param input dataset for create one instance
          */
-        New: FxOrmTypeHelpers.ReturnItemOrArrayAccordingTo_1stParam<Fibjs.AnyObject | string | number, FxOrmInstance.Class_Instance>
+        // New (
+        //     input: FxOrmTypeHelpers.ItOrListOfIt<Fibjs.AnyObject | string | number>
+        // ): FxOrmTypeHelpers.TransformArrayOrItsEle<typeof input, FxOrmInstance.Class_Instance>
+        New: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaElementIdx0<
+            (input: (Fibjs.AnyObject | string | number)) => FxOrmInstance.Class_Instance
+        >
         /* ddl about :start */
 
         /**
@@ -135,10 +143,9 @@ declare namespace FxOrmModel {
         /**
          * @description create one instance from this model
          */
-        create: {
-            (kvItem: Fibjs.AnyObject, opts?: { parallel?: boolean }): FxOrmInstance.Class_Instance
-            (kvItem: Fibjs.AnyObject[], opts?: { parallel?: boolean }): FxOrmInstance.Class_Instance[]
-        }
+        create: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaElementIdx0<
+            (kvItem: Fibjs.AnyObject, opts?: { parallel?: boolean }) => FxOrmInstance.Class_Instance
+        >
         /**
          * @description remove items corresponding to conditions
          *
@@ -229,6 +236,18 @@ declare namespace FxOrmModel {
                 collection: string
                 type: 'm2m' | 'o2m'
                 on?: Class_MergeModel['associationInfo']['onMatch']
+            }
+        ): Class_MergeModel
+
+        /**
+         * @on sourceModel.id === targetModel.[reverseAs_Key]
+         */
+        hasManyExclusively(
+            model: FxOrmModel.Class_Model,
+            opts?: {
+                as: string
+                reverseAs?: string
+                collection: string
             }
         ): Class_MergeModel
 
@@ -391,7 +410,8 @@ declare namespace FxOrmModel {
         }): void
 
         findForSource (opts: {
-            sourceInstance: FxOrmInstance.Class_Instance
+            sourceInstance: FxOrmInstance.Class_Instance,
+            findOptions?: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['find']>
         }): FxOrmTypeHelpers.ItOrListOfIt<FxOrmInstance.Class_Instance>
 
         removeForSource (opts: {

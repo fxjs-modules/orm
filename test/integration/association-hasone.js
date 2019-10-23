@@ -168,12 +168,12 @@ odescribe("hasOne", function () {
                 size: 14
             });
             assert.exist(leaf);
-            var tree = leaf.$getReference('tree');
+            var tree = leaf.$getRef('tree');
 
             assert.exist(tree);
             assert.strictEqual(treeId, tree.id);
 
-            var [tree] = leaf.$getReference(['tree']);
+            var [tree] = leaf.$getRef(['tree']);
             assert.exist(tree);
             assert.strictEqual(treeId, tree.id);
         });
@@ -182,7 +182,7 @@ odescribe("hasOne", function () {
             var leaf = Leaf.one({
                 size: 14
             });
-            var tree = leaf.$getReference('tree');
+            var tree = leaf.$getRef('tree');
 
             assert.equal(tree.$model, Tree);
         });
@@ -199,10 +199,10 @@ odescribe("hasOne", function () {
             });
             assert.exist(leaf);
 
-            var has = leaf.$hasReference('tree');
+            var has = leaf.$hasRef('tree');
             assert.equal(has, true);
 
-            has = leaf.$hasReference('stalk');
+            has = leaf.$hasRef('stalk');
             assert.equal(has, false);
         });
 
@@ -230,11 +230,11 @@ odescribe("hasOne", function () {
             assert.exist(stalk);
             var leaf = Leaf.one({
                 size: 14
-            }).$fetchReference();
+            }).$fetchRef();
 
             assert.exist(leaf);
             assert.exist(leaf.stalk);
-            leaf.$removeReference('stalk');
+            leaf.$unlinkRef('stalk');
             assert.equal(leaf.stalk, null);
 
             var leaf = Leaf.one({
@@ -482,8 +482,8 @@ odescribe("hasOne", function () {
                 person = Person.get(person[Person.id]);
 
                 assert.isFunction(person.$set);
-                assert.isFunction(person.$removeReference);
-                assert.isFunction(person.$hasReference);
+                assert.isFunction(person.$unlinkRef);
+                assert.isFunction(person.$hasRef);
             });
         });
     });

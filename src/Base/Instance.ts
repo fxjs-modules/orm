@@ -141,9 +141,6 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
             }
         })
 
-        // this.$kvs = this.$model.normlizePropertyData(instanceBase, this.$kvs)
-        // this.$refs = this.$model.normalizeAssociationData(instanceBase, this.$refs)
-
         return getInstance(this) as any;
     }
 
@@ -151,19 +148,18 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
     $off (...args: any[]) { return super.off.apply(this, args) }
     $emit (...args: any[]) { return super.emit.apply(this, args) }
 
-    $set (prop: string | string[], value: any) {
-        if (!prop) return ;
+    $set (fieldname: string | string[], value: any) {
+        if (!fieldname) return ;
 
-        if (typeof prop === 'string') {
-            if (this.$model.isPropertyName(prop))
-                setTarget(prop, value, this);
-            else if (this.$model.isAssociationName(prop)) {
-                this.$refs[prop] = value
+        if (typeof fieldname === 'string') {
+            if (this.$model.isPropertyName(fieldname))
+                setTarget(fieldname, value, this);
+            else if (this.$model.isAssociationName(fieldname)) {
+                this.$refs[fieldname] = value
             }
-
-        } if (Array.isArray(prop)) {
-            prop = prop.filter(x => x && typeof x === 'string').join('.');
-            this.$set(prop, value);
+        } if (Array.isArray(fieldname)) {
+            fieldname = fieldname.filter(x => x && typeof x === 'string').join('.');
+            this.$set(fieldname, value);
         }
 
         return this
@@ -222,22 +218,22 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         return isEmptyPlainObject(kvs) ? undefined : kvs;
     }
 
-    $fetchReference () {
-        const refs = this.$getReference(this.$model.associationNames);
+    $fetchRef () {
+        const refs = this.$getRef(this.$model.associationNames);
 
         this.$model.normalizeAssociationData(refs, this.$refs);
 
         return this
     }
 
-    $getReference (refName: string | string[]) {
+    $getRef (refName: string | string[], opts?: FxOrmTypeHelpers.SecondParameter<FxOrmInstance.Class_Instance['$getRef']>) {
         const associationInfos = <FxOrmTypeHelpers.ReturnType<FxOrmModel.Class_Model['fieldInfo']>[]>[]
         arraify(refName).filter(x => {
             if (this.$model.isAssociationName(x))
                 associationInfos.push(this.$model.fieldInfo(x))
         })
         if (!associationInfos.length)
-            throw new Error(`[Instance::$getReference] invalid reference names given`)
+            throw new Error(`[Instance::$getRef] invalid reference names given`)
 
         const refs = <any>[];
 
@@ -247,7 +243,8 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
                 if (associationInfo.type !== 'association') return ;
 
                 associationInfo.association.findForSource({
-                    sourceInstance: this
+                    sourceInstance: this,
+                    findOptions: opts
                 });
 
                 refs.push(this[associationInfo.association.name] || null);
@@ -257,14 +254,14 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         return Array.isArray(refName) ? refs : refs[0];
     }
 
-    $hasReference (refName: string | string[]): any {
+    $hasRef (refName: string | string[]): any {
         if (Array.isArray(refName))
-            return refName.map(_ref => this.$hasReference(_ref)) as any
+            return refName.map(_ref => this.$hasRef(_ref)) as any
 
         if (!this.$model.isAssociationName(refName))
-            throw new Error(`[Instance::$hasReference] "${refName}" is not reference of this instance, with model(collection: ${this.$model.collection})`)
+            throw new Error(`[Instance::$hasRef] "${refName}" is not reference of this instance, with model(collection: ${this.$model.collection})`)
 
-        return !!this.$getReference(refName) as any
+        return !!this.$getRef(refName) as any
     }
 
     $save (
@@ -305,26 +302,28 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
             .toSingleton()
             .useTrans((dml: any) => {
                 if (this.$isPersisted && this.$exists()) {
-                    const changes = this.$model.normalizePropertiesToData(kvs);
-                    const whereCond = <typeof changes>{};
+                    if (this.$changedFieldsCount) {
+                        const changes = this.$model.normalizePropertiesToData(kvs);
+                        const whereCond = <typeof changes>{};
 
-                    let hasWhere = false
-                    Object.values(this.$model.idPropertyList).forEach(property => {
-                        if (changes.hasOwnProperty(property.mapsTo)) {
-                            whereCond[property.mapsTo] = changes[property.mapsTo]
-                            delete changes[property.mapsTo];
-                            hasWhere = true
-                        }
-                    });
+                        let hasWhere = false
+                        Object.values(this.$model.idPropertyList).forEach(property => {
+                            if (changes.hasOwnProperty(property.mapsTo)) {
+                                whereCond[property.mapsTo] = changes[property.mapsTo]
+                                delete changes[property.mapsTo];
+                                hasWhere = true
+                            }
+                        });
 
-                    if (!hasWhere)
-                        throw new Error(`[Instance::save] update in $save must have specific where conditions, check your instance`)
+                        if (!hasWhere)
+                            throw new Error(`[Instance::save] update in $save must have specific where conditions, check your instance`)
 
-                    dml.update(
-                        this.$model.collection,
-                        changes,
-                        { where: whereCond }
-                    );
+                        dml.update(
+                            this.$model.collection,
+                            changes,
+                            { where: whereCond }
+                        );
+                    }
                 } else {
                     const creates = this.$model.normalizePropertiesToData(kvs);
                     const insertResult = dml.insert(
@@ -347,22 +346,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
 
                 this.$model.filterOutAssociatedData(refs)
                     .forEach(item => {
-                        const assocModel = item.association
-
-                        assocModel.saveForSource({
-                            targetDataSet: item.dataset,
-                            sourceInstance: this
-                        });
-
-                        /**
-                         * @whatif item.dataset is array of Instance
-                         */
-                        if (item.dataset instanceof Instance) {
-                            item.dataset.$model.propertyList.forEach(property => {
-                                if (this[item.association.name].$kvs.hasOwnProperty(property.name))
-                                    item.dataset[property.name] = this[item.association.name].$kvs[property.name]
-                            });
-                        }
+                        this.$saveRef(item.association.name, item.dataset)
                     })
             })
             .releaseSingleton()
@@ -372,6 +356,30 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         super.emit('saved')
 
         return this
+    }
+
+    $saveRef (
+        refName: string,
+        dataset: FxOrmTypeHelpers.ItOrListOfIt<Fibjs.AnyObject | FxOrmInstance.Class_Instance> = []
+    ) {
+        const assocModel = this.$model.assoc(refName);
+        assocModel.saveForSource({targetDataSet: dataset, sourceInstance: this})
+
+        if (dataset instanceof Instance) {
+            dataset.$model.propertyList.forEach(property => {
+                if (this[assocModel.name].$kvs.hasOwnProperty(property.name))
+                    dataset[property.name] = this[assocModel.name].$kvs[property.name]
+            });
+        }
+
+        return this[refName]
+    }
+
+    $addRef (
+        refName: string,
+        dataset: FxOrmTypeHelpers.ItOrListOfIt<Fibjs.AnyObject | FxOrmInstance.Class_Instance> = []
+    ) {
+        return null as any
     }
 
     $remove (): void {
@@ -390,11 +398,11 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         })
     }
 
-    $removeReference (refName: string | string[]) {
+    $unlinkRef (refName: string | string[]) {
         const refNames = arraify(refName).filter(x => this.$refs.hasOwnProperty(x))
 
         if (!refNames.length)
-            throw new Error(`[Instance::$removeReference] no any valid reference names provided!`)
+            throw new Error(`[Instance::$unlinkRef] no any valid reference names provided!`)
 
         this.$model.filterOutAssociatedData(this.$refs)
             .filter(item => refNames.includes(item.association.name))

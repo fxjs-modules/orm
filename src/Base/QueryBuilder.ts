@@ -82,12 +82,9 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
     @transformToQCIfModel
     getQueryBuilder () { return this }
 
-    /**
-     * @description find tuples from remote endpoints
-     */
     @transformToQCIfModel
     find (
-        opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']> = {}
+        opts: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['find']> = {}
     ): TUPLE_ITEM[] {
         const _opts = {...opts}
 
@@ -105,6 +102,8 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
 
         const results = this.model.$dml.find(this.model.collection, _opts)
 
+        if (_opts.return_raw) return results as any
+
         this._tuples = results.map((x: TUPLE_ITEM) => {
             const inst = this.model.New(x)
             return inst as any
@@ -113,19 +112,13 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
         return Array.from(this._tuples);
     }
 
-    /**
-     * @description get first tuple from remote endpoints
-     */
     one (
-        opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>
+        opts?: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['one']>
     ): TUPLE_ITEM {
         opts = {...opts, limit: 1}
         return this.find(opts)[0]
     }
 
-    /**
-     * @description get first tuple from remote endpoints
-     */
     @transformToQCIfModel
     get (
         id?: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['get']>,
@@ -144,12 +137,9 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
         return this.find(opts)[0];
     }
 
-    /**
-     * @description check if one item existed in remote endpoints
-     */
     @transformToQCIfModel
     exists (
-        id?: string | number | FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['count']>['where']
+        id?: string | number | FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['count']>['where']
     ): boolean {
         if (isIdsInput(id))
             return !!this.get(id)
@@ -159,12 +149,9 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
         throw new Error(`[QueryBuilder::exists] invalid input! its type must be one of string, number, object`)
     }
 
-    /**
-     * @description count tuples from remote endpoints
-     */
     @transformToQCIfModel
     count (
-        opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['count']> = {}
+        opts: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['count']> = {}
     ): number {
         return this.model.$dml.count(
             this.model.collection,

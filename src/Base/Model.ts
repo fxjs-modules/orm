@@ -560,6 +560,10 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     }
 
     hasMany (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['hasMany']>) {
+        return null as any
+    }
+
+    hasManyExclusively (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['hasMany']>) {
         const [ targetModel, opts ] = args;
 
         const {
@@ -612,15 +616,11 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             howToCheckExistenceForSource: ({ mergeModel, mergeInstance }) => {
                 return mergeModel.targetModel.idPropertyList.every(prop => mergeInstance.$isFieldFilled(prop.name))
             },
-            howToFetchForSource: ({ mergeModel, sourceInstance }) => {
+            howToFetchForSource: ({ mergeModel, sourceInstance, findOptions }) => {
                 const { targetModel, sourceModel } = mergeModel
-                console.log(
-                    'miaomiaomiao?',
-                    mergeModel.collection,
-                    mergeModel.propertyNames
-                )
 
-                const mergeInsts = mergeModel.find({
+                sourceInstance[mergeModel.name] = <FxOrmInstance.Class_Instance[]>(mergeModel.find({
+                    ...findOptions,
                     select: (() => {
                         const ss = { [mergePropertyNameInTarget]: mergeModel.propIdentifier(mergePropertyNameInTarget) };
                         targetModel.propertyList.forEach(property => {
@@ -645,14 +645,9 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                                 ]
                             }
                         })
-                    ]
-                })
-
-                sourceInstance[mergeModel.name] = mergeInsts || null
-
-                console.log(
-                    'miaomiaomiao[2]', mergeInsts.map(x => x.toJSON())
-                )
+                    ],
+                    // return_raw: true,
+                })).map(x => x.$set(reverseAs, sourceInstance))
             },
             howToSaveForSource: ({ mergeModel, targetDataSet, sourceInstance }) => {
                 const inputs = arraify(mergeModel.New(targetDataSet));
@@ -961,9 +956,10 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     }
 
     findForSource ({
-        sourceInstance = null
+        sourceInstance = null,
+        findOptions = undefined
     }: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['findForSource']>) {
-        this.associationInfo.howToFetchForSource({ mergeModel: this, sourceInstance })
+        this.associationInfo.howToFetchForSource({ mergeModel: this, sourceInstance, findOptions })
         return sourceInstance
     }
 
