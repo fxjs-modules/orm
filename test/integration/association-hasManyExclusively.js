@@ -231,20 +231,43 @@ odescribe("hasManyExclusively", function () {
 
         describe("$saveRef", function () {
           before(setup());
+          var Jane, John
+          var Ac_2, AC_1
 
-          it("do it", function () {
-            var Jane = Person.one({
-                where: { name: "Jane" }
-            });
+          before(() => {
+            Jane = Person.one({ where: { name: "Jane" } });
+            John = Person.one({ where: { name: "John" } });
 
-            var stations = Station.find({
-                where: { name: "Ac_2" }
-            });
+            Ac_1 = Station.one({ where: { name: "Ac_1" } });
+            Ac_2 = Station.one({ where: { name: "Ac_2" } });
+          });
+
+          it("re assign", function () {
+            // these stations are belonging to John
+
+            assert.equal(John.$getRef('$stations').length, 2)
 
             // reassign station to Jane
-            Jane.$saveRef('stations', stations);
+            Jane.$saveRef('stations', Ac_2);
+            assert.equal(John.$getRef('$stations').length, 1)
+          });
 
-            // John.$getRef('stations');
+          it("save as replacement", function () {
+            assert.equal(Jane.$getRef('$stations').length, 1);
+            Jane.$saveRef('stations', []);
+            assert.equal(Jane.$getRef('$stations').length, 0);
+
+            Jane.$saveRef('stations', Ac_1);
+            assert.equal(John.$getRef('$stations').length, 1);
+
+            Jane.$saveRef('stations', [Ac_1, Ac_2]);
+            assert.equal(John.$getRef('$stations').length, 2);
+          });
+
+          it("save as clean", function () {
+            assert.equal(Jane.$getRef('$stations').length, 1);
+            Jane.$saveRef('stations', []);
+            assert.equal(Jane.$getRef('$stations').length, 0);
           });
         });
 

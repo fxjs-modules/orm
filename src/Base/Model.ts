@@ -650,6 +650,8 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                 })).map(x => x.$set(reverseAs, sourceInstance))
             },
             howToSaveForSource: ({ mergeModel, targetDataSet, sourceInstance, isAddOnly }) => {
+                if (targetDataSet === []) sourceInstance.$removeRef(mergeModel.name)
+
                 const mergeInsts = arraify(mergeModel.New(targetDataSet));
                 if (mergeInsts && mergeInsts.length)
                     sourceInstance[mergeModel.name] = sourceInstance[mergeModel.name] || []
@@ -678,8 +680,18 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                     .map((x: Fibjs.AnyObject) => mergeModel.New(x).$set(reverseAs, sourceInstance))
                 
             },
-            howToRemoveForSource: ({}) => {
-
+            howToRemoveForSource: ({mergeModel, sourceInstance}) => {
+                mergeModel.$dml.update(
+                    mergeModel.collection,
+                    {
+                        [mergePropertyNameInTarget]: null
+                    },
+                    {
+                        where: {
+                            [mergePropertyNameInTarget]: sourceInstance[mergeModel.sourceModel.id]
+                        }
+                    }
+                )
             },
             onMatch: ({ sourceModel, targetModel, mergeCollection }) => {
               return null as any
