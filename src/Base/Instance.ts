@@ -42,7 +42,11 @@ function clearChanges(
 
     inst.$changes[fieldName].clear();
 }
-class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
+class Instance implements FxOrmInstance.Class_Instance {
+    static isInstance (input: any): input is FxOrmInstance.Class_Instance {
+        return input instanceof Instance
+    }
+    $event_emitter: FxOrmInstance.Class_Instance['$event_emitter'] = new EventEmitter()
     // @DecoratorsProperty.buildDescriptor({ enumerable: false })
     $model: FxOrmModel.Class_Model
 
@@ -116,8 +120,6 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
     get $dml () { return this.$model.$dml }
 
     constructor (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmInstance.Class_Instance>) {
-        super()
-
         let [model, instanceBase] = args
 
         if (Array.isArray(instanceBase))
@@ -128,8 +130,6 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         if (instanceBase instanceof Instance) instanceBase = instanceBase.toJSON()
 
         this.$bornsnapshot = JSON.stringify(instanceBase)
-        this.$kvs = {};
-        this.$refs = {};
 
         this.$model.normalizeDataIntoInstance({...instanceBase}, {
             onPropertyField: ({ fieldname, transformedValue }) => {
@@ -144,9 +144,9 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         return getInstance(this) as any;
     }
 
-    $on (...args: any[]) { return super.on.apply(this, args) }
-    $off (...args: any[]) { return super.off.apply(this, args) }
-    $emit (...args: any[]) { return super.emit.apply(this, args) }
+    $on (...args: any[]) { return this.$event_emitter.on.apply(this, args) }
+    $off (...args: any[]) { return this.$event_emitter.off.apply(this, args) }
+    $emit (...args: any[]) { return this.$event_emitter.emit.apply(this, args) }
 
     $set (fieldname: string | string[], value: any) {
         if (!fieldname) return ;
@@ -353,7 +353,7 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
 
         this.$clearChanges()
 
-        super.emit('saved')
+        this.$emit('saved')
 
         return this
     }
@@ -371,6 +371,19 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
                     dataset[property.name] = this[assocModel.name].$kvs[property.name]
             });
         }
+        // if (
+        //     Instance.isInstance(dataset) && Instance.isInstance(this[refName])
+        //     && this[refName].$model === dataset.$model
+        // ) {
+        //     (<FxOrmInstance.Class_Instance>this[refName]).$model.normalizeDataIntoInstance(
+        //         this[refName].$kvs,
+        //         {
+        //             onPropertyField: ({ fieldname, transformedValue }) => {
+        //                 dataset[fieldname] = transformedValue
+        //             }
+        //         }
+        //     )
+        // }
 
         return this[refName]
     }
@@ -379,7 +392,10 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
         refName: string,
         dataset: FxOrmTypeHelpers.ItOrListOfIt<Fibjs.AnyObject | FxOrmInstance.Class_Instance> = []
     ) {
-        return null as any
+        const assocModel = this.$model.assoc(refName);
+        assocModel.saveForSource({targetDataSet: dataset, sourceInstance: this, isAddOnly: true})
+
+        return arraify(this[refName])
     }
 
     $remove (): void {
@@ -472,8 +488,14 @@ class Instance extends EventEmitter implements FxOrmInstance.Class_Instance {
     [k: string]: any
 }
 
-function isInternalProp (prop: string) {
-    return prop.startsWith('$') || prop.startsWith('_')
+function isInternalProp (prop: string | symbol) {
+    return typeof prop === 'string' && (prop[0] === '$' || prop[0] === '_')
+}
+
+function isInternalPropOrSymbol (prop: string | symbol) {
+    if (typeof prop === 'symbol') return true
+
+    return isInternalProp(prop)
 }
 
 const getInstance = function (
@@ -481,9 +503,9 @@ const getInstance = function (
 ) {
     function getPhHandler ({
         parent_path = '',
-        track_$kv = false,
+        track_$instance_self = false,
     } = {}) {
-        if (!track_$kv) {
+        if (!track_$instance_self) {
             const loose_p_tuple = (prop: string) => [parent_path, prop].join('.').split('.')
             const cur_path_str = (prop: string) => [parent_path, prop].filter(x => x).join('.')
 
@@ -535,7 +557,7 @@ const getInstance = function (
 
         return {
             get (target: typeof instance, prop: string): any {
-                if (REVERSE_KEYS.includes(prop) || isInternalProp(prop))
+                if (REVERSE_KEYS.includes(prop) || isInternalPropOrSymbol(prop))
                     return target[prop];
 
                 if (target.$model.isAssociationName(prop))
@@ -549,11 +571,8 @@ const getInstance = function (
             },
             ownKeys (target: typeof instance) {
                 return Reflect.ownKeys(target.$kvs).concat(
-                    Reflect.ownKeys(target.$refs)
+                    Object.keys(target.$refs)
                 )
-                // return instance.$model.propertyNames.concat(
-                //     Object.keys(instance.$model.associations)
-                // )
             },
             deleteProperty (target: typeof instance, prop:string) {
                 if (REVERSE_KEYS.includes(prop) || isInternalProp(prop)) {
@@ -611,7 +630,7 @@ const getInstance = function (
         }
     };
 
-    return new Proxy(instance, getPhHandler({ parent_path: '' ,track_$kv: true }))
+    return new Proxy(instance, getPhHandler({ parent_path: '' , track_$instance_self: true }))
 }
 
 export default Instance

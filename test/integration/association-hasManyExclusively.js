@@ -57,9 +57,9 @@ odescribe("hasManyExclusively", function () {
 
                 helper.dropSync([Station, Person], function () {
                     Station.create([{
-                        name: "Cat"
+                        name: "stataion_D1"
                     }, {
-                        name: "Dog"
+                        name: "stataion_D2"
                     }]);
 
                     /**
@@ -174,7 +174,62 @@ odescribe("hasManyExclusively", function () {
             });
         });
 
-        odescribe("$saveRef", function () {
+        odescribe("$addRef", function () {
+            before(setup());
+
+            var Jane, JaneStation
+            var John
+            before(() => {
+                Jane = Person.one({ where: { name: "Jane" } });
+                John = Person.one({ where: { name: "John" } });
+            });
+            
+            it("add from raw object", function () {
+                // reassign station to Jane
+                JaneStations = Jane.$addRef('stations', { name: "station of Jane" });
+
+                assert.exist(Jane, 'stations')
+                assert.isArray(Jane.stations)
+                assert.equal(JaneStations, Jane.stations)
+
+                assert.equal(JaneStations[0].name, "station of Jane")
+            });
+
+            it("update for linked instance", function () {
+                Jane.$addRef("stations", JaneStation)
+
+                var stations = Jane.$getRef("stations")
+                assert.isArray(stations)
+                assert.equal(stations.length, 1)
+            });
+
+            it("add again", function () {
+                var _JaneStations = Jane.$addRef('stations', { name: "station2 of Jane" });
+
+                assert.equal(JaneStations.length, 1);
+                assert.equal(_JaneStations.length, 2);
+            });
+            
+            it("add non-linked instance", function () {
+                var _JaneStations = Jane.$addRef("stations", Station.create({
+                    name: "station3 of Jane"
+                }));
+                assert.equal(JaneStations.length, 1);
+                assert.equal(_JaneStations.length, 3);
+            });
+
+            it("add other instance linked instance", function () {
+                var JohnStations = John.$getRef("stations");
+                assert.equal(JohnStations.length, 2);
+                
+                var _JaneStations = Jane.$addRef("stations", JohnStations[0]);
+
+                assert.equal(John.$getRef("stations").length, 1);
+                assert.equal(_JaneStations.length, 4);
+            });
+        });
+
+        describe("$saveRef", function () {
           before(setup());
 
           it("do it", function () {

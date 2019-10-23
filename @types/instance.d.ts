@@ -2,7 +2,9 @@
 
 declare namespace FxOrmInstance {
 
-    class Class_Instance extends Class_EventEmitter {
+    class Class_Instance {
+        static isInstance (input: any): input is Class_Instance
+        readonly $event_emitter: Class_EventEmitter
         readonly $kvs: Fibjs.AnyObject
         readonly $refs: {[k: string]: FxOrmInstance.Class_Instance | any}
 
@@ -80,9 +82,7 @@ declare namespace FxOrmInstance {
         /**
          * @description only valid for reference(with name `refName`) 'x2m', such as hasMany, hasManyExclusively
          */
-        $addRef: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaElementIdx1<
-            (refName: string, dataset: Fibjs.AnyObject | FxOrmInstance.Class_Instance) => Class_Instance
-        >
+        $addRef: (refName: string, dataset: Fibjs.AnyObject | FxOrmInstance.Class_Instance) => Class_Instance[]
 
         /**
          * @description remove instance

@@ -406,7 +406,8 @@ declare namespace FxOrmModel {
 
         saveForSource (opts: {
             targetDataSet: Fibjs.AnyObject | FxOrmInstance.Class_Instance,
-            sourceInstance: FxOrmInstance.Class_Instance
+            sourceInstance: FxOrmInstance.Class_Instance,
+            isAddOnly?: boolean
         }): void
 
         findForSource (opts: {

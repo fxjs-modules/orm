@@ -11,7 +11,7 @@ import { snapshot } from "../Utils/clone";
 import Property from './Property';
 import { configurable } from '../Decorators/accessor';
 
-import { arraify } from '../Utils/array';
+import { arraify, deduplication } from '../Utils/array';
 
 function isProperty (input: any): input is FxOrmProperty.Class_Property {
   return input instanceof Property
@@ -571,7 +571,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             reverseAs = `of_${asKey}`,
         } = opts
 
-        if (!asKey) throw new Error(`[o2m] association name is required`)
+        if (!asKey) throw new Error(`[hasManyExclusively] "as" is required for association name`)
 
         const mergePropertyNameInTarget = `${reverseAs}_id`
 
@@ -649,25 +649,34 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                     // return_raw: true,
                 })).map(x => x.$set(reverseAs, sourceInstance))
             },
-            howToSaveForSource: ({ mergeModel, targetDataSet, sourceInstance }) => {
-                const inputs = arraify(mergeModel.New(targetDataSet));
-                // don't change it it no inputs
-                if (inputs && inputs.length)
+            howToSaveForSource: ({ mergeModel, targetDataSet, sourceInstance, isAddOnly }) => {
+                const mergeInsts = arraify(mergeModel.New(targetDataSet));
+                if (mergeInsts && mergeInsts.length)
                     sourceInstance[mergeModel.name] = sourceInstance[mergeModel.name] || []
 
-                const targetInstances = <Fibjs.AnyObject[]>coroutine.parallel(
-                    inputs,
-                    (targetInst: FxOrmInstance.Class_Instance) => {
+                const mergeDataList = <Fibjs.AnyObject[]>coroutine.parallel(
+                    mergeInsts,
+                    (mergeInst: FxOrmInstance.Class_Instance) => {
                         if (!sourceInstance[mergeModel.sourceModel.id]) return ;
-                        targetInst[mergePropertyNameInTarget] = sourceInstance[mergeModel.sourceModel.id]
+                        mergeInst[mergePropertyNameInTarget] = sourceInstance[mergeModel.sourceModel.id]
 
-                        targetInst.$save()
+                        mergeInst.$save()
 
-                        return targetInst.toJSON()
+                        return mergeInst.toJSON()
                     }
                 )
 
-                sourceInstance[mergeModel.name] = mergeModel.targetModel.New(targetInstances)
+                if (!isAddOnly && Array.isArray(sourceInstance[mergeModel.name]))
+                    sourceInstance[mergeModel.name].splice(0)
+                
+                sourceInstance[mergeModel.name] = 
+                    deduplication(
+                        <FxOrmInstance.Class_Instance[]>(sourceInstance[mergeModel.name] || [])
+                            .concat(mergeDataList),
+                        (item) => item[targetModel.id]
+                    )
+                    .map((x: Fibjs.AnyObject) => mergeModel.New(x).$set(reverseAs, sourceInstance))
+                
             },
             howToRemoveForSource: ({}) => {
 
@@ -809,43 +818,6 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
         // generate associated properties
         ;false && (() => {
             switch (this.type) {
-                /**
-                 * for o2m,
-                 * - this mergeModel has all properties in targetModel
-                 */
-                case 'o2m':
-                    /**
-                     * @whatif use lonely merge Table
-                     */
-                    ;(() => {
-                        if (this.targetModel.fieldInfo(matchKeys.target))
-                            return ;
-
-                        const sProperty = this.sourceModel.properties[matchKeys.source]
-                        if (!sProperty)
-                            throw new Error(`[MergeModel::constructor/o2m] no src property "${matchKeys.source}" in source model, check your definition about 'matchKeys'`)
-
-                        this.addProperty(
-                            matchKeys.target,
-                            sProperty
-                                .renameTo({ name: matchKeys.target })
-                                .useForAssociationMatch()
-                                .deKeys()
-                        )
-
-                        this.targetModel.propertyList.forEach(tProperty => {
-                            if (this.fieldInfo(tProperty.name)) return ;
-
-                            this.addProperty(
-                                tProperty.name,
-                                tProperty
-                                    .renameTo({ name: tProperty.name })
-                                    .useForAssociationMatch()
-                                    .deKeys()
-                            )
-                        })
-                    })();
-                    break
                 case 'm2m':
                     ;(() => {
                         if (!(this.sourceJoinKey = sourceJoinKey))
@@ -914,16 +886,20 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
 
     saveForSource ({
         targetDataSet = {},
-        sourceInstance = null
+        sourceInstance = null,
+        isAddOnly = false
     }: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['saveForSource']>) {
-        let inputs = <FxOrmInstance.Class_Instance[]>[]
-        let targetInstances = []
-
-        this.associationInfo.howToSaveForSource({ mergeModel: this, sourceInstance, targetDataSet })
+        this.associationInfo.howToSaveForSource({
+            mergeModel: this,
+            sourceInstance,
+            targetDataSet,
+            isAddOnly
+        })
 
         return sourceInstance
 
-        const matchCond = this.associationInfo.matchKeys
+        let inputs = <FxOrmInstance.Class_Instance[]>[]
+        let targetInstances = []
 
         switch (this.type) {
             case 'm2m':
