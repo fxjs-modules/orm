@@ -193,7 +193,7 @@ odescribe("hasOne", function () {
             assert.equal(tree[Tree.id], treeId);
         });
 
-        oit("has should indicate if there is an association present", function () {
+        xit("has should indicate if there is an association present", function () {
             var leaf = Leaf.one({
                 size: 14
             });

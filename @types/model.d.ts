@@ -117,7 +117,7 @@ declare namespace FxOrmModel {
         // New (
         //     input: FxOrmTypeHelpers.ItOrListOfIt<Fibjs.AnyObject | string | number>
         // ): FxOrmTypeHelpers.TransformArrayOrItsEle<typeof input, FxOrmInstance.Class_Instance>
-        New: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaElementIdx0<
+        New: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaArgIdx0<
             (input: (Fibjs.AnyObject | string | number)) => FxOrmInstance.Class_Instance
         >
         /* ddl about :start */
@@ -143,7 +143,7 @@ declare namespace FxOrmModel {
         /**
          * @description create one instance from this model
          */
-        create: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaElementIdx0<
+        create: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaArgIdx0<
             (kvItem: Fibjs.AnyObject, opts?: { parallel?: boolean }) => FxOrmInstance.Class_Instance
         >
         /**
@@ -353,6 +353,11 @@ declare namespace FxOrmModel {
                 & FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['checkExistenceForSource']>
             ) => any
 
+            howToCheckHasForSource: FxOrmTypeHelpers.MergeToFunctionArgOption0<
+                FxOrmModel.Class_MergeModel['checkHasForSource'],
+                { mergeModel: FxOrmModel.Class_MergeModel }
+            >
+
             howToSaveForSource: (
                 payload: { mergeModel: FxOrmModel.Class_MergeModel }
                 & FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['saveForSource']>
@@ -363,7 +368,7 @@ declare namespace FxOrmModel {
             howToFetchForSource: (
                 payload: { mergeModel: FxOrmModel.Class_MergeModel }
                 & FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['findForSource']>
-            ) => any // FxOrmInstance.Class_Instance
+            ) => void
 
             howToRemoveForSource: (
                 payload: { mergeModel: FxOrmModel.Class_MergeModel }
@@ -391,7 +396,7 @@ declare namespace FxOrmModel {
             howToSaveForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToSaveForSource']
             howToFetchForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToFetchForSource']
             howToRemoveForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToRemoveForSource']
-            // howToFetchForSource: FxOrmModel.Class_MergeModel['_howToFetchForSource']
+            howToCheckHasForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToCheckHasForSource']
             onMatch: Class_MergeModel['associationInfo']['onMatch']
 
             // matchKeys: Class_MergeModel['associationInfo']['matchKeys']
@@ -404,6 +409,11 @@ declare namespace FxOrmModel {
             mergeInstance: FxOrmInstance.Class_Instance,
         }): boolean
 
+        checkHasForSource: (opts: {
+            sourceInstance: FxOrmInstance.Class_Instance,
+            targetInstances: FxOrmInstance.Class_Instance[]
+        }) => boolean[]
+
         saveForSource (opts: {
             targetDataSet: Fibjs.AnyObject | FxOrmInstance.Class_Instance,
             sourceInstance: FxOrmInstance.Class_Instance,
@@ -413,7 +423,7 @@ declare namespace FxOrmModel {
         findForSource (opts: {
             sourceInstance: FxOrmInstance.Class_Instance,
             findOptions?: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['find']>
-        }): FxOrmTypeHelpers.ItOrListOfIt<FxOrmInstance.Class_Instance>
+        }): void
 
         removeForSource (opts: {
             sourceInstance: FxOrmInstance.Class_Instance

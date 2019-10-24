@@ -48,7 +48,7 @@ declare namespace FxOrmInstance {
          * @description just fetch field name (list) from remote endpoints, but never update local instance,
          * just return field-value object
          */
-        $get: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaElementIdx0<
+        $get: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaArgIdx0<
             (fieldName: string) => Fibjs.AnyObject
         >
 
@@ -63,20 +63,22 @@ declare namespace FxOrmInstance {
          * @description just fetch reference name (list) from remote endpoints, but never update local instance,
          * just return ref-value object
          */
-        $getRef: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaElementIdx0<
+        $getRef: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaArgIdx0<
             (fieldName: string, opts?: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['find']>) => Class_Instance
         >
         /**
          *
          * @description just check if reference name (list) exist(s) in remote endpoints, but never update local instance,
          * just return check result
+         *
+         * @notice, if data is not instance(ot array of it), make all id properties passed
          */
-        $hasRef: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaElementIdx0<
-            (fieldName: string) => boolean
+        $hasRef:FxOrmTypeHelpers.FuncReturnArrayOrItEleViaArgIdx1<
+            (refName: string, dataset: Fibjs.AnyObject | FxOrmInstance.Class_Instance) => boolean
         >
 
         $save: (kvs?: Fibjs.AnyObject) => this
-        $saveRef: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaElementIdx1<
+        $saveRef: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaArgIdx1<
             (refName: string, dataset: Fibjs.AnyObject | FxOrmInstance.Class_Instance) => Class_Instance
         >
         /**

@@ -67,14 +67,29 @@ declare namespace FxOrmTypeHelpers {
     type FlattenIfArray<T> = T extends (infer R)[] ? R : T
     type TransformArrayOrItsEle<T1, T2> = T1 extends any[] ? FlattenIfArray<T2>[] : FlattenIfArray<T2>
 
-    type FuncReturnArrayOrItEleViaElementIdx0<FUNC> =
+    type RecordEleArray<K extends keyof T, T> = {
+        [P in K]: T[K][];
+    };
+    type RecordEle<K extends keyof T, T> = {
+        [P in K]: T[K];
+    };
+
+    type ReverseKeyOf<K extends any, T> = Exclude<keyof T, K>
+    type ReReverseKeyOf<K extends any, T> = ReverseKeyOf<ReverseKeyOf<K, T>, T>
+
+    type FuncReturnArrayOrItEleViaArgIdx0<FUNC> =
         FUNC extends (arg0: infer ARG, ...args: infer OTHERS) => infer RTN ? (
             {
                 (arg0: FlattenIfArray<ARG>[], ...args: OTHERS): RTN[]
                 (arg0: FlattenIfArray<ARG>, ...args: OTHERS): RTN
             }
         ) : never
-    type FuncReturnArrayOrItEleViaElementIdx1<FUNC> =
+
+    type MergeToFunctionArgOption0<FUNC, MERGED> = FUNC extends (arg0: infer ARG, ...args: infer OTHERS) => infer RTN ?
+            (arg0: ARG & MERGED, ...args: OTHERS) => RTN
+            : never
+
+    type FuncReturnArrayOrItEleViaArgIdx1<FUNC> =
         FUNC extends (arg0: infer ARG0, arg1: infer ARG, ...args: infer OTHERS) => infer RTN ? (
             {
                 (arg0: ARG0, arg1: FlattenIfArray<ARG>[], ...args: OTHERS): RTN[]

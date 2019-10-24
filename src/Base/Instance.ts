@@ -82,6 +82,10 @@ class Instance implements FxOrmInstance.Class_Instance {
         return this.$model.keyPropertyNames.every(x => this.$isFieldFilled(x))
     }
 
+    $getWhereFromProperty () {
+
+    }
+
     $isFieldFilled (x: string) {
         return (
             this.$model.isPropertyName(x) && this.$kvs[x] !== undefined
@@ -254,14 +258,31 @@ class Instance implements FxOrmInstance.Class_Instance {
         return Array.isArray(refName) ? refs : refs[0];
     }
 
-    $hasRef (refName: string | string[]): any {
-        if (Array.isArray(refName))
-            return refName.map(_ref => this.$hasRef(_ref)) as any
+    $hasRef (...opts: FxOrmTypeHelpers.Parameters<FxOrmInstance.Class_Instance['$hasRef']>): any {
+        let [refName, dataset] = opts;
 
         if (!this.$model.isAssociationName(refName))
             throw new Error(`[Instance::$hasRef] "${refName}" is not reference of this instance, with model(collection: ${this.$model.collection})`)
 
-        return !!this.$getRef(refName) as any
+        const assocModel = this.$model.assoc(refName)
+
+        let invalid: any
+        const fdataset = arraify(dataset).filter(x => {
+            if (!x) invalid = x
+            else if (typeof x !== 'object') invalid = x
+
+            return !!x
+         })
+
+        if (invalid || !fdataset.length)
+            throw new Error(`[Instance::$hasRef] input must be non-empty object or array of it!`)
+
+        const results = assocModel.checkHasForSource({
+            sourceInstance: this,
+            targetInstances: fdataset.map((x: Fibjs.AnyObject) => assocModel.targetModel.New(x))
+        })
+
+        return Array.isArray(dataset) ? results : results[0]
     }
 
     $save (

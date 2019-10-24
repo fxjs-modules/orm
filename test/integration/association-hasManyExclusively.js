@@ -183,7 +183,7 @@ odescribe("hasManyExclusively", function () {
                 Jane = Person.one({ where: { name: "Jane" } });
                 John = Person.one({ where: { name: "John" } });
             });
-            
+
             it("add from raw object", function () {
                 // reassign station to Jane
                 JaneStations = Jane.$addRef('stations', { name: "station of Jane" });
@@ -209,7 +209,7 @@ odescribe("hasManyExclusively", function () {
                 assert.equal(JaneStations.length, 1);
                 assert.equal(_JaneStations.length, 2);
             });
-            
+
             it("add non-linked instance", function () {
                 var _JaneStations = Jane.$addRef("stations", Station.create({
                     name: "station3 of Jane"
@@ -221,7 +221,7 @@ odescribe("hasManyExclusively", function () {
             it("add other instance linked instance", function () {
                 var JohnStations = John.$getRef("stations");
                 assert.equal(JohnStations.length, 2);
-                
+
                 var _JaneStations = Jane.$addRef("stations", JohnStations[0]);
 
                 assert.equal(John.$getRef("stations").length, 1);
@@ -271,18 +271,18 @@ odescribe("hasManyExclusively", function () {
           });
         });
 
-        xdescribe("hasAccessor", function () {
+        odescribe("$hasRef", function () {
             before(setup());
 
-            it("should return true if instance has associated item", function () {
-                var stations = Station.find({
-                    name: "Ac_2"
-                });
-                var Jane = Person.find({
-                    name: "Jane"
-                }).firstSync();
-                var has_pets = Jane.hasPetsSync(stations[0]);
-                assert.ok(has_pets);
+            oit("should return true if instance has associated item", function () {
+                var stations = Station.find({ where: { name: "Ac_2" } });
+                var John = Person.one({ where: { name: "John" } });
+
+                assert.ok(John.$hasRef("stations", stations[0]));
+
+                var Jane = Person.one({ where: { name: "Jane" } });
+
+                assert.isFalse(Jane.$hasRef("stations", stations[0]));
             });
 
             it("should return true if not passing any instance and has associated items", function (done) {
