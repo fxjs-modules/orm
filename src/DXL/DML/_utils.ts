@@ -12,6 +12,7 @@ import {
 } from '../../Base/Query/onWalkConditions';
 import { isOperatorFunction } from '../../Base/Query/Operator';
 import { mapObjectToTupleList } from '../../Utils/object';
+import { normalizeCollectionColumn } from '../../Utils/endpoints';
 
 export function filterKnexBuilderBeforeQuery (
 	builder: any,
@@ -27,7 +28,7 @@ export function filterKnexBuilderBeforeQuery (
 	}
 
 	if (typeof beforeQuery === 'function') {
-		const kqbuilder = beforeQuery(builder, ctx)
+		const kqbuilder = beforeQuery(builder, {...ctx, builder})
 
 		if (kqbuilder)
 			builder = kqbuilder
@@ -158,12 +159,13 @@ export const filterJoinOnConditionToClauseBuilderActions = gnrWalkWhere<
   {
     source_collection: string,
     target_collection: string,
-    jbuilder: FKnexNS.Knex.JoinClause
+    jbuilder: FKnexNS.Knex.JoinClause,
+    knex: FKnexNS.KnexInstance
   }
 >({
   onNode: ({ scene, nodeFrame, walk_fn, walk_fn_context, input }) => {
     const dfltReturn = { isReturn: false, result: <any>null }
-    const { jbuilder, source_collection, target_collection } = walk_fn_context
+    const { jbuilder, source_collection, target_collection, knex } = walk_fn_context
 
     if (!jbuilder) throw new Error(`[filterJoinOnConditionToClauseBuilderActions] jbuilder required!`)
     if (!source_collection) throw new Error(`[filterJoinOnConditionToClauseBuilderActions] source_collection required!`)
@@ -189,31 +191,36 @@ export const filterJoinOnConditionToClauseBuilderActions = gnrWalkWhere<
         const field_name = nodeFrame.field_name
 
         if (field_name) {
-          const sourceVarNode = `${source_collection}.${field_name}`
+          const sourceVarNode = normalizeCollectionColumn(field_name, source_collection)
 
           let fValue = cmpr_opfn_result.value
 
           if (isOperatorFunction(fValue)) {
             fValue = parseOperatorFunctionAsValue(fValue)
+            
             switch (cmpr_opfn_result.value.$wrapper) {
               case QueryGrammers.Qlfn.Others.refTableCol: fValue = `${fValue.table}.${fValue.column}`
                 break
-              case QueryGrammers.Qlfn.Operators.colref: fValue = `${target_collection}.${fValue}`
+              case QueryGrammers.Qlfn.Operators.colref: fValue = normalizeCollectionColumn(fValue, target_collection)
                 break
               case QueryGrammers.Qlfn.Operators.between: fValue = parseOperatorFunctionAsValue(fValue)
                 break
               case QueryGrammers.Qlfn.Operators.in: fValue = parseOperatorFunctionAsValue(fValue)
                 break
               default:
-                new Error('unsupport operator here!')
+                new Error('unsupported operator here!')
             }
-          } else
+          } else {
             switch (scene) {
               case 'walkWhere:opfn:in': fValue = normalizeInInput(fValue)
                 break
               case 'walkWhere:opfn:between': fValue = normalizeWhereInput(fValue)
                 break
+              default:
+                fValue = knex.raw("?", [fValue])
+                break
             }
+          }
 
           switch (cmpr_opfn_result.func_ref) {
             case QueryGrammers.Qlfn.Operators.eq:
@@ -257,32 +264,35 @@ const filterJoinsToKnexActionsInternal = gnrWalkJoinOn<
       case 'inputIs:opfn:joinVerb': {
         const condInput = input().value
         const target_collection = condInput.collection
-
-        const jcallback = function () {
-          /**
-           * @note `this` is  JoinClause, never use jcallback as arrow-function or change call it by other `this`
-           */
-          filterJoinOnConditionToClauseBuilderActions(condInput.on, {
-            jbuilder: this,
-            source_collection,
-            target_collection
-          })
+        
+        const get_jcallback = function (knex: FxOrmTypeHelpers.SecondParameter<FxOrmDML.BeforeQueryItem>['knex']) {
+          return function () {
+            /**
+             * @note `this` is  JoinClause, never use jcallback as arrow-function or change call it by other `this`
+             */
+            filterJoinOnConditionToClauseBuilderActions(condInput.on, {
+              jbuilder: this,
+              source_collection,
+              target_collection,
+              knex
+            })
+          }
         }
 
         switch (input.$wrapper) {
-          case QueryGrammers.Qlfn.Selects.join: bQList.push((builder) => { builder.join(target_collection, jcallback) }); break
-          case QueryGrammers.Qlfn.Selects.leftJoin: bQList.push((builder) => { builder.leftJoin(target_collection, jcallback) }); break
-          case QueryGrammers.Qlfn.Selects.leftOuterJoin: bQList.push((builder) => { builder.leftOuterJoin(target_collection, jcallback) }); break
-          case QueryGrammers.Qlfn.Selects.rightJoin: bQList.push((builder) => {
+          case QueryGrammers.Qlfn.Selects.join: bQList.push((builder, { knex }) => { builder.join(target_collection, get_jcallback(knex) ) }); break
+          case QueryGrammers.Qlfn.Selects.leftJoin: bQList.push((builder, { knex }) => { builder.leftJoin(target_collection, get_jcallback(knex) ) }); break
+          case QueryGrammers.Qlfn.Selects.leftOuterJoin: bQList.push((builder, { knex }) => { builder.leftOuterJoin(target_collection, get_jcallback(knex) ) }); break
+          case QueryGrammers.Qlfn.Selects.rightJoin: bQList.push((builder, { knex }) => {
             if ((<any>builder).client.config.client === 'sqlite') throw new Error(SQLITE_CANNOT)
-            builder.rightJoin(target_collection, jcallback)
+            builder.rightJoin(target_collection, get_jcallback(knex) )
           }); break
-          case QueryGrammers.Qlfn.Selects.rightOuterJoin: bQList.push((builder) => {
+          case QueryGrammers.Qlfn.Selects.rightOuterJoin: bQList.push((builder, { knex }) => {
             if ((<any>builder).client.config.client === 'sqlite') throw new Error(SQLITE_CANNOT)
-            builder.rightOuterJoin(target_collection, jcallback)
+            builder.rightOuterJoin(target_collection, get_jcallback(knex) )
           }); break
-          case QueryGrammers.Qlfn.Selects.fullOuterJoin: bQList.push((builder) => { builder.fullOuterJoin(target_collection, jcallback) }); break
-          case QueryGrammers.Qlfn.Selects.innerJoin: bQList.push((builder) => { builder.innerJoin(target_collection, jcallback) }); break
+          case QueryGrammers.Qlfn.Selects.fullOuterJoin: bQList.push((builder, { knex }) => { builder.fullOuterJoin(target_collection, get_jcallback(knex) ) }); break
+          case QueryGrammers.Qlfn.Selects.innerJoin: bQList.push((builder, { knex }) => { builder.innerJoin(target_collection, get_jcallback(knex) ) }); break
         }
 
         return dfltReturn

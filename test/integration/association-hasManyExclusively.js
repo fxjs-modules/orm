@@ -42,13 +42,13 @@ odescribe("hasManyExclusively", function () {
                     age: Number
                 });
                 Station = db.define('station', {
-                  uuid: {
-                    type: 'text',
-                    defaultValue () {
-                      return Date.now()
-                    }
-                  },
-                  name: String
+                    uuid: {
+                        type: 'text',
+                        defaultValue() {
+                            return Date.now()
+                        }
+                    },
+                    name: String
                 });
                 PersonStation = Person.hasManyExclusively(Station, {
                     as: 'stations',
@@ -104,12 +104,12 @@ odescribe("hasManyExclusively", function () {
             oit("should allow to specify order as string", function () {
                 var people = Person.find({
                     where: {
-                      name: "John"
+                        name: "John"
                     }
                 });
 
                 var stations = people[0].$getRef("stations", {
-                  orderBy: ['name', 'desc']
+                    orderBy: ['name', 'desc']
                 });
 
                 assert.isArray(stations);
@@ -122,12 +122,12 @@ odescribe("hasManyExclusively", function () {
             oit("should return proper instance model", function () {
                 var people = Person.find({
                     where: {
-                      name: "John"
+                        name: "John"
                     }
                 });
 
                 var stations = people[0].$getRef("stations", {
-                  orderBy: ['name', 'desc']
+                    orderBy: ['name', 'desc']
                 });
 
                 assert.equal(stations[0].$model, PersonStation);
@@ -136,12 +136,12 @@ odescribe("hasManyExclusively", function () {
             oit("should specify order as Array", function () {
                 var people = Person.find({
                     where: {
-                      name: "John"
+                        name: "John"
                     }
                 });
 
                 var stations = people[0].$getRef("stations", {
-                  orderBy: ['name', 'desc']
+                    orderBy: ['name', 'desc']
                 });
 
                 assert.ok(Array.isArray(stations));
@@ -153,20 +153,20 @@ odescribe("hasManyExclusively", function () {
             oit("should allow to specify a limit", function () {
                 var John = Person.one({
                     where: {
-                      name: "John"
+                        name: "John"
                     }
                 });
 
                 var stations = John.$getRef("stations", {
-                  orderBy: ['name', 'desc'],
+                    orderBy: ['name', 'desc'],
                 });
 
                 assert.ok(Array.isArray(stations));
                 assert.equal(stations.length, 2);
 
                 var stations = John.$getRef("stations", {
-                  orderBy: ['name', 'desc'],
-                  limit: 1
+                    orderBy: ['name', 'desc'],
+                    limit: 1
                 });
 
                 assert.ok(Array.isArray(stations));
@@ -177,14 +177,14 @@ odescribe("hasManyExclusively", function () {
         odescribe("$addRef", function () {
             before(setup());
 
-            var Jane, JaneStation
+            var Jane, JaneStations
             var John
             before(() => {
                 Jane = Person.one({ where: { name: "Jane" } });
                 John = Person.one({ where: { name: "John" } });
             });
 
-            it("add from raw object", function () {
+            oit("add from raw object", function () {
                 // reassign station to Jane
                 JaneStations = Jane.$addRef('stations', { name: "station of Jane" });
 
@@ -195,22 +195,22 @@ odescribe("hasManyExclusively", function () {
                 assert.equal(JaneStations[0].name, "station of Jane")
             });
 
-            it("update for linked instance", function () {
-                Jane.$addRef("stations", JaneStation)
+            oit("update for linked instance", function () {
+                Jane.$addRef("stations", JaneStations)
 
                 var stations = Jane.$getRef("stations")
                 assert.isArray(stations)
                 assert.equal(stations.length, 1)
             });
 
-            it("add again", function () {
+            oit("add again", function () {
                 var _JaneStations = Jane.$addRef('stations', { name: "station2 of Jane" });
 
                 assert.equal(JaneStations.length, 1);
                 assert.equal(_JaneStations.length, 2);
             });
 
-            it("add non-linked instance", function () {
+            oit("add non-linked instance", function () {
                 var _JaneStations = Jane.$addRef("stations", Station.create({
                     name: "station3 of Jane"
                 }));
@@ -218,7 +218,7 @@ odescribe("hasManyExclusively", function () {
                 assert.equal(_JaneStations.length, 3);
             });
 
-            it("add other instance linked instance", function () {
+            oit("add other instance linked instance", function () {
                 var JohnStations = John.$getRef("stations");
                 assert.equal(JohnStations.length, 2);
 
@@ -227,158 +227,12 @@ odescribe("hasManyExclusively", function () {
                 assert.equal(John.$getRef("stations").length, 1);
                 assert.equal(_JaneStations.length, 4);
             });
-        });
 
-        describe("$saveRef", function () {
-          before(setup());
-          var Jane, John
-          var Ac_2, AC_1
-
-          before(() => {
-            Jane = Person.one({ where: { name: "Jane" } });
-            John = Person.one({ where: { name: "John" } });
-
-            Ac_1 = Station.one({ where: { name: "Ac_1" } });
-            Ac_2 = Station.one({ where: { name: "Ac_2" } });
-          });
-
-          it("re assign", function () {
-            // these stations are belonging to John
-
-            assert.equal(John.$getRef('$stations').length, 2)
-
-            // reassign station to Jane
-            Jane.$saveRef('stations', Ac_2);
-            assert.equal(John.$getRef('$stations').length, 1)
-          });
-
-          it("save as replacement", function () {
-            assert.equal(Jane.$getRef('$stations').length, 1);
-            Jane.$saveRef('stations', []);
-            assert.equal(Jane.$getRef('$stations').length, 0);
-
-            Jane.$saveRef('stations', Ac_1);
-            assert.equal(John.$getRef('$stations').length, 1);
-
-            Jane.$saveRef('stations', [Ac_1, Ac_2]);
-            assert.equal(John.$getRef('$stations').length, 2);
-          });
-
-          it("save as clean", function () {
-            assert.equal(Jane.$getRef('$stations').length, 1);
-            Jane.$saveRef('stations', []);
-            assert.equal(Jane.$getRef('$stations').length, 0);
-          });
-        });
-
-        odescribe("$hasRef", function () {
-            before(setup());
-
-            oit("should return true if instance has associated item", function () {
-                var stations = Station.find({ where: { name: "Ac_2" } });
-                var John = Person.one({ where: { name: "John" } });
-
-                assert.ok(John.$hasRef("stations", stations[0]));
-
-                var Jane = Person.one({ where: { name: "Jane" } });
-
-                assert.isFalse(Jane.$hasRef("stations", stations[0]));
+            describe("reset", function () {
+                before(setup())
             });
 
-            it("should return true if not passing any instance and has associated items", function (done) {
-                Person.find({ name: "Jane" }).first(function (err, Jane) {
-                    assert.equal(err, null);
-
-                    Jane.hasPets(function (err, has_pets) {
-                        assert.equal(err, null);
-                        assert.ok(has_pets);
-
-                        return done();
-                    });
-                });
-            });
-
-            it("should return true if all passed instances are associated", function () {
-                var stations = Station.find({
-                    name: ["Ac_2", "Ac_1"]
-                });
-                var John = Person.find({
-                    name: "John"
-                }).firstSync();
-                var has_pets = John.hasPetsSync(stations);
-                assert.ok(has_pets);
-            });
-
-            it("should return false if any passed instances are not associated", function () {
-                var stations = Station.find();
-                var Jane = Person.find({
-                    name: "Jane"
-                }).firstSync();
-                var has_pets = Jane.hasPetsSync(stations);
-                assert.notOk(has_pets);
-            });
-
-            it("should return true if join table has duplicate entries", function () {
-                var stations = Station.find({
-                    name: ["Ac_2", "Ac_1"]
-                });
-
-                assert.equal(stations.length, 2);
-
-                var John = Person.find({
-                    name: "John"
-                }).firstSync();
-
-                var hasPets = John.hasPetsSync(stations);
-
-                assert.equal(hasPets, true);
-
-                db.driver.execQuerySync(
-                    "INSERT INTO person_pets (person_id, pets_id) VALUES (?,?), (?,?)", [John.id, stations[0].id, John.id, stations[1].id]);
-
-                var hasPets = John.hasPetsSync(stations);
-                assert.equal(hasPets, true);
-            });
-        });
-
-        xdescribe("delAccessor", function () {
-            before(setup());
-
-            it("should remove specific associations if passed", function () {
-                var stations = Station.find({
-                    name: "Ac_2"
-                });
-                var people = Person.find({
-                    name: "John"
-                });
-
-                people[0].removePetsSync(stations[0]);
-
-                var stations = people[0].getPetsSync();
-
-                assert.ok(Array.isArray(stations));
-                assert.equal(stations.length, 1);
-                assert.equal(stations[0].name, "Ac_1");
-            });
-
-            it("should remove all associations if none passed", function () {
-                var John = Person.find({
-                    name: "John"
-                }).firstSync();
-
-                John.removePetsSync();
-
-                var stations = John.getPetsSync();
-
-                assert.ok(Array.isArray(stations));
-                assert.equal(stations.length, 0);
-            });
-        });
-
-        xdescribe("addAccessor", function () {
-            before(setup());
-
-            it("might add duplicates", function () {
+            xit("might add duplicates", function () {
                 var stations = Station.find({
                     name: "Ac_2"
                 });
@@ -396,7 +250,7 @@ odescribe("hasManyExclusively", function () {
                 assert.equal(stations[1].name, "Ac_2");
             });
 
-            it("should keep associations and add new ones", function () {
+            xit("should keep associations and add new ones", function () {
                 var Ac_1 = Station.find({
                     name: "Ac_1"
                 }).firstSync();
@@ -418,7 +272,7 @@ odescribe("hasManyExclusively", function () {
                 assert.equal(stations[1].name, "Ac_2");
             });
 
-            it("should accept several arguments as associations", function () {
+            xit("should accept several arguments as associations", function () {
                 var stations = Station.find();
                 var Justin = Person.find({
                     name: "Justin"
@@ -431,7 +285,7 @@ odescribe("hasManyExclusively", function () {
                 assert.equal(stations.length, 2);
             });
 
-            it("should accept array as list of associations", function () {
+            xit("should accept array as list of associations", function () {
                 var stations = Station.create([{
                     name: 'Ruff'
                 }, {
@@ -454,7 +308,7 @@ odescribe("hasManyExclusively", function () {
                 assert.equal(justinsPets.length, petCount + 2);
             });
 
-            it("should throw if no items passed", function () {
+            xit("should throw if no items passed", function () {
                 var person = Person.oneSync();
 
                 assert.throws(function () {
@@ -463,10 +317,50 @@ odescribe("hasManyExclusively", function () {
             });
         });
 
-        xdescribe("setAccessor", function () {
+        odescribe("$saveRef", function () {
             before(setup());
+            var Jane, John
+            var Ac_2, Ac_1
 
-            it("should accept several arguments as associations", function () {
+            before(() => {
+                Jane = Person.one({ where: { name: "Jane" } });
+                John = Person.one({ where: { name: "John" } });
+
+                Ac_1 = Station.one({ where: { name: "Ac_1" } });
+                Ac_2 = Station.one({ where: { name: "Ac_2" } });
+            });
+
+            it("re assign", function () {
+                // these stations are belonging to John
+
+                assert.equal(John.$getRef('stations').length, 2)
+
+                // reassign station to Jane
+                Jane.$saveRef('stations', Ac_2);
+                assert.equal(John.$getRef('stations').length, 1)
+            });
+
+            it("save as replacement", function () {
+                assert.equal(Jane.$getRef('stations').length, 1);
+                Jane.$saveRef('stations', []);
+                assert.equal(Jane.$getRef('stations').length, 0);
+
+                Jane.$saveRef('stations', Ac_1);
+                assert.equal(Jane.$getRef('stations').length, 1);
+                assert.equal(John.$getRef('stations').length, 0);
+
+                Jane.$saveRef('stations', [Ac_1, Ac_2]);
+                assert.equal(Jane.$getRef('stations').length, 2);
+            });
+
+            it("save as clean", function () {
+                assert.equal(Jane.$getRef('stations').length, 2);
+                Jane.$saveRef('stations', []);
+                assert.equal(Jane.$getRef('stations').length, 0);
+            });
+
+
+            xit("should accept several arguments as associations", function () {
                 var stations = Station.find();
                 var Justin = Person.find({
                     name: "Justin"
@@ -480,7 +374,7 @@ odescribe("hasManyExclusively", function () {
                 assert.equal(stations.length, 2);
             });
 
-            it("should accept an array of associations", function () {
+            xit("should accept an array of associations", function () {
                 var stations = Station.find();
                 var Justin = Person.find({
                     name: "Justin"
@@ -494,7 +388,7 @@ odescribe("hasManyExclusively", function () {
                 assert.equal(all_pets.length, stations.length);
             });
 
-            it("should remove all associations if an empty array is passed", function () {
+            xit("should remove all associations if an empty array is passed", function () {
                 var Justin = Person.find({
                     name: "Justin"
                 }).firstSync();
@@ -506,7 +400,7 @@ odescribe("hasManyExclusively", function () {
                 assert.equal(stations.length, 0);
             });
 
-            it("clears current associations", function () {
+            xit("clears current associations", function () {
                 var stations = Station.find({
                     name: "Ac_1"
                 });
@@ -532,8 +426,108 @@ odescribe("hasManyExclusively", function () {
             });
         });
 
-        xdescribe("findBy*()", function () {
-            function assertion_people_for_findby (people) {
+        odescribe("$hasRef", function () {
+            before(setup());
+            before(() => {
+                Jane = Person.one({ where: { name: "Jane" } });
+                John = Person.one({ where: { name: "John" } });
+            });
+            var Jane, John
+
+            oit("should return { final: true } if instance has associated item", function () {
+                var station = Station.one({ where: { name: "Ac_2" } });
+
+                assert.isTrue(John.$hasRef("stations", station).final);
+                assert.isFalse(Jane.$hasRef("stations", station).final);
+            });
+
+            oit("should return { final: true } if not passing any instance and has associated items", function () {
+                assert.isFalse(Jane.$hasRef("stations").final);
+                assert.isTrue(John.$hasRef("stations").final);
+            });
+
+            oit("should return { final: true } if all passed instances are associated", function () {
+                var stations = Station.find({ where: { name: ["Ac_2", "Ac_1"] } });
+
+                assert.deepEqual(
+                    John.$hasRef("stations", stations),
+                    {
+                        final: true,
+                        ids: {
+                            [stations[0].id]: true,
+                            [stations[1].id]: true
+                        }
+                    }
+                );
+            });
+
+            oit("should return { final: false } if any passed instances are not associated", function () {
+                var stations = Station.find();
+
+                assert.deepEqual(
+                    Jane.$hasRef("stations", stations),
+                    {
+                        final: false,
+                        ids: (() => {
+                            const kvs = {}
+                            stations.forEach(station => kvs[station.id] = false)
+                            return kvs;
+                        })()
+                    }
+                )
+
+                var JohnStations = John.$getRef("stations");
+
+                assert.deepEqual(
+                    John.$hasRef("stations", stations),
+                    {
+                        final: false,
+                        ids: (() => {
+                            const kvs = {}
+                            stations.forEach(station =>
+                                kvs[station.id] = !!JohnStations.find(JohnS =>
+                                    JohnS.id === station.id
+                                )
+                            )
+                            return kvs;
+                        })()
+                    }
+                )
+            });
+        });
+
+        odescribe("$unlinkRef", function () {
+            before(setup());
+
+            var John, Ac_2
+            before(() => {
+                John = Person.one({ where: { name: "John" } });
+                Ac_2 = Station.one({ where: { name: "Ac_2" } });
+            });
+
+            oit("should unlink specific associations if passed", function () {
+                John.$unlinkRef("stations", Ac_2);
+
+                var pstations = John.$getRef("stations");
+
+                assert.ok(Array.isArray(pstations));
+                assert.equal(pstations.length, 1);
+                assert.equal(pstations[0].name, "Ac_1");
+            });
+
+            oit("should unlink all associations if none passed", function () {
+                John.$addRef("stations", Ac_2);
+                assert.equal(John.$getRef("stations").length, 2);
+                John.$unlinkRef("stations");
+
+                var pstations = John.$getRef("stations");
+                assert.ok(Array.isArray(pstations));
+                assert.equal(pstations.length, 0);
+            });
+        });
+
+        odescribe("findByRef*()", function () {
+            function assertion_people_for_findby(people) {
                 assert.equal(people.length, 2);
 
                 var Jane = people.find(person => person.name === "Jane")
@@ -554,7 +548,7 @@ odescribe("hasManyExclusively", function () {
                 assert.equal(JohnPets[1].name, "Ac_1");
             }
 
-            function assertion_pets_for_findby (stations) {
+            function assertion_pets_for_findby(stations) {
                 assert.equal(stations.length, 2);
 
                 var Ac_2 = stations.find(pet => pet.name === "Ac_2")
@@ -575,22 +569,27 @@ odescribe("hasManyExclusively", function () {
                 assert.equal(DecoOwners[0].name, "John");
             }
 
-            xdescribe("findBy() - A hasManyExclusively B, with reverse", function () {
-                before(setup({
-                    reversePets: 'owners',
-                    autoFetchPets: false
-                }));
+            odescribe("findByRef() - A hasManyExclusively B, with reverse", function () {
+                before(setup({}));
 
-                it("could find A with `findByB()`", function (done) {
-                    var John = Person.findByPets({ name: "Ac_2" }, { order: 'name' }).lastSync();
+                oit("could find A with `findByB()`", function () {
+                    var John = Person.findByRef(
+                        'stations',
+                        { [Station.propIdentifier('name')]: Person.Opf.eq("Ac_2") },
+                        {
+                            orderBy: Station.propIdentifier('name'),
+                        },
+                    )[0];
+                    return 
+
                     var Jane = Person.findByPets({ name: "Ac_2" }, { order: 'name' }).firstSync();
                     assertion_people_for_findby([John, Jane]);
 
-                    var John = Person.findByPets({ name: "Ac_2" }, {  }).firstSync();
-                    var Jane = Person.findByPets({ name: "Ac_2" }, {  }).lastSync();
+                    var John = Person.findByPets({ name: "Ac_2" }, {}).firstSync();
+                    var Jane = Person.findByPets({ name: "Ac_2" }, {}).lastSync();
                     assertion_people_for_findby([John, Jane]);
 
-                    var personCount = Person.findByPets({ name: "Ac_2" }, {  }).countSync();
+                    var personCount = Person.findByPets({ name: "Ac_2" }, {}).countSync();
                     assert.ok(personCount, 2);
 
                     ;[
@@ -607,14 +606,13 @@ odescribe("hasManyExclusively", function () {
                     var people = Person.findByPetsSync({ name: "Ac_2" });
                     assertion_people_for_findby(people);
 
-                    var people = Person.findBy('stations', { name: "Ac_2" }).runSync();
+                    var people = Person.findByRef('stations', { name: "Ac_2" }).runSync();
                     assertion_people_for_findby(people);
 
                     // asynchronous version
                     Person.findByPets({ name: "Ac_2" })
                         .run(function (err, people) {
                             assertion_people_for_findby(people);
-                            done();
                         });
                 });
 
@@ -627,11 +625,11 @@ odescribe("hasManyExclusively", function () {
                     }).firstSync();
                     assertion_pets_for_findby([Ac_2, Ac_1]);
 
-                    var Ac_2 = Station.findByOwners({ name: "John" }, {  }).firstSync();
-                    var Ac_1 = Station.findByOwners({ name: "John" }, {  }).lastSync();
+                    var Ac_2 = Station.findByOwners({ name: "John" }, {}).firstSync();
+                    var Ac_1 = Station.findByOwners({ name: "John" }, {}).lastSync();
                     assertion_pets_for_findby([Ac_2, Ac_1]);
 
-                    var personCount = Station.findByOwners({ name: "John" }, {  }).countSync();
+                    var personCount = Station.findByOwners({ name: "John" }, {}).countSync();
                     assert.ok(personCount, 2);
 
                     ;[
@@ -648,7 +646,7 @@ odescribe("hasManyExclusively", function () {
                     var stations = Station.findByOwnersSync({ name: "John" });
                     assertion_pets_for_findby(stations);
 
-                    var stations = Station.findBy('owners', { name: "John" }).runSync();
+                    var stations = Station.findByRef('owners', { name: "John" }).runSync();
                     assertion_pets_for_findby(stations);
 
                     // asynchronous version
@@ -659,11 +657,11 @@ odescribe("hasManyExclusively", function () {
                         });
                 });
 
-                it("could find A with `findBy([...])`", function () {
+                it("could find A with `findByRef([...])`", function () {
                     /**
                      * View details in @relationship above
                      */
-                    var Nil = Person.findBy(
+                    var Nil = Person.findByRef(
                         [
                             {
                                 association_name: 'stations',
@@ -681,7 +679,7 @@ odescribe("hasManyExclusively", function () {
                     ).firstSync();
                     assert.ok(!Nil);
 
-                    var John = Person.findBy(
+                    var John = Person.findByRef(
                         [
                             {
                                 association_name: 'stations',
@@ -693,7 +691,7 @@ odescribe("hasManyExclusively", function () {
                             order: '-name'
                         }
                     ).firstSync();
-                    var Jane = Person.findBy(
+                    var Jane = Person.findByRef(
                         [
                             {
                                 association_name: 'stations',
@@ -712,26 +710,24 @@ odescribe("hasManyExclusively", function () {
                 });
 
                 it("zero count", function () {
-                    var personCount = Station.findByOwners({ name: "Bob" }, {  }).countSync();
+                    var personCount = Station.findByOwners({ name: "Bob" }, {}).countSync();
                     assert.equal(personCount, 0);
                 })
             });
 
-            xdescribe("findBy() - A hasManyExclusively B, without reverse", function () {
-                before(setup({
-                    autoFetchPets: false
-                }));
+            xdescribe("findByRef() - A hasManyExclusively B, without reverse", function () {
+                before(setup({}));
 
                 it("could find A with `findByB()`", function (done) {
                     var John = Person.findByPets({ name: "Ac_2" }, { order: 'name' }).lastSync();
                     var Jane = Person.findByPets({ name: "Ac_2" }, { order: 'name' }).firstSync();
                     assertion_people_for_findby([John, Jane]);
 
-                    var John = Person.findByPets({ name: "Ac_2" }, {  }).firstSync();
-                    var Jane = Person.findByPets({ name: "Ac_2" }, {  }).lastSync();
+                    var John = Person.findByPets({ name: "Ac_2" }, {}).firstSync();
+                    var Jane = Person.findByPets({ name: "Ac_2" }, {}).lastSync();
                     assertion_people_for_findby([John, Jane]);
 
-                    var personCount = Person.findByPets({ name: "Ac_2" }, {  }).countSync();
+                    var personCount = Person.findByPets({ name: "Ac_2" }, {}).countSync();
                     assert.ok(personCount, 2);
 
                     ;[
@@ -748,7 +744,7 @@ odescribe("hasManyExclusively", function () {
                     var people = Person.findByPetsSync({ name: "Ac_2" });
                     assertion_people_for_findby(people);
 
-                    var people = Person.findBy('stations', { name: "Ac_2" }).runSync();
+                    var people = Person.findByRef('stations', { name: "Ac_2" }).runSync();
                     assertion_people_for_findby(people);
 
                     // asynchronous version
@@ -763,7 +759,6 @@ odescribe("hasManyExclusively", function () {
 
         xdescribe("with autoFetch turned on", function () {
             before(setup({
-                autoFetchPets: true
             }));
 
             it("should fetch associations", function () {

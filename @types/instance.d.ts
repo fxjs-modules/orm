@@ -73,9 +73,16 @@ declare namespace FxOrmInstance {
          *
          * @notice, if data is not instance(ot array of it), make all id properties passed
          */
-        $hasRef:FxOrmTypeHelpers.FuncReturnArrayOrItEleViaArgIdx1<
-            (refName: string, dataset: Fibjs.AnyObject | FxOrmInstance.Class_Instance) => boolean
-        >
+        $hasRef: (
+            refName: string,
+            dataset?: FxOrmTypeHelpers.ItOrListOfIt<Fibjs.AnyObject | FxOrmInstance.Class_Instance>
+        ) => {
+            /**
+             * @description final summary result
+             */
+            final: boolean,
+            ids: {[k: string]: boolean}
+        }
 
         $save: (kvs?: Fibjs.AnyObject) => this
         $saveRef: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaArgIdx1<
@@ -104,7 +111,7 @@ declare namespace FxOrmInstance {
          *
          * - for `x2o` type reference's instance, this action would unlink the only reference of it.
          */
-        $unlinkRef (refName: string | string[]): this
+        $unlinkRef (refName: string, dataset?: FxOrmTypeHelpers.ItOrListOfIt<Fibjs.AnyObject | FxOrmInstance.Class_Instance>): this
 
         $exists (): boolean
         $clearChanges(fieldName?: string | string[]): void

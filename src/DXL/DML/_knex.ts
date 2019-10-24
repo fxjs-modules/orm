@@ -64,7 +64,7 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         if (orderBy) kbuilder.orderBy.apply(kbuilder, arraify(orderBy))
         if (where) kbuilder.where.apply(kbuilder, arraify(where))
 
-        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
+        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })
 
         return filterResultAfterQuery(
           this.useConnection(connection =>
@@ -121,7 +121,7 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         else
             kbuilder.count()
 
-        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
+        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })
 
         return filterResultAfterQuery(
             this.useConnection(connection =>
@@ -142,7 +142,7 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
     ) {
         let kbuilder = this.sqlQuery.knex.queryBuilder().table(table).insert(data)
 
-        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
+        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })
 
         const info = this.useConnection(connection =>
             this.execSqlQuery<{insertId: string | number}>(connection, kbuilder.toString())
@@ -186,7 +186,7 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
             throw new Error(`[DML_KnexBased::update] invalid changes input given! it must be non-empty object`);
 
         kbuilder.update(changes)
-        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
+        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })
 
         return this.useConnection(connection =>
             this.execSqlQuery<any[]>(connection, kbuilder.toString())
@@ -212,7 +212,7 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         kbuilder.where.apply(kbuilder, arraify(where))
 
         kbuilder.delete()
-        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { dml: this })
+        kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })
 
         const bTransResult = this.useConnection(connection =>
             connection.trans(() => {

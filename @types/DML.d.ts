@@ -11,7 +11,7 @@ declare namespace FxOrmDML {
 
     type BeforeQueryItem = (
         builer: KnexQueryBuilder,
-        ctx: { dml: DMLDriver }
+        ctx: { dml: DMLDriver, knex: FKnexNS.KnexInstance }
     ) => typeof builer | void
 
     class DMLDriver<CONN_TYPE = any> extends FxOrmDXL.DXLDriver<CONN_TYPE> {

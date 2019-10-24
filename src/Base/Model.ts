@@ -11,7 +11,7 @@ import { snapshot } from "../Utils/clone";
 import Property from './Property';
 import { configurable } from '../Decorators/accessor';
 
-import { arraify, deduplication } from '../Utils/array';
+import { arraify, deduplication, isEmptyArray } from '../Utils/array';
 
 function isProperty (input: any): input is FxOrmProperty.Class_Property {
   return input instanceof Property
@@ -217,6 +217,9 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     }
     isAssociationName (name: string): boolean {
         return this.associations.hasOwnProperty(name);
+    }
+    isInstance (input: any): input is FxOrmInstance.Class_Instance {
+        return (input instanceof Instance) && input.$model === <any>this
     }
     prop (propname: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['prop']>): ReturnType<FxOrmModel.Class_Model['prop']> {
       if (isProperty(propname)) {
@@ -537,7 +540,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
                 sourceInstance[mergeModel.name] = targetInst;
             },
-            howToRemoveForSource: ({ mergeModel, sourceInstance }) => {
+            howToUnlinkForSource: ({ mergeModel, sourceInstance }) => {
                 const mergeInst = mergeModel.New({
                     [mergeModel.sourceModel.id]: sourceInstance[mergeModel.sourceModel.id]
                 });
@@ -547,7 +550,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
                 sourceInstance[mergeModel.name] = null;
             },
-            onMatch: ({ sourceModel, targetModel, mergeCollection }) => {
+            onFindByRef: ({ sourceModel, targetModel, mergeCollection }) => {
               return null as any
             },
 
@@ -621,12 +624,16 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             },
             howToCheckHasForSource: ({ mergeModel, sourceInstance, targetInstances }) => {
                 const { targetModel, sourceModel } = mergeModel
-
+                
+                const zeroChecking = {
+                    is: !targetInstances || (Array.isArray(targetInstances) && !targetInstances.length),
+                    existed: true
+                }
+                
                 const results = <{[k: string]: boolean}>{};
-                const targetIds = targetInstances.map(x => {
-                    const id = x[targetModel.id]
-                    results[id] = false;
-                    return id;
+                const targetIds = (targetInstances || []).map(x => {
+                    results[x[targetModel.id]] = false;
+                    return x[targetModel.id];
                 })
                 const alias = `${targetModel.collection}_${targetModel.id}`
 
@@ -646,34 +653,37 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                          */
                         [targetModel.Op.and]: {
                             [mergePropertyNameInTarget]: sourceInstance[mergeModel.sourceModel.id],
-                            [alias]: targetModel.Opf.in(targetIds)
+                            ...targetIds.length && { [alias]: targetModel.Opf.in(targetIds) }
                         }
                     },
                     joins: [
                         mergeModel.leftJoin({
                             collection: sourceModel.collection,
                             on: {
-                                [mergeModel.Op.and]: [
-                                    {
-                                        [mergePropertyNameInTarget]: mergeModel.refTableCol({
-                                            table: sourceModel.collection,
-                                            column: sourceModel.id
-                                        }),
-                                    }
-                                ]
+                                [mergePropertyNameInTarget]: mergeModel.refTableCol({
+                                    table: sourceModel.collection,
+                                    column: sourceModel.id
+                                }),
                             }
                         })
                     ],
                     filterQueryResult (_results) {
+                        if (zeroChecking.is) zeroChecking.existed = !!_results.length
+
                         _results.forEach(({[alias]: alias_id}: any) => {
-                            results[alias_id] = true
+                            if (results.hasOwnProperty(alias_id)) results[alias_id] = true
                         })
 
                         return _results
                     }
                 }))
 
-                return targetIds.map(id => results[id])
+                if (zeroChecking.is) return { final: zeroChecking.existed, ids: results }
+
+                return {
+                    final: targetIds.every(id => !!results[id]),
+                    ids: results
+                }
             },
             howToFetchForSource: ({ mergeModel, sourceInstance, findOptions }) => {
                 const { targetModel, sourceModel } = mergeModel
@@ -712,7 +722,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                 })).map(x => x.$set(reverseAs, sourceInstance))
             },
             howToSaveForSource: ({ mergeModel, targetDataSet, sourceInstance, isAddOnly }) => {
-                if (targetDataSet === []) sourceInstance.$removeRef(mergeModel.name)
+                if (isEmptyArray(targetDataSet)) sourceInstance.$unlinkRef(mergeModel.name)
 
                 const mergeInsts = arraify(mergeModel.New(targetDataSet));
                 if (mergeInsts && mergeInsts.length)
@@ -742,7 +752,14 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                     .map((x: Fibjs.AnyObject) => mergeModel.New(x).$set(reverseAs, sourceInstance))
 
             },
-            howToRemoveForSource: ({mergeModel, sourceInstance}) => {
+            howToUnlinkForSource: ({ mergeModel, targetInstances, sourceInstance }) => {
+                const { targetModel } = mergeModel
+
+                const targetIds = <string[]>[];
+                targetInstances.forEach(x => {
+                    if (x.$isFieldFilled(targetModel.id)) targetIds.push(x[targetModel.id])
+                })
+
                 mergeModel.$dml.update(
                     mergeModel.collection,
                     {
@@ -750,13 +767,75 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                     },
                     {
                         where: {
-                            [mergePropertyNameInTarget]: sourceInstance[mergeModel.sourceModel.id]
+                            [mergePropertyNameInTarget]: sourceInstance[mergeModel.sourceModel.id],
+                            ...targetIds.length && { [targetModel.id]: targetModel.Opf.in(targetIds) }
                         }
                     }
                 )
+
+                targetInstances.forEach(x => x.$set(reverseAs, null))
             },
-            onMatch: ({ sourceModel, targetModel, mergeCollection }) => {
-              return null as any
+            onFindByRef: ({ mergeModel, refWhere: refOn, mergeModelFindOptions: findOptions }) => {
+                const { targetModel, sourceModel } = mergeModel
+                if (!findOptions) findOptions = {}
+                
+                let results
+                results = mergeModel.find({
+                    ...findOptions,
+                    return_raw: true,
+                    select: (() => {
+                        const ss = { [mergePropertyNameInTarget]: mergeModel.propIdentifier(mergePropertyNameInTarget) };
+                        targetModel.propertyList.forEach(property => 
+                            ss[property.name] = targetModel.propIdentifier(property)
+                        )
+                        return ss
+                    })(),
+                    joins: [
+                        mergeModel.leftJoin({
+                            collection: sourceModel.collection,
+                            on: {
+                                [mergeModel.Op.and]: [
+                                    {
+                                        [mergePropertyNameInTarget]: mergeModel.refTableCol({
+                                            table: sourceModel.collection,
+                                            column: sourceModel.id
+                                        }),
+                                    },
+                                    refOn
+                                ]
+                            }
+                        })
+                    ],
+                })
+
+                results = sourceModel.find({
+                    ...findOptions,
+                    select: (() => {
+                        const ss = { [mergePropertyNameInTarget]: mergeModel.propIdentifier(mergePropertyNameInTarget) };
+                        targetModel.propertyList.forEach(property => 
+                            ss[property.name] = targetModel.propIdentifier(property)
+                        )
+                        return ss
+                    })(),
+                    joins: [
+                        sourceModel.leftJoin({
+                            collection: mergeModel.collection,
+                            on: {
+                                [sourceModel.Op.and]: [
+                                    {
+                                        [sourceModel.id]: mergeModel.refTableCol({
+                                            table: mergeModel.collection,
+                                            column: mergePropertyNameInTarget
+                                        }),
+                                    },
+                                    refOn
+                                ]
+                            }
+                        })
+                    ]
+                })
+
+                return results
             },
 
             mergeCollection: targetModel.collection,
@@ -793,7 +872,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             orm: this.orm,
             properties: {},
             settings: this.settings.clone(),
-            onMatch: ({ sourceModel, targetModel, mergeCollection }) => {
+            onFindByRef: ({ sourceModel, targetModel, mergeCollection }) => {
               return null as any
             },
             // matchKeys: matchKeys,
@@ -856,11 +935,11 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
 
     constructor (opts: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmModel.Class_MergeModel>[0]) {
         const {
-            mergeCollection, source, target, onMatch,
+            mergeCollection, source, target, onFindByRef,
             sourceJoinKey, targetJoinKey,
             defineMergeProperties,
             howToCheckExistenceForSource,
-            howToSaveForSource, howToFetchForSource, howToRemoveForSource,
+            howToSaveForSource, howToFetchForSource, howToUnlinkForSource,
             howToCheckHasForSource,
             /**
              * @description for MergeModel, deal with options.keys alone to avoid parent `Model`'s processing
@@ -875,11 +954,11 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
         this.type = opts.type
         this.associationInfo = {
             collection: mergeCollection,
-            onMatch: onMatch,
+            onFindByRef: onFindByRef,
             howToCheckExistenceForSource,
             howToSaveForSource,
             howToFetchForSource,
-            howToRemoveForSource,
+            howToUnlinkForSource,
             howToCheckHasForSource
         }
 
@@ -966,16 +1045,19 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
         targetInstances
     }: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['checkHasForSource']>
     ) {
-        let unfilledTargetInstance = targetInstances.find(inst => !inst.$isPersisted)
+        if (Array.isArray(targetInstances)) {
+            const unfilledTargetInstance = targetInstances.find(inst => !inst.$isPersisted)
 
-        if (unfilledTargetInstance) {
-            throw new Error(`[MergeModel::checkHasForSource] there's id-unfull-filled instance, details: \n ${JSON.stringify(unfilledTargetInstance.toJSON())}`)
+            if (unfilledTargetInstance) {
+                throw new Error(`[MergeModel::checkHasForSource] there's id-unfull-filled instance, details: \n ${JSON.stringify(unfilledTargetInstance.toJSON())}`)
+            }
         }
+
         return this.associationInfo.howToCheckHasForSource({ mergeModel: this, sourceInstance, targetInstances })
     }
 
     saveForSource ({
-        targetDataSet = {},
+        targetDataSet,
         sourceInstance = null,
         isAddOnly = false
     }: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['saveForSource']>) {
@@ -1029,10 +1111,11 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
         return sourceInstance
     }
 
-    removeForSource ({
+    unlinkForSource ({
+        targetInstances,
         sourceInstance = null
-    }: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['removeForSource']>) {
-        this.associationInfo.howToRemoveForSource({ mergeModel: this, sourceInstance })
+    }: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['unlinkForSource']>) {
+        this.associationInfo.howToUnlinkForSource({ mergeModel: this, sourceInstance, targetInstances })
         return sourceInstance
     }
 }

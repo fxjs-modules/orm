@@ -222,69 +222,6 @@ class Instance implements FxOrmInstance.Class_Instance {
         return isEmptyPlainObject(kvs) ? undefined : kvs;
     }
 
-    $fetchRef () {
-        const refs = this.$getRef(this.$model.associationNames);
-
-        this.$model.normalizeAssociationData(refs, this.$refs);
-
-        return this
-    }
-
-    $getRef (refName: string | string[], opts?: FxOrmTypeHelpers.SecondParameter<FxOrmInstance.Class_Instance['$getRef']>) {
-        const associationInfos = <FxOrmTypeHelpers.ReturnType<FxOrmModel.Class_Model['fieldInfo']>[]>[]
-        arraify(refName).filter(x => {
-            if (this.$model.isAssociationName(x))
-                associationInfos.push(this.$model.fieldInfo(x))
-        })
-        if (!associationInfos.length)
-            throw new Error(`[Instance::$getRef] invalid reference names given`)
-
-        const refs = <any>[];
-
-        coroutine.parallel(
-            associationInfos,
-            (associationInfo: typeof associationInfos[any]) => {
-                if (associationInfo.type !== 'association') return ;
-
-                associationInfo.association.findForSource({
-                    sourceInstance: this,
-                    findOptions: opts
-                });
-
-                refs.push(this[associationInfo.association.name] || null);
-            }
-        )
-
-        return Array.isArray(refName) ? refs : refs[0];
-    }
-
-    $hasRef (...opts: FxOrmTypeHelpers.Parameters<FxOrmInstance.Class_Instance['$hasRef']>): any {
-        let [refName, dataset] = opts;
-
-        if (!this.$model.isAssociationName(refName))
-            throw new Error(`[Instance::$hasRef] "${refName}" is not reference of this instance, with model(collection: ${this.$model.collection})`)
-
-        const assocModel = this.$model.assoc(refName)
-
-        let invalid: any
-        const fdataset = arraify(dataset).filter(x => {
-            if (!x) invalid = x
-            else if (typeof x !== 'object') invalid = x
-
-            return !!x
-         })
-
-        if (invalid || !fdataset.length)
-            throw new Error(`[Instance::$hasRef] input must be non-empty object or array of it!`)
-
-        const results = assocModel.checkHasForSource({
-            sourceInstance: this,
-            targetInstances: fdataset.map((x: Fibjs.AnyObject) => assocModel.targetModel.New(x))
-        })
-
-        return Array.isArray(dataset) ? results : results[0]
-    }
-
     $save (
         dataset: Fibjs.AnyObject = this.$kvs
     ): this {
@@ -379,6 +316,73 @@ class Instance implements FxOrmInstance.Class_Instance {
         return this
     }
 
+    $fetchRef () {
+        const refs = this.$getRef(this.$model.associationNames);
+
+        this.$model.normalizeAssociationData(refs, this.$refs);
+
+        return this
+    }
+
+    $getRef (refName: string | string[], opts?: FxOrmTypeHelpers.SecondParameter<FxOrmInstance.Class_Instance['$getRef']>) {
+        const associationInfos = <FxOrmTypeHelpers.ReturnType<FxOrmModel.Class_Model['fieldInfo']>[]>[]
+        arraify(refName).filter(x => {
+            if (this.$model.isAssociationName(x))
+                associationInfos.push(this.$model.fieldInfo(x))
+        })
+        if (!associationInfos.length)
+            throw new Error(`[Instance::$getRef] invalid reference names given`)
+
+        const refs = <any>[];
+
+        coroutine.parallel(
+            associationInfos,
+            (associationInfo: typeof associationInfos[any]) => {
+                if (associationInfo.type !== 'association') return ;
+
+                associationInfo.association.findForSource({
+                    sourceInstance: this,
+                    findOptions: opts
+                });
+
+                refs.push(this[associationInfo.association.name] || null);
+            }
+        )
+
+        return Array.isArray(refName) ? refs : refs[0];
+    }
+
+    $hasRef (
+        ...opts: FxOrmTypeHelpers.Parameters<FxOrmInstance.Class_Instance['$hasRef']>
+    ): ReturnType<FxOrmInstance.Class_Instance['$hasRef']> {
+        let [refName, dataset] = opts;
+
+        if (!this.$model.isAssociationName(refName))
+            throw new Error(`[Instance::$hasRef] "${refName}" is not reference of this instance, with model(collection: ${this.$model.collection})`)
+
+        const assocModel = this.$model.assoc(refName)
+
+        if (!dataset) {
+            return assocModel.checkHasForSource({ sourceInstance: this, targetInstances: undefined })
+        }
+
+        let invalid: any
+        const fdataset = arraify(dataset).filter(x => {
+            if (!x) invalid = x
+            else if (typeof x !== 'object') invalid = x
+
+            return !!x
+         })
+
+        if (invalid || !fdataset.length)
+            throw new Error(`[Instance::$hasRef] input must be non-empty object or array of it!`)
+
+        return assocModel.checkHasForSource({
+            sourceInstance: this,
+            targetInstances: fdataset.map((x: Fibjs.AnyObject) => assocModel.targetModel.New(x))
+        })
+    }
+
     $saveRef (
         refName: string,
         dataset: FxOrmTypeHelpers.ItOrListOfIt<Fibjs.AnyObject | FxOrmInstance.Class_Instance> = []
@@ -386,25 +390,19 @@ class Instance implements FxOrmInstance.Class_Instance {
         const assocModel = this.$model.assoc(refName);
         assocModel.saveForSource({targetDataSet: dataset, sourceInstance: this})
 
-        if (dataset instanceof Instance) {
-            dataset.$model.propertyList.forEach(property => {
-                if (this[assocModel.name].$kvs.hasOwnProperty(property.name))
-                    dataset[property.name] = this[assocModel.name].$kvs[property.name]
-            });
+        if (
+            Instance.isInstance(dataset) && Instance.isInstance(this[refName])
+            && this[refName].$model === dataset.$model
+        ) {
+            (<FxOrmInstance.Class_Instance>this[refName]).$model.normalizeDataIntoInstance(
+                this[refName].$kvs,
+                {
+                    onPropertyField: ({ fieldname, transformedValue }) => {
+                        dataset[fieldname] = transformedValue
+                    }
+                }
+            )
         }
-        // if (
-        //     Instance.isInstance(dataset) && Instance.isInstance(this[refName])
-        //     && this[refName].$model === dataset.$model
-        // ) {
-        //     (<FxOrmInstance.Class_Instance>this[refName]).$model.normalizeDataIntoInstance(
-        //         this[refName].$kvs,
-        //         {
-        //             onPropertyField: ({ fieldname, transformedValue }) => {
-        //                 dataset[fieldname] = transformedValue
-        //             }
-        //         }
-        //     )
-        // }
 
         return this[refName]
     }
@@ -435,19 +433,20 @@ class Instance implements FxOrmInstance.Class_Instance {
         })
     }
 
-    $unlinkRef (refName: string | string[]) {
-        const refNames = arraify(refName).filter(x => this.$refs.hasOwnProperty(x))
+    $unlinkRef (
+        ...args: FxOrmTypeHelpers.Parameters<FxOrmInstance.Class_Instance['$unlinkRef']>
+    ): this {
+        const [refName, dataset] = args
+        const assocModel = this.$model.assoc(refName)
 
-        if (!refNames.length)
-            throw new Error(`[Instance::$unlinkRef] no any valid reference names provided!`)
+        const fdataset = arraify(dataset || []).filter(x => !!x)
 
-        this.$model.filterOutAssociatedData(this.$refs)
-            .filter(item => refNames.includes(item.association.name))
-            .forEach(item => {
-                const assocModel = item.association
-
-                assocModel.removeForSource({ sourceInstance: this });
-            })
+        assocModel.unlinkForSource({
+            targetInstances: fdataset.map((x: Fibjs.AnyObject) => 
+                assocModel.targetModel.isInstance(x) ? x : assocModel.targetModel.New(x)
+            ),
+            sourceInstance: this
+        });
         return this
     }
 

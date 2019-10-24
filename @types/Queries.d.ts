@@ -220,6 +220,7 @@ declare namespace FxOrmQueries {
         model: FxOrmModel.Class_Model;
         conditions: any;
 
+        getModel (): FxOrmModel.Class_Model
         getQueryBuilder (): Class_QueryBuilder<T_RETURN>
         propIdentifier (propname: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['prop']>): string
         associcatedPropIdentifier (assoc_name: string, propname: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['prop']>): string
@@ -230,6 +231,12 @@ declare namespace FxOrmQueries {
         find (
             opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']> & { return_raw?: boolean }
         ): T_RETURN[]
+
+        findByRef <T = any>(
+          refName: string,
+          refWhere: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['find']>['where'],
+          mergeModelFindOptions?: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['find']>
+        ): T[]
         /**
          * @description get first tuple from remote endpoints
          */

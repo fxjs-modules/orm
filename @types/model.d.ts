@@ -103,6 +103,7 @@ declare namespace FxOrmModel {
 
         isPropertyName (name: string): boolean
         isAssociationName (name: string): boolean
+        isInstance (input: any): input is FxOrmInstance.Class_Instance
 
         prop (propertyname: string | FxOrmProperty.Class_Property): Class_Model['properties'][any]
         assoc (propertyname: string): Class_Model['associations'][any]
@@ -235,7 +236,7 @@ declare namespace FxOrmModel {
                 reverseAs?: string
                 collection: string
                 type: 'm2m' | 'o2m'
-                on?: Class_MergeModel['associationInfo']['onMatch']
+                on?: Class_MergeModel['associationInfo']['onFindByRef']
             }
         ): Class_MergeModel
 
@@ -256,7 +257,7 @@ declare namespace FxOrmModel {
             opts?: {
                 as?: string
                 collection: string
-                on?: Class_MergeModel['associationInfo']['onMatch']
+                on?: Class_MergeModel['associationInfo']['onFindByRef']
             }
         ): Class_MergeModel
 
@@ -340,12 +341,10 @@ declare namespace FxOrmModel {
              * @description one required easy-on conditions input
              * @see test/model-walkCondtions.js
              */
-            onMatch: (payload: {
-              sourceProperty: FxOrmModel.Class_Model['properties'][any],
-              sourceModel: FxOrmModel.Class_Model,
-              targetProperty: FxOrmModel.Class_MergeModel['properties'][any]
-              targetModel: FxOrmModel.Class_Model,
-              mergeCollection: string
+            onFindByRef: (payload: {
+              mergeModel: FxOrmModel.Class_MergeModel,
+              refWhere: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['find']>['where']
+              mergeModelFindOptions?: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['find']>
             }) => Fibjs.AnyObject
 
             howToCheckExistenceForSource: (
@@ -370,9 +369,9 @@ declare namespace FxOrmModel {
                 & FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['findForSource']>
             ) => void
 
-            howToRemoveForSource: (
+            howToUnlinkForSource: (
                 payload: { mergeModel: FxOrmModel.Class_MergeModel }
-                & FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['removeForSource']>
+                & FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['unlinkForSource']>
             ) => any
         }
 
@@ -395,9 +394,9 @@ declare namespace FxOrmModel {
             howToCheckExistenceForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToCheckExistenceForSource']
             howToSaveForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToSaveForSource']
             howToFetchForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToFetchForSource']
-            howToRemoveForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToRemoveForSource']
+            howToUnlinkForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToUnlinkForSource']
             howToCheckHasForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToCheckHasForSource']
-            onMatch: Class_MergeModel['associationInfo']['onMatch']
+            onFindByRef: Class_MergeModel['associationInfo']['onFindByRef']
 
             // matchKeys: Class_MergeModel['associationInfo']['matchKeys']
         })
@@ -412,10 +411,19 @@ declare namespace FxOrmModel {
         checkHasForSource: (opts: {
             sourceInstance: FxOrmInstance.Class_Instance,
             targetInstances: FxOrmInstance.Class_Instance[]
-        }) => boolean[]
+        }) => {
+            /**
+             * @description final summary result
+             */
+            final: boolean,
+            /**
+             * @description id-existence
+             */
+            ids: {[k: string]: boolean}
+        }
 
         saveForSource (opts: {
-            targetDataSet: Fibjs.AnyObject | FxOrmInstance.Class_Instance,
+            targetDataSet: FxOrmTypeHelpers.ItOrListOfIt<Fibjs.AnyObject | FxOrmInstance.Class_Instance>,
             sourceInstance: FxOrmInstance.Class_Instance,
             isAddOnly?: boolean
         }): void
@@ -425,7 +433,8 @@ declare namespace FxOrmModel {
             findOptions?: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['find']>
         }): void
 
-        removeForSource (opts: {
+        unlinkForSource (opts: {
+            targetInstances: FxOrmInstance.Class_Instance[],
             sourceInstance: FxOrmInstance.Class_Instance
         }): void
 

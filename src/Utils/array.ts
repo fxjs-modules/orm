@@ -15,6 +15,10 @@ export function postDestruct (input: any[]) {
   return [input[0], input.slice(1)]
 }
 
+export function isEmptyArray (input: any) {
+  return Array.isArray(input) && !input.length
+}
+
 export function deduplication (
   input: any[],
   get_id: (item: FxOrmTypeHelpers.FlattenIfArray<typeof input>, idx: number) => string | number

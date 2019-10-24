@@ -76,6 +76,10 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
       return `${assoc.collection}.${assoc.prop(propname).mapsTo}`
     }
 
+    getModel () {
+        return <FxOrmModel.Class_Model>(this.notQueryBuilder ? this : this.model)
+    }
+
     /**
      * @description find tuples from remote endpoints
      */
@@ -110,6 +114,24 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
         });
 
         return Array.from(this._tuples);
+    }
+
+    @transformToQCIfModel
+    findByRef <T = any>(
+        ...args: FxOrmTypeHelpers.Parameters<FxOrmQueries.Class_QueryBuilder['findByRef']>
+    ): T[] {
+        const [refName, refWhere, mergeModelFindOptions = {}] = args
+
+        const sourceModel = this.getModel()
+        const assocModel = sourceModel.assoc(refName)
+
+        assocModel.associationInfo.onFindByRef({
+            mergeModel: sourceModel.assoc(refName),
+            refWhere,
+            mergeModelFindOptions
+        })
+      
+        return Array.from([])
     }
 
     one (
