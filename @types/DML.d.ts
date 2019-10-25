@@ -59,8 +59,8 @@ declare namespace FxOrmDML {
             <T = number>(
                 collection: string,
                 opts?: {
-                    joins?: Fibjs.AnyObject,
-                    where?: Fibjs.AnyObject,
+                    joins?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>['joins'],
+                    where?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>['where'],
                     countParams?: FxOrmTypeHelpers.Parameters<FKnexNS.KnexInstance['count']>
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                     filterQueryResult?: <T2 = any>(result: any) => T2
