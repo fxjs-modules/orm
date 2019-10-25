@@ -101,7 +101,7 @@ odescribe("hasManyExclusively", function () {
             };
         };
 
-        odescribe("$getRef", function () {
+        describe("$getRef", function () {
             before(setup());
 
             oit("should allow to specify order as string", function () {
@@ -177,7 +177,7 @@ odescribe("hasManyExclusively", function () {
             });
         });
 
-        odescribe("$addRef", function () {
+        describe("$addRef", function () {
             before(setup());
 
             var Jane, JaneStations
@@ -320,7 +320,7 @@ odescribe("hasManyExclusively", function () {
             });
         });
 
-        odescribe("$saveRef", function () {
+        describe("$saveRef", function () {
             before(setup());
             var Jane, John
             var Ac_2, Ac_1
@@ -429,7 +429,7 @@ odescribe("hasManyExclusively", function () {
             });
         });
 
-        odescribe("$hasRef", function () {
+        describe("$hasRef", function () {
             before(setup());
             before(() => {
                 Jane = Person.one({ where: { name: "Jane" } });
@@ -499,7 +499,7 @@ odescribe("hasManyExclusively", function () {
             });
         });
 
-        odescribe("$unlinkRef", function () {
+        describe("$unlinkRef", function () {
             before(setup());
 
             var John, Ac_2
@@ -529,7 +529,7 @@ odescribe("hasManyExclusively", function () {
             });
         });
 
-        odescribe("findByRef", function () {
+        describe("findByRef", function () {
             odescribe("findByRef() - A hasManyExclusively B, with reverse", function () {
                 before(setup({}));
                 var xJohn, Justin
@@ -569,6 +569,67 @@ odescribe("hasManyExclusively", function () {
                     assert.equal(_John.id, xJohn.id)
                 });
             });
+        });
+
+        odescribe("benchmark", function () {
+          before(setup());
+
+          before(() => {
+            Person.clear()
+            Station.clear()
+          })
+
+          it("insert", function () {
+            var seeds = Array(500).fill(undefined)
+            var oinfo = helper.countTime(() => {
+              Person.create(
+                seeds.map((_, idx) =>
+                  ({
+                    name: `Person ${idx}`
+                  })
+                )
+              )
+            })
+
+            console.log(require('@fibjs/chalk')`{bold.yellow.inverse \t$$ orm-diff:}`, `${oinfo.diff}ms`)
+
+            var dmlinfo = helper.countTime(() => {
+              Person.$dml
+                .useTrans(dml =>
+                  dml.useConnection(conn => {
+                    seeds.map((_, idx) =>
+                      dml.insert(
+                        Person.collection,
+                        {
+                          name: `Person ${idx}`,
+                        }
+                      )
+                    )
+                  })
+                )
+            })
+
+            console.log(require('@fibjs/chalk')`{bold.yellow.inverse \t$$ dml-diff:}`, `${dmlinfo.diff}ms`)
+
+            var nativeinfo = helper.countTime(() => {
+              Person.$dml.useTrans(dml =>
+                dml.useConnection(conn =>
+                  seeds.map((_, idx) =>
+                    dml.execSqlQuery(
+                      conn,
+                      `insert into \`person\` (\`name\`) values ('Person ?')`,
+                      [idx]
+                    )
+                  )
+                )
+              )
+            })
+
+            console.log(require('@fibjs/chalk')`{bold.yellow.inverse \t$$ native-diff:}`, `${nativeinfo.diff}ms`)
+
+            console.log(require('@fibjs/chalk')`{bold.blue.inverse \t$$ orm/native times:}`, `${oinfo.diff / nativeinfo.diff} `)
+            console.log(require('@fibjs/chalk')`{bold.blue.inverse \t$$ dml/native times:}`, `${dmlinfo.diff / nativeinfo.diff} `)
+          });
         });
 
         xdescribe("with autoFetch turned on", function () {

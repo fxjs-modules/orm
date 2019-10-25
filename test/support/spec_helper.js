@@ -1,6 +1,6 @@
 var common = require('../common');
 
-module.exports.connect = function (cb) {
+exports.connect = function (cb) {
   var opts = {}
 
   if (1 in arguments) {
@@ -16,7 +16,7 @@ module.exports.connect = function (cb) {
   });
 }
 
-module.exports.dropSync = function (models, done) {
+exports.dropSync = function (models, done) {
   if (!Array.isArray(models)) {
     models = [models]
   }
@@ -28,4 +28,16 @@ module.exports.dropSync = function (models, done) {
 
   if (done)
     done()
+}
+
+exports.countTime = function (syncRun) {
+  const start = Date.now()
+  syncRun()
+  const end = Date.now()
+
+  const diff = end - start
+
+  return {
+    start, end, diff
+  }
 }
