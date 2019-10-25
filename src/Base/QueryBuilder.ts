@@ -101,6 +101,9 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
         if (_opts.where && !isEmptyPlainObject(_opts.where)) {
             const where = <typeof _opts.where>{};
             this.model.normalizePropertiesToData(_opts.where, where);
+            this.model.normalizeDataSetToWhere(
+                util.omit(_opts.where, Object.keys(where)), where
+            );
             _opts.where = where;
         }
 
@@ -120,18 +123,16 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
     findByRef <T = any>(
         ...args: FxOrmTypeHelpers.Parameters<FxOrmQueries.Class_QueryBuilder['findByRef']>
     ): T[] {
-        const [refName, refWhere, mergeModelFindOptions = {}] = args
+        const [refName, complexWhere, mergeModelFindOptions = {}] = args
 
         const sourceModel = this.getModel()
         const assocModel = sourceModel.assoc(refName)
 
-        assocModel.associationInfo.onFindByRef({
+        return <T[]>assocModel.associationInfo.onFindByRef({
             mergeModel: sourceModel.assoc(refName),
-            refWhere,
+            complexWhere,
             mergeModelFindOptions
         })
-      
-        return Array.from([])
     }
 
     one (

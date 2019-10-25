@@ -198,6 +198,14 @@ declare namespace FxOrmModel {
         normalizeAssociationData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
         /**
          * @description
+         *  normalize data set to where conditions, just normalize key in dataset, never change anything of
+         *  any field's value
+         *
+         * @return []
+         */
+        normalizeDataSetToWhere (dataset: Fibjs.AnyObject, target: Fibjs.AnyObject): any
+        /**
+         * @description
          *  filter out association-about key-value in dataset only,
          *  if no key-value about association, would return one empty array
          *
@@ -207,6 +215,8 @@ declare namespace FxOrmModel {
             association: FxOrmModel.Class_Model['associations'][any],
             dataset: any,
         }[]
+
+
         addProperty(
             name: string,
             propertyDefinition: ModelProperty | FxOrmProperty.NormalizedProperty
@@ -343,7 +353,7 @@ declare namespace FxOrmModel {
              */
             onFindByRef: (payload: {
               mergeModel: FxOrmModel.Class_MergeModel,
-              refWhere: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['find']>['where']
+              complexWhere: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['find']>['where']
               mergeModelFindOptions?: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['find']>
             }) => Fibjs.AnyObject
 

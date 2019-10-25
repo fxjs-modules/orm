@@ -90,7 +90,10 @@ odescribe("hasManyExclusively", function () {
                     }, {
                         name: "Justin",
                         surname: "Dean",
-                        age: 18
+                        age: 18,
+                        stations: [{
+                            name: "Ac_3"
+                        }]
                     }]);
 
                     done();
@@ -526,94 +529,44 @@ odescribe("hasManyExclusively", function () {
             });
         });
 
-        odescribe("findByRef*()", function () {
-            function assertion_people_for_findby(people) {
-                assert.equal(people.length, 2);
-
-                var Jane = people.find(person => person.name === "Jane")
-                var JanePets = Jane.getPetsSync("-name");
-
-                assert.ok(Array.isArray(JanePets));
-                assert.equal(JanePets.length, 1);
-                assert.equal(JanePets[0].$model, Station);
-                assert.equal(JanePets[0].name, "Ac_2");
-
-                var John = people.find(person => person.name === "John")
-                var JohnPets = John.getPetsSync("-name");
-
-                assert.ok(Array.isArray(JohnPets));
-                assert.equal(JohnPets.length, 2);
-                assert.equal(JohnPets[0].$model, Station);
-                assert.equal(JohnPets[0].name, "Ac_2");
-                assert.equal(JohnPets[1].name, "Ac_1");
-            }
-
-            function assertion_pets_for_findby(stations) {
-                assert.equal(stations.length, 2);
-
-                var Ac_2 = stations.find(pet => pet.name === "Ac_2")
-                var MuttOwners = Ac_2.getOwnersSync("-name");
-
-                assert.ok(Array.isArray(MuttOwners));
-                assert.equal(MuttOwners.length, 2);
-                assert.equal(MuttOwners[0].$model, Person);
-                assert.equal(MuttOwners[0].name, "John");
-                assert.equal(MuttOwners[1].name, "Jane");
-
-                var Ac_1 = stations.find(pet => pet.name === "Ac_1")
-                var DecoOwners = Ac_1.getOwnersSync("-name");
-
-                assert.ok(Array.isArray(DecoOwners));
-                assert.equal(DecoOwners.length, 1);
-                assert.equal(DecoOwners[0].$model, Person);
-                assert.equal(DecoOwners[0].name, "John");
-            }
-
+        odescribe("findByRef", function () {
             odescribe("findByRef() - A hasManyExclusively B, with reverse", function () {
                 before(setup({}));
+                var xJohn, Justin
+                before(() => {
+                  xJohn = Person.one({ where: { name: "John" } });
+                  Justin = Person.one({ where: { name: "Justin" } });
+                });
 
                 oit("could find A with `findByB()`", function () {
-                    var John = Person.findByRef(
+                    var _John = Person.findByRef(
                         'stations',
                         { [Station.propIdentifier('name')]: Person.Opf.eq("Ac_2") },
                         {
                             orderBy: Station.propIdentifier('name'),
+                            limit: 1
                         },
                     )[0];
-                    return 
+                    assert.equal(_John.id, xJohn.id)
 
-                    var Jane = Person.findByPets({ name: "Ac_2" }, { order: 'name' }).firstSync();
-                    assertion_people_for_findby([John, Jane]);
+                    var _Justin = Person.findByRef(
+                        'stations',
+                        { [Station.propIdentifier('name')]: Person.Opf.eq("Ac_3") },
+                        {
+                            limit: 1
+                        },
+                    )[0];
 
-                    var John = Person.findByPets({ name: "Ac_2" }, {}).firstSync();
-                    var Jane = Person.findByPets({ name: "Ac_2" }, {}).lastSync();
-                    assertion_people_for_findby([John, Jane]);
+                    assert.equal(_Justin.id, Justin.id)
 
-                    var personCount = Person.findByPets({ name: "Ac_2" }, {}).countSync();
-                    assert.ok(personCount, 2);
-
-                    ;[
-                        'all',
-                        'where',
-                        'find',
-                        // 'remove',
-                        'run'
-                    ].forEach(ichainFindKey => {
-                        var people = Person.findByPets({ name: "Ac_2" })[`${ichainFindKey}Sync`]();
-                        assertion_people_for_findby(people);
-                    });
-
-                    var people = Person.findByPetsSync({ name: "Ac_2" });
-                    assertion_people_for_findby(people);
-
-                    var people = Person.findByRef('stations', { name: "Ac_2" }).runSync();
-                    assertion_people_for_findby(people);
-
-                    // asynchronous version
-                    Person.findByPets({ name: "Ac_2" })
-                        .run(function (err, people) {
-                            assertion_people_for_findby(people);
-                        });
+                    var _John = Person.findByRef(
+                        'stations',
+                        { [Station.propIdentifier('name')]: Person.Opf.in(["Ac_1", "Ac_2"]) },
+                        {
+                            orderBy: Station.propIdentifier('name'),
+                        },
+                    )[0];
+                    assert.equal(_John.id, xJohn.id)
                 });
 
                 it("could find B with `findbyA()`", function (done) {

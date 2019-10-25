@@ -39,7 +39,7 @@ declare namespace FxOrmDML {
                 opts?: {
                     $dml?: FxOrmDML.DMLDriver,
                     where?: Fibjs.AnyObject,
-                    joins?: Fibjs.AnyObject,
+                    joins?: FxOrmQueries.OperatorFunction[],
                     fields?: string[],
                     select?: {
                         [k: string]: string,
