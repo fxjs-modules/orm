@@ -10,6 +10,7 @@ import Normalizer from './Query/Normalizer';
 import { dfltWalkWhere, dfltWalkOn } from './Query/walkOnHQL';
 
 import * as QueryGrammers from './Query/QueryGrammar'
+import { isOperatorFunction } from './Query/Operator';
 
 function transformToQCIfModel (
     target: Class_QueryBuilder,
@@ -106,6 +107,11 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
             );
             _opts.where = where;
         }
+
+        /**
+         * @notce join could be item or list, but item of it's must be wrappeed by join-about OperatorFunction
+         */
+        const joins = (_opts.joins ? arraify(_opts.joins) : []).filter(x => isOperatorFunction(x))
 
         const results = this.model.$dml.find(this.model.collection, _opts)
 

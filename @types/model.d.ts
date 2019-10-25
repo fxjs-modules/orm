@@ -407,8 +407,6 @@ declare namespace FxOrmModel {
             howToUnlinkForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToUnlinkForSource']
             howToCheckHasForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToCheckHasForSource']
             onFindByRef: Class_MergeModel['associationInfo']['onFindByRef']
-
-            // matchKeys: Class_MergeModel['associationInfo']['matchKeys']
         })
 
         isSourceModel (model: Class_Model): boolean
