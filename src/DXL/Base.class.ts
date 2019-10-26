@@ -24,7 +24,8 @@ export default class DXLBase<ConnType = any> implements FxOrmDXL.DXLDriver<ConnT
      */
     toSingleton () {
         if (this.singleton_connection) {
-            (<any>this.singleton_connection).open()
+            if (typeof (<any>this.singleton_connection).open === 'function')
+                (<any>this.singleton_connection).open()
             return this
         }
 

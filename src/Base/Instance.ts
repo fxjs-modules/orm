@@ -121,8 +121,6 @@ class Instance implements FxOrmInstance.Class_Instance {
 
     get $isInstance () { return true };
 
-    get $dml () { return this.$model.$dml }
-
     constructor (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmInstance.Class_Instance>) {
         let [model, instanceBase] = args
 
@@ -145,7 +143,7 @@ class Instance implements FxOrmInstance.Class_Instance {
             }
         })
 
-        return getInstance(this) as any;
+        return getInstanceProxy(this) as any;
     }
 
     $on (...args: any[]) { return this.$event_emitter.on.apply(this, args) }
@@ -223,7 +221,10 @@ class Instance implements FxOrmInstance.Class_Instance {
     }
 
     $save (
-        dataset: Fibjs.AnyObject = this.$kvs
+        dataset: Fibjs.AnyObject = this.$kvs,
+        {
+            dml = this.$model.$dml
+        } = {}
     ): this {
         if (dataset !== undefined && typeof dataset !== 'object')
             throw new Error(`[Instance::save] invalid save arguments ${dataset}, it should be non-empty object or undefined`)
@@ -256,58 +257,53 @@ class Instance implements FxOrmInstance.Class_Instance {
         if (isEmptyPlainObject(kvs) && isEmptyPlainObject(refs) && !this.$model.noKey)
             throw new Error(`[Instance::save] for instance of model(collection: ${this.$model.collection}), at least one non-empty object in "kvs" and "refs" should be provided!`)
 
-        this.$dml
-            .toSingleton()
-            .useTrans((dml: any) => {
-                if (this.$isPersisted && this.$exists()) {
-                    if (this.$changedFieldsCount) {
-                        const changes = this.$model.normalizePropertiesToData(kvs);
-                        const whereCond = <typeof changes>{};
+            if (this.$isPersisted && this.$exists()) {
+                if (this.$changedFieldsCount) {
+                    const changes = this.$model.normalizePropertiesToData(kvs);
+                    const whereCond = <typeof changes>{};
 
-                        let hasWhere = false
-                        Object.values(this.$model.idPropertyList).forEach(property => {
-                            if (changes.hasOwnProperty(property.mapsTo)) {
-                                whereCond[property.mapsTo] = changes[property.mapsTo]
-                                delete changes[property.mapsTo];
-                                hasWhere = true
-                            }
-                        });
+                    let hasWhere = false
+                    this.$model.idPropertyList.forEach(property => {
+                        if (changes.hasOwnProperty(property.mapsTo)) {
+                            whereCond[property.mapsTo] = changes[property.mapsTo]
+                            delete changes[property.mapsTo];
+                            hasWhere = true
+                        }
+                    });
 
-                        if (!hasWhere)
-                            throw new Error(`[Instance::save] update in $save must have specific where conditions, check your instance`)
+                    if (!hasWhere)
+                        throw new Error(`[Instance::save] update in $save must have specific where conditions, check your instance`)
 
-                        dml.update(
-                            this.$model.collection,
-                            changes,
-                            { where: whereCond }
-                        );
-                    }
-                } else {
-                    const creates = this.$model.normalizePropertiesToData(kvs);
-                    const insertResult = dml.insert(
+                    dml.update(
                         this.$model.collection,
-                        creates,
-                        { idPropertyList: this.$model.idPropertyList }
+                        changes,
+                        { where: whereCond }
                     );
-
-                    if (insertResult)
-                        this.$model.normalizeDataIntoInstance(
-                            insertResult,
-                            {
-                                onPropertyField: ({ fieldname, transformedValue }) => {
-                                    this.$kvs[fieldname] = transformedValue
-                                }
-                            }
-                        )
-                    this.$model.normlizePropertyData(kvs, this.$kvs)
                 }
+            } else {
+                const creates = this.$model.normalizePropertiesToData(kvs);
+                const insertResult = dml.insert(
+                    this.$model.collection,
+                    creates,
+                    { idPropertyList: this.$model.idPropertyList }
+                );
 
-                this.$model.filterOutAssociatedData(refs)
-                    .forEach(item => {
-                        this.$saveRef(item.association.name, item.dataset)
-                    })
-            })
-            .releaseSingleton()
+                if (insertResult)
+                    this.$model.normalizeDataIntoInstance(
+                        insertResult,
+                        {
+                            onPropertyField: ({ fieldname, transformedValue }) => {
+                                this.$kvs[fieldname] = transformedValue
+                            }
+                        }
+                    )
+                this.$model.normlizePropertyData(kvs, this.$kvs)
+            }
+
+            this.$model.filterOutAssociatedData(refs)
+                .forEach(item => {
+                    this.$saveRef(item.association.name, item.dataset)
+                })
 
         this.$clearChanges()
 
@@ -485,7 +481,7 @@ class Instance implements FxOrmInstance.Class_Instance {
         // if no any id filled, return false directly
         if (!withIdFilled) return false
 
-        return this.$dml.exists(this.$model.collection, { where })
+        return this.$model.$dml.exists(this.$model.collection, { where })
     }
 
     toJSON () {
@@ -518,139 +514,147 @@ function isInternalPropOrSymbol (prop: string | symbol) {
     return isInternalProp(prop)
 }
 
-const getInstance = function (
+function getPhHandler ({
+    instance = null,
+    parent_path = '',
+    track_$instance_self = false,
+}: {
     instance: FxOrmInstance.Class_Instance,
-) {
-    function getPhHandler ({
-        parent_path = '',
-        track_$instance_self = false,
-    } = {}) {
-        if (!track_$instance_self) {
-            const loose_p_tuple = (prop: string) => [parent_path, prop].join('.').split('.')
-            const cur_path_str = (prop: string) => [parent_path, prop].filter(x => x).join('.')
+    parent_path?: string,
+    track_$instance_self?: boolean
+}) {
+    if (!instance || !Instance.isInstance(instance))
+        throw new Error(`[getPhHandler] instance is required!`)
 
-            return {
-                get (target: any, prop: string): any {
-                    if (Array.isArray(target[prop]))
-                        return target[prop];
-
-                    if (target[prop] && typeof target[prop] === 'object') {
-                        return new Proxy(target[prop], getPhHandler({ parent_path: cur_path_str(prop) }))
-                    }
-
-                    return target[prop];
-                },
-                deleteProperty (target: any, prop:string) {
-                    if (target.hasOwnProperty(prop)) {
-                        pushChange(instance, util.first(loose_p_tuple(prop)), {
-                            type: 'delete',
-                            snapshot: target[prop],
-                            via_path: cur_path_str(prop)
-                        });
-                        delete target[prop];
-                    }
-
-                    return true;
-                },
-                set: function(target: any, prop: string, value: any) {
-                    if (!target.hasOwnProperty(prop))
-                        // @todo: only allow set deep key which existed in intialization
-                        // pushChange(instance, util.first(loose_p_tuple(prop)), {
-                        //     type: 'add',
-                        //     snapshot: target[prop],
-                        //     via_path: cur_path_str(prop)
-                        // });
-                        return true;
-                    else if (target[prop] !== value)
-                        pushChange(instance, util.first(loose_p_tuple(prop)), {
-                            type: 'update',
-                            snapshot: target[prop],
-                            via_path: cur_path_str(prop)
-                        });
-
-                    target[prop] = value;
-
-                    return true;
-                }
-            }
-        }
+    if (!track_$instance_self) {
+        const loose_p_tuple = (prop: string) => [parent_path, prop].join('.').split('.')
+        const cur_path_str = (prop: string) => [parent_path, prop].filter(x => x).join('.')
 
         return {
-            get (target: typeof instance, prop: string): any {
-                if (REVERSE_KEYS.includes(prop) || isInternalPropOrSymbol(prop))
+            get (target: any, prop: string): any {
+                if (Array.isArray(target[prop]))
                     return target[prop];
 
-                if (target.$model.isAssociationName(prop))
-                    return target.$refs[prop];
-
-                if (target.$kvs[prop] && typeof target.$kvs[prop] === 'object') {
-                    return new Proxy(target.$kvs[prop], getPhHandler({ parent_path: prop }))
+                if (target[prop] && typeof target[prop] === 'object') {
+                    return new Proxy(target[prop], getPhHandler({ instance, parent_path: cur_path_str(prop) }))
                 }
 
-                return target.$kvs[prop];
+                return target[prop];
             },
-            ownKeys (target: typeof instance) {
-                return Reflect.ownKeys(target.$kvs).concat(
-                    Object.keys(target.$refs)
-                )
-            },
-            deleteProperty (target: typeof instance, prop:string) {
-                if (REVERSE_KEYS.includes(prop) || isInternalProp(prop)) {
-                    delete target[prop];
-                    return true;
-                }
-
-                if (target.$model.isAssociationName(prop)) {
-                    delete target.$refs[prop];
-                    return true;
-                }
-
-                if (target.$kvs.hasOwnProperty(prop)) {
-                    pushChange(target, prop, {
+            deleteProperty (target: any, prop:string) {
+                if (target.hasOwnProperty(prop)) {
+                    pushChange(instance, util.first(loose_p_tuple(prop)), {
                         type: 'delete',
-                        snapshot: target.$kvs[prop],
-                        via_path: prop
+                        snapshot: target[prop],
+                        via_path: cur_path_str(prop)
                     });
-                    delete target.$kvs[prop];
+                    delete target[prop];
                 }
 
                 return true;
             },
-            set: function(target: typeof instance, prop: string, value: any) {
-                if (REVERSE_KEYS.includes(prop) || !instance.$isModelField(prop))
-                    return false;
-
-                if (target.$model.isAssociationName(prop)) {
-                    target.$refs[prop] = value;
+            set: function(target: any, prop: string, value: any) {
+                if (!target.hasOwnProperty(prop))
+                    // @todo: only allow set deep key which existed in intialization
+                    // pushChange(instance, util.first(loose_p_tuple(prop)), {
+                    //     type: 'add',
+                    //     snapshot: target[prop],
+                    //     via_path: cur_path_str(prop)
+                    // });
                     return true;
-                }
-
-                if (!target.$kvs.hasOwnProperty(prop))
-                    pushChange(target, prop, {
-                        type: 'add',
-                        snapshot: target.$kvs[prop],
-                        via_path: prop
-                    });
-                else if (target.$kvs[prop] !== value)
-                    pushChange(target, prop, {
+                else if (target[prop] !== value)
+                    pushChange(instance, util.first(loose_p_tuple(prop)), {
                         type: 'update',
-                        snapshot: target.$kvs[prop],
-                        via_path: prop
+                        snapshot: target[prop],
+                        via_path: cur_path_str(prop)
                     });
 
-                target.$kvs[prop] = value;
-                return true;
-            },
-            has (target: typeof instance, prop: string) {
-                if (REVERSE_KEYS.includes(prop) || isInternalProp(prop))
-                    return prop in target;
+                target[prop] = value;
 
-                return target.$kvs.hasOwnProperty(prop) || target.$refs.hasOwnProperty(prop);
+                return true;
             }
         }
-    };
+    }
 
-    return new Proxy(instance, getPhHandler({ parent_path: '' , track_$instance_self: true }))
+    return {
+        get (target: typeof instance, prop: string): any {
+            if (REVERSE_KEYS.includes(prop) || isInternalPropOrSymbol(prop))
+                return target[prop];
+
+            if (target.$model.isAssociationName(prop))
+                return target.$refs[prop];
+
+            if (target.$kvs[prop] && typeof target.$kvs[prop] === 'object') {
+                return new Proxy(target.$kvs[prop], getPhHandler({ instance, parent_path: prop }))
+            }
+
+            return target.$kvs[prop];
+        },
+        ownKeys (target: typeof instance) {
+            return Reflect.ownKeys(target.$kvs).concat(
+                Object.keys(target.$refs)
+            )
+        },
+        deleteProperty (target: typeof instance, prop:string) {
+            if (REVERSE_KEYS.includes(prop) || isInternalProp(prop)) {
+                delete target[prop];
+                return true;
+            }
+
+            if (target.$model.isAssociationName(prop)) {
+                delete target.$refs[prop];
+                return true;
+            }
+
+            if (target.$kvs.hasOwnProperty(prop)) {
+                pushChange(target, prop, {
+                    type: 'delete',
+                    snapshot: target.$kvs[prop],
+                    via_path: prop
+                });
+                delete target.$kvs[prop];
+            }
+
+            return true;
+        },
+        set: function(target: typeof instance, prop: string, value: any) {
+            if (REVERSE_KEYS.includes(prop) || !instance.$isModelField(prop))
+                return false;
+
+            if (target.$model.isAssociationName(prop)) {
+                target.$refs[prop] = value;
+                return true;
+            }
+
+            if (!target.$kvs.hasOwnProperty(prop))
+                pushChange(target, prop, {
+                    type: 'add',
+                    snapshot: target.$kvs[prop],
+                    via_path: prop
+                });
+            else if (target.$kvs[prop] !== value)
+                pushChange(target, prop, {
+                    type: 'update',
+                    snapshot: target.$kvs[prop],
+                    via_path: prop
+                });
+
+            target.$kvs[prop] = value;
+            return true;
+        },
+        has (target: typeof instance, prop: string) {
+            if (REVERSE_KEYS.includes(prop) || isInternalProp(prop))
+                return prop in target;
+
+            return target.$kvs.hasOwnProperty(prop) || target.$refs.hasOwnProperty(prop);
+        }
+    }
+};
+
+const getInstanceProxy = function (
+    instance: FxOrmInstance.Class_Instance,
+) {
+    return new Proxy(instance, getPhHandler({ instance, parent_path: '' , track_$instance_self: true }))
 }
 
 export default Instance

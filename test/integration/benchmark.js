@@ -56,15 +56,19 @@ odescribe("benchmark", function () {
         const { getPageRanges } = require('../../lib/Utils/array')
 
         it("getPageRanges", () => {
-
             assert.deepEqual(
                 getPageRanges(0, 0 / 5),
+                [[0, -1]]
+            )
+
+            assert.deepEqual(
+                getPageRanges(1, 1e4),
                 [[0, 0]]
             )
 
             assert.deepEqual(
                 getPageRanges(1, 1 / 5),
-                [[0, 1]]
+                [[0, 0]]
             )
 
             assert.deepEqual(
@@ -103,7 +107,7 @@ odescribe("benchmark", function () {
 
             assert.deepEqual(
                 getPageRanges(10, 1e4),
-                [[0, 10]]
+                [[0, 9]]
             )
         })
     })
@@ -111,23 +115,27 @@ odescribe("benchmark", function () {
     describe("model-create/dml-insert", function () {
         before(setup());
 
-        var bare_input = 1e5;
+        var c_bare_input = 1e5;
         
         /**
-         * @levels_sqlite
+         * @levels_sqlite_orm
          *  - 500 ✅
          *  - 1e3 ✅
          *  - 2e3 ✅
          *  - 5e3 ✅
-         *  - 1e4 ✅ as cache size
-         *  - 1e5 28000+ms ---> ?
-         *  - 1e6
-         *  - 1e7
+         *  - 1e4 single: ✅(≈440ms) batch ✅ | ---> page size
+         *  - 1e5 single: 28000+ms; batch ✅️(≈5500ms)
+         *  - 1e6 single: -; batch (≈52500ms)
+         *  - 1e7 single: -; batch ?
+         * 
+         * @temp 
+         * native / dml / orm: 1 / (2 ~ 3) / (5 ~ 6)
+         * 
          */
-        var seeds = Array(bare_input).fill(undefined)
+        var seeds = Array(c_bare_input).fill(undefined)
         var infos = {
             orm: undefined,
-            ormparallel: undefined,
+            orm_batch_outer: undefined,
             native: undefined,
             nativeInnerConnection: undefined,
             dml: undefined,
@@ -141,72 +149,6 @@ odescribe("benchmark", function () {
         beforeEach(() => {
             Person.clear()
         })
-
-        it(`insert ${seeds.length} rows by orm`, function () {
-            infos.orm = helper.countTime(() => {
-                Person.create(
-                    seeds.map((_, idx) =>
-                        ({
-                            name: `Person ${idx}`,
-                            surname: `surname ${idx}`
-                        })
-                    )
-                )
-            })
-
-            console.log(
-                '\t',
-                require('@fibjs/chalk')`{bold.grey.inverse $$ orm >> Stat}:`, `${infos.orm.diff}ms`,
-                require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(bare_input, infos.orm.diff)}`
-            )
-        });
-
-        xit(`parallel insert ${seeds.length} rows by orm`, function () {
-            infos.ormparallel = helper.countTime(() => {
-                Person.create(
-                    seeds.map((_, idx) =>
-                        ({
-                            name: `Person ${idx}`,
-                            surname: `surname ${idx}`
-                        })
-                    ),
-                    {
-                        parallel: true
-                    }
-                )
-            })
-
-            console.log(
-                '\t',
-                require('@fibjs/chalk')`{bold.grey.inverse $$ orm >> Stat}:`, `${infos.ormparallel.diff}ms`,
-                require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(bare_input, infos.ormparallel.diff)}`
-            )
-        });
-        
-        it(`insert ${seeds.length} rows by dml`, function () {
-            infos.dml = helper.countTime(() => {
-                Person.$dml
-                    .toSingleton()
-                    .useTrans(dml =>
-                        seeds.map((_, idx) =>
-                            dml.insert(
-                                Person.collection,
-                                {
-                                    name: `Person ${idx}`,
-                                    surname: `surname ${idx}`
-                                }
-                            )
-                        )
-                    )
-                    .releaseSingleton()
-            })
-
-            console.log(
-                '\t',
-                require('@fibjs/chalk')`{bold.grey.inverse $$ dml >> Stat}:`, `${infos.dml.diff}ms`,
-                require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(bare_input, infos.dml.diff)}`
-            )
-        });
 
         it(`insert ${seeds.length} rows by native, useConnection inner`, function () {
             infos.nativeInnerConnection = helper.countTime(() => {
@@ -226,10 +168,11 @@ odescribe("benchmark", function () {
                 .releaseSingleton()
             })
 
+            assert.equal(Person.count(), c_bare_input)
             console.log(
                 '\t',
                 require('@fibjs/chalk')`{bold.grey.inverse $$ native-ic >> Stat}:`, `${infos.nativeInnerConnection.diff}ms`,
-                require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(bare_input, infos.nativeInnerConnection.diff)}`
+                require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(c_bare_input, infos.nativeInnerConnection.diff)}`
             )
         })
 
@@ -253,15 +196,92 @@ odescribe("benchmark", function () {
             console.log(
                 '\t',
                 require('@fibjs/chalk')`{bold.grey.inverse $$ native-oc >> Stat}:`, `${infos.nativeOuterConnection.diff}ms`,
-                require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(bare_input, infos.nativeOuterConnection.diff)}`
+                require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(c_bare_input, infos.nativeOuterConnection.diff)}`
+            )
+        });
+        
+        it(`insert ${seeds.length} rows by dml`, function () {
+            infos.dml = helper.countTime(() => {
+                Person.$dml
+                    .toSingleton()
+                    .useTrans(dml =>
+                        seeds.map((_, idx) =>
+                            dml.insert(
+                                Person.collection,
+                                {
+                                    name: `Person ${idx}`,
+                                    surname: `surname ${idx}`
+                                }
+                            )
+                        )
+                    )
+                    .releaseSingleton()
+            })
+
+            assert.equal(Person.count(), c_bare_input)
+            console.log(
+                '\t',
+                require('@fibjs/chalk')`{bold.grey.inverse $$ dml >> Stat}:`, `${infos.dml.diff}ms`,
+                require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(c_bare_input, infos.dml.diff)}`
+            )
+        });
+
+        c_bare_input < 1e4 && it(`insert ${seeds.length} rows by orm`, function () {
+            infos.orm = helper.countTime(() => {
+                seeds.map((_, idx) =>
+                    Person.create(
+                        ({
+                            name: `Person ${idx}`,
+                            surname: `surname ${idx}`
+                        })
+                    )
+                )
+            })
+
+            assert.equal(Person.count(), c_bare_input)
+            console.log(
+                '\t',
+                require('@fibjs/chalk')`{bold.grey.inverse $$ orm >> Stat}:`, `${infos.orm.diff}ms`,
+                require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(c_bare_input, infos.orm.diff)}`
+            )
+        });
+
+        it(`batch insert ${seeds.length} rows by orm`, function () {
+            infos.orm_batch_outer = helper.countTime(() => {
+                Person.create(
+                    seeds.map((_, idx) =>
+                        ({
+                            name: `Person ${idx}`,
+                            surname: `surname ${idx}`
+                        })
+                    )
+                )
+            })
+
+            assert.equal(Person.count(), c_bare_input)
+            console.log(
+                '\t',
+                require('@fibjs/chalk')`{bold.grey.inverse $$ orm batch >> Stat}:`, `${infos.orm_batch_outer.diff}ms`,
+                require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(c_bare_input, infos.orm_batch_outer.diff)}`
             )
         });
 
         it(`summary`, function () {
-            // console.log(require('@fibjs/chalk')`{bold.blue.inverse $$ orm/orm-parallel extra-cost-times}:`, `${infos.orm.diff / infos.ormparallel.diff} `)
-            console.log(require('@fibjs/chalk')`{bold.blue.inverse $$ orm/dml extra-cost-times}:`, `${infos.orm.diff / infos.dml.diff} `)
-            console.log(require('@fibjs/chalk')`{bold.blue.inverse $$ orm/native cost-times}:`, `${infos.orm.diff / infos.nativeOuterConnection.diff} `)
-            console.log(require('@fibjs/chalk')`{bold.blue.inverse $$ dml/native cost-times}:`, `${infos.dml.diff / infos.nativeOuterConnection.diff} `)
+            if (infos.orm && infos.dml)
+                console.log(
+                    '\t',
+                    require('@fibjs/chalk')`{bold.blue.inverse $$ orm/dml extra-cost-times}:`, `${infos.orm.diff / infos.dml.diff} `
+                )
+            if (infos.orm && infos.nativeOuterConnection)
+                console.log(
+                    '\t',
+                    require('@fibjs/chalk')`{bold.blue.inverse $$ orm/native cost-times}:`, `${infos.orm.diff / infos.nativeOuterConnection.diff} `
+                )
+            if (infos.dml && infos.nativeOuterConnection)
+                console.log(
+                    '\t',
+                    require('@fibjs/chalk')`{bold.blue.inverse $$ dml/native cost-times}:`, `${infos.dml.diff / infos.nativeOuterConnection.diff} `
+                )
         });
     });
 });

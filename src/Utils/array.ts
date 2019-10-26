@@ -27,7 +27,7 @@ export function isEmptyArray (input: any) {
  */
 export function getPageRanges (count = 0, pageSize = 2) {
   pageSize = Math.floor(pageSize)
-  if (count <=1 || pageSize <= 1 || count < pageSize) return [[0, count]]
+  if (count <=1 || pageSize <= 1 || count < pageSize) return [[0, Math.max(-1, count - 1)]]
 
   const tgts = []
 

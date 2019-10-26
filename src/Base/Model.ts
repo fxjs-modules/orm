@@ -7,12 +7,11 @@ import Class_QueryBuilder from './QueryBuilder';
 import Instance from './Instance';
 
 import * as SYMBOLS from '../Utils/symbols';
-import { snapshot } from "../Utils/clone";
 import Property from './Property';
 import { configurable } from '../Decorators/accessor';
 
-import { arraify, deduplication, isEmptyArray, getPageRanges } from '../Utils/array';
-import { normalizeCollectionColumn, parseCollColumn } from '../Utils/endpoints';
+import { arraify, deduplication, isEmptyArray } from '../Utils/array';
+import { normalizeCollectionColumn } from '../Utils/endpoints';
 
 function isProperty (input: any): input is FxOrmProperty.Class_Property {
   return input instanceof Property
@@ -314,32 +313,26 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     create (
         kvItem: Fibjs.AnyObject | Fibjs.AnyObject[]
     ): any {
-        const isMultiple = Array.isArray(kvItem);
+        const isReturnMultiple = Array.isArray(kvItem);
         const list = arraify(kvItem)
+        
+        const pdml = this.$dml
+        let inst: FxOrmInstance.Class_Instance, instances = <(typeof inst)[]>[]
 
-        const ranges = getPageRanges(list.length, 1e4)
-        const pages = coroutine.parallel(ranges, (range: [number, number]) => {
-            const [start, end] = range
-            let idx = start, inst: FxOrmInstance.Class_Instance
-            const page = []
-            while (idx <= end) {
-                inst = new Instance(this, list[idx])
-                inst.$save()
-                idx++
-            }
-            page.push(inst)
+        pdml
+            .toSingleton()
+            .useTrans((dml: typeof pdml) => {
+                list.forEach(x => {
+                    inst = new Instance(this, x)
+                    inst.$save(undefined, { dml: dml })
+                    if (isReturnMultiple)
+                        instances.push(inst)
+                    else if (!instances[0])
+                        instances[0] = inst
+                });
+            })
 
-            return page
-        })
-        return !isMultiple ? pages[0][0] : pages.reduce((prev, cur) => prev.concat(cur));
-
-        // let inst: FxOrmInstance.Class_Instance
-        // const instances = list.map(x => {
-        //     inst = new Instance(this, x)
-        //     inst.$save()
-        // });
-
-        // return !isMultiple ? instances[0] : instances
+        return !isReturnMultiple ? instances[0] : instances
     }
 
     remove (opts?: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['remove']>) {
