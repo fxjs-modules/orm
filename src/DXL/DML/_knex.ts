@@ -20,15 +20,7 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
     }
 
     constructor(opts: FxOrmTypeHelpers.ConstructorParams<typeof Base>[0]) {
-        super({ dbdriver: opts.dbdriver })
-    }
-
-    query: FxOrmDML.DMLDriver['query'] = function (
-        this: DML_KnexBased,
-        table,
-        opts?
-    ) {
-      return null as any
+        super({...opts, dbdriver: opts.dbdriver })
     }
 
     find: FxOrmDML.DMLDriver['find'] = function (
@@ -140,12 +132,13 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
             beforeQuery = HOOK_DEFAULT
         } = {}
     ) {
-        let kbuilder = this.sqlQuery.knex.queryBuilder().table(table).insert(data)
+        let kbuilder = this.sqlQuery.knex(table).insert(data)
 
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })
+        const sql = kbuilder.toQuery()
 
         const info = this.useConnection(connection =>
-            this.execSqlQuery<{insertId: string | number}>(connection, kbuilder.toString())
+            this.execSqlQuery<{insertId: string | number}>(connection, sql)
         )
 
         if (!idPropertyList) return null;

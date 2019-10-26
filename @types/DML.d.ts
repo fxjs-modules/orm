@@ -15,24 +15,6 @@ declare namespace FxOrmDML {
     ) => typeof builer | void
 
     class DMLDriver<CONN_TYPE = any> extends FxOrmDXL.DXLDriver<CONN_TYPE> {
-        query: {
-            <T = any>(
-                collection: string,
-                opts?: {
-                    where?: Fibjs.AnyObject,
-                    fields?: string[],// FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['select']>,
-
-                    offset?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['offset']>
-                    limit?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['limit']>
-                    orderBy?: FxOrmTypeHelpers.Parameters<FKnexNS.KnexInstance['orderBy']>
-
-                    having?: Fibjs.AnyObject,
-                    joins?: FxHQLParser.ParsedResult['joins']
-
-                    beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
-                }
-            ): T
-        }
         find: {
             <T = Fibjs.AnyObject[]>(
                 collection: string,

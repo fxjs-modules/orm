@@ -4,3 +4,6 @@ package-lock.json
 lib
 
 config.js*
+
+fibjs-*.log
+fibjsprof.svg

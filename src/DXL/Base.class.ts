@@ -6,24 +6,28 @@ export default class DXLBase<ConnType = any> implements FxOrmDXL.DXLDriver<ConnT
 
     sqlQuery: FxSqlQuery.Class_Query;
 
-    constructor(opts: {
-        dbdriver: DXLBase['dbdriver'],
-        singleton?: boolean,
-    }) {
-        this.dbdriver = opts.dbdriver;
+    constructor(opts: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmDXL.DXLDriver>[0]) {
+        this.dbdriver = <FxOrmDXL.DXLDriver<ConnType>['dbdriver']>opts.dbdriver;
 
         if (opts.singleton)
             this.singleton_connection = this.dbdriver.getConnection();
 
         if (this.dbdriver.isSql)
-            this.sqlQuery = new SqlQuery.Query({ dialect: <any>this.dbdriver.type });
+            if (opts.sqlQuery instanceof SqlQuery.Query)
+                this.sqlQuery = opts.sqlQuery
+            else
+                this.sqlQuery = new SqlQuery.Query({ dialect: <any>this.dbdriver.type });
     }
 
     /**
      * @warning you should always call releaseSingleton when task of singleton finished
      */
     toSingleton () {
-        return new (<any>this.constructor)({ dbdriver: this.dbdriver, singleton: true })
+        return new (<any>this.constructor)({
+            dbdriver: this.dbdriver,
+            sqlQuery: this.sqlQuery,
+            singleton: true
+        })
     }
     releaseSingleton () {
         if (this.singleton_connection)

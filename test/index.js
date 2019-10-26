@@ -74,6 +74,8 @@ function t() {
     run('./integration/instance.js');
     run('./integration/instance-changes-track.js');
 
+    run('./integration/benchmark.js');
+
     test.run(console.DEBUG);
 }
 

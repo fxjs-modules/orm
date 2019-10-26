@@ -4,9 +4,14 @@ export default class Base<ConnType = any> extends DXLBase<ConnType> implements F
     dbdriver: FxDbDriverNS.Driver<ConnType>;
     sqlQuery: FxSqlQuery.Class_Query;
 
-    static create (opts: { dbdriver: Base['dbdriver'] }) {
-        return new Base({ dbdriver: opts.dbdriver })
-    }
+    // static create (opts: { dbdriver: Base['dbdriver'] }) {
+    //     return new Base({ dbdriver: opts.dbdriver })
+    // }
+
+    // constructor (opts: FxOrmTypeHelpers.ConstructorParams<(typeof FxOrmDML.DMLDriver)>[0]) {
+    //     console.log('opts', opts.singleton)
+    //     super(opts)
+    // }
 
     /**
      * @description find items from remote endpoints

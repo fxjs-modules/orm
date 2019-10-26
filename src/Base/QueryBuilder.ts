@@ -1,5 +1,4 @@
 import util = require('util');
-import SqlQuery = require('@fxjs/sql-query');
 
 import * as SYMBOLS from '../Utils/symbols';
 import { configurable } from '../Decorators/accessor';

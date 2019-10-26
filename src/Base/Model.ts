@@ -324,10 +324,8 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                 return kvItem.map((item: Fibjs.AnyObject) => this.create(item))
 
         const isMultiple = Array.isArray(kvItem);
-        const instances = arraify(new Instance(this, snapshot(kvItem)))
+        const instances = arraify(new Instance(this, kvItem))
             .map(x => x.$save(kvItem));
-
-        // console.log(require('@fibjs/chalk')`{bold.yellow.inverse instance.$kvs [1]}`, kvItem, instance.$kvs);
 
         return !isMultiple ? instances[0] : instances;
     }

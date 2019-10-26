@@ -21,7 +21,8 @@
     ],
     "scripts": {
         "build": "fib-typify src -o lib",
-        "test": "fibjs test",
+        "test": "rm -rf fibjs-*.log && fibjs --prof --prof-interval=10 test",
+        "prof": "fibjs --prof-process fibjs-*.log fibjsprof.svg",
         "ci": "npm run build && npm run test",
         "ci-mysql": "npm run build && cross-env ORM_PROTOCOL=mysql npm run test",
         "ci-sqlite": "npm run build && cross-env ORM_PROTOCOL=sqlite npm run test",
@@ -43,7 +44,7 @@
     "dependencies": {
         "@fibjs/chalk": "^1.0.0",
         "@fibjs/enforce": "^0.1.1",
-        "@fxjs/db-driver": "0.0.5",
+        "@fxjs/db-driver": "^0.0.6",
         "@fxjs/knex": "^0.2.0",
         "@fxjs/orm-core": "^0.0.1",
         "@fxjs/orm-hql": "file:packages/orm-hql",
