@@ -19,6 +19,31 @@ export function isEmptyArray (input: any) {
   return Array.isArray(input) && !input.length
 }
 
+/**
+ * @description get memory-page ranges
+ * 
+ * @param count 
+ * @param pageSize 
+ */
+export function getPageRanges (count = 0, pageSize = 2) {
+  pageSize = Math.floor(pageSize)
+  if (count <=1 || pageSize <= 1 || count < pageSize) return [[0, count]]
+
+  const tgts = []
+
+  let start = 0, end = start + pageSize - 1
+  let pageTuple = [start, end]
+  while (start < count) {
+    pageTuple = [start, end]
+    tgts.push(pageTuple)
+    start += pageSize
+    end = start + pageSize - 1
+    if (end > count) end = count
+}
+
+  return tgts
+}
+
 export function deduplication (
   input: any[],
   get_id: (item: FxOrmTypeHelpers.FlattenIfArray<typeof input>, idx: number) => string | number

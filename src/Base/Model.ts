@@ -11,7 +11,7 @@ import { snapshot } from "../Utils/clone";
 import Property from './Property';
 import { configurable } from '../Decorators/accessor';
 
-import { arraify, deduplication, isEmptyArray } from '../Utils/array';
+import { arraify, deduplication, isEmptyArray, getPageRanges } from '../Utils/array';
 import { normalizeCollectionColumn, parseCollColumn } from '../Utils/endpoints';
 
 function isProperty (input: any): input is FxOrmProperty.Class_Property {
@@ -312,22 +312,34 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     }
 
     create (
-        kvItem: Fibjs.AnyObject | Fibjs.AnyObject[],
-        {
-            parallel = false
-        } = {}
+        kvItem: Fibjs.AnyObject | Fibjs.AnyObject[]
     ): any {
-        if (Array.isArray(kvItem))
-            if (parallel)
-                return coroutine.parallel(kvItem, (kv: Fibjs.AnyObject) => this.create(kv))
-            else
-                return kvItem.map((item: Fibjs.AnyObject) => this.create(item))
-
         const isMultiple = Array.isArray(kvItem);
-        const instances = arraify(new Instance(this, kvItem))
-            .map(x => x.$save(kvItem));
+        const list = arraify(kvItem)
 
-        return !isMultiple ? instances[0] : instances;
+        const ranges = getPageRanges(list.length, 1e4)
+        const pages = coroutine.parallel(ranges, (range: [number, number]) => {
+            const [start, end] = range
+            let idx = start, inst: FxOrmInstance.Class_Instance
+            const page = []
+            while (idx <= end) {
+                inst = new Instance(this, list[idx])
+                inst.$save()
+                idx++
+            }
+            page.push(inst)
+
+            return page
+        })
+        return !isMultiple ? pages[0][0] : pages.reduce((prev, cur) => prev.concat(cur));
+
+        // let inst: FxOrmInstance.Class_Instance
+        // const instances = list.map(x => {
+        //     inst = new Instance(this, x)
+        //     inst.$save()
+        // });
+
+        // return !isMultiple ? instances[0] : instances
     }
 
     remove (opts?: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['remove']>) {

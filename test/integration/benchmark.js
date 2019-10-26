@@ -4,6 +4,11 @@ test.setup();
 var helper = require('../support/spec_helper');
 var common = require('../common');
 
+function tps (count, ms) {
+    const r = (count / ms * 1000)
+    return Math.floor(r)
+}
+
 odescribe("benchmark", function () {
     var db = null;
     var Person = null;
@@ -47,8 +52,66 @@ odescribe("benchmark", function () {
         };
     };
 
+    describe("others", () => {
+        const { getPageRanges } = require('../../lib/Utils/array')
+
+        it("getPageRanges", () => {
+
+            assert.deepEqual(
+                getPageRanges(0, 0 / 5),
+                [[0, 0]]
+            )
+
+            assert.deepEqual(
+                getPageRanges(1, 1 / 5),
+                [[0, 1]]
+            )
+
+            assert.deepEqual(
+                getPageRanges(1e2, 1e2 / 5),
+                [
+                    [ 0, 19 ],
+                    [ 20, 39 ],
+                    [ 40, 59 ],
+                    [ 60, 79 ],
+                    [ 80, 99 ]
+                ]
+            )
+
+            assert.deepEqual(
+                getPageRanges(1e2 - 2, 1e2 / 5),
+                [
+                    [ 0, 19 ],
+                    [ 20, 39 ],
+                    [ 40, 59 ],
+                    [ 60, 79 ],
+                    [ 80, 98 ]
+                ]
+            )
+
+            assert.deepEqual(
+                getPageRanges(1e2 + 2, 1e2 / 5),
+                [
+                    [ 0, 19 ],
+                    [ 20, 39 ],
+                    [ 40, 59 ],
+                    [ 60, 79 ],
+                    [ 80, 99 ],
+                    [ 100, 102 ]
+                ]
+            )
+
+            assert.deepEqual(
+                getPageRanges(10, 1e4),
+                [[0, 10]]
+            )
+        })
+    })
+
     describe("model-create/dml-insert", function () {
         before(setup());
+
+        var bare_input = 1e5;
         
         /**
          * @levels_sqlite
@@ -56,12 +119,12 @@ odescribe("benchmark", function () {
          *  - 1e3 ✅
          *  - 2e3 ✅
          *  - 5e3 ✅
-         *  - 1e4 ✅
+         *  - 1e4 ✅ as cache size
          *  - 1e5 28000+ms ---> ?
          *  - 1e6
          *  - 1e7
          */
-        var seeds = Array(1e5).fill(undefined)
+        var seeds = Array(bare_input).fill(undefined)
         var infos = {
             orm: undefined,
             ormparallel: undefined,
@@ -75,7 +138,11 @@ odescribe("benchmark", function () {
             Station.clear()
         })
 
-        oit(`insert ${seeds.length} rows by orm`, function () {
+        beforeEach(() => {
+            Person.clear()
+        })
+
+        it(`insert ${seeds.length} rows by orm`, function () {
             infos.orm = helper.countTime(() => {
                 Person.create(
                     seeds.map((_, idx) =>
@@ -87,7 +154,10 @@ odescribe("benchmark", function () {
                 )
             })
 
-            console.log(require('@fibjs/chalk')`{bold.grey.inverse \t$$ orm >> diff}:`, `${infos.orm.diff}ms`)
+            console.log(
+                require('@fibjs/chalk')`{bold.grey.inverse $$ orm >> Stat}:`, `${infos.orm.diff}ms`,
+                require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(bare_input, infos.orm.diff)}`
+            )
         });
 
         xit(`parallel insert ${seeds.length} rows by orm`, function () {
@@ -105,7 +175,10 @@ odescribe("benchmark", function () {
                 )
             })
 
-            console.log(require('@fibjs/chalk')`{bold.grey.inverse \t$$ orm >> diff}:`, `${infos.ormparallel.diff}ms`)
+            console.log(
+                require('@fibjs/chalk')`{bold.grey.inverse $$ orm >> Stat}:`, `${infos.ormparallel.diff}ms`,
+                require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(bare_input, infos.ormparallel.diff)}`
+            )
         });
         
         it(`insert ${seeds.length} rows by dml`, function () {
@@ -126,7 +199,10 @@ odescribe("benchmark", function () {
                     .releaseSingleton()
             })
 
-            console.log(require('@fibjs/chalk')`{bold.grey.inverse \t$$ dml >> diff}:`, `${infos.dml.diff}ms`)
+            console.log(
+                require('@fibjs/chalk')`{bold.grey.inverse $$ dml >> Stat}:`, `${infos.dml.diff}ms`,
+                require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(bare_input, infos.dml.diff)}`
+            )
         });
 
         it(`insert ${seeds.length} rows by native, useConnection inner`, function () {
@@ -147,7 +223,10 @@ odescribe("benchmark", function () {
                 .releaseSingleton()
             })
 
-            console.log(require('@fibjs/chalk')`{bold.grey.inverse \t$$ native-ic >> diff}:`, `${infos.nativeInnerConnection.diff}ms`)
+            console.log(
+                require('@fibjs/chalk')`{bold.grey.inverse $$ native-ic >> Stat}:`, `${infos.nativeInnerConnection.diff}ms`,
+                require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(bare_input, infos.nativeInnerConnection.diff)}`
+            )
         })
 
         it(`insert ${seeds.length} rows by native, useConnection wrapper`, function () {
@@ -167,14 +246,18 @@ odescribe("benchmark", function () {
                     ).releaseSingleton()
             });
 
-            console.log(require('@fibjs/chalk')`{bold.grey.inverse \t$$ native-oc >> diff}:`, `${infos.nativeOuterConnection.diff}ms`)
+            console.log(
+                require('@fibjs/chalk')`{bold.grey.inverse $$ native-oc >> Stat}:`, `${infos.nativeOuterConnection.diff}ms`,
+                require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(bare_input, infos.nativeOuterConnection.diff)}`
+            )
         });
 
         it(`summary`, function () {
-            // console.log(require('@fibjs/chalk')`{bold.blue.inverse \t$$ orm/orm-parallel extra-cost-times}:`, `${infos.orm.diff / infos.ormparallel.diff} `)
-            console.log(require('@fibjs/chalk')`{bold.blue.inverse \t$$ orm/dml extra-cost-times}:`, `${infos.orm.diff / infos.dml.diff} `)
-            console.log(require('@fibjs/chalk')`{bold.blue.inverse \t$$ orm/native cost-times}:`, `${infos.orm.diff / infos.nativeOuterConnection.diff} `)
-            console.log(require('@fibjs/chalk')`{bold.blue.inverse \t$$ dml/native cost-times}:`, `${infos.dml.diff / infos.nativeOuterConnection.diff} `)
+            // console.log(require('@fibjs/chalk')`{bold.blue.inverse $$ orm/orm-parallel extra-cost-times}:`, `${infos.orm.diff / infos.ormparallel.diff} `)
+            console.log(require('@fibjs/chalk')`{bold.blue.inverse $$ orm/dml extra-cost-times}:`, `${infos.orm.diff / infos.dml.diff} `)
+            console.log(require('@fibjs/chalk')`{bold.blue.inverse $$ orm/native cost-times}:`, `${infos.orm.diff / infos.nativeOuterConnection.diff} `)
+            console.log(require('@fibjs/chalk')`{bold.blue.inverse $$ dml/native cost-times}:`, `${infos.dml.diff / infos.nativeOuterConnection.diff} `)
+            console.log('tps:\n')
         });
     });
 });
