@@ -62,7 +62,8 @@ export class Driver<CONN_TYPE = any> implements FxDbDriverNS.Driver<CONN_TYPE> {
     get uri () {        
         return url.format({
             ...this.config,
-            slashes: this.config.protocol === 'sqlite:' ? false : this.config.slashes
+            slashes: this.config.protocol === 'sqlite:' ? false : this.config.slashes,
+            query: this.config.protocol === 'sqlite:' ? {} : this.config.query
         });
     }
 	config: FxDbDriverNS.Driver['config'];
