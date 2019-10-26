@@ -1,6 +1,6 @@
 {
 	"name": "@fxjs/sql-ddl-sync",
-	"version": "0.6.3",
+	"version": "0.6.4",
 	"description": "Fibjs SQL DDL Synchronization",
 	"keywords": [
 		"sql",
