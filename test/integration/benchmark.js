@@ -155,6 +155,7 @@ odescribe("benchmark", function () {
             })
 
             console.log(
+                '\t',
                 require('@fibjs/chalk')`{bold.grey.inverse $$ orm >> Stat}:`, `${infos.orm.diff}ms`,
                 require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(bare_input, infos.orm.diff)}`
             )
@@ -176,6 +177,7 @@ odescribe("benchmark", function () {
             })
 
             console.log(
+                '\t',
                 require('@fibjs/chalk')`{bold.grey.inverse $$ orm >> Stat}:`, `${infos.ormparallel.diff}ms`,
                 require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(bare_input, infos.ormparallel.diff)}`
             )
@@ -200,6 +202,7 @@ odescribe("benchmark", function () {
             })
 
             console.log(
+                '\t',
                 require('@fibjs/chalk')`{bold.grey.inverse $$ dml >> Stat}:`, `${infos.dml.diff}ms`,
                 require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(bare_input, infos.dml.diff)}`
             )
@@ -224,6 +227,7 @@ odescribe("benchmark", function () {
             })
 
             console.log(
+                '\t',
                 require('@fibjs/chalk')`{bold.grey.inverse $$ native-ic >> Stat}:`, `${infos.nativeInnerConnection.diff}ms`,
                 require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(bare_input, infos.nativeInnerConnection.diff)}`
             )
@@ -247,6 +251,7 @@ odescribe("benchmark", function () {
             });
 
             console.log(
+                '\t',
                 require('@fibjs/chalk')`{bold.grey.inverse $$ native-oc >> Stat}:`, `${infos.nativeOuterConnection.diff}ms`,
                 require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(bare_input, infos.nativeOuterConnection.diff)}`
             )
@@ -257,7 +262,6 @@ odescribe("benchmark", function () {
             console.log(require('@fibjs/chalk')`{bold.blue.inverse $$ orm/dml extra-cost-times}:`, `${infos.orm.diff / infos.dml.diff} `)
             console.log(require('@fibjs/chalk')`{bold.blue.inverse $$ orm/native cost-times}:`, `${infos.orm.diff / infos.nativeOuterConnection.diff} `)
             console.log(require('@fibjs/chalk')`{bold.blue.inverse $$ dml/native cost-times}:`, `${infos.dml.diff / infos.nativeOuterConnection.diff} `)
-            console.log('tps:\n')
         });
     });
 });
