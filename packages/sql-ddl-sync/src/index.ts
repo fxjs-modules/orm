@@ -324,6 +324,8 @@ export class Sync<ConnType = any> implements FxOrmSqlDDLSync.Sync<ConnType> {
 		for (let k in collection.properties) {
 			prop = collection.properties[k];
 
+			const column_name = prop.mapsTo || k;
+
 			if (prop.unique) {
 				let mixed_arr_unique: (string | true)[] = prop.unique as string[]
 				if (!Array.isArray(prop.unique)) {
@@ -335,7 +337,7 @@ export class Sync<ConnType = any> implements FxOrmSqlDDLSync.Sync<ConnType> {
 						indexes.push({
 							name    : getIndexName(collection, prop, this.dbdriver.type),
 							unique  : true,
-							columns : [ k ]
+							columns : [ column_name ]
 						});
 					} else {
 						found = false;
@@ -343,7 +345,7 @@ export class Sync<ConnType = any> implements FxOrmSqlDDLSync.Sync<ConnType> {
 						for (let j = 0; j < indexes.length; j++) {
 							if (indexes[j].name == mixed_arr_unique[i]) {
 								found = true;
-								indexes[j].columns.push(k);
+								indexes[j].columns.push(column_name);
 								break;
 							}
 						}
@@ -352,7 +354,7 @@ export class Sync<ConnType = any> implements FxOrmSqlDDLSync.Sync<ConnType> {
 							indexes.push({
 								name    : mixed_arr_unique[i] as string,
 								unique  : true,
-								columns : [ k ]
+								columns : [ column_name ]
 							});
 						}
 					}
