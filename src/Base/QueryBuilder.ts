@@ -112,7 +112,12 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
          */
         const joins = (_opts.joins ? arraify(_opts.joins) : []).filter(x => isOperatorFunction(x))
 
-        const results = this.model.$dml.find(this.model.collection, _opts)
+        const results = this.model.$dml.useConnection(connection =>
+            this.model.$dml.find(this.model.collection, {
+                connection,
+                ..._opts
+            })
+        )
 
         if (_opts.return_raw) return results as any
 
@@ -158,7 +163,7 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
         else if (typeof id === 'object')
             where = id
 
-        const opts = <FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>>{}
+        const opts = <FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>>{}
         opts.where = {...opts.where, ...where}
         opts.limit = 1
 
@@ -179,12 +184,17 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
 
     @transformToQCIfModel
     count (
-        opts: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['count']> = {}
+        opts: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['count']>
     ): number {
-        return this.model.$dml.count(
-            this.model.collection,
-            opts
-        )
+        return this.model.$dml.useConnection(connection => {
+            return this.model.$dml.count(
+                this.model.collection,
+                {
+                    connection,
+                    ...opts
+                }
+            )
+        })
     }
 
     /**

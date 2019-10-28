@@ -3,12 +3,12 @@ import { default as mysql } from './mysql'
 
 export function getDML (
     type: FxDbDriverNS.Driver['type'],
-): (typeof FxOrmDML.DMLDriver) {
+): (typeof FxOrmDML.DMLDialect) {
     switch (type) {
         case 'sqlite':
-            return sqlite as (typeof FxOrmDML.DMLDriver) as any
+            return sqlite as (typeof FxOrmDML.DMLDialect) as any
         case 'mysql':
-            return mysql as (typeof FxOrmDML.DMLDriver) as any
+            return mysql as (typeof FxOrmDML.DMLDialect) as any
         default:
             throw new Error(`[getDML] unsupported type: ${type}`)
     }

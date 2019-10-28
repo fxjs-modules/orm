@@ -1,10 +1,8 @@
 declare namespace FxOrmDXL {
-    class DXLDriver<CONN_TYPE> {
-        // uid: string
+    class DXLDialect<CONN_TYPE> {
         dbdriver: FxDbDriverNS.Driver<CONN_TYPE>;
         singleton_connection?: CONN_TYPE;
 
-        // readonly isSql: boolean
         /**
          * @description only valid for supported sql dbdriver
          *
@@ -15,15 +13,16 @@ declare namespace FxOrmDXL {
         sqlQuery: FxSqlQuery.Class_Query;
 
         constructor(opts: {
-            dbdriver: DXLDriver<CONN_TYPE>['dbdriver'],
-            sqlQuery?: DXLDriver<CONN_TYPE>['sqlQuery'],
+            dbdriver: DXLDialect<CONN_TYPE>['dbdriver'],
+            sqlQuery?: DXLDialect<CONN_TYPE>['sqlQuery'],
             singleton?: boolean,
         })
 
         toSingleton (): this
-        useSingletonTrans (callback: (dxl: DXLDriver<CONN_TYPE>) => any): this
+        useSingletonTrans (callback: (dxl: DXLDialect<CONN_TYPE>) => any): this
 
         useConnection (callback: (connection: CONN_TYPE) => any): any
+
         execSqlQuery<T_RESULT = any>(
             connection: any,
             sqlstr: string,

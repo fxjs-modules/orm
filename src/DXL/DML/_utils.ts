@@ -141,7 +141,7 @@ const filterWhereToKnexActionsInternal = gnrWalkWhere<
 })
 
 export function filterWhereToKnexActions (
-    opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>
+    opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>
 ) {
     if (!opts) return
     const { where = null } = opts || {}
@@ -197,7 +197,7 @@ export const filterJoinOnConditionToClauseBuilderActions = gnrWalkWhere<
 
           if (isOperatorFunction(fValue)) {
             fValue = parseOperatorFunctionAsValue(fValue)
-            
+
             switch (cmpr_opfn_result.value.$wrapper) {
               case QueryGrammers.Qlfn.Others.refTableCol: fValue = `${fValue.table}.${fValue.column}`
                 break
@@ -264,7 +264,7 @@ const filterJoinsToKnexActionsInternal = gnrWalkJoinOn<
       case 'inputIs:opfn:joinVerb': {
         const condInput = input().value
         const target_collection = condInput.collection
-        
+
         const get_jcallback = function (knex: FxOrmTypeHelpers.SecondParameter<FxOrmDML.BeforeQueryItem>['knex']) {
           return function () {
             /**
@@ -304,7 +304,7 @@ const filterJoinsToKnexActionsInternal = gnrWalkJoinOn<
 })
 
 export function filterJoinSelectToKnexActions (
-    opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>,
+    opts: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>,
     source_collection: string
 ) {
     if (!opts) return

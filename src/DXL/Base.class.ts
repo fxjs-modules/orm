@@ -1,13 +1,13 @@
 import SqlQuery = require('@fxjs/sql-query');
 
-export default class DXLBase<ConnType = any> implements FxOrmDXL.DXLDriver<ConnType> {
+export default class DXLBase<ConnType = any> implements FxOrmDXL.DXLDialect<ConnType> {
     dbdriver: FxDbDriverNS.Driver<ConnType>;
     singleton_connection?: ConnType;
 
     sqlQuery: FxSqlQuery.Class_Query;
 
-    constructor(opts: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmDXL.DXLDriver>[0]) {
-        this.dbdriver = <FxOrmDXL.DXLDriver<ConnType>['dbdriver']>opts.dbdriver;
+    constructor(opts: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmDXL.DXLDialect>[0]) {
+        this.dbdriver = <FxOrmDXL.DXLDialect<ConnType>['dbdriver']>opts.dbdriver;
 
         if (opts.singleton)
             this.singleton_connection = this.dbdriver.getConnection()
@@ -37,7 +37,7 @@ export default class DXLBase<ConnType = any> implements FxOrmDXL.DXLDriver<ConnT
             if (this.dbdriver.isSql)
                 connection.trans(() => {
                     callback(dml)
-                    
+
                     return true
                 })
             else

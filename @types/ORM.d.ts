@@ -48,7 +48,7 @@ declare namespace FxOrmNS {
         constructor (
             driver: FxDbDriverNS.Driver<ConnType> | string | FxDbDriverNS.ConnectionInputArgs,
             opts?: {
-                dml?: FxOrmDML.DMLDriver<ConnType>
+                dml?: FxOrmDML.DMLDialect<ConnType>
             }
         )
 
@@ -57,8 +57,8 @@ declare namespace FxOrmNS {
         settings: any
 
         readonly models: {[k: string]: FxOrmModel.Class_Model}
-        $dml: any; // FxOrmDML.DMLDriver;
-        $ddl: any; // FxOrmDDL.DDLDriver;
+        $dml: any; // FxOrmDML.DMLDialect;
+        $ddl: any; // FxOrmDDL.DDLDialect;
         /**
          * @description define one model with modelName(name) and properties(props)
          *

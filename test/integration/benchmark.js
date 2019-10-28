@@ -202,14 +202,19 @@ odescribe("benchmark", function () {
             infos.dml = helper.countTime(() => {
                 Person.$dml
                     .useSingletonTrans(dml =>
-                        seeds.map((_, idx) =>
-                            dml.insert(
-                                Person.collection,
-                                {
-                                    name: `Person ${idx}`,
-                                    surname: `surname ${idx}`
-                                }
-                            )
+                        dml.useConnection(conn =>
+                          seeds.map((_, idx) =>
+                              dml.insert(
+                                  Person.collection,
+                                  {
+                                      name: `Person ${idx}`,
+                                      surname: `surname ${idx}`
+                                  },
+                                  {
+                                      connection: conn,
+                                  }
+                              )
+                          )
                         )
                     )
             })

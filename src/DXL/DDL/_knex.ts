@@ -10,7 +10,7 @@ class DDL_KnexBased extends Base {
     }
 
     createCollection (collection: string) {
-        
+
     }
 
     dropCollection (collection: string) {
@@ -18,7 +18,7 @@ class DDL_KnexBased extends Base {
             .knex.schema
             .dropTableIfExists(collection)
 
-        this.dbdriver.connectionPool(connection => {
+        this.useConnection(connection => {
             this.execSqlQuery(connection, kq.toString());
         })
 

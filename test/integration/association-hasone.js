@@ -1,7 +1,7 @@
 var ORM = require('../../');
 var helper = require('../support/spec_helper');
 
-describe("hasOne", function () {
+odescribe("hasOne", function () {
     var db = null;
     var Tree = null;
     var Stalk = null;

@@ -67,16 +67,16 @@ declare namespace FxOrmModel {
         readonly keys: string[]
 
         readonly _symbol: Symbol
-        readonly $dml: FxOrmDML.DMLDriver
-        readonly $ddl: FxOrmDDL.DDLDriver
+        readonly $dml: FxOrmDML.DMLDialect
+        readonly $ddl: FxOrmDDL.DDLDialect
         readonly schemaBuilder: FKnexNS.KnexInstance['schema']
         readonly queryBuilder: FxOrmTypeHelpers.ReturnType<FKnexNS.KnexInstance['queryBuilder']>
         readonly sqlQuery: FxSqlQuery.Class_Query
 
         readonly propertyContext: {
             model: FxOrmModel.Class_Model,
-            sqlQuery: FxOrmDML.DMLDriver<any>['sqlQuery']
-            knex: FxOrmDXL.DXLDriver<any>['sqlQuery']['knex']
+            sqlQuery: FxOrmDML.DMLDialect<any>['sqlQuery']
+            knex: FxOrmDXL.DXLDialect<any>['sqlQuery']['knex']
         }
 
         constructor (config: {
@@ -156,7 +156,7 @@ declare namespace FxOrmModel {
          */
         remove (
             opts?: {
-                where: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>['where']
+                where: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['where']
             }
         ): number
         /**

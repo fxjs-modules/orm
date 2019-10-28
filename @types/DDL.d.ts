@@ -5,7 +5,7 @@
 declare namespace FxOrmDDL {
   type KnexSchemaBuilder = FKnexNS.KnexInstance['schema'];
 
-    class DDLDriver<ConnType = any> extends FxOrmDXL.DXLDriver<ConnType> {
+    class DDLDialect<ConnType = any> extends FxOrmDXL.DXLDialect<ConnType> {
         // uid: string
         createCollection: <T = Fibjs.AnyObject[]>(collection: string) => T
         alertCollection: <T = any>(collection: string) => T

@@ -229,7 +229,10 @@ declare namespace FxOrmQueries {
          * @description find tuples from remote endpoints
          */
         find (
-            opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']> & { return_raw?: boolean }
+            opts?: Omit<
+                FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>,
+                'connection'
+            > & { return_raw?: boolean }
         ): T_RETURN[]
 
         findByRef <T = any>(
@@ -259,7 +262,12 @@ declare namespace FxOrmQueries {
         /**
          * @description count tuples from remote endpoints
          */
-        count (opts?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['count']>): number
+        count (
+            opts?: Omit<
+                FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['count']>,
+                'connection'
+            >
+        ): number
 
         first (): T_RETURN
         last (): T_RETURN

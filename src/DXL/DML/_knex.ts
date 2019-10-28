@@ -11,7 +11,7 @@ import { isEmptyPlainObject } from "../../Utils/object";
 
 function HOOK_DEFAULT () {}
 
-class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML.DMLDriver<CONN_TYPE> {
+class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML.DMLDialect<CONN_TYPE> {
     dbdriver: FxDbDriverNS.SQLDriver;
 
     @configurable(false)
@@ -23,15 +23,16 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         super({...opts, dbdriver: opts.dbdriver })
     }
 
-    find: FxOrmDML.DMLDriver['find'] = function (
+    find: FxOrmDML.DMLDialect['find'] = function (
         this: DML_KnexBased,
         collection,
-        opts?
+        opts
     ) {
         filterWhereToKnexActions(opts);
         filterJoinSelectToKnexActions(opts, collection)
 
         const {
+            connection,
             fields = undefined,
             select = undefined,
             where = undefined,
@@ -59,22 +60,25 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })
 
         return filterResultAfterQuery(
-          this.useConnection(connection =>
-            this.execSqlQuery(connection, kbuilder.toString())
-          ),
-          filterQueryResult
+            this.execSqlQuery(connection, kbuilder.toString()),
+        //   this.useConnection(connection =>
+        //     this.execSqlQuery(connection, kbuilder.toString())
+        //   ),
+            filterQueryResult
         )
     }
 
     exists (
         collection: string,
         {
+            connection = null,
             where = null
         } = {}
     ) {
         const results = this.find(
             collection,
             {
+                connection,
                 // don't read all fields
                 fields: where ? Object.keys(where) : [],
                 beforeQuery: (builder) => {
@@ -89,14 +93,15 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         return !!results.length
     }
 
-    count: FxOrmDML.DMLDriver['count'] = function (
+    count: FxOrmDML.DMLDialect['count'] = function (
         this: DML_KnexBased,
         table,
-        opts?
+        opts
     ) {
         filterWhereToKnexActions(opts)
 
         const {
+            connection,
             where = undefined,
             countParams = undefined,
             beforeQuery = HOOK_DEFAULT,
@@ -116,30 +121,27 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })
 
         return filterResultAfterQuery(
-            this.useConnection(connection =>
-                this.execSqlQuery(connection, kbuilder.toString(), [])
-            ),
+            this.execSqlQuery<number>(connection, kbuilder.toString(), []),
             filterQueryResult
-        );
+        )
     }
 
-    insert: FxOrmDML.DMLDriver['insert'] = function (
+    insert: FxOrmDML.DMLDialect['insert'] = function (
         this: DML_KnexBased,
         table,
         data,
         {
+            connection,
             idPropertyList,
             beforeQuery = HOOK_DEFAULT
-        } = {}
+        }
     ) {
         let kbuilder = this.sqlQuery.knex(table).insert(data)
 
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })
         const sql = kbuilder.toQuery()
 
-        const info = this.useConnection(connection =>
-            this.execSqlQuery<{insertId: string | number}>(connection, sql)
-        )
+        const info = this.execSqlQuery<{insertId: string | number}>(connection, sql)
 
         if (!idPropertyList) return null;
 
@@ -158,15 +160,16 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         return ids;
     }
 
-    update: FxOrmDML.DMLDriver['update'] = function (
+    update: FxOrmDML.DMLDialect['update'] = function (
         this: DML_KnexBased,
         table,
         changes,
-        opts?
+        opts
     ) {
         filterWhereToKnexActions(opts)
 
         const {
+            connection,
             where = undefined,
             beforeQuery = HOOK_DEFAULT
         } = opts || {}
@@ -181,19 +184,21 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         kbuilder.update(changes)
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })
 
-        return this.useConnection(connection =>
-            this.execSqlQuery<any[]>(connection, kbuilder.toString())
-        )
+        // return this.useConnection(connection =>
+        //     this.execSqlQuery<any[]>(connection, kbuilder.toString())
+        // )
+        return this.execSqlQuery<any>(connection, kbuilder.toString())
     }
 
-    remove: FxOrmDML.DMLDriver['remove'] = function (
+    remove: FxOrmDML.DMLDialect['remove'] = function (
         this: DML_KnexBased,
         table,
-        opts?
+        opts
     ) {
         filterWhereToKnexActions(opts)
 
         const {
+            connection,
             beforeQuery = HOOK_DEFAULT
         } = opts || {}
 
@@ -204,11 +209,12 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         kbuilder.delete()
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })
 
-        const bTransResult = this.useConnection(connection =>
-            this.execSqlQuery(connection, kbuilder.toString())
-        )
+        // const bTransResult = this.useConnection(connection =>
+        //     this.execSqlQuery(connection, kbuilder.toString())
+        // )
 
-        return bTransResult
+        // return bTransResult
+        return this.execSqlQuery<any>(connection, kbuilder.toString())
     }
 
     clear(collection: string) { return null as any }

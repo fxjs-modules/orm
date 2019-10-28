@@ -339,11 +339,15 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     remove (opts?: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['remove']>) {
         const { where = null } = opts || {};
 
-        return this.$dml.remove(this.collection, { where })
+        return this.$dml.useConnection(connection => {
+            return this.$dml.remove(this.collection, { connection, where })
+        })
     }
 
     clear (): void {
-        this.$dml.clear(this.collection)
+        this.$dml.useConnection(connection => {
+            return this.$dml.clear(this.collection, { connection })
+        })
     }
 
     normalizePropertiesToData (inputdata: Fibjs.AnyObject = {}, target: Fibjs.AnyObject = {}) {
@@ -776,18 +780,21 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                     if (x.$isFieldFilled(targetModel.id)) targetIds.push(x[targetModel.id])
                 })
 
-                mergeModel.$dml.update(
-                    mergeModel.collection,
-                    {
-                        [mergePropertyNameInTarget]: null
-                    },
-                    {
-                        where: {
-                            [mergePropertyNameInTarget]: sourceInstance[mergeModel.sourceModel.id],
-                            ...targetIds.length && { [targetModel.id]: targetModel.Opf.in(targetIds) }
+                this.$dml.useConnection(connection => {
+                    mergeModel.$dml.update(
+                        mergeModel.collection,
+                        {
+                            [mergePropertyNameInTarget]: null
+                        },
+                        {
+                            connection,
+                            where: {
+                                [mergePropertyNameInTarget]: sourceInstance[mergeModel.sourceModel.id],
+                                ...targetIds.length && { [targetModel.id]: targetModel.Opf.in(targetIds) }
+                            }
                         }
-                    }
-                )
+                    )
+                })
 
                 targetInstances.forEach(x => x.$set(reverseAs, null))
             },

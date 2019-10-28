@@ -1,11 +1,10 @@
 import KnexBased from './_knex';
 
-class DML_MySQL extends KnexBased<Class_MySQL> implements FxOrmDML.DMLDriver<Class_MySQL> {
+class DML_MySQL extends KnexBased<Class_MySQL> implements FxOrmDML.DMLDialect<Class_MySQL> {
     dbdriver: FxDbDriverNS.SQLDriver;
 
-    clear: FxOrmDML.DMLDriver['clear'] = function(
-        this: FxOrmDML.DMLDriver<Class_MySQL>,
-        collection
+    clear(
+        collection: FxOrmTypeHelpers.FirstParameter<FxOrmDML.DMLDialect<Class_MySQL>['clear']>
     ) {
         const bTransResult = this.useConnection(connection =>
             this.execSqlQuery(

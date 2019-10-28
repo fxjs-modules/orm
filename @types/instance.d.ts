@@ -84,7 +84,7 @@ declare namespace FxOrmInstance {
             ids: {[k: string]: boolean}
         }
 
-        $save: (kvs?: Fibjs.AnyObject, options?: { dml?: FxOrmDML.DMLDriver }) => this
+        $save: (kvs?: Fibjs.AnyObject, options?: { dml?: FxOrmDML.DMLDialect }) => this
         $saveRef: FxOrmTypeHelpers.FuncReturnArrayOrItEleViaArgIdx1<
             (refName: string, dataset: Fibjs.AnyObject | FxOrmInstance.Class_Instance) => Class_Instance
         >

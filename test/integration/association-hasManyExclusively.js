@@ -17,7 +17,7 @@ function assertModelInstanceWithHasMany(instance) {
     assert.property(instance.__opts, 'associations')
 }
 
-describe("hasManyExclusively", function () {
+odescribe("hasManyExclusively", function () {
     var db = null;
     var Person = null;
     var Station = null;

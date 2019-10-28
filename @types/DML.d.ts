@@ -11,22 +11,20 @@ declare namespace FxOrmDML {
 
     type BeforeQueryItem = (
         builer: KnexQueryBuilder,
-        ctx: { dml: DMLDriver, knex: FKnexNS.KnexInstance }
+        ctx: { dml: DMLDialect, knex: FKnexNS.KnexInstance }
     ) => typeof builer | void
 
-    class DMLDriver<CONN_TYPE = any> extends FxOrmDXL.DXLDriver<CONN_TYPE> {
+    class DMLDialect<CONN_TYPE = any> extends FxOrmDXL.DXLDialect<CONN_TYPE> {
         find: {
             <T = Fibjs.AnyObject[]>(
                 collection: string,
-                opts?: {
-                    $dml?: FxOrmDML.DMLDriver,
+                opts: {
+                    connection: FxDbDriverNS.Driver,
+                    $dml?: FxOrmDML.DMLDialect,
                     where?: Fibjs.AnyObject,
                     joins?: FxOrmQueries.OperatorFunction[],
                     fields?: string[],
-                    select?: {
-                        [k: string]: string,
-                        // FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['select']>,
-                    },
+                    select?: { [k: string]: string },
 
                     offset?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['offset']>
                     limit?: FxOrmTypeHelpers.FirstParameter<FKnexNS.KnexInstance['limit']>
@@ -40,9 +38,10 @@ declare namespace FxOrmDML {
         count: {
             <T = number>(
                 collection: string,
-                opts?: {
-                    joins?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>['joins'],
-                    where?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDriver['find']>['where'],
+                opts: {
+                    connection: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
+                    joins?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['joins'],
+                    where?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['where'],
                     countParams?: FxOrmTypeHelpers.Parameters<FKnexNS.KnexInstance['count']>
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                     filterQueryResult?: <T2 = any>(result: any) => T2
@@ -52,7 +51,8 @@ declare namespace FxOrmDML {
         exists: {
             <T = boolean>(
                 collection: string,
-                opts?: {
+                opts: {
+                    connection: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
                     where?: Fibjs.AnyObject,
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                     filterQueryResult?: <T2 = any>(result: any) => T2
@@ -63,7 +63,8 @@ declare namespace FxOrmDML {
             (
                 collection: string,
                 data: FxSqlQuerySql.DataToSet,
-                opts?: {
+                opts: {
+                    connection: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
                     idPropertyList?: FxOrmProperty.NormalizedProperty[],
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                 }
@@ -73,7 +74,8 @@ declare namespace FxOrmDML {
             <T = any>(
                 collection: string,
                 changes: FxSqlQuerySql.DataToSet,
-                opts?: {
+                opts: {
+                    connection: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
                     where?: Fibjs.AnyObject,
                     idPropertyList?: FxOrmProperty.NormalizedProperty[],
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
@@ -83,7 +85,8 @@ declare namespace FxOrmDML {
         remove: {
             <T = number>(
                 collection: string,
-                opts?: {
+                opts: {
+                    connection: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
                     where: Fibjs.AnyObject,
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                 }
@@ -91,7 +94,10 @@ declare namespace FxOrmDML {
         }
         clear: {
             <T = any>(
-                collection: string
+                collection: string,
+                opts: {
+                    connection: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
+                }
             ): T
         }
     }

@@ -138,7 +138,7 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
         if (typeof callback !== 'function')
             throw new Error(`[ORM::useTrans] callback must be function`)
 
-        this.$dml.useSingletonTrans((dml: FxOrmDML.DMLDriver<ConnType>) => {
+        this.$dml.useSingletonTrans((dml: FxOrmDML.DMLDialect<ConnType>) => {
             const orm = new ORM(this.driver.config, { dml })
 
             // copy all model
