@@ -86,6 +86,7 @@ declare namespace FxDbDriverNS {
         constructor (options: ConnectionInputArgs | string)
 
         readonly uid: string
+        readonly uri: string
         readonly isPool: boolean;
         /**
          * @description whether driver is based on sql query
