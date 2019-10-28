@@ -221,9 +221,9 @@ declare namespace FxOrmQueries {
         conditions: any;
 
         getModel (): FxOrmModel.Class_Model
-        getQueryBuilder (): Class_QueryBuilder<T_RETURN>
         propIdentifier (propname: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['prop']>): string
         associcatedPropIdentifier (assoc_name: string, propname: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['prop']>): string
+        useDML <T = any>(callback: (dml: FxOrmDML.DMLDialect) => T): T
 
         /**
          * @description find tuples from remote endpoints

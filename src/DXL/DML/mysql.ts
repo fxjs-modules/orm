@@ -4,13 +4,14 @@ class DML_MySQL extends KnexBased<Class_MySQL> implements FxOrmDML.DMLDialect<Cl
     dbdriver: FxDbDriverNS.SQLDriver;
 
     clear(
-        collection: FxOrmTypeHelpers.FirstParameter<FxOrmDML.DMLDialect<Class_MySQL>['clear']>
+        collection: FxOrmTypeHelpers.FirstParameter<FxOrmDML.DMLDialect<Class_MySQL>['clear']>,
+        {
+            connection
+        }: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect<Class_MySQL>['clear']>
     ) {
-        const bTransResult = this.useConnection(connection =>
-            this.execSqlQuery(
-                connection,
-                "TRUNCATE TABLE " + this.sqlQuery.escapeId(collection),
-            )
+        const bTransResult = this.execSqlQuery(
+            connection,
+            "TRUNCATE TABLE " + this.sqlQuery.escapeId(collection),
         )
 
         return bTransResult

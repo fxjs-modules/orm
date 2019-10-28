@@ -61,9 +61,6 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
 
         return filterResultAfterQuery(
             this.execSqlQuery(connection, kbuilder.toString()),
-        //   this.useConnection(connection =>
-        //     this.execSqlQuery(connection, kbuilder.toString())
-        //   ),
             filterQueryResult
         )
     }
@@ -184,9 +181,6 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         kbuilder.update(changes)
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })
 
-        // return this.useConnection(connection =>
-        //     this.execSqlQuery<any[]>(connection, kbuilder.toString())
-        // )
         return this.execSqlQuery<any>(connection, kbuilder.toString())
     }
 
@@ -202,22 +196,17 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
             beforeQuery = HOOK_DEFAULT
         } = opts || {}
 
-        if (!beforeQuery || !beforeQuery.length) return this.clear(table)
+        if (!beforeQuery || !beforeQuery.length) return this.clear(table, { connection })
 
         let kbuilder = this.sqlQuery.knex(table)
 
         kbuilder.delete()
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })
 
-        // const bTransResult = this.useConnection(connection =>
-        //     this.execSqlQuery(connection, kbuilder.toString())
-        // )
-
-        // return bTransResult
         return this.execSqlQuery<any>(connection, kbuilder.toString())
     }
 
-    clear(collection: string) { return null as any }
+    clear(...args: FxOrmTypeHelpers.Parameters<FxOrmDML.DMLDialect['clear']>) { return null as any }
 }
 
 export default DML_KnexBased

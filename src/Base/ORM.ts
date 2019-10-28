@@ -138,30 +138,31 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
         if (typeof callback !== 'function')
             throw new Error(`[ORM::useTrans] callback must be function`)
 
-        this.$dml.useSingletonTrans((dml: FxOrmDML.DMLDialect<ConnType>) => {
-            const orm = new ORM(this.driver.config, { dml })
+        this.$dml
+            .useSingletonTrans((dml: FxOrmDML.DMLDialect<ConnType>) => {
+                const orm = new ORM(this.driver.config, { dml })
 
-            // copy all model
-            Object.keys(this.models).forEach(mk => {
-                const model = this.models[mk]
-                orm.define(mk,
-                    (() => {
-                        const kvs = <any>{}
-                        Object.keys(model.properties).forEach(pname => {
-                            kvs[pname] = model.properties[pname]
-                        })
+                // copy all model
+                Object.keys(this.models).forEach(mk => {
+                    const model = this.models[mk]
+                    orm.define(mk,
+                        (() => {
+                            const kvs = <any>{}
+                            Object.keys(model.properties).forEach(pname => {
+                                kvs[pname] = model.properties[pname]
+                            })
 
-                        return kvs
-                    })(),
-                    {
-                        keys: model.keys,
-                        collection: model.collection,
-                    }
-                )
+                            return kvs
+                        })(),
+                        {
+                            keys: model.keys,
+                            collection: model.collection,
+                        }
+                    )
+                })
+
+                callback(orm)
             })
-
-            callback(orm)
-        })
     }
 
     /**

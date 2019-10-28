@@ -80,11 +80,24 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
         return <FxOrmModel.Class_Model>(this.notQueryBuilder ? this : this.model)
     }
 
-    /**
-     * @description find tuples from remote endpoints
-     */
-    @transformToQCIfModel
-    getQueryBuilder () { return this }
+    useDML (callback: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['useDML']>) {
+        const coroutine = require('coroutine')
+        const waitor = {
+            evt: new (coroutine.Event)(),
+            result: <any>null
+        }
+
+        this.getModel()
+            .orm.$dml
+                .useSingletonTrans((dml: FxOrmDML.DMLDialect<any>)  => {
+                    waitor.result = callback(dml)
+                    waitor.evt.set()
+                })
+
+        waitor.evt.wait()
+
+        return waitor.result
+    }
 
     @transformToQCIfModel
     find (
