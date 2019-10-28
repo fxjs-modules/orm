@@ -166,7 +166,7 @@ function filterComplexPropertyDefinition (
         })
 
     if (!input || typeof input !== 'object')
-        throw new Error('property must be valid descriptor or built-in type')
+        throw new Error(`property must be valid descriptor or built-in type, got "${typeof input}"`)
 
     if (input instanceof Function)
         throw new Error(`invalid property type 'function'`)
@@ -275,10 +275,9 @@ export default class Property<
         return raw
     }
 
-    constructor (
-        input: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmProperty.Class_Property>[0],
-        opts: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmProperty.Class_Property>[1]
-    ) {
+    constructor (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmProperty.Class_Property>) {
+        const [ input, opts ] = args
+
         const {
             storeType = 'unknown',
             propertyName = '',
@@ -294,7 +293,10 @@ export default class Property<
 
         this.$storeType = storeType
 
-        const $definition = this.$definition = <Property<T_CTX>['$definition']>filterComplexPropertyDefinition(input, propertyName);
+        const $definition = this.$definition = <Property<T_CTX>['$definition']>filterComplexPropertyDefinition(
+            input instanceof Property ? input.toJSON() : input,
+            propertyName
+        );
 
         const self = this as any
         PROPERTIES_KEYS.forEach((k: any) => self[k] = $definition[k])

@@ -123,14 +123,12 @@ class Instance implements FxOrmInstance.Class_Instance {
     get $isInstance () { return true };
 
     constructor (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmInstance.Class_Instance>) {
-        let [model, instanceBase, opts] = args
+        let [model, instanceBase] = args
 
         if (Array.isArray(instanceBase))
             return instanceBase.map(x => new Instance(model, x)) as any
 
-        const { dml: $dml = model.$dml } = opts || {};
         this.$model = model
-        this.$dml = $dml
 
         if (instanceBase instanceof Instance) instanceBase = instanceBase.toJSON()
 
@@ -274,7 +272,7 @@ class Instance implements FxOrmInstance.Class_Instance {
                     if (!hasWhere)
                         throw new Error(`[Instance::save] update in $save must have specific where conditions, check your instance`)
 
-                    this.$dml.update(
+                    this.$model.$dml.update(
                         this.$model.collection,
                         changes,
                         { where: whereCond }
@@ -282,7 +280,7 @@ class Instance implements FxOrmInstance.Class_Instance {
                 }
             } else {
                 const creates = this.$model.normalizePropertiesToData(kvs);
-                const insertResult = this.$dml.insert(
+                const insertResult = this.$model.$dml.insert(
                     this.$model.collection,
                     creates,
                     { idPropertyList: this.$model.idPropertyList }
@@ -438,7 +436,7 @@ class Instance implements FxOrmInstance.Class_Instance {
         const fdataset = arraify(dataset || []).filter(x => !!x)
 
         assocModel.unlinkForSource({
-            targetInstances: fdataset.map((x: Fibjs.AnyObject) => 
+            targetInstances: fdataset.map((x: Fibjs.AnyObject) =>
                 assocModel.targetModel.isInstance(x) ? x : assocModel.targetModel.New(x)
             ),
             sourceInstance: this
@@ -481,7 +479,7 @@ class Instance implements FxOrmInstance.Class_Instance {
         // if no any id filled, return false directly
         if (!withIdFilled) return false
 
-        return this.$dml.exists(this.$model.collection, { where })
+        return this.$model.$dml.exists(this.$model.collection, { where })
     }
 
     toJSON () {

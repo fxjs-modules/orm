@@ -22,7 +22,7 @@ odescribe("benchmark", function () {
     after(function () {
         db.close();
     });
-    
+
     var setup = function (opts) {
         opts = opts || {};
 
@@ -46,7 +46,7 @@ odescribe("benchmark", function () {
                 reverseAs: 'owner',
             });
 
-            helper.dropSync([Station, Person], function () {
+            helper.dropSync([Station, Person, PersonStation], function () {
                 done();
             });
         };
@@ -116,7 +116,7 @@ odescribe("benchmark", function () {
         before(setup());
 
         var c_bare_input = 1e5;
-        
+
         /**
          * @levels_sqlite_orm
          *  - 500 ✅
@@ -127,10 +127,10 @@ odescribe("benchmark", function () {
          *  - 1e5 single: 28000+ms; batch ✅️(≈5500ms)
          *  - 1e6 single: -; batch (≈52500ms)
          *  - 1e7 single: -; batch ?
-         * 
-         * @temp 
+         *
+         * @temp
          * native / dml / orm: 1 / (2 ~ 3) / (5 ~ 6)
-         * 
+         *
          */
         var seeds = Array(c_bare_input).fill(undefined)
         var infos = {
@@ -164,7 +164,7 @@ odescribe("benchmark", function () {
                             )
                         )
                     )
-                
+
             })
 
             assert.equal(Person.count(), c_bare_input)
@@ -197,7 +197,7 @@ odescribe("benchmark", function () {
                 require('@fibjs/chalk')`{bold.yellow.inverse tps}: ${tps(c_bare_input, infos.nativeOuterConnection.diff)}`
             )
         });
-        
+
         it(`insert ${seeds.length} rows by dml`, function () {
             infos.dml = helper.countTime(() => {
                 Person.$dml
@@ -244,8 +244,8 @@ odescribe("benchmark", function () {
 
         it(`batch insert ${seeds.length} rows by orm`, function () {
             infos.orm_batch_outer = helper.countTime(() => {
-                Person.$dml.useSingletonTrans(dml => 
-                    Person.create(
+                db.useTrans(db => {
+                    db.models.person.create(
                         seeds.map((_, idx) =>
                             ({
                                 name: `Person ${idx}`,
@@ -253,10 +253,11 @@ odescribe("benchmark", function () {
                             })
                         )
                     )
-                )
+
+                    assert.equal(db.models.person.count(), c_bare_input)
+                })
             })
 
-            assert.equal(Person.count(), c_bare_input)
             console.log(
                 '\t',
                 require('@fibjs/chalk')`{bold.grey.inverse $$ orm batch >> Stat}:`, `${infos.orm_batch_outer.diff}ms`,
@@ -275,6 +276,18 @@ odescribe("benchmark", function () {
                     '\t',
                     require('@fibjs/chalk')`{bold.blue.inverse $$ orm/native cost-times}:`, `${infos.orm.diff / infos.nativeOuterConnection.diff} `
                 )
+
+            if (infos.orm_batch_outer && infos.dml)
+                console.log(
+                    '\t',
+                    require('@fibjs/chalk')`{bold.blue.inverse $$ orm_batch_outer/dml extra-cost-times}:`, `${infos.orm_batch_outer.diff / infos.dml.diff} `
+                )
+            if (infos.orm_batch_outer && infos.nativeOuterConnection)
+                console.log(
+                    '\t',
+                    require('@fibjs/chalk')`{bold.blue.inverse $$ orm_batch_outer/native cost-times}:`, `${infos.orm_batch_outer.diff / infos.nativeOuterConnection.diff} `
+                )
+
             if (infos.dml && infos.nativeOuterConnection)
                 console.log(
                     '\t',

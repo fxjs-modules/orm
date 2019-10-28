@@ -320,13 +320,12 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     ): any {
         const isReturnMultiple = Array.isArray(kvItem);
         const list = arraify(kvItem)
-        
+
         let inst: FxOrmInstance.Class_Instance, instances = <(typeof inst)[]>[]
 
         list.forEach(kv => {
             inst = new Instance(this, kv)
             inst.$save()
-            // inst = inst.$model.New(inst.toJSON())
 
             if (isReturnMultiple)
                 instances.push(inst)
@@ -382,7 +381,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         this.propertyList.forEach((prop: FxOrmProperty.NormalizedProperty) => {
             const fname = storeData.hasOwnProperty(prop.mapsTo) ?
                 prop.mapsTo : storeData.hasOwnProperty(prop.name) ? prop.name : null
-            
+
             if (!fname) return ;
 
             if (storeData.hasOwnProperty(fname)) {

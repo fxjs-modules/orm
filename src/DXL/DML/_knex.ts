@@ -205,9 +205,7 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })
 
         const bTransResult = this.useConnection(connection =>
-            connection.trans(() => {
-                this.execSqlQuery(connection, kbuilder.toString());
-            })
+            this.execSqlQuery(connection, kbuilder.toString())
         )
 
         return bTransResult

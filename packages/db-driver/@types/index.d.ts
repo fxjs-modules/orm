@@ -8,7 +8,7 @@ declare namespace FxDbDriverNS {
     interface ConnectionInputArgs {
         protocol?: string;
         /**
-         * 
+         *
          * prioty: hasOwnProperty('hostname') > host
          */
         hostname?: string;
@@ -27,7 +27,7 @@ declare namespace FxDbDriverNS {
         pathname?: string
         query?: Fibjs.AnyObject
         href?: string
-        
+
         [extra: string]: any
     }
 

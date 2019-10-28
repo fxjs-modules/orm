@@ -22,16 +22,13 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
     static Ql = QueryGrammers.Ql
     static Qlfn = QueryGrammers.Qlfn
 
-    static create (connection: string | FxDbDriverNS.ConnectionInputArgs) {
-        const dbdriver = FxDbDriver.create(connection);
-        const orm = new ORM(dbdriver);
-
-        ORMRuntime.validProtocol()(orm);
+    static create (connection: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmNS.Class_ORM>[0]) {
+        const orm = new ORM(connection);
 
         return orm;
     }
 
-    static connect (connection: string | FxDbDriverNS.DBConnectionConfig) {
+    static connect (connection: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmNS.Class_ORM>[0]) {
         const orm = ORM.create(connection);
 
         orm.driver.open();
@@ -82,17 +79,25 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
 
     driver: FxDbDriverNS.Driver<ConnType>;
 
-    constructor (driver: FxDbDriverNS.Driver<ConnType> | string | FxDbDriverNS.ConnectionInputArgs) {
+    constructor (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmNS.Class_ORM>) {
         super();
+
+        let [driver, opts] = args
+
         if (typeof driver === 'string')
             driver = FxDbDriver.create(driver);
         else if (typeof driver === 'object' && !(driver instanceof FxDbDriver))
             driver = FxDbDriver.create(driver);
 
-        this.driver = driver;
+        this.driver = <FxDbDriverNS.Driver<ConnType>>driver;
+
+        ORMRuntime.validProtocol()(this);
 
         const DML = getDML(this.driver.type)
-        this.$dml = new DML({ dbdriver: this.driver as any });
+        let { dml } = opts || {}
+        if (!(dml instanceof DML))
+            dml = new DML({ dbdriver: this.driver as any });
+        this.$dml = dml;
 
         const DDL = getDDL(this.driver.type)
         this.$ddl = new DDL({ dbdriver: this.driver as any });
@@ -122,8 +127,6 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
             collection: config.collection || name,
             indexes: [],
 
-            // autoSave: false,
-            // autoFetch: config.autoFetch,
             cascadeRemove: config.cascadeRemove,
 
             methods: {},
@@ -131,10 +134,34 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
         });
     }
 
-    defineFromHQLQuery (
-      hql: string
-    ) {
-      return null as any
+    useTrans (callback: (orm: FxOrmNS.Class_ORM) => void) {
+        if (typeof callback !== 'function')
+            throw new Error(`[ORM::useTrans] callback must be function`)
+
+        this.$dml.useSingletonTrans((dml: FxOrmDML.DMLDriver<ConnType>) => {
+            const orm = new ORM(this.driver.config, { dml })
+
+            // copy all model
+            Object.keys(this.models).forEach(mk => {
+                const model = this.models[mk]
+                orm.define(mk,
+                    (() => {
+                        const kvs = <any>{}
+                        Object.keys(model.properties).forEach(pname => {
+                            kvs[pname] = model.properties[pname]
+                        })
+
+                        return kvs
+                    })(),
+                    {
+                        keys: model.keys,
+                        collection: model.collection,
+                    }
+                )
+            })
+
+            callback(orm)
+        })
     }
 
     /**

@@ -7,27 +7,27 @@ class DML_SQLite extends KnexBased<Class_SQLite> implements FxOrmDML.DMLDriver<C
         this: FxOrmDML.DMLDriver<Class_SQLite>,
         table
     ) {
-        const bTransResult = this.useConnection(connection => 
-            connection.trans(() => {
-                this.execSqlQuery(
-                    connection,
-                    this.sqlQuery.remove()
-                            .from(table)
-                            .build(),
-                    
-                );
-                
-                this.execSqlQuery(
-                    connection,
-                    this.sqlQuery.remove()
-                            .from(table)
-                            .where({ name: 'sqlite_sequence' })
-                            .build(),
-                    
-                );
+        const bTransResult = this.useSingletonTrans(dml => {
+            return dml.useConnection(connection => {
+                dml.execSqlQuery(
+                        connection,
+                        dml.sqlQuery.remove()
+                                .from(table)
+                                .build(),
+
+                    );
+
+                    dml.execSqlQuery(
+                        connection,
+                        dml.sqlQuery.remove()
+                                .from(table)
+                                .where({ name: 'sqlite_sequence' })
+                                .build(),
+
+                    );
             })
-        )
-        
+        })
+
         return bTransResult
     }
 }

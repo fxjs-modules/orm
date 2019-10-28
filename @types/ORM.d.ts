@@ -45,6 +45,13 @@ declare namespace FxOrmNS {
          */
         static parseHQL (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmQueries.Class_QueryNormalizer>): FxOrmQueries.Class_QueryNormalizer
 
+        constructor (
+            driver: FxDbDriverNS.Driver<ConnType> | string | FxDbDriverNS.ConnectionInputArgs,
+            opts?: {
+                dml?: FxOrmDML.DMLDriver<ConnType>
+            }
+        )
+
         driver: FxDbDriverNS.Driver<ConnType>
 
         settings: any
@@ -65,7 +72,7 @@ declare namespace FxOrmNS {
           config: FxOrmModel.Class_ModelDefinitionOptions
         ): FxOrmModel.Class_Model
 
-        defineFromHQLQuery (hql: string): FxOrmModel.Class_Model
+        useTrans (callback: (orm: FxOrmNS.Class_ORM) => any): void
         /**
          * @description sync all model in this.models to remote endpoints
          */

@@ -18,7 +18,6 @@ declare namespace FxOrmInstance {
         readonly $bornsnapshot: string
 
         readonly $model: FxOrmModel.Class_Model
-        readonly $dml: FxOrmModel.Class_Model['$dml']
 
 
         /**
@@ -30,10 +29,7 @@ declare namespace FxOrmInstance {
          */
         constructor (
             model: FxOrmModel.Class_Model,
-            input?: Fibjs.AnyObject,
-            opts?: {
-                dml: FxOrmModel.Class_Model['$dml']
-            }
+            input?: Fibjs.AnyObject
         );
 
         $on: Class_EventEmitter['on']
