@@ -271,29 +271,23 @@ class Instance implements FxOrmInstance.Class_Instance {
                     if (!hasWhere)
                         throw new Error(`[Instance::save] update in $save must have specific where conditions, check your instance`)
 
-                    this.$model.$dml.useConnection(connection => {
-                        return this.$model.$dml.update(
-                            this.$model.collection,
-                            changes,
-                            {
-                                connection: connection,
-                                where: whereCond
-                            }
-                        );
-                    })
+                    this.$model.$dml.update(
+                        this.$model.collection,
+                        changes,
+                        {
+                            where: whereCond
+                        }
+                    );
                 }
             } else {
                 const creates = this.$model.normalizePropertiesToData(kvs);
-                const insertResult = this.$model.$dml.useConnection(connection => {
-                    return this.$model.$dml.insert(
-                        this.$model.collection,
-                        creates,
-                        {
-                            connection,
-                            idPropertyList: this.$model.idPropertyList
-                        }
-                    );
-                })
+                const insertResult = this.$model.$dml.insert(
+                    this.$model.collection,
+                    creates,
+                    {
+                        idPropertyList: this.$model.idPropertyList
+                    }
+                );
 
                 if (insertResult)
                     this.$model.normalizeDataIntoInstance(
@@ -488,8 +482,8 @@ class Instance implements FxOrmInstance.Class_Instance {
         // if no any id filled, return false directly
         if (!withIdFilled) return false
 
-        return this.$model.$dml.useConnection(connection => {
-            return this.$model.$dml.exists(this.$model.collection, { connection, where })
+        return this.$model.$dml.exists(this.$model.collection, {
+            where
         })
     }
 

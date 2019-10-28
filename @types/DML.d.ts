@@ -18,8 +18,7 @@ declare namespace FxOrmDML {
         find: {
             <T = Fibjs.AnyObject[]>(
                 collection: string,
-                opts: {
-                    connection: FxDbDriverNS.Driver,
+                opts?: {
                     $dml?: FxOrmDML.DMLDialect,
                     where?: Fibjs.AnyObject,
                     joins?: FxOrmQueries.OperatorFunction[],
@@ -32,14 +31,14 @@ declare namespace FxOrmDML {
 
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                     filterQueryResult?: <T2 = any>(result: any) => T2
-                }
+                } & FxOrmDXL.OptionsCommon<CONN_TYPE>
             ): T
         }
         count: {
             <T = number>(
                 collection: string,
-                opts: {
-                    connection: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
+                opts?: {
+                    connection?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
                     joins?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['joins'],
                     where?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['where'],
                     countParams?: FxOrmTypeHelpers.Parameters<FKnexNS.KnexInstance['count']>
@@ -51,8 +50,8 @@ declare namespace FxOrmDML {
         exists: {
             <T = boolean>(
                 collection: string,
-                opts: {
-                    connection: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
+                opts?: {
+                    connection?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
                     where?: Fibjs.AnyObject,
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                     filterQueryResult?: <T2 = any>(result: any) => T2
@@ -63,8 +62,8 @@ declare namespace FxOrmDML {
             (
                 collection: string,
                 data: FxSqlQuerySql.DataToSet,
-                opts: {
-                    connection: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
+                opts?: {
+                    connection?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
                     idPropertyList?: FxOrmProperty.NormalizedProperty[],
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                 }
@@ -74,8 +73,8 @@ declare namespace FxOrmDML {
             <T = any>(
                 collection: string,
                 changes: FxSqlQuerySql.DataToSet,
-                opts: {
-                    connection: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
+                opts?: {
+                    connection?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
                     where?: Fibjs.AnyObject,
                     idPropertyList?: FxOrmProperty.NormalizedProperty[],
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
@@ -85,8 +84,8 @@ declare namespace FxOrmDML {
         remove: {
             <T = number>(
                 collection: string,
-                opts: {
-                    connection: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
+                opts?: {
+                    connection?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
                     where: Fibjs.AnyObject,
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                 }
@@ -95,8 +94,8 @@ declare namespace FxOrmDML {
         clear: {
             <T = any>(
                 collection: string,
-                opts: {
-                    connection: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
+                opts?: {
+                    connection?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
                 }
             ): T
         }

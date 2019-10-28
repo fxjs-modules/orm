@@ -1,7 +1,10 @@
 declare namespace FxOrmDXL {
+    interface OptionsCommon<ConnType = any> {
+        connection?: FxDbDriverNS.Driver<ConnType>['connection']
+    }
     class DXLDialect<CONN_TYPE> {
-        dbdriver: FxDbDriverNS.Driver<CONN_TYPE>;
-        singleton_connection?: CONN_TYPE;
+        dialect: FxSqlQueryDialect.DialectType | FxDbDriverNS.DriverType
+        connection: CONN_TYPE;
 
         /**
          * @description only valid for supported sql dbdriver
@@ -13,15 +16,14 @@ declare namespace FxOrmDXL {
         sqlQuery: FxSqlQuery.Class_Query;
 
         constructor(opts: {
-            dbdriver: DXLDialect<CONN_TYPE>['dbdriver'],
+            // dbdriver: DXLDialect<CONN_TYPE>['dbdriver'],
+            dialect: DXLDialect<CONN_TYPE>['dialect'],
+            connection: DXLDialect<CONN_TYPE>['connection'],
+
             sqlQuery?: DXLDialect<CONN_TYPE>['sqlQuery'],
-            singleton?: boolean,
         })
 
-        toSingleton (): this
-        useSingletonTrans (callback: (dxl: DXLDialect<CONN_TYPE>) => any): this
-
-        useConnection (callback: (connection: CONN_TYPE) => any): any
+        fromNewConnection(connection: CONN_TYPE): FxOrmDXL.DXLDialect<CONN_TYPE>
 
         execSqlQuery<T_RESULT = any>(
             connection: any,

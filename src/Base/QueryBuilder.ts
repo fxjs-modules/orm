@@ -80,25 +80,6 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
         return <FxOrmModel.Class_Model>(this.notQueryBuilder ? this : this.model)
     }
 
-    useDML (callback: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['useDML']>) {
-        const coroutine = require('coroutine')
-        const waitor = {
-            evt: new (coroutine.Event)(),
-            result: <any>null
-        }
-
-        this.getModel()
-            .orm.$dml
-                .useSingletonTrans((dml: FxOrmDML.DMLDialect<any>)  => {
-                    waitor.result = callback(dml)
-                    waitor.evt.set()
-                })
-
-        waitor.evt.wait()
-
-        return waitor.result
-    }
-
     @transformToQCIfModel
     find (
         opts: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['find']> = {}
@@ -125,12 +106,7 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
          */
         const joins = (_opts.joins ? arraify(_opts.joins) : []).filter(x => isOperatorFunction(x))
 
-        const results = this.model.$dml.useConnection(connection =>
-            this.model.$dml.find(this.model.collection, {
-                connection,
-                ..._opts
-            })
-        )
+        const results = this.model.$dml.find(this.model.collection, { ..._opts })
 
         if (_opts.return_raw) return results as any
 
@@ -199,15 +175,7 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
     count (
         opts: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['count']>
     ): number {
-        return this.model.$dml.useConnection(connection => {
-            return this.model.$dml.count(
-                this.model.collection,
-                {
-                    connection,
-                    ...opts
-                }
-            )
-        })
+        return this.model.$dml.count(this.model.collection, { ...opts })
     }
 
     /**

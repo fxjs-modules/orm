@@ -74,7 +74,8 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
     @buildDescriptor({ configurable: false, enumerable: false })
     $ddl: FxOrmTypeHelpers.InstanceOf<ReturnType<typeof getDDL>>;
 
-    driver: FxDbDriverNS.Driver<ConnType>;
+    driver: FxOrmNS.Class_ORM['driver']
+    connection: FxOrmNS.Class_ORM['connection']
 
     constructor (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmNS.Class_ORM>) {
         super();
@@ -90,14 +91,15 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
 
         ORMRuntime.validProtocol()(this);
 
-        const DML = getDML(this.driver.type)
-        let { dml = null } = opts || {}
-        if (!(dml instanceof DML))
-            dml = new DML({ dbdriver: this.driver as any });
-        this.$dml = dml;
+        const { ddl = null, dml = null, connection = null } = opts || {}
+
+        this.connection = connection || driver.getConnection()
 
         const DDL = getDDL(this.driver.type)
-        this.$ddl = new DDL({ dbdriver: this.driver as any });
+        this.$ddl = ddl instanceof DDL ? ddl : new DDL({ dialect: this.driver.type, connection: this.connection });
+
+        const DML = getDML(this.driver.type)
+        this.$dml = dml instanceof DML ? dml : new DML({ dialect: this.driver.type, connection: this.connection });
     }
 
     /**
@@ -144,17 +146,22 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
             throw new Error(`[ORM::useTrans] callback must be function`)
 
         /**
-         * @TODO: check why `this.modelDefinitions` is not correct in `.useSingletonTrans` callback?
+         * @TODO: check why `this.modelDefinitions` is not correct in `.useTrans` callback?
          */
         const modelDefinitions = this.modelDefinitions
-        this.$dml
-            .useSingletonTrans((dml: FxOrmDML.DMLDialect<ConnType>) => {
-                const orm = new ORM(this.driver.config, { dml })
-                // get one fresh orm
-                Object.values(modelDefinitions).forEach(def => def(orm))
 
-                callback(orm)
+        this.driver.useTrans((conn) => {
+            const orm = new ORM(this.driver, {
+                connection: conn,
+                ddl: <any>this.$ddl.fromNewConnection(conn),
+                dml: <any>this.$dml.fromNewConnection(conn),
             })
+        
+            // get one fresh orm
+            Object.values(modelDefinitions).forEach(def => def(orm))
+    
+            callback(orm)
+        })
     }
 
     /**

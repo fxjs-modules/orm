@@ -48,11 +48,14 @@ declare namespace FxOrmNS {
         constructor (
             driver: FxDbDriverNS.Driver<ConnType> | string | FxDbDriverNS.ConnectionInputArgs,
             opts?: {
+                connection?: FxDbDriverNS.Driver<ConnType>['connection']
+                ddl?: FxOrmDDL.DDLDialect<ConnType>
                 dml?: FxOrmDML.DMLDialect<ConnType>
             }
         )
 
         driver: FxDbDriverNS.Driver<ConnType>
+        connection: FxDbDriverNS.Driver<ConnType>['connection']
 
         settings: any
 

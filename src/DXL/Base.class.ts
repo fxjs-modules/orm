@@ -1,59 +1,34 @@
 import SqlQuery = require('@fxjs/sql-query');
 
 export default class DXLBase<ConnType = any> implements FxOrmDXL.DXLDialect<ConnType> {
-    dbdriver: FxDbDriverNS.Driver<ConnType>;
-    singleton_connection?: ConnType;
+    dialect: FxOrmDXL.DXLDialect<ConnType>['dialect'];
+    connection: FxOrmDXL.DXLDialect<ConnType>['connection'];
 
     sqlQuery: FxSqlQuery.Class_Query;
 
     constructor(opts: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmDXL.DXLDialect>[0]) {
-        this.dbdriver = <FxOrmDXL.DXLDialect<ConnType>['dbdriver']>opts.dbdriver;
+        this.connection = <any>opts.connection
 
-        if (opts.singleton)
-            this.singleton_connection = this.dbdriver.getConnection()
-
-        if (this.dbdriver.isSql)
-            if (opts.sqlQuery instanceof SqlQuery.Query)
-                this.sqlQuery = opts.sqlQuery
-            else
-                this.sqlQuery = new SqlQuery.Query({ dialect: <any>this.dbdriver.type });
+        this.dialect = opts.dialect
+        switch (opts.dialect) {
+            case 'mssql':
+            case 'mysql':
+            case 'sqlite':
+            case 'postgresql':
+                if (opts.sqlQuery instanceof SqlQuery.Query)
+                    this.sqlQuery = opts.sqlQuery
+                else
+                    this.sqlQuery = new SqlQuery.Query({ dialect: opts.dialect });
+                break
+        }
     }
 
-    /**
-     * @warning you should always call releaseSingleton when task of singleton finished
-     */
-    toSingleton () {
+    fromNewConnection (connection: FxOrmTypeHelpers.FirstParameter<FxOrmDXL.DXLDialect<ConnType>['fromNewConnection']>) {
         return new (<any>this.constructor)({
-            dbdriver: this.dbdriver,
+            dialect: this.dialect,
             sqlQuery: this.sqlQuery,
-            singleton: true
+            connection,
         })
-    }
-
-    useSingletonTrans (callback: (dxl: DXLBase<ConnType>) => any) {
-        const dml = this.toSingleton()
-
-        dml.useConnection((connection: any) => {
-            if (this.dbdriver.isSql)
-                connection.trans(() => {
-                    callback(dml)
-
-                    return true
-                })
-            else
-                callback(dml)
-
-            connection.close()
-        })
-
-        return dml
-    }
-
-    useConnection (callback: (connection: ConnType) => any) {
-        if (this.singleton_connection)
-            return callback(this.singleton_connection)
-        else
-            return this.dbdriver.connectionPool(conn => callback(conn))
     }
 
     execSqlQuery<T_RESULT = any>(

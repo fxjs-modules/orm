@@ -44,7 +44,7 @@
     "dependencies": {
         "@fibjs/chalk": "^1.0.0",
         "@fibjs/enforce": "^0.1.1",
-        "@fxjs/db-driver": "^0.0.6",
+        "@fxjs/db-driver": "^0.0.7",
         "@fxjs/knex": "^0.2.0",
         "@fxjs/orm-core": "^0.0.1",
         "@fxjs/orm-hql": "file:packages/orm-hql",

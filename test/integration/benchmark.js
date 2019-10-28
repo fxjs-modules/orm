@@ -152,19 +152,15 @@ odescribe("benchmark", function () {
 
         it(`insert ${seeds.length} rows by native, useConnection inner`, function () {
             infos.nativeInnerConnection = helper.countTime(() => {
-                Person.$dml
-                    .useSingletonTrans(dml =>
-                        seeds.map((_, idx) =>
-                            dml.useConnection(conn =>
-                                dml.execSqlQuery(
-                                    conn,
-                                    `insert into \`person\` (\`name\`, \`surname\`) values ('Person ?', 'surname ?')`,
-                                    [idx, idx]
-                                )
-                            )
+                db.driver.useTrans(conn => {
+                    seeds.forEach((_, idx) =>
+                        db.$dml.execSqlQuery(
+                            conn,
+                            `insert into \`person\` (\`name\`, \`surname\`) values ('Person ?', 'surname ?')`,
+                            [idx, idx]
                         )
                     )
-
+                })
             })
 
             assert.equal(Person.count(), c_bare_input)
@@ -177,18 +173,15 @@ odescribe("benchmark", function () {
 
         it(`insert ${seeds.length} rows by native, useConnection wrapper`, function () {
             infos.nativeOuterConnection = helper.countTime(() => {
-                Person.$dml
-                    .useSingletonTrans(dml =>
-                        dml.useConnection(conn =>
-                            seeds.map((_, idx) =>
-                                dml.execSqlQuery(
-                                    conn,
-                                    `insert into \`person\` (\`name\`, \`surname\`) values ('Person ?', 'surname ?')`,
-                                    [idx, idx]
-                                )
-                            )
+                db.driver.useTrans(conn => {
+                    seeds.forEach((_, idx) =>
+                        db.$dml.execSqlQuery(
+                            conn,
+                            `insert into \`person\` (\`name\`, \`surname\`) values ('Person ?', 'surname ?')`,
+                            [idx, idx]
                         )
                     )
+                })
             });
 
             console.log(
@@ -200,23 +193,20 @@ odescribe("benchmark", function () {
 
         it(`insert ${seeds.length} rows by dml`, function () {
             infos.dml = helper.countTime(() => {
-                Person.$dml
-                    .useSingletonTrans(dml =>
-                        dml.useConnection(conn =>
-                          seeds.map((_, idx) =>
-                              dml.insert(
-                                  Person.collection,
-                                  {
-                                      name: `Person ${idx}`,
-                                      surname: `surname ${idx}`
-                                  },
-                                  {
-                                      connection: conn,
-                                  }
-                              )
-                          )
+                db.driver.useTrans(conn => {
+                    seeds.forEach((_, idx) =>
+                        db.$dml.insert(
+                            Person.collection,
+                            {
+                                name: `Person ${idx}`,
+                                surname: `surname ${idx}`
+                            },
+                            {
+                                connection: conn,
+                            }
                         )
                     )
+                })
             })
 
             assert.equal(Person.count(), c_bare_input)
@@ -229,7 +219,7 @@ odescribe("benchmark", function () {
 
         c_bare_input < 1e4 && it(`insert ${seeds.length} rows by orm`, function () {
             infos.orm = helper.countTime(() => {
-                seeds.map((_, idx) =>
+                seeds.forEach((_, idx) =>
                     Person.create(
                         ({
                             name: `Person ${idx}`,

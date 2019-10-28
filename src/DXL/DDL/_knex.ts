@@ -11,14 +11,15 @@ class DDL_KnexBased<ConnType= any> extends Base<ConnType> {
 
     // createCollection (collection: string) { return null as any }
 
-    dropCollection (collection: string) {
+    dropCollection (...args: FxOrmTypeHelpers.Parameters<FxOrmDDL.DDLDialect['dropCollection']>) {
+        const [collection, opts] = args
+        const { connection = this.connection } = opts || {}
+        
         const kq = this.sqlQuery
             .knex.schema
             .dropTableIfExists(collection)
-
-        this.useConnection(connection => {
-            this.execSqlQuery(connection, kq.toString());
-        })
+        
+        this.execSqlQuery(connection, kq.toString());
 
         return true;
     }

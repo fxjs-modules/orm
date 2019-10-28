@@ -12,15 +12,13 @@ import { isEmptyPlainObject } from "../../Utils/object";
 function HOOK_DEFAULT () {}
 
 class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML.DMLDialect<CONN_TYPE> {
-    dbdriver: FxDbDriverNS.SQLDriver;
-
     @configurable(false)
     get isDebug () {
         return false
     }
 
     constructor(opts: FxOrmTypeHelpers.ConstructorParams<typeof Base>[0]) {
-        super({...opts, dbdriver: opts.dbdriver })
+        super({...opts})
     }
 
     find: FxOrmDML.DMLDialect['find'] = function (
@@ -32,7 +30,7 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         filterJoinSelectToKnexActions(opts, collection)
 
         const {
-            connection,
+            connection = this.connection,
             fields = undefined,
             select = undefined,
             where = undefined,
@@ -51,7 +49,7 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         if (offset) kbuilder.offset(offset)
 
         if (limit) kbuilder.limit(limit as number)
-        else if (offset && this.dbdriver.type === 'sqlite')
+        else if (offset && this.dialect === 'sqlite')
             kbuilder.limit(-1)
 
         if (orderBy) kbuilder.orderBy.apply(kbuilder, arraify(orderBy))
@@ -68,7 +66,7 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
     exists (
         collection: string,
         {
-            connection = null,
+            connection = this.connection,
             where = null
         } = {}
     ) {
@@ -98,7 +96,7 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         filterWhereToKnexActions(opts)
 
         const {
-            connection,
+            connection = this.connection,
             where = undefined,
             countParams = undefined,
             beforeQuery = HOOK_DEFAULT,
@@ -128,7 +126,7 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         table,
         data,
         {
-            connection,
+            connection = this.connection,
             idPropertyList,
             beforeQuery = HOOK_DEFAULT
         }
@@ -166,7 +164,7 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         filterWhereToKnexActions(opts)
 
         const {
-            connection,
+            connection = this.connection,
             where = undefined,
             beforeQuery = HOOK_DEFAULT
         } = opts || {}
@@ -192,7 +190,7 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         filterWhereToKnexActions(opts)
 
         const {
-            connection,
+            connection = this.connection,
             beforeQuery = HOOK_DEFAULT
         } = opts || {}
 

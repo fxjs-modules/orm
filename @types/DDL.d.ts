@@ -7,11 +7,11 @@ declare namespace FxOrmDDL {
 
     class DDLDialect<ConnType = any> extends FxOrmDXL.DXLDialect<ConnType> {
         // uid: string
-        createCollection: <T = Fibjs.AnyObject[]>(collection: string) => T
-        alertCollection: <T = any>(collection: string) => T
-        truncateCollection: <T = any>(collection: string) => T
-        commentCollection: <T = any>(collection: string) => T
-        dropCollection: (collection: string) => void
-        renameCollection: <T = number>(collection: string) => T
+        createCollection: <T = Fibjs.AnyObject[]>(collection: string, opts?: FxOrmDXL.OptionsCommon<ConnType>) => T
+        alertCollection: <T = any>(collection: string, opts?: FxOrmDXL.OptionsCommon<ConnType>) => T
+        truncateCollection: <T = any>(collection: string, opts?: FxOrmDXL.OptionsCommon<ConnType>) => T
+        commentCollection: <T = any>(collection: string, opts?: FxOrmDXL.OptionsCommon<ConnType>) => T
+        dropCollection: (collection: string, opts?: FxOrmDXL.OptionsCommon<ConnType>) => void
+        renameCollection: <T = number>(collection: string, opts?: FxOrmDXL.OptionsCommon<ConnType>) => T
     }
 }
