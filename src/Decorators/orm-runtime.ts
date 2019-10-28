@@ -6,7 +6,6 @@ export function validProtocol () {
         // propertyKey: string,
         // descriptor: PropertyDescriptor
     ) {
-        // console.log('target.driver.config', target.driver.config);
         if (!target.driver)
             throw new Error(`driver hasn't been initialized`)
 

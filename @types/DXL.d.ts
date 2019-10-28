@@ -21,11 +21,9 @@ declare namespace FxOrmDXL {
         })
 
         toSingleton (): this
-        useTrans (callback: (dxl: DXLDriver<CONN_TYPE>) => any): this
-        releaseSingleton (): this
+        useSingletonTrans (callback: (dxl: DXLDriver<CONN_TYPE>) => any): this
 
         useConnection (callback: (connection: CONN_TYPE) => any): any
-
         execSqlQuery<T_RESULT = any>(
             connection: any,
             sqlstr: string,

@@ -194,15 +194,12 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         filterWhereToKnexActions(opts)
 
         const {
-            where = undefined,
             beforeQuery = HOOK_DEFAULT
         } = opts || {}
 
-        if (!where) return this.clear(table)
+        if (!beforeQuery || !beforeQuery.length) return this.clear(table)
 
         let kbuilder = this.sqlQuery.knex(table)
-
-        kbuilder.where.apply(kbuilder, arraify(where))
 
         kbuilder.delete()
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })

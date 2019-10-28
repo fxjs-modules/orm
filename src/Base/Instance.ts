@@ -48,7 +48,8 @@ class Instance implements FxOrmInstance.Class_Instance {
     }
     $event_emitter: FxOrmInstance.Class_Instance['$event_emitter'] = new EventEmitter()
     // @DecoratorsProperty.buildDescriptor({ enumerable: false })
-    $model: FxOrmModel.Class_Model
+    $model: FxOrmInstance.Class_Instance['$model']
+    $dml: FxOrmInstance.Class_Instance['$dml']
 
     /**
      * only allow settting fields of Model.properties into it.
@@ -122,12 +123,14 @@ class Instance implements FxOrmInstance.Class_Instance {
     get $isInstance () { return true };
 
     constructor (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmInstance.Class_Instance>) {
-        let [model, instanceBase] = args
+        let [model, instanceBase, opts] = args
 
         if (Array.isArray(instanceBase))
             return instanceBase.map(x => new Instance(model, x)) as any
 
+        const { dml: $dml = model.$dml } = opts || {};
         this.$model = model
+        this.$dml = $dml
 
         if (instanceBase instanceof Instance) instanceBase = instanceBase.toJSON()
 
@@ -221,16 +224,13 @@ class Instance implements FxOrmInstance.Class_Instance {
     }
 
     $save (
-        dataset: Fibjs.AnyObject = this.$kvs,
-        {
-            dml = this.$model.$dml
-        } = {}
+        dataset: Fibjs.AnyObject = this.$kvs
     ): this {
         if (dataset !== undefined && typeof dataset !== 'object')
             throw new Error(`[Instance::save] invalid save arguments ${dataset}, it should be non-empty object or undefined`)
 
-        const kvs = {...this.$kvs, ...this.$model.normlizePropertyData(dataset)}
-        const refs = {...this.$refs, ...this.$model.normalizeAssociationData(dataset)}
+        const kvs = {...this.$kvs, ...this.$model.pickPropertyData(dataset)}
+        const refs = {...this.$refs, ...this.$model.pickAssociationData(dataset)}
 
         /* fill default value :start */
         this.$model.propertyList.forEach(property => {
@@ -274,7 +274,7 @@ class Instance implements FxOrmInstance.Class_Instance {
                     if (!hasWhere)
                         throw new Error(`[Instance::save] update in $save must have specific where conditions, check your instance`)
 
-                    dml.update(
+                    this.$dml.update(
                         this.$model.collection,
                         changes,
                         { where: whereCond }
@@ -282,7 +282,7 @@ class Instance implements FxOrmInstance.Class_Instance {
                 }
             } else {
                 const creates = this.$model.normalizePropertiesToData(kvs);
-                const insertResult = dml.insert(
+                const insertResult = this.$dml.insert(
                     this.$model.collection,
                     creates,
                     { idPropertyList: this.$model.idPropertyList }
@@ -297,7 +297,7 @@ class Instance implements FxOrmInstance.Class_Instance {
                             }
                         }
                     )
-                this.$model.normlizePropertyData(kvs, this.$kvs)
+                this.$model.pickPropertyData(kvs, this.$kvs)
             }
 
             this.$model.filterOutAssociatedData(refs)
@@ -315,7 +315,7 @@ class Instance implements FxOrmInstance.Class_Instance {
     $fetchRef () {
         const refs = this.$getRef(this.$model.associationNames);
 
-        this.$model.normalizeAssociationData(refs, this.$refs);
+        this.$model.pickAssociationData(refs, this.$refs);
 
         return this
     }
@@ -481,7 +481,7 @@ class Instance implements FxOrmInstance.Class_Instance {
         // if no any id filled, return false directly
         if (!withIdFilled) return false
 
-        return this.$model.$dml.exists(this.$model.collection, { where })
+        return this.$dml.exists(this.$model.collection, { where })
     }
 
     toJSON () {
@@ -492,7 +492,7 @@ class Instance implements FxOrmInstance.Class_Instance {
                 json[k] = this.$kvs[k];
         })
 
-        this.$model.normalizeAssociationData(this.$refs, json);
+        this.$model.pickAssociationData(this.$refs, json);
 
         return json;
     }

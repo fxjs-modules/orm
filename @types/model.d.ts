@@ -189,13 +189,13 @@ declare namespace FxOrmModel {
          *  filter out properties-about key-value in `mixed` only,
          *  and transform [key] to correspoding `name` field in property
          */
-        normlizePropertyData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        pickPropertyData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
         /**
          * @description
          *  filter out association-about key-value in `mixed` only,
          *  and transform [key] to correspoding `name` field in property
          */
-        normalizeAssociationData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        pickAssociationData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
         /**
          * @description
          *  normalize data set to where conditions, just normalize key in dataset, never change anything of

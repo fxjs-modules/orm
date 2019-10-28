@@ -153,19 +153,18 @@ odescribe("benchmark", function () {
         it(`insert ${seeds.length} rows by native, useConnection inner`, function () {
             infos.nativeInnerConnection = helper.countTime(() => {
                 Person.$dml
-                .toSingleton()
-                .useTrans(dml =>
-                    seeds.map((_, idx) =>
-                        dml.useConnection(conn =>
-                            dml.execSqlQuery(
-                                conn,
-                                `insert into \`person\` (\`name\`, \`surname\`) values ('Person ?', 'surname ?')`,
-                                [idx, idx]
+                    .useSingletonTrans(dml =>
+                        seeds.map((_, idx) =>
+                            dml.useConnection(conn =>
+                                dml.execSqlQuery(
+                                    conn,
+                                    `insert into \`person\` (\`name\`, \`surname\`) values ('Person ?', 'surname ?')`,
+                                    [idx, idx]
+                                )
                             )
                         )
                     )
-                )
-                .releaseSingleton()
+                
             })
 
             assert.equal(Person.count(), c_bare_input)
@@ -179,8 +178,7 @@ odescribe("benchmark", function () {
         it(`insert ${seeds.length} rows by native, useConnection wrapper`, function () {
             infos.nativeOuterConnection = helper.countTime(() => {
                 Person.$dml
-                    .toSingleton()
-                    .useTrans(dml =>
+                    .useSingletonTrans(dml =>
                         dml.useConnection(conn =>
                             seeds.map((_, idx) =>
                                 dml.execSqlQuery(
@@ -190,7 +188,7 @@ odescribe("benchmark", function () {
                                 )
                             )
                         )
-                    ).releaseSingleton()
+                    )
             });
 
             console.log(
@@ -203,8 +201,7 @@ odescribe("benchmark", function () {
         it(`insert ${seeds.length} rows by dml`, function () {
             infos.dml = helper.countTime(() => {
                 Person.$dml
-                    .toSingleton()
-                    .useTrans(dml =>
+                    .useSingletonTrans(dml =>
                         seeds.map((_, idx) =>
                             dml.insert(
                                 Person.collection,
@@ -215,7 +212,6 @@ odescribe("benchmark", function () {
                             )
                         )
                     )
-                    .releaseSingleton()
             })
 
             assert.equal(Person.count(), c_bare_input)
@@ -248,12 +244,14 @@ odescribe("benchmark", function () {
 
         it(`batch insert ${seeds.length} rows by orm`, function () {
             infos.orm_batch_outer = helper.countTime(() => {
-                Person.create(
-                    seeds.map((_, idx) =>
-                        ({
-                            name: `Person ${idx}`,
-                            surname: `surname ${idx}`
-                        })
+                Person.$dml.useSingletonTrans(dml => 
+                    Person.create(
+                        seeds.map((_, idx) =>
+                            ({
+                                name: `Person ${idx}`,
+                                surname: `surname ${idx}`
+                            })
+                        )
                     )
                 )
             })

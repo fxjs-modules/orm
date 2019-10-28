@@ -596,7 +596,7 @@ describe("Model Property", function () {
         });
     })
     
-    describe("MergeModel Property --- [o2m]", function () {
+    xdescribe("MergeModel Property --- [o2m]", function () {
         before(setup);
 
         it(`never effect sourceModel and targetModel's properties`, () => {

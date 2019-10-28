@@ -72,9 +72,7 @@ describe("Model.create()", function () {
                 name: "John Doe"
             }, {
                 name: "Jane Doe"
-            }], {
-                parallel: true
-            });
+            }]);
 
             assert.ok(Array.isArray(people));
 

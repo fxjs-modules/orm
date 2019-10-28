@@ -17,7 +17,7 @@ function assertModelInstanceWithHasMany(instance) {
     assert.property(instance.__opts, 'associations')
 }
 
-describe("hasMany", function () {
+xdescribe("hasMany", function () {
     var db = null;
     var Person = null;
     var Pet = null;

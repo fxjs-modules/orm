@@ -295,8 +295,6 @@ describe("Model instance", function () {
 
     xdescribe("#validate", function () {
         it("should return validation errors if invalid", function () {
-            console.log('Person', Person);
-
             var person = new Person({
                 age: -1
             });

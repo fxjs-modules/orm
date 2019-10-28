@@ -48,8 +48,8 @@
         "@fxjs/knex": "^0.2.0",
         "@fxjs/orm-core": "^0.0.1",
         "@fxjs/orm-hql": "file:packages/orm-hql",
-        "@fxjs/sql-ddl-sync": "^0.6.3",
-        "@fxjs/sql-query": "^0.6.0",
+        "@fxjs/sql-ddl-sync": "^0.6.4",
+        "@fxjs/sql-query": "^0.6.1",
         "fib-pool": "^1.5.3",
         "knex": "^0.19.5",
         "reflect-metadata": "^0.1.13"

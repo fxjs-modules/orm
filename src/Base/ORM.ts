@@ -114,7 +114,7 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
         return this.models[name] = new Model({
             name,
             properties: filteredProps,
-            keys: config.keys ? arraify(config.keys) : (config.keys === false ? false : undefined),
+            keys: config.keys,
 
             orm: this as any,
             settings: this.settings.clone(),
@@ -122,8 +122,8 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
             collection: config.collection || name,
             indexes: [],
 
-            autoSave: false,
-            autoFetch: config.autoFetch,
+            // autoSave: false,
+            // autoFetch: config.autoFetch,
             cascadeRemove: config.cascadeRemove,
 
             methods: {},

@@ -62,8 +62,10 @@ function normalizeKeysInConfig (
     keys: FxOrmModel.Class_ModelConstructOptions['keys'] = DFLT_KEYS
 ) {
     if (keys === false) return false
+    else
+        keys = arraify(keys).filter(x => typeof x === 'string')
 
-    if (!Array.isArray(keys)) keys = DFLT_KEYS
+    if (!Array.isArray(keys) || !keys.length) keys = DFLT_KEYS
 
     return keys.filter(x => !!x)
 }
@@ -199,16 +201,19 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                             this.keyProperties[prop] = property;
                 });
 
-            if (specKeyPropertyNames && this.ids.length === 0) {
-                this.keyProperties[DFLT_ID_DEF.name] = this.properties[DFLT_ID_DEF.name] = new Property(
-                    {...DFLT_ID_DEF},
-                    {
-                        propertyName: DFLT_ID_DEF.name,
-                        storeType: this.storeType,
-                        $ctx: this.propertyContext
-                    }
-                )
-            }
+            if (specKeyPropertyNames)
+                if (this.ids.length === 0) {
+                    this.keyProperties[DFLT_ID_DEF.name] = this.properties[DFLT_ID_DEF.name] = new Property(
+                        {...DFLT_ID_DEF},
+                        {
+                            propertyName: DFLT_ID_DEF.name,
+                            storeType: this.storeType,
+                            $ctx: this.propertyContext
+                        }
+                    )
+                } else {
+                    this.idPropertyList[0].serial = this.idPropertyList[0].primary = true
+                }
         })();
     }
 
@@ -316,21 +321,18 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         const isReturnMultiple = Array.isArray(kvItem);
         const list = arraify(kvItem)
         
-        const pdml = this.$dml
         let inst: FxOrmInstance.Class_Instance, instances = <(typeof inst)[]>[]
 
-        pdml
-            .toSingleton()
-            .useTrans((dml: typeof pdml) => {
-                list.forEach(x => {
-                    inst = new Instance(this, x)
-                    inst.$save(undefined, { dml: dml })
-                    if (isReturnMultiple)
-                        instances.push(inst)
-                    else if (!instances[0])
-                        instances[0] = inst
-                });
-            })
+        list.forEach(kv => {
+            inst = new Instance(this, kv)
+            inst.$save()
+            // inst = inst.$model.New(inst.toJSON())
+
+            if (isReturnMultiple)
+                instances.push(inst)
+            else if (!instances[0])
+                instances[0] = inst
+        });
 
         return !isReturnMultiple ? instances[0] : instances
     }
@@ -378,11 +380,16 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
         const target: Fibjs.AnyObject = {}
         this.propertyList.forEach((prop: FxOrmProperty.NormalizedProperty) => {
-            if (storeData.hasOwnProperty(prop.mapsTo)) {
-                target[prop.name] = prop.fromStoreValue(storeData[prop.mapsTo])
+            const fname = storeData.hasOwnProperty(prop.mapsTo) ?
+                prop.mapsTo : storeData.hasOwnProperty(prop.name) ? prop.name : null
+            
+            if (!fname) return ;
+
+            if (storeData.hasOwnProperty(fname)) {
+                target[prop.name] = prop.fromStoreValue(storeData[fname])
                 if (call_prop) onPropertyField({
-                    origValue: storeData[prop.mapsTo], transformedValue: target[prop.name],
-                    fieldname: prop.name, mapsTo: prop.mapsTo
+                    origValue: storeData[fname], transformedValue: target[prop.name],
+                    fieldname: prop.name, mapsTo: fname
                 })
             }
         })
@@ -401,7 +408,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return target
     }
 
-    normlizePropertyData (dataset: Fibjs.AnyObject = {}, kvs: Fibjs.AnyObject = {}) {
+    pickPropertyData (dataset: Fibjs.AnyObject = {}, kvs: Fibjs.AnyObject = {}) {
         this.propertyList.forEach(property => {
             if (dataset.hasOwnProperty(property.name)) kvs[property.name] = dataset[property.name]
         })
@@ -409,7 +416,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return kvs
     }
 
-    normalizeAssociationData (dataset: Fibjs.AnyObject = {}, refs: Fibjs.AnyObject = {}) {
+    pickAssociationData (dataset: Fibjs.AnyObject = {}, refs: Fibjs.AnyObject = {}) {
         this.associationNames.forEach(assocName => {
             if (dataset.hasOwnProperty(assocName)) refs[assocName] = dataset[assocName]
         })
@@ -741,17 +748,14 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                 if (mergeInsts && mergeInsts.length)
                     sourceInstance[mergeModel.name] = sourceInstance[mergeModel.name] || []
 
-                const mergeDataList = <Fibjs.AnyObject[]>coroutine.parallel(
-                    mergeInsts,
-                    (mergeInst: FxOrmInstance.Class_Instance) => {
-                        if (!sourceInstance[mergeModel.sourceModel.id]) return ;
-                        mergeInst[mergePropertyNameInTarget] = sourceInstance[mergeModel.sourceModel.id]
+                const mergeDataList = mergeInsts.map((mergeInst: FxOrmInstance.Class_Instance) => {
+                    if (!sourceInstance[mergeModel.sourceModel.id]) return ;
+                    mergeInst[mergePropertyNameInTarget] = sourceInstance[mergeModel.sourceModel.id]
 
-                        mergeInst.$save()
+                    mergeInst.$save()
 
-                        return mergeInst.toJSON()
-                    }
-                )
+                    return mergeInst.toJSON()
+                })
 
                 if (!isAddOnly && Array.isArray(sourceInstance[mergeModel.name]))
                     sourceInstance[mergeModel.name].splice(0)

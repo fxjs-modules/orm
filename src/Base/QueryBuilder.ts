@@ -108,7 +108,7 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
         }
 
         /**
-         * @notce join could be item or list, but item of it's must be wrappeed by join-about OperatorFunction
+         * @notce join could be item or list, but item of it must be wrappeed by join-about OperatorFunction
          */
         const joins = (_opts.joins ? arraify(_opts.joins) : []).filter(x => isOperatorFunction(x))
 

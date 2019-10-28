@@ -23,35 +23,30 @@ export default class DXLBase<ConnType = any> implements FxOrmDXL.DXLDriver<ConnT
      * @warning you should always call releaseSingleton when task of singleton finished
      */
     toSingleton () {
-        if (this.singleton_connection) {
-            if (typeof (<any>this.singleton_connection).open === 'function')
-                (<any>this.singleton_connection).open()
-            return this
-        }
-
         return new (<any>this.constructor)({
             dbdriver: this.dbdriver,
             sqlQuery: this.sqlQuery,
             singleton: true
         })
     }
-    releaseSingleton () {
-        if (this.singleton_connection) (<any>this.singleton_connection).close()
 
-        return this
-    }
+    useSingletonTrans (callback: (dxl: DXLBase<ConnType>) => any) {
+        const dml = this.toSingleton()
 
-    useTrans (callback: (dxl: DXLBase<ConnType>) => any) {
-        this.useConnection((connection: any) => {
+        dml.useConnection((connection: any) => {
             if (this.dbdriver.isSql)
                 connection.trans(() => {
-                    callback(this)
+                    callback(dml)
+                    
+                    return true
                 })
             else
-                callback(this)
+                callback(dml)
+
+            connection.close()
         })
 
-        return this
+        return dml
     }
 
     useConnection (callback: (connection: ConnType) => any) {
