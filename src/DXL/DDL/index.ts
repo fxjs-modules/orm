@@ -3,7 +3,7 @@ import { default as mysql } from './mysql'
 
 export function getDDL (
     type: FxDbDriverNS.Driver['type'],
-): typeof sqlite {
+): typeof FxOrmDDL.DDLDialect {
     switch (type) {
         case 'sqlite':
             return sqlite

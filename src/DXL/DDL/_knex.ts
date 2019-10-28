@@ -1,7 +1,7 @@
 import Base from "./_base";
 import { configurable } from "../../Decorators/accessor";
 
-class DDL_KnexBased extends Base {
+class DDL_KnexBased<ConnType= any> extends Base<ConnType> {
     dbdriver: FxDbDriverNS.SQLDriver;
 
     @configurable(false)
@@ -9,9 +9,7 @@ class DDL_KnexBased extends Base {
         return false
     }
 
-    createCollection (collection: string) {
-
-    }
+    // createCollection (collection: string) { return null as any }
 
     dropCollection (collection: string) {
         const kq = this.sqlQuery

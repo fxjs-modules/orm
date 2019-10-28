@@ -9,7 +9,6 @@ import * as ORMRuntime from '../Decorators/orm-runtime';
 import Setting from './Setting';
 import Model from './Model';
 import * as QueryGrammers from './Query/QueryGrammar';
-import { arraify } from '../Utils/array';
 import { configurable } from '../Decorators/accessor';
 import { buildDescriptor } from '../Decorators/property';
 import { getDML } from '../DXL/DML';
@@ -51,11 +50,9 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
         },
         properties : {
             primary_key               : "id",
-            association_key           : "{name}_{field}",
             required                  : false
         },
         instance   : {
-            defaultFindLimit          : 1000,
             cascadeRemove             : true,
             saveAssociationsByDefault : true
         },
@@ -66,16 +63,16 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
         }
     });
 
-    private _models: {[k: string]: FxOrmModel.Class_Model} = {};
-    @configurable(false)
-    get models (): {[k: string]: FxOrmModel.Class_Model} {
-        return this._models;
-    };
+    @buildDescriptor({ configurable: false, enumerable: false })
+    models: FxOrmNS.Class_ORM['models'] = {}
 
     @buildDescriptor({ configurable: false, enumerable: false })
-    $dml: FxOrmTypeHelpers.InstanceOf<FxOrmTypeHelpers.ReturnType<typeof getDML>>;
+    modelDefinitions: FxOrmNS.Class_ORM['modelDefinitions'] = {}
+
     @buildDescriptor({ configurable: false, enumerable: false })
-    $ddl: FxOrmTypeHelpers.InstanceOf<FxOrmTypeHelpers.ReturnType<typeof getDDL>>;
+    $dml: FxOrmTypeHelpers.InstanceOf<ReturnType<typeof getDML>>;
+    @buildDescriptor({ configurable: false, enumerable: false })
+    $ddl: FxOrmTypeHelpers.InstanceOf<ReturnType<typeof getDDL>>;
 
     driver: FxDbDriverNS.Driver<ConnType>;
 
@@ -94,7 +91,7 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
         ORMRuntime.validProtocol()(this);
 
         const DML = getDML(this.driver.type)
-        let { dml } = opts || {}
+        let { dml = null } = opts || {}
         if (!(dml instanceof DML))
             dml = new DML({ dbdriver: this.driver as any });
         this.$dml = dml;
@@ -113,53 +110,48 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
         name: string,
         properties: Fibjs.AnyObject,
         config: FxOrmModel.Class_ModelDefinitionOptions = {}
-    ) {
-        const filteredProps = properties as FxOrmProperty.NormalizedPropertyHash;
+    ): FxOrmModel.Class_Model {
+        const settings = this.settings.clone()
 
-        return this.models[name] = new Model({
-            name,
-            properties: filteredProps,
-            keys: config.keys,
+        const def: FxOrmNS.Class_ORM['modelDefinitions'][any] = (orm) => {
+            orm.models[name] = new Model({
+                name,
+                properties: <FxOrmProperty.NormalizedPropertyHash>properties,
+                keys: config.keys,
+    
+                orm,
+                settings: settings.clone(),
+    
+                collection: config.collection || name,
+                indexes: [],
+    
+                cascadeRemove: config.cascadeRemove,
+    
+                methods: {},
+                validations: {},
+            })
 
-            orm: this as any,
-            settings: this.settings.clone(),
+            orm.modelDefinitions[name] = def
 
-            collection: config.collection || name,
-            indexes: [],
+            return orm.models[name]
+        };
 
-            cascadeRemove: config.cascadeRemove,
-
-            methods: {},
-            validations: {},
-        });
+        return def(this)
     }
 
     useTrans (callback: (orm: FxOrmNS.Class_ORM) => void) {
         if (typeof callback !== 'function')
             throw new Error(`[ORM::useTrans] callback must be function`)
 
+        /**
+         * @TODO: check why `this.modelDefinitions` is not correct in `.useSingletonTrans` callback?
+         */
+        const modelDefinitions = this.modelDefinitions
         this.$dml
             .useSingletonTrans((dml: FxOrmDML.DMLDialect<ConnType>) => {
                 const orm = new ORM(this.driver.config, { dml })
-
-                // copy all model
-                Object.keys(this.models).forEach(mk => {
-                    const model = this.models[mk]
-                    orm.define(mk,
-                        (() => {
-                            const kvs = <any>{}
-                            Object.keys(model.properties).forEach(pname => {
-                                kvs[pname] = model.properties[pname]
-                            })
-
-                            return kvs
-                        })(),
-                        {
-                            keys: model.keys,
-                            collection: model.collection,
-                        }
-                    )
-                })
+                // get one fresh orm
+                Object.values(modelDefinitions).forEach(def => def(orm))
 
                 callback(orm)
             })

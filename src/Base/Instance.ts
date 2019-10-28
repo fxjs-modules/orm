@@ -49,7 +49,6 @@ class Instance implements FxOrmInstance.Class_Instance {
     $event_emitter: FxOrmInstance.Class_Instance['$event_emitter'] = new EventEmitter()
     // @DecoratorsProperty.buildDescriptor({ enumerable: false })
     $model: FxOrmInstance.Class_Instance['$model']
-    $dml: FxOrmInstance.Class_Instance['$dml']
 
     /**
      * only allow settting fields of Model.properties into it.
@@ -133,7 +132,7 @@ class Instance implements FxOrmInstance.Class_Instance {
         if (instanceBase instanceof Instance) instanceBase = instanceBase.toJSON()
 
         this.$bornsnapshot = JSON.stringify(instanceBase)
-
+        
         this.$model.normalizeDataIntoInstance({...instanceBase}, {
             onPropertyField: ({ fieldname, transformedValue }) => {
                 // dont use $set, never leave change history now.
@@ -489,7 +488,6 @@ class Instance implements FxOrmInstance.Class_Instance {
         // if no any id filled, return false directly
         if (!withIdFilled) return false
 
-        // return this.$model.$dml.exists(this.$model.collection, { where })
         return this.$model.$dml.useConnection(connection => {
             return this.$model.$dml.exists(this.$model.collection, { connection, where })
         })

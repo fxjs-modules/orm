@@ -17,7 +17,6 @@ declare namespace FxOrmSettings {
         static defaults(): {
             properties: {
                 primary_key: string;
-                association_key: string;
                 required: boolean;
             };
 
@@ -26,7 +25,6 @@ declare namespace FxOrmSettings {
                 identityCacheSaveCheck: boolean;
                 autoSave: boolean;
                 autoFetch: boolean;
-                autoFetchLimit: number;
                 cascadeRemove: boolean;
                 returnAllErrors: boolean;
             };

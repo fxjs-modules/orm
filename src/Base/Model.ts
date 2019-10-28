@@ -159,10 +159,10 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     get schemaBuilder () { return this.$ddl.sqlQuery.knex.schema }
     get queryBuilder () { return this.$ddl.sqlQuery.knex.queryBuilder() }
     get sqlQuery (): FxSqlQuery.Class_Query {
-      switch (this.$ddl.dbdriver.type) {
+      switch (this.$dml.dbdriver.type) {
           case 'mysql':
           case 'sqlite':
-              return this.$ddl.sqlQuery
+              return this.$dml.sqlQuery
       }
     }
 
@@ -170,7 +170,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return {
             model: this,
             sqlQuery: this.sqlQuery,
-            knex: this.$ddl.sqlQuery.knex
+            knex: this.$dml.sqlQuery.knex
         }
     }
 

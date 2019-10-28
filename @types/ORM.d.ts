@@ -57,8 +57,12 @@ declare namespace FxOrmNS {
         settings: any
 
         readonly models: {[k: string]: FxOrmModel.Class_Model}
+        readonly modelDefinitions: {
+            [k: string]: ((orm: FxOrmNS.Class_ORM, ...args: any) => FxOrmModel.Class_Model)
+        }
         $dml: FxOrmDML.DMLDialect<ConnType>;
         $ddl: FxOrmDDL.DDLDialect<ConnType>;
+
         /**
          * @description define one model with modelName(name) and properties(props)
          *

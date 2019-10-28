@@ -11,7 +11,7 @@ declare namespace FxOrmDDL {
         alertCollection: <T = any>(collection: string) => T
         truncateCollection: <T = any>(collection: string) => T
         commentCollection: <T = any>(collection: string) => T
-        dropCollection: <T = number>(collection: string) => T
+        dropCollection: (collection: string) => void
         renameCollection: <T = number>(collection: string) => T
     }
 }
