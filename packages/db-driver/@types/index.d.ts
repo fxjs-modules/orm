@@ -80,7 +80,7 @@ declare namespace FxDbDriverNS {
     class Driver<CONN_TYPE = any> {
         static getDriver(
             name: FxDbDriverNS.DriverType | string
-        ): any
+        ): typeof Driver
         static create<CreateCONN_TYPE = any> (options: ConnectionInputArgs | string): Driver<CreateCONN_TYPE>
 
         constructor (options: ConnectionInputArgs | string)
@@ -140,6 +140,8 @@ declare namespace FxDbDriverNS {
         getConnection (): CONN_TYPE
 
         connectionPool (callback: (connection: CONN_TYPE) => any): any
+
+        useTrans<T = any> (callback: (conn_for_trans: CONN_TYPE) => T): T
 
         [ext_key: string]: any
     }

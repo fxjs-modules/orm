@@ -2,9 +2,18 @@ var common  = require("../common");
 var Driver = require("../..").getDriver('sqlite');
 
 describe("SQLite", function () {
+	var driver;
+	var knex;
+
+	var setup = function () {
+		return function () {
+			driver = Driver.create('sqlite:test-driver.db');
+			knex = common.getKnexInstance(driver, { useNullAsDefault: true });
+		}
+	}
+	
 	describe("basic operation", () => {
-		var driver = Driver.create('sqlite:test-driver.db');
-		var knex = common.getKnexInstance(driver, { useNullAsDefault: true });
+		before(setup());
 
 		it("#open, #ping, #close, re-open", () => {
 			driver.open()
@@ -71,6 +80,44 @@ describe("SQLite", function () {
 				),
 				[]
 			)
-		})
+		});
 	})
+
+	describe("#useTrans", () => {
+		var result, executed = false
+		before(setup());
+
+		beforeEach(() => {
+			executed = false
+		})
+
+		it("normal", () => {
+			result = driver.useTrans((conn) => {
+				executed = true
+			});
+
+			assert.isTrue(executed, true)
+			assert.equal(result, undefined)
+		});
+
+		it("return number", () => {
+			result = driver.useTrans((conn) => {
+				executed = true
+				return 1
+			});
+
+			assert.isTrue(executed, true)
+			assert.equal(result, 1)
+		});
+
+		it("return object", () => {
+			result = driver.useTrans((conn) => {
+				executed = true
+				return {foo: 'bar'}
+			});
+
+			assert.isTrue(executed, true)
+			assert.deepEqual(result, {foo: 'bar'})
+		});
+	});
 })

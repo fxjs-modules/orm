@@ -161,7 +161,27 @@ export class Driver<CONN_TYPE = any> implements FxDbDriverNS.Driver<CONN_TYPE> {
         if (this.isPool)
             return this.pool((conn) => callback(conn))
         
-        return callback(this.open())
+        return callback(this.getConnection())
+    }
+
+    useTrans (callback: (conn_for_trans: CONN_TYPE) => any) {
+        return this.connectionPool((conn: any) => {
+            if (typeof conn.trans === 'function') {
+                const waitor = {
+                    ev: new (coroutine.Event)(),
+                    result: <any>undefined
+                }
+                conn.trans(() => {
+                    waitor.result = callback(conn)
+                    waitor.ev.set()
+                })
+                waitor.ev.wait()
+
+                return waitor.result
+            } else {
+                return callback(conn)
+            }
+        })
     }
 
 	[sync_method: string]: any

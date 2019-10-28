@@ -2,23 +2,29 @@ var common  = require("../common");
 var Driver = require("../..").getDriver('mysql');
 
 describe("MySQL", function () {
-	describe("basic operation", () => {
-		var driver
-		var knex
-		var DBNAME = 'fxjs-db-driver-test';
-		before(() => {
+	var driver
+	var knex
+	var DBNAME = 'fxjs-db-driver-test';
+
+	var setup = function () {
+		return function () {
 			driver = Driver.create('mysql://root:@localhost:3306');
 			knex = common.getKnexInstance(driver);
+		}
+	}
 
-			driver.open()
+	before(() => {
+		driver = Driver.create('mysql://root:@localhost:3306');
+		driver.open()
+		driver.execute('CREATE DATABASE IF NOT EXISTS `' + DBNAME + '`;')
+	})
 
-			driver.execute('CREATE DATABASE IF NOT EXISTS `' + DBNAME + '`;')
-		})
+	after(() => {
+		driver.execute('DROP DATABASE IF EXISTS `' + DBNAME + '`;')
+	})
 
-		after(() => {
-			driver.execute('DROP DATABASE IF EXISTS `' + DBNAME + '`;')
-		})
-
+	describe("basic operation", () => {
+		before(setup());
 		it("#open, #ping, #close, re-open", () => {
 			driver.open()
 
@@ -88,4 +94,44 @@ describe("MySQL", function () {
 			)
 		})
 	})
+
+	describe("#useTrans", () => {
+		before(setup());
+
+		var result, executed = false
+		before(() => setup());
+
+		beforeEach(() => {
+			executed = false
+		})
+
+		it("normal", () => {
+			result = driver.useTrans((conn) => {
+				executed = true
+			});
+
+			assert.isTrue(executed, true)
+			assert.equal(result, undefined)
+		});
+
+		it("return number", () => {
+			result = driver.useTrans((conn) => {
+				executed = true
+				return 1
+			});
+
+			assert.isTrue(executed, true)
+			assert.equal(result, 1)
+		});
+
+		it("return object", () => {
+			result = driver.useTrans((conn) => {
+				executed = true
+				return {foo: 'bar'}
+			});
+
+			assert.isTrue(executed, true)
+			assert.deepEqual(result, {foo: 'bar'})
+		});
+	});
 })

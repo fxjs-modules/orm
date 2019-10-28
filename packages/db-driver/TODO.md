@@ -2,16 +2,23 @@
 
 ## test cases
 
-- [ ] index
-    - [ ] create
-        - [ ] sql
-        - [ ] driver test
-    - [ ] find/get
-        - [ ] sql
-        - [ ] driver test
-    - [ ] drop
-        - [ ] sql
-        - [ ] driver test
-    - [ ] rename
-        - [ ] sql
-        - [ ] driver test
+- [] mysql
+    - [x] \#open
+    - [x] \#ping
+    - [x] \#close
+    - [x] \#execute
+- [] sqlite
+    - [x] \#open
+    - [x] \#ping
+    - [x] \#close
+    - [x] \#execute
+- [] mongo
+    - [ ] \#open
+    - [ ] \#ping
+    - [ ] \#close
+    - [ ] \#execute
+- [] redis
+    - [x] \#open
+    - [x] \#ping
+    - [x] \#close
+    - [x] \#execute

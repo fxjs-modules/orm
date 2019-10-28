@@ -2,8 +2,16 @@ var common  = require("../common");
 var Driver = require("../..").getDriver('sqlite');
 
 describe("Redis", function () {
+	var driver;
+
+	var setup = function () {
+		return function () {
+			driver = Driver.create('redis://127.0.0.1:6379');
+		}
+	}
+
 	describe("basic operation", () => {
-		var driver = Driver.create('redis://127.0.0.1:6379');
+		before(setup());
 
 		it("#open, #ping, #close, re-open", () => {
 			driver.open()
@@ -53,4 +61,42 @@ describe("Redis", function () {
 			assert.deepEqual(resuls[3].result.toString(), "string")
 		});
 	})
+
+	describe("#useTrans", () => {
+		var result, executed = false
+		before(setup());
+
+		beforeEach(() => {
+			executed = false
+		})
+
+		it("normal", () => {
+			result = driver.useTrans((conn) => {
+				executed = true
+			});
+
+			assert.isTrue(executed, true)
+			assert.equal(result, undefined)
+		});
+
+		it("return number", () => {
+			result = driver.useTrans((conn) => {
+				executed = true
+				return 1
+			});
+
+			assert.isTrue(executed, true)
+			assert.equal(result, 1)
+		});
+
+		it("return object", () => {
+			result = driver.useTrans((conn) => {
+				executed = true
+				return {foo: 'bar'}
+			});
+
+			assert.isTrue(executed, true)
+			assert.deepEqual(result, {foo: 'bar'})
+		});
+	});
 })
