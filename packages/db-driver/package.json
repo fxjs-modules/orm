@@ -1,6 +1,6 @@
 {
 	"name": "@fxjs/db-driver",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "Fibjs Db Driver",
 	"keywords": [
 		"mysql",
