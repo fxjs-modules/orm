@@ -150,7 +150,7 @@ odescribe("benchmark", function () {
             Person.clear()
         })
 
-        it(`insert ${seeds.length} rows by native, useConnection inner`, function () {
+        it(`[trans]insert ${seeds.length} rows by native, useConnection inner`, function () {
             infos.nativeInnerConnection = helper.countTime(() => {
                 db.driver.useTrans(conn => {
                     seeds.forEach((_, idx) =>
@@ -171,7 +171,7 @@ odescribe("benchmark", function () {
             )
         })
 
-        it(`insert ${seeds.length} rows by native, useConnection wrapper`, function () {
+        it(`[trans]insert ${seeds.length} rows by native, useConnection wrapper`, function () {
             infos.nativeOuterConnection = helper.countTime(() => {
                 db.driver.useTrans(conn => {
                     seeds.forEach((_, idx) =>
@@ -191,7 +191,7 @@ odescribe("benchmark", function () {
             )
         });
 
-        it(`insert ${seeds.length} rows by dml`, function () {
+        it(`[trans]insert ${seeds.length} rows by dml`, function () {
             infos.dml = helper.countTime(() => {
                 db.driver.useTrans(conn => {
                     seeds.forEach((_, idx) =>
@@ -237,7 +237,7 @@ odescribe("benchmark", function () {
             )
         });
 
-        it(`batch insert ${seeds.length} rows by orm`, function () {
+        it(`[trans] insert ${seeds.length} rows by orm`, function () {
             infos.orm_batch_outer = helper.countTime(() => {
                 db.useTrans(db => {
                     db.models.person.create(
