@@ -54,12 +54,12 @@ function t() {
     run('./integration/association-belongsToMany.js');
     // // run('./integration/association-extend.js');
 
-    run('./integration/association-hasone.js');
+    // run('./integration/association-hasone.js');
     // run('./integration/association-hasone-required.js');
     // run('./integration/association-hasone-reverse.js');
     // run('./integration/association-hasone-zeroid.js');
 
-    run('./integration/association-hasManyExclusively.js');
+    // run('./integration/association-hasManyExclusively.js');
 
     run('./integration/association-hasmany.js');
     // run('./integration/association-hasmany-extra.js');

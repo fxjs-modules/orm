@@ -43,7 +43,7 @@ odescribe("Association belongsToMany", function () {
         db.close();
     });
 
-    odescribe("Model existence", function () {
+    describe("Model existence", function () {
         before(setup);
 
         it("association models has corresponding association", function () {
@@ -148,6 +148,99 @@ odescribe("Association belongsToMany", function () {
             assert.propertyVal(John.pets[0], "name", "Deco");
             assert.property(John.pets[0], Pet.ids[0]);
             assert.ok(John.pets[0].$saved);
+        });
+    });
+
+    describe("accessors", function () {
+        before(setup);
+        var John, Deco
+        
+        function initData ({ doSave = true} = {}) {
+            return () => {
+                John = Person.create({
+                    name: "John Doe",
+                });
+
+                if (doSave) {
+                    John.$saveRef('pets', {
+                        name: "Deco"
+                    });
+        
+                    Deco = John.pets[0];
+                }
+            }
+        }
+        
+        odescribe("#$saveRef", function () {
+            before(initData())
+
+            it("basic", function () {
+                assert.isTrue(John.$hasRef('pets').final)
+
+                assert.exist(John.pets);
+                assert.isArray(John.pets);
+
+                Deco = John.pets[0];
+
+                assert.exist(PersonPets.one({ where: { person_id: John.id, pet_id: Deco.id } }))
+            })
+        });
+
+        odescribe("#$getRef", function () {
+            before(initData({ doSave: false }))
+
+            it("basic", function () {
+                var _Deco = John.$getRef('pets', {
+                    where: {
+                        [Pet.propIdentifier('name')]: 'Deco'
+                    }
+                })[0];
+
+                assert.exist(_Deco.id)
+                assert.equal(Deco.id, _Deco.id)
+            })
+
+            it("valid ref name is requried", function () {
+                assert.throws(() => {
+                    John.$getRef()
+                })
+
+                assert.throws(() => {
+                    John.$getRef('non-existed')
+                })
+            });
+        });
+
+        describe("#$hasRef", function () {
+            before(initData())
+
+            it("basic", function () {
+                assert.isTrue(John.$hasRef('pets').final)
+
+                assert.isTrue(John.$hasRef('pets', Deco).final)
+                assert.isTrue(John.$hasRef('pets', [Deco]).final)
+
+                assert.isTrue(John.$hasRef('pets', { id: Deco.id }).final)
+                assert.isTrue(John.$hasRef('pets', [{ id: Deco.id }]).final)
+            })
+        });
+
+        describe("#$unlinkRef", function () {
+            before(initData())
+
+            it("basic", function () {
+                assert.throws(() => {
+                    John.$unlinkRef()
+                })
+
+                assert.isTrue(John.$hasRef('pets').final)
+                John.$unlinkRef('pets')
+                assert.isFalse(John.$hasRef('pets').final)
+                John.$addRef('pets', Deco)
+                assert.isTrue(John.$hasRef('pets').final)
+                John.$unlinkRef('pets', Deco)
+                assert.isFalse(John.$hasRef('pets').final)
+            });
         });
     });
 });

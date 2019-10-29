@@ -194,7 +194,7 @@ odescribe("hasOne", function () {
             assert.equal(tree[Tree.id], treeId);
         });
 
-        oit("#$getRef: has should indicate if there is an association present", function () {
+        oit("#$hasRef: has should indicate if there is an association present", function () {
             var leaf = Leaf.one({
                 size: 14
             });
@@ -207,7 +207,7 @@ odescribe("hasOne", function () {
             assert.equal(has.final, false);
         });
 
-        oit("#$getRef: set should associate another instance", function () {
+        oit("#$saveRef: set should associate another instance", function () {
             var stalk = Stalk.one({
                 length: 20
             });
@@ -224,7 +224,7 @@ odescribe("hasOne", function () {
             assert.equal(leaf.stalk.id, stalk[Stalk.id]);
         });
 
-        oit("#$getRef: remove should unassociation another instance", function () {
+        oit("#$unlinkRef: remove should unassociation another instance", function () {
             var stalk = Stalk.one({
                 length: 20
             });
