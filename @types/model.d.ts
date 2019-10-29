@@ -358,6 +358,7 @@ declare namespace FxOrmModel {
          */
         readonly associationKeys: string[]
 
+        readonly joinPropertyList: FxOrmModel.Class_MergeModel['properties'][any][]
         readonly joinKeys: string[]
 
         /**

@@ -530,13 +530,14 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
         const mergeModel = this.defineAssociation({
             name: asKey,
-            target: targetModel,
             collection: this.collection,
             /**
              * @important pass {keys: false} to disable auto-fill id key
              */
             // keys: false,
             properties: {},
+            type: 'o2o',
+            target: targetModel,
             howToGetIdPropertyNames: ({ mergeModel }) => {
                 return [mergeModel.targetModel.id]
             },
@@ -544,7 +545,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                 const { targetModel, sourceModel } = mergeModel
                 const tProperty = targetModel.properties[targetModel.id]
                 if (!tProperty)
-                    throw new Error(`[MergeModel::defineMergeProperties/o2o] no target property "${targetModel.id}" in target model, check your definition about 'defineMergeProperties'`)
+                    throw new Error(`[MergeModel::defineMergeProperties/hasOne] no target property "${targetModel.id}" in target model, check your definition about 'defineMergeProperties'`)
 
                 mergeModel.addProperty(
                     mergePropertyNameInSource,
@@ -620,8 +621,6 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             onFindByRef: ({ sourceModel, targetModel, mergeCollection }) => {
               return null as any
             },
-
-            type: 'o2o',
         })
 
         this.associations[asKey] = mergeModel
@@ -653,6 +652,8 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
              */
             // keys: false,
             properties: {},
+            type: 'o2m',
+            target: targetModel,
             defineMergeProperties: ({ mergeModel }) => {
                 const { targetModel, sourceModel } = mergeModel
 
@@ -869,31 +870,30 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                     ].concat(findOptions.joins ? arraify(findOptions.joins) : [])
                 })
             },
-
-            type: 'o2m',
-            target: targetModel,
         })
 
         return mergeModel
     }
 
     belongsToMany (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['belongsToMany']>) {
-        const [ targetModel = this, opts ] = args;
+        const [ tM = this, opts ] = args;
 
         const {
-            as: asKey = `${targetModel.collection}`,
-            collection = `${targetModel.collection}_${this.collection}s`,
+            as: asKey = `${this.collection}s`,
+            collection = `${tM.collection}_${this.collection}s`,
             sourceJoinKey = this.id,
-            targetJoinKey = targetModel.id
+            targetJoinKey = tM.id
         } = opts || {}
 
-        if (targetModel.fieldInfo(asKey))
-            throw new Error(`[MergeModel::belongsToMany] target model(collection: ${targetModel.collection}) already has field "${asKey}", it's not allowed to add one associated field to it.`)
+        if (tM.fieldInfo(asKey))
+            throw new Error(`[MergeModel::belongsToMany] target model(collection: ${tM.collection}) already has field "${asKey}", it's not allowed to add one associated field to it.`)
 
-        const mergeModel: MergeModel = this.defineAssociation({
+        const mergeModel: MergeModel = tM.defineAssociation({
             name: asKey,
             collection: collection,
             properties: {},
+            type: 'm2m',
+            target: this,
             defineMergeProperties: ({ mergeModel }) => {
                 const { targetModel, sourceModel } = mergeModel
 
@@ -957,18 +957,17 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             howToCheckExistenceForSource: ({ mergeModel, mergeInstance }) => {
             },
             howToCheckHasForSource: ({ mergeModel, sourceInstance, targetInstances }) => {
-
             },
             howToFetchForSource: ({ mergeModel, sourceInstance, findOptions }) => {
             },
             howToSaveForSource: ({ mergeModel, targetDataSet, sourceInstance, isAddOnly }) => {
                 let inputs = <FxOrmInstance.Class_Instance[]>[]
                 let targetInstances = []
-                inputs = arraify(this.targetModel.New(targetDataSet));
+                inputs = arraify(mergeModel.targetModel.New(targetDataSet));
 
                 // don't change it it no inputs
                 if (inputs && inputs.length)
-                    sourceInstance[this.name] = sourceInstance[this.name] || []
+                    sourceInstance[mergeModel.name] = sourceInstance[mergeModel.name] || []
 
                 targetInstances = coroutine.parallel(
                     inputs,
@@ -976,10 +975,16 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                     (targetInst: FxOrmInstance.Class_Instance) => {
                         targetInst.$save()
 
-                        const mergeInstance = this.New({
-                            [this.sourceJoinKey]: sourceInstance[sourceInstance.$model.id],
-                            [this.targetJoinKey]: targetInst[targetInst.$model.id],
+                        const kv = <Fibjs.AnyObject>{};
+                        mergeModel.joinPropertyList.forEach(property => {
+                            if (property.joinNode.refCollection === sourceInstance.$model.collection)
+                                kv[property.joinNode.refColumn] = sourceInstance[property.joinNode.refColumn]
+
+                            if (property.joinNode.refCollection === targetInst.$model.collection)
+                                kv[property.joinNode.refColumn] = targetInst[property.joinNode.refColumn]
                         })
+
+                        const mergeInstance = mergeModel.New(kv)
 
                         if (!mergeInstance.$exists()) mergeInstance.$save()
 
@@ -987,15 +992,12 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                     }
                 )
 
-                sourceInstance[this.name] = this.targetModel.New(targetInstances)
+                sourceInstance[mergeModel.name] = mergeModel.targetModel.New(targetInstances)
             },
             howToUnlinkForSource: ({ mergeModel, targetInstances, sourceInstance }) => {
             },
             onFindByRef: ({ mergeModel, complexWhere, mergeModelFindOptions: findOptions }) => {
             },
-
-            type: 'm2m',
-            target: targetModel,
         })
 
         return mergeModel
@@ -1022,8 +1024,13 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     }
 
     @configurable(false)
+    get joinPropertyList (): FxOrmModel.Class_MergeModel['joinPropertyList'] {
+        return this.propertyList.filter(x => x.isJoinProperty())
+    }
+
+    @configurable(false)
     get joinKeys (): string[] {
-        const joinProperties = this.propertyList.filter(x => x.isJoinProperty())
+        const joinProperties = this.joinPropertyList
 
         if (!joinProperties.length)
             throw new Error(`[MergeModel:joinKeys] no any join property defined.`)

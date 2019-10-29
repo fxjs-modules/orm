@@ -1,7 +1,7 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-describe("Association belongsToMany", function () {
+odescribe("Association belongsToMany", function () {
     var db = null;
     var Pet = null;
     var Person = null;
@@ -48,36 +48,38 @@ describe("Association belongsToMany", function () {
 
         it("association models has corresponding association", function () {
             assert.property(db.models, 'person')
+            assert.equal(db.models.person, Person)
             assert.property(db.models, 'pet')
+            assert.equal(db.models.pet, Pet)
 
-            assert.property(db.models.person.associations, 'pets')
-            assert.equal(db.models.person.associations.pets.sourceModel, db.models.pet)
-            assert.equal(db.models.person.associations.pets.targetModel, db.models.person)
-            assert.equal(db.models.person.associations.pets, PersonPets)
+            assert.property(Person.associations, 'pets')
+            assert.equal(Person.associations.pets, PersonPets)
+            assert.equal(Person.associations.pets.sourceModel, Person)
+            assert.equal(Person.associations.pets.targetModel, Pet)
 
-            assert.notProperty(db.models.person.associations, 'owners')
+            assert.notProperty(Person.associations, 'owners')
 
-            assert.property(db.models.pet.associations, 'owners')
-            assert.equal(db.models.pet.associations.owners.sourceModel, db.models.person)
-            assert.equal(db.models.pet.associations.owners.targetModel, db.models.pet)
-            assert.equal(db.models.pet.associations.owners, PetOwners)
-            assert.notProperty(db.models.pet.associations, 'pets')
+            assert.property(Pet.associations, 'owners')
+            assert.equal(Pet.associations.owners, PetOwners)
+            assert.equal(Pet.associations.owners.sourceModel, Pet)
+            assert.equal(Pet.associations.owners.targetModel, Person)
+            assert.notProperty(Pet.associations, 'pets')
 
             assert.notProperty(db.models, 'person_pets')
             assert.notProperty(db.models, 'pet_owners')
         });
 
         it("keys of associated model", function () {
-            assert.deepEqual(db.models.person.associations.pets.sourceKeys, ['id'])
-            assert.deepEqual(db.models.person.associations.pets.targetKeys, ['id'])
+            assert.deepEqual(Person.associations.pets.sourceKeys, ['id'])
+            assert.deepEqual(Person.associations.pets.targetKeys, ['id'])
 
-            assert.deepEqual(db.models.pet.associations.owners.sourceKeys, ['id'])
-            assert.deepEqual(db.models.pet.associations.owners.targetKeys, ['id'])
+            assert.deepEqual(Pet.associations.owners.sourceKeys, ['id'])
+            assert.deepEqual(Pet.associations.owners.targetKeys, ['id'])
         });
 
         it("keys of association model", function () {
-            assert.deepEqual(PersonPets.ids, [ "pet_id", "person_id" ])
-            assert.deepEqual(PetOwners.ids, [ "person_id", "pet_id" ])
+            assert.deepEqual(PersonPets.ids, [ "person_id", "pet_id" ])
+            assert.deepEqual(PetOwners.ids, [ "pet_id", "person_id" ])
         });
 
         it("distingush model though they connection same collections", function () {
@@ -106,7 +108,7 @@ describe("Association belongsToMany", function () {
         });
     });
 
-    odescribe("if element has an association", function () {
+    describe("if element has an association", function () {
         before(setup);
 
         it("should also create it or save it", function () {
