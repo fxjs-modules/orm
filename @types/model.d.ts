@@ -34,7 +34,10 @@ declare namespace FxOrmModel {
         /**
          * @notice all instance refered by associations is just instance of merge model, not target model
          */
-        associations: {[k: string]: FxOrmModel.Class_MergeModel}
+        readonly associations: {[k: string]: FxOrmModel.Class_MergeModel}
+        readonly associationDefinitions: {
+            [k: string]: ((sourceModel: FxOrmModel.Class_Model) => FxOrmModel.Class_MergeModel)
+        }
 
         settings: any
 
@@ -271,36 +274,54 @@ declare namespace FxOrmModel {
             }
         ): Class_MergeModel
 
-        defineMergeModel (
+        defineAssociation (
             opts: {
-                source: {
-                    model: Class_Model,
-                    foreignKey: string | string[]
-                },
-                target: {
-                    model: Class_Model
-                    foreignKey: string | string[]
-                },
-                onFind: (
-                    ctx: {
-                        sourceModel: Class_Model,
-                        sourceModelKeys: string[],
-                        targetModel: Class_Model,
-                        targetModelKeys: string[],
-                        mergeModel: Class_MergeModel,
-                    }
-                ) => FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['find']>,
-                onSourceInstanceSave: ({
-                    sourceModel: Class_Model,
-                    sourceModelKeys: string[],
-                    sourceInstance: FxOrmInstance.Class_Instance,
-
-                    targetModel: Class_Model,
-                    targetModelKeys: string[],
-                    targetInstance: FxOrmInstance.Class_Instance,
-
-                    mergeModel: Class_MergeModel,
-                }),
+                /**
+                 * @description target model
+                 */
+                target: FxOrmModel.Class_Model
+                /**
+                 * @description association name
+                 */
+                name: string
+                /**
+                 * @description merge collection name
+                 */
+                collection: string
+                /**
+                 * @description: extra properties
+                 */
+                properties?: {[k: string]: any}
+                /**
+                 * @description lock some properties in source/target[/merge] collection
+                 * as join properties, all of them MUST be non-key
+                 */
+                defineMergeProperties: ConstructorParameters<typeof Class_MergeModel>[0]['defineMergeProperties']
+                /**
+                 * @description ???
+                 */
+                howToCheckExistenceForSource: ConstructorParameters<typeof Class_MergeModel>[0]['howToCheckExistenceForSource']
+                /**
+                 * @description determine how to check if source-model-instance HAS target-model-instance(s)
+                 */
+                howToCheckHasForSource: ConstructorParameters<typeof Class_MergeModel>[0]['howToCheckHasForSource']
+                /**
+                 * @description determine how to fetch target-model-instance(s)
+                 */
+                howToFetchForSource: ConstructorParameters<typeof Class_MergeModel>[0]['howToFetchForSource']
+                /**
+                 * @description determine how to save target-model-instance(s) for source-model-instance
+                 */
+                howToSaveForSource: ConstructorParameters<typeof Class_MergeModel>[0]['howToSaveForSource']
+                /**
+                 * @description determine how to unlink target-model-instance(s) from source-model-instance
+                 */
+                howToUnlinkForSource: ConstructorParameters<typeof Class_MergeModel>[0]['howToUnlinkForSource']
+                /**
+                 * @description determine actions when findBy target-model-instance(s)
+                 */
+                onFindByRef: ConstructorParameters<typeof Class_MergeModel>[0]['onFindByRef']
+                type: FxOrmModel.Class_MergeModel['type']
             }
         ): Class_MergeModel
     }

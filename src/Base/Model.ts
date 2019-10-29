@@ -12,6 +12,7 @@ import { configurable } from '../Decorators/accessor';
 
 import { arraify, deduplication, isEmptyArray } from '../Utils/array';
 import { normalizeCollectionColumn } from '../Utils/endpoints';
+import { buildDescriptor } from '../Decorators/property';
 
 function isProperty (input: any): input is FxOrmProperty.Class_Property {
   return input instanceof Property
@@ -93,7 +94,11 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return Object.values(this.properties)
     }
 
+    // @buildDescriptor({ writable: true, configurable: true, enumerable: true })
     associations: FxOrmModel.Class_Model['associations'] = {};
+
+    @buildDescriptor({ writable: true, configurable: true, enumerable: true })
+    associationDefinitions: FxOrmModel.Class_Model['associationDefinitions'] = {};
     /**
      * @description all association names
      */
@@ -466,8 +471,48 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return null
     }
 
-    defineMergeModel (opts: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['defineMergeModel']>) {
-        return null as any
+    defineAssociation (
+        opts: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['defineAssociation']>
+    ): FxOrmModel.Class_MergeModel {
+        const {
+            name, collection, properties,
+            defineMergeProperties,
+            howToCheckExistenceForSource,
+            howToCheckHasForSource,
+            howToFetchForSource,
+            howToSaveForSource,
+            howToUnlinkForSource,
+            onFindByRef,
+
+            type,
+            target
+        } = opts
+
+        const assc_def = this.associationDefinitions[name] = (source) => {
+            const mergeModel: FxOrmModel.Class_MergeModel = this.associations[name] = new MergeModel({
+                name,
+                collection,
+                orm: this.orm,
+                properties: properties,
+                settings: this.settings.clone(),
+                defineMergeProperties: defineMergeProperties,
+                howToCheckExistenceForSource: howToCheckExistenceForSource,
+                howToCheckHasForSource: howToCheckHasForSource,
+                howToFetchForSource: howToFetchForSource,
+                howToSaveForSource: howToSaveForSource,
+                howToUnlinkForSource: howToUnlinkForSource,
+                onFindByRef: onFindByRef,
+
+                mergeCollection: collection,
+                type: type,
+                source: source,
+                target: target,
+            })
+
+            return mergeModel
+        }
+
+        return assc_def(this)
     }
 
     hasOne (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['hasOne']>) {
@@ -481,16 +526,15 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         if (this.fieldInfo(asKey))
             throw new Error(`[MergeModel::hasOne] source model(collection: ${targetModel.collection}) already has field "${asKey}", it's not allowed to add one associated field to it.`)
 
-        const mergeModel: MergeModel = new MergeModel({
+        const mergeModel = this.defineAssociation({
             name: asKey,
+            target: targetModel,
             collection: this.collection,
             /**
-             * @import pass {keys: false} to disable auto-fill id key
+             * @important pass {keys: false} to disable auto-fill id key
              */
             // keys: false,
-            orm: this.orm,
             properties: {},
-            settings: this.settings.clone(),
             defineMergeProperties: ({ mergeModel }) => {
                 const { targetModel, sourceModel } = mergeModel
                 const tProperty = targetModel.properties[targetModel.id]
@@ -573,10 +617,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
               return null as any
             },
 
-            mergeCollection: this.collection,
             type: 'o2o',
-            source: this,
-            target: targetModel,
         })
 
         this.associations[asKey] = mergeModel
@@ -600,16 +641,14 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
         const mergePropertyNameInTarget = `${reverseAs}_id`
 
-        const mergeModel: MergeModel = new MergeModel({
+        const mergeModel = this.defineAssociation({
             name: asKey,
             collection: targetModel.collection,
             /**
-             * @import pass {keys: false} to disable auto-fill id key
+             * @important pass {keys: false} to disable auto-fill id key
              */
             // keys: false,
-            orm: this.orm,
             properties: {},
-            settings: this.settings.clone(),
             defineMergeProperties: ({ mergeModel }) => {
                 const { targetModel, sourceModel } = mergeModel
 
@@ -775,7 +814,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                 targetInstances.forEach(x => {
                     if (x.$isFieldFilled(targetModel.id)) targetIds.push(x[targetModel.id])
                 })
-                
+
                 mergeModel.$dml.update(
                     mergeModel.collection,
                     {
@@ -825,13 +864,9 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                 })
             },
 
-            mergeCollection: targetModel.collection,
             type: 'o2m',
-            source: this,
             target: targetModel,
         })
-
-        this.associations[asKey] = mergeModel
 
         return mergeModel
     }
@@ -847,13 +882,11 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         if (targetModel.fieldInfo(asKey))
             throw new Error(`[MergeModel::belongsToMany] target model(collection: ${targetModel.collection}) already has field "${asKey}", it's not allowed to add one associated field to it.`)
 
-        const { matchKeys = undefined } = opts || {}
-
         const mergeModel: MergeModel = new MergeModel(<any>{
             name: asKey,
             collection: collection,
             /**
-             * @import pass {keys: false} to disable auto-fill id key
+             * @important pass {keys: false} to disable auto-fill id key
              */
             // keys: false,
             orm: this.orm,
@@ -875,8 +908,6 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return mergeModel
     }
 }
-
-// util.inherits(Model, Class_QueryBuilder)
 
 class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     name: string
