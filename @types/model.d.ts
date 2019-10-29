@@ -195,6 +195,11 @@ declare namespace FxOrmModel {
         pickPropertyData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
         /**
          * @description
+         * similar with `pickPropertyData`, but only pick id properties
+         */
+        pickIdPropertyData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        /**
+         * @description
          *  filter out association-about key-value in `mixed` only,
          *  and transform [key] to correspoding `name` field in property
          */
@@ -202,11 +207,13 @@ declare namespace FxOrmModel {
         /**
          * @description
          *  normalize data set to where conditions, just normalize key in dataset, never change anything of
-         *  any field's value
+         *  any field's value. On the other hand, if passed key in dataset is one full table-column indetifier,
+         *  such as `table1.col1`, it would'nt changed ---- sometimes user want keep it, like when result of
+         *  `normalizeDataSetToWhere` were used for join-on conditions
          *
          * @return []
          */
-        normalizeDataSetToWhere (dataset: Fibjs.AnyObject, target: Fibjs.AnyObject): any
+        normalizeDataSetToWhere (dataset: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
         /**
          * @description
          *  filter out association-about key-value in dataset only,

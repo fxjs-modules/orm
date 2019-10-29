@@ -13,6 +13,7 @@ import { configurable } from '../Decorators/accessor';
 import { arraify, deduplication, isEmptyArray } from '../Utils/array';
 import { normalizeCollectionColumn } from '../Utils/endpoints';
 import { buildDescriptor } from '../Decorators/property';
+import { isEmptyPlainObject } from '../Utils/object';
 
 function isProperty (input: any): input is FxOrmProperty.Class_Property {
   return input instanceof Property
@@ -363,10 +364,10 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     }
 
     normalizeDataSetToWhere (dataset: Fibjs.AnyObject, target: Fibjs.AnyObject = {}) {
-        Object.keys(dataset).forEach(dk => {
+        for (let dk in dataset) {
             const nk = normalizeCollectionColumn(dk, this.collection)
             target[nk] = dataset[dk]
-        })
+        }
 
         return target
     }
@@ -414,6 +415,14 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
     pickPropertyData (dataset: Fibjs.AnyObject = {}, kvs: Fibjs.AnyObject = {}) {
         this.propertyList.forEach(property => {
+            if (dataset.hasOwnProperty(property.name)) kvs[property.name] = dataset[property.name]
+        })
+
+        return kvs
+    }
+
+    pickIdPropertyData (dataset: Fibjs.AnyObject = {}, kvs: Fibjs.AnyObject = {}) {
+        this.idPropertyList.forEach(property => {
             if (dataset.hasOwnProperty(property.name)) kvs[property.name] = dataset[property.name]
         })
 
@@ -496,14 +505,14 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                 orm: this.orm,
                 properties: properties,
                 settings: this.settings.clone(),
-                defineMergeProperties: defineMergeProperties,
-                howToGetIdPropertyNames: howToGetIdPropertyNames,
-                howToCheckExistenceForSource: howToCheckExistenceForSource,
-                howToCheckHasForSource: howToCheckHasForSource,
-                howToFetchForSource: howToFetchForSource,
-                howToSaveForSource: howToSaveForSource,
-                howToUnlinkForSource: howToUnlinkForSource,
-                onFindByRef: onFindByRef,
+                defineMergeProperties,
+                howToGetIdPropertyNames,
+                howToCheckExistenceForSource,
+                howToCheckHasForSource,
+                howToFetchForSource,
+                howToSaveForSource,
+                howToUnlinkForSource,
+                onFindByRef,
 
                 mergeCollection: collection,
                 type: type,
@@ -572,7 +581,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             howToSaveForSource: ({ mergeModel, targetDataSet, sourceInstance }) => {
                 let targetInst = <FxOrmInstance.Class_Instance>util.last(arraify(targetDataSet))
 
-                if (!targetInst.$isInstance) targetInst = mergeModel.targetModel.New(targetInst)
+                if (!mergeModel.targetModel.isInstance(targetInst)) targetInst = mergeModel.targetModel.New(<Fibjs.AnyObject>targetInst)
 
                 targetInst.$save()
 
@@ -676,8 +685,42 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
                 sourceInstance[mergeModel.name] = null;
             },
-            onFindByRef: ({ sourceModel, targetModel, mergeCollection }) => {
-              return null as any
+            onFindByRef: ({ mergeModel, complexWhere, mergeModelFindOptions: findOptions }) => {
+                if (!complexWhere || isEmptyPlainObject(complexWhere))
+                    throw new Error(`[MergeModel::hasOne::onFindByRef] find where options is required! check your input`)
+
+                const { sourceModel, targetModel } = mergeModel
+                findOptions = {...findOptions}
+
+                return sourceModel.find({
+                    ...findOptions,
+                    select: (() => {
+                        const ss = <Record<string, string>>{[mergePropertyNameInSource]: targetModel.propIdentifier(targetModel.id)};
+                        sourceModel.propertyList.forEach(property =>
+                            ss[property.mapsTo] = sourceModel.propIdentifier(property)
+                        )
+                        return ss
+                    })(),
+                    where: complexWhere,
+                    joins: [
+                        <any>sourceModel.leftJoin({
+                            collection: targetModel.collection,
+                            on: {
+                                [sourceModel.Op.and]: [
+                                    {
+                                        [mergeModel.propIdentifier(mergePropertyNameInSource)]: targetModel.refTableCol({
+                                            table: targetModel.collection,
+                                            column: targetModel.id
+                                        }),
+                                    },
+                                ]
+                            }
+                        })
+                    ].concat(findOptions.joins ? arraify(findOptions.joins) : []),
+                    filterQueryResult: (_results) => {
+                        return _results;
+                    }
+                })
             },
         })
 
@@ -822,7 +865,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                     select: (() => {
                         const ss = { [mergePropertyNameInTarget]: mergeModel.propIdentifier(mergePropertyNameInTarget) };
                         targetModel.propertyList.forEach(property => {
-                            ss[property.name] = targetModel.propIdentifier(property)
+                            ss[property.mapsTo] = targetModel.propIdentifier(property)
                         })
                         return ss
                     })(),
@@ -899,7 +942,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                 targetInstances.forEach(x => x.$set(reverseAs, null))
             },
             onFindByRef: ({ mergeModel, complexWhere, mergeModelFindOptions: findOptions }) => {
-                const { targetModel, sourceModel } = mergeModel
+                const { sourceModel } = mergeModel
                 findOptions = {...findOptions}
 
                 return sourceModel.find({
@@ -908,7 +951,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                         // const ss = { [mergePropertyNameInTarget]: mergeModel.propIdentifier(mergePropertyNameInTarget) };
                         const ss = <Record<string, string>>{};
                         sourceModel.propertyList.forEach(property =>
-                            ss[property.name] = sourceModel.propIdentifier(property)
+                            ss[property.mapsTo] = sourceModel.propIdentifier(property)
                         )
                         return ss
                     })(),

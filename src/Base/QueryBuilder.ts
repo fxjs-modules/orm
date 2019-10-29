@@ -101,11 +101,6 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
             _opts.where = where;
         }
 
-        /**
-         * @notce join could be item or list, but item of it must be wrappeed by join-about OperatorFunction
-         */
-        const joins = (_opts.joins ? arraify(_opts.joins) : []).filter(x => isOperatorFunction(x))
-
         const results = this.model.$dml.find(this.model.collection, { ..._opts })
 
         if (_opts.return_raw) return results as any
@@ -122,10 +117,14 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
     findByRef <T = any>(
         ...args: FxOrmTypeHelpers.Parameters<FxOrmQueries.Class_QueryBuilder['findByRef']>
     ): T[] {
-        const [refName, complexWhere, mergeModelFindOptions = {}] = args
+        const [refName, _complexWhere, mergeModelFindOptions = {}] = args
 
         const sourceModel = this.getModel()
         const assocModel = sourceModel.assoc(refName)
+
+        const complexWhere =  assocModel.targetModel.normalizeDataSetToWhere(
+            assocModel.targetModel.isInstance(_complexWhere) ? _complexWhere.$model.pickIdPropertyData(_complexWhere.$kvs) : _complexWhere
+        )
 
         return <T[]>assocModel.associationInfo.onFindByRef({
             mergeModel: sourceModel.assoc(refName),

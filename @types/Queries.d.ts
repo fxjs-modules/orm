@@ -236,7 +236,7 @@ declare namespace FxOrmQueries {
 
         findByRef <T = any>(
           refName: string,
-          complexWhere: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['find']>['where'],
+          complexWhere: FxOrmInstance.Class_Instance | FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['find']>['where'],
           mergeModelFindOptions?: FxOrmTypeHelpers.FirstParameter<FxOrmQueries.Class_QueryBuilder['find']>
         ): T[]
         /**

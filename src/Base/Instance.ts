@@ -82,8 +82,8 @@ class Instance implements FxOrmInstance.Class_Instance {
         return this.$model.keyPropertyNames.every(x => this.$isFieldFilled(x))
     }
 
-    $getWhereFromProperty () {
-
+    $$getWheres () {
+        return this.$model.pickIdPropertyData(this.$kvs)
     }
 
     $isFieldFilled (x: string) {

@@ -530,7 +530,7 @@ odescribe("hasManyExclusively", function () {
         });
 
         describe("findByRef", function () {
-            odescribe("findByRef() - A hasManyExclusively B, with reverse", function () {
+            odescribe("findByRef() - A hasManyExclusively B", function () {
                 before(setup({}));
                 var xJohn, Justin
                 before(() => {
