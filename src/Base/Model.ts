@@ -584,8 +584,66 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
                 sourceInstance[mergeModel.name] = targetInst
             },
-            howToCheckHasForSource: ({}) => {
-                return null as any
+            howToCheckHasForSource: ({ mergeModel, targetInstances, sourceInstance }) => {
+                const { targetModel, sourceModel } = mergeModel
+
+                const zeroChecking = {
+                    is: !targetInstances || (Array.isArray(targetInstances) && !targetInstances.length),
+                    existed: false
+                }
+
+                let results = <{[k: string]: boolean}>{};
+                const targetIds = (targetInstances || []).map(x => {
+                    results[x[targetModel.id]] = false;
+                    return x[targetModel.id];
+                })
+                const alias = `${targetModel.collection}_${targetModel.id}`
+
+                ;<FxOrmInstance.Class_Instance[]>(mergeModel.find({
+                    select: (() => {
+                        const ss = { [mergePropertyNameInSource]: sourceModel.propIdentifier(sourceModel.id) };
+                        /**
+                         * @todo reduce unnecesary property
+                         */
+                        ss[alias] = mergeModel.propIdentifier(mergePropertyNameInSource)
+
+                        return ss
+                    })(),
+                    where: {
+                        [targetModel.Op.and]: {
+                            ...targetIds.length && { [mergePropertyNameInSource]: targetModel.Opf.in(targetIds) }
+                        }
+                    },
+                    joins: [
+                        mergeModel.leftJoin({
+                            collection: targetModel.collection,
+                            on: {
+                                [mergePropertyNameInSource]: mergeModel.refTableCol({
+                                    table: targetModel.collection,
+                                    column: targetModel.id
+                                }),
+                            }
+                        })
+                    ],
+                    filterQueryResult (_results) {
+                        if (zeroChecking.is) {
+                            zeroChecking.existed = !!_results.length && _results.some((x: any) => x && !!x[alias])
+                        } else {
+                            _results.forEach(({[alias]: alias_id}: any) => {
+                                if (alias_id && results.hasOwnProperty(alias_id)) results[alias_id] = true
+                            })
+                        }
+
+                        return _results
+                    }
+                }))
+
+                if (zeroChecking.is) return { final: zeroChecking.existed, ids: {} }
+
+                return {
+                    final: targetIds.every(id => !!results[id]),
+                    ids: results
+                }
             },
             howToFetchForSource: ({ mergeModel, sourceInstance }) => {
                 const mergeInst = mergeModel.New({
@@ -692,7 +750,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
                 const zeroChecking = {
                     is: !targetInstances || (Array.isArray(targetInstances) && !targetInstances.length),
-                    existed: true
+                    existed: false
                 }
 
                 const results = <{[k: string]: boolean}>{};
@@ -733,17 +791,19 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                         })
                     ],
                     filterQueryResult (_results) {
-                        if (zeroChecking.is) zeroChecking.existed = !!_results.length
-
-                        _results.forEach(({[alias]: alias_id}: any) => {
-                            if (results.hasOwnProperty(alias_id)) results[alias_id] = true
-                        })
+                        if (zeroChecking.is) {
+                            zeroChecking.existed = !!_results.length && _results.some((x: any) => x && !!x[alias])
+                        } else {
+                            _results.forEach(({[alias]: alias_id}: any) => {
+                                if (alias_id && results.hasOwnProperty(alias_id)) results[alias_id] = true
+                            })
+                        }
 
                         return _results
                     }
                 }))
 
-                if (zeroChecking.is) return { final: zeroChecking.existed, ids: results }
+                if (zeroChecking.is) return { final: zeroChecking.existed, ids: {} }
 
                 return {
                     final: targetIds.every(id => !!results[id]),

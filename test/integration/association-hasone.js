@@ -188,23 +188,23 @@ odescribe("hasOne", function () {
             assert.equal(tree.$model, Tree);
         });
 
-        xit("get should get the association with a shell model", function () {
-            var tree = Leaf(leafId).getTreeSync();
+        oit("get should get the association with a shell model", function () {
+            var tree = Leaf.New(leafId).$getRef('tree');
             assert.exist(tree);
             assert.equal(tree[Tree.id], treeId);
         });
 
-        xit("has should indicate if there is an association present", function () {
+        oit("has should indicate if there is an association present", function () {
             var leaf = Leaf.one({
                 size: 14
             });
             assert.exist(leaf);
 
             var has = leaf.$hasRef('tree');
-            assert.equal(has, true);
+            assert.equal(has.final, true);
 
             has = leaf.$hasRef('stalk');
-            assert.equal(has, false);
+            assert.equal(has.final, false);
         });
 
         oit("set should associate another instance", function () {
