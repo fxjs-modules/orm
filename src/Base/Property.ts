@@ -27,7 +27,8 @@ function getNormalizedProperty (
         enumerable = true,
         required = false,
         size = 0,
-        type = 'text'
+        type = 'text',
+        joinNode
     } = overwrite || {} as any
 
     if (util.isFunction(defaultValue) || util.isSymbol(defaultValue))
@@ -49,6 +50,11 @@ function getNormalizedProperty (
     if (!size && isSerial) size = 4
 
     if (isPrimary || isSerial) required = true
+
+    if (!joinNode) joinNode = {refColumn: ''}
+    else {
+        joinNode = {refColumn: joinNode.refColumn, refCollection: joinNode.refCollection}
+    }
 
     return {
         key: false,
@@ -73,6 +79,7 @@ function getNormalizedProperty (
         primary: isPrimary,
         unsigned: isUnsigned,
         unique: isUnique,
+        joinNode,
         // @deprecated: just compute it rather than allowing it in input
         serial: isSerial,
     }
@@ -213,6 +220,10 @@ function isValidCustomizedType(
     )
 }
 
+function isProperty (input: any): input is FxOrmProperty.Class_Property {
+    return input instanceof Property
+}
+
 export default class Property<
   T_CTX extends Fibjs.AnyObject & { sqlQuery?: FxSqlQuery.Class_Query } = any
 > implements FxOrmProperty.Class_Property<T_CTX> {
@@ -249,6 +260,7 @@ export default class Property<
     lazyload: FxOrmProperty.Class_Property['lazyload']
     lazyname: FxOrmProperty.Class_Property['lazyname']
     enumerable: FxOrmProperty.Class_Property['enumerable']
+    joinNode: FxOrmProperty.Class_Property['joinNode'] = { refColumn: '' }
     /* meta :end */
 
     @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
@@ -378,10 +390,27 @@ export default class Property<
         return this.type === 'serial'
     }
 
-    useForAssociationMatch () {
+    useAsJoinColumn (opts: FxOrmTypeHelpers.FirstParameter<FxOrmProperty.Class_Property['useAsJoinColumn']>) {
         this.required = false
 
+        if (isProperty(opts)) {
+            this.joinNode.refColumn = opts.name
+            delete this.joinNode.refCollection
+        } else {
+            const { column, collection } = opts
+
+            this.joinNode.refColumn = column
+            this.joinNode.refCollection = collection
+        }
+
+        if (!this.joinNode.refColumn)
+            throw new Error(`[Property::useAsJoinColumn] useAsJoinColumn didn't make this property has valid 'joinNode.name', check your input.`)
+
         return this
+    }
+
+    isJoinProperty () {
+        return !!this.joinNode && !!this.joinNode.refColumn
     }
 
     toJSON () {
@@ -392,6 +421,7 @@ export default class Property<
         });
 
         kvs.name = this.name
+        kvs.joinNode = this.joinNode
 
         return kvs;
     }

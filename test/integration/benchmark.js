@@ -9,7 +9,7 @@ function tps (count, ms) {
     return Math.floor(r)
 }
 
-odescribe("benchmark", function () {
+describe("benchmark", function () {
     var db = null;
     var Person = null;
     var Station = null;

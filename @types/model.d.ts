@@ -270,7 +270,8 @@ declare namespace FxOrmModel {
             opts?: {
                 as?: string
                 collection: string
-                on?: Class_MergeModel['associationInfo']['onFindByRef']
+                sourceJoinKey?: string
+                targetJoinKey?: string
             }
         ): Class_MergeModel
 
@@ -288,6 +289,7 @@ declare namespace FxOrmModel {
                  * @description merge collection name
                  */
                 collection: string
+                type: FxOrmModel.Class_MergeModel['type']
                 /**
                  * @description: extra properties
                  */
@@ -297,6 +299,10 @@ declare namespace FxOrmModel {
                  * as join properties, all of them MUST be non-key
                  */
                 defineMergeProperties: ConstructorParameters<typeof Class_MergeModel>[0]['defineMergeProperties']
+                /**
+                 * @description determine how to get id names for merge model
+                 */
+                howToGetIdPropertyNames: ConstructorParameters<typeof Class_MergeModel>[0]['howToGetIdPropertyNames']
                 /**
                  * @description ???
                  */
@@ -321,7 +327,6 @@ declare namespace FxOrmModel {
                  * @description determine actions when findBy target-model-instance(s)
                  */
                 onFindByRef: ConstructorParameters<typeof Class_MergeModel>[0]['onFindByRef']
-                type: FxOrmModel.Class_MergeModel['type']
             }
         ): Class_MergeModel
     }
@@ -341,17 +346,19 @@ declare namespace FxOrmModel {
          * @description name of collection which used as association table/collection in remote endpoints
          */
         sourceModel: FxOrmModel.Class_Model
-        readonly sourceKeys: string[]
-        sourceJoinKey: string
+        // readonly sourceKeys: string[]
+        // sourceJoinKey: string
 
         targetModel: FxOrmModel.Class_Model
-        readonly targetKeys: string[]
-        targetJoinKey: string
+        // readonly targetKeys: string[]
+        // targetJoinKey: string
 
         /**
          * @description this is fully determined by `options.matchKeys` in constructor
          */
         readonly associationKeys: string[]
+
+        readonly joinKeys: string[]
 
         /**
          * @description
@@ -368,6 +375,9 @@ declare namespace FxOrmModel {
             //     target: string,
             //     comparator: string
             // }
+            howToGetIdPropertyNames (payload: {
+              mergeModel: FxOrmModel.Class_MergeModel,
+            }): string[]
             /**
              * @description one required easy-on conditions input
              * @see test/model-walkCondtions.js
@@ -411,9 +421,7 @@ declare namespace FxOrmModel {
             type: Class_MergeModel['type']
 
             source: Class_MergeModel['sourceModel']
-            sourceJoinKey?: Class_MergeModel['sourceJoinKey']
             target: Class_MergeModel['targetModel']
-            targetJoinKey?: Class_MergeModel['targetJoinKey']
 
             defineMergeProperties: (
                 payload: {
@@ -422,6 +430,7 @@ declare namespace FxOrmModel {
                     mergeModel: FxOrmModel.Class_MergeModel,
                 }
             ) => any
+            howToGetIdPropertyNames: FxOrmModel.Class_MergeModel['associationInfo']['howToGetIdPropertyNames']
             howToCheckExistenceForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToCheckExistenceForSource']
             howToSaveForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToSaveForSource']
             howToFetchForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToFetchForSource']

@@ -477,6 +477,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         const {
             name, collection, properties,
             defineMergeProperties,
+            howToGetIdPropertyNames,
             howToCheckExistenceForSource,
             howToCheckHasForSource,
             howToFetchForSource,
@@ -496,6 +497,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                 properties: properties,
                 settings: this.settings.clone(),
                 defineMergeProperties: defineMergeProperties,
+                howToGetIdPropertyNames: howToGetIdPropertyNames,
                 howToCheckExistenceForSource: howToCheckExistenceForSource,
                 howToCheckHasForSource: howToCheckHasForSource,
                 howToFetchForSource: howToFetchForSource,
@@ -535,6 +537,9 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
              */
             // keys: false,
             properties: {},
+            howToGetIdPropertyNames: ({ mergeModel }) => {
+                return [mergeModel.targetModel.id]
+            },
             defineMergeProperties: ({ mergeModel }) => {
                 const { targetModel, sourceModel } = mergeModel
                 const tProperty = targetModel.properties[targetModel.id]
@@ -545,7 +550,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                     mergePropertyNameInSource,
                     tProperty
                         .renameTo({ name: mergePropertyNameInSource })
-                        .useForAssociationMatch()
+                        .useAsJoinColumn({ column: tProperty.name, collection: targetModel.collection })
                         .deKeys()
                 )
 
@@ -556,7 +561,6 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                         sProperty.name,
                         sProperty
                             .renameTo({ name: sProperty.name })
-                            .useForAssociationMatch()
                             .deKeys()
                     )
                 })
@@ -661,7 +665,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                     mergePropertyNameInTarget,
                     sProperty
                         .renameTo({ name: mergePropertyNameInTarget })
-                        .useForAssociationMatch()
+                        .useAsJoinColumn({ column: sProperty.name, collection: sourceModel.collection })
                         .deKeys()
                 )
 
@@ -672,10 +676,12 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                         tProperty.name,
                         tProperty
                             .renameTo({ name: tProperty.name })
-                            .useForAssociationMatch()
                             .deKeys()
                     )
                 })
+            },
+            howToGetIdPropertyNames: ({ mergeModel }) => {
+                return [mergeModel.sourceModel.id]
             },
             howToCheckExistenceForSource: ({ mergeModel, mergeInstance }) => {
                 return mergeModel.targetModel.idPropertyList.every(prop => mergeInstance.$isFieldFilled(prop.name))
@@ -876,34 +882,121 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
         const {
             as: asKey = `${targetModel.collection}`,
-            collection = `${targetModel.collection}_${this.collection}s`
+            collection = `${targetModel.collection}_${this.collection}s`,
+            sourceJoinKey = this.id,
+            targetJoinKey = targetModel.id
         } = opts || {}
 
         if (targetModel.fieldInfo(asKey))
             throw new Error(`[MergeModel::belongsToMany] target model(collection: ${targetModel.collection}) already has field "${asKey}", it's not allowed to add one associated field to it.`)
 
-        const mergeModel: MergeModel = new MergeModel(<any>{
+        const mergeModel: MergeModel = this.defineAssociation({
             name: asKey,
             collection: collection,
-            /**
-             * @important pass {keys: false} to disable auto-fill id key
-             */
-            // keys: false,
-            orm: this.orm,
             properties: {},
-            settings: this.settings.clone(),
-            onFindByRef: ({ sourceModel, targetModel, mergeCollection }) => {
-              return null as any
-            },
-            // matchKeys: matchKeys,
+            defineMergeProperties: ({ mergeModel }) => {
+                const { targetModel, sourceModel } = mergeModel
 
-            mergeCollection: collection,
+                if (!sourceJoinKey)
+                    if (sourceModel.ids.length > 1)
+                        throw new Error(
+                            `[MergeModel::constructor/belongsToMany] source model(collection: ${sourceModel.collection})`
+                            + `has more than one id properties, you must specify sourceJoinKey`,
+                        )
+                    else if (!sourceModel.ids.length)
+                        throw new Error(
+                            `[MergeModel::constructor/belongsToMany] source model(collection: ${sourceModel.collection})`
+                            + `has no any id property, you must specify sourceJoinKey`,
+                        )
+                    else if (!sourceModel.isPropertyName(sourceJoinKey))
+                        throw new Error(
+                            `[MergeModel::constructor/belongsToMany] source model(collection: ${sourceModel.collection}) has no property(name: ${sourceJoinKey})`
+                        )
+
+                const sProperty = sourceModel.properties[sourceJoinKey]
+                const sname = `${sourceModel.collection}_id`
+
+                mergeModel.addProperty(
+                    sname,
+                    sProperty
+                        .renameTo({ name: sname })
+                        .useAsJoinColumn({ column: sProperty.name, collection: sourceModel.collection })
+                        .deKeys()
+                )
+
+                if (!targetJoinKey)
+                    if (targetModel.ids.length > 1)
+                        throw new Error(
+                            `[MergeModel::constructor/belongsToMany] target model(collection: ${targetModel.collection})`
+                            + `has more than one id properties, you must specify targetJoinKey`,
+                        )
+                    else if (!targetModel.ids.length)
+                        throw new Error(
+                            `[MergeModel::constructor/belongsToMany] target model(collection: ${sourceModel.collection})`
+                            + `has no any id property, you must specify targetJoinKey`,
+                        )
+                    else if (!targetModel.isPropertyName(targetJoinKey))
+                        throw new Error(
+                            `[MergeModel::constructor/belongsToMany] target model(collection: ${sourceModel.collection}) has no property(name: ${targetJoinKey})`
+                        )
+
+                const tProperty = targetModel.properties[targetJoinKey]
+                const tname = `${targetModel.collection}_id`
+
+                mergeModel.addProperty(
+                    tname,
+                    tProperty
+                        .renameTo({ name: tname })
+                        .useAsJoinColumn({ column: tProperty.name, collection: targetModel.collection })
+                        .deKeys()
+                )
+            },
+            howToGetIdPropertyNames: ({ mergeModel }) => {
+                return mergeModel.joinKeys
+            },
+            howToCheckExistenceForSource: ({ mergeModel, mergeInstance }) => {
+            },
+            howToCheckHasForSource: ({ mergeModel, sourceInstance, targetInstances }) => {
+
+            },
+            howToFetchForSource: ({ mergeModel, sourceInstance, findOptions }) => {
+            },
+            howToSaveForSource: ({ mergeModel, targetDataSet, sourceInstance, isAddOnly }) => {
+                let inputs = <FxOrmInstance.Class_Instance[]>[]
+                let targetInstances = []
+                inputs = arraify(this.targetModel.New(targetDataSet));
+
+                // don't change it it no inputs
+                if (inputs && inputs.length)
+                    sourceInstance[this.name] = sourceInstance[this.name] || []
+
+                targetInstances = coroutine.parallel(
+                    inputs,
+                    // TODO: try to use trans here
+                    (targetInst: FxOrmInstance.Class_Instance) => {
+                        targetInst.$save()
+
+                        const mergeInstance = this.New({
+                            [this.sourceJoinKey]: sourceInstance[sourceInstance.$model.id],
+                            [this.targetJoinKey]: targetInst[targetInst.$model.id],
+                        })
+
+                        if (!mergeInstance.$exists()) mergeInstance.$save()
+
+                        return targetInst.toJSON()
+                    }
+                )
+
+                sourceInstance[this.name] = this.targetModel.New(targetInstances)
+            },
+            howToUnlinkForSource: ({ mergeModel, targetInstances, sourceInstance }) => {
+            },
+            onFindByRef: ({ mergeModel, complexWhere, mergeModelFindOptions: findOptions }) => {
+            },
+
             type: 'm2m',
-            source: this,
             target: targetModel,
         })
-
-        targetModel.associations[asKey] = mergeModel
 
         return mergeModel
     }
@@ -913,11 +1006,11 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     name: string
     type: 'o2o' | 'o2m' | 'm2o' | 'm2m'
     sourceModel: FxOrmModel.Class_Model
-    sourceJoinKey: string
+    // sourceJoinKey: string
     get sourceKeys () { return this.sourceModel.keys }
 
     targetModel: FxOrmModel.Class_Model
-    targetJoinKey: string
+    // targetJoinKey: string
     get targetKeys () { return this.targetModel.keys }
 
     @configurable(false)
@@ -925,23 +1018,17 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
 
     @configurable(false)
     get ids (): string[] {
-        let _ids = <string[]>[]
+        return this.associationInfo.howToGetIdPropertyNames({ mergeModel: this })
+    }
 
-        switch (this.type) {
-            case 'o2o':
-                _ids = Array.from(new Set(super.ids.concat(this.targetModel.ids)))
-                break
-            case 'o2m':
-                _ids = Array.from(new Set(super.ids.concat(this.targetModel.ids)))
-                break
-            case 'm2m':
-                _ids = [this.sourceJoinKey, this.targetJoinKey]
-                break
-            default:
-                break
-        }
+    @configurable(false)
+    get joinKeys (): string[] {
+        const joinProperties = this.propertyList.filter(x => x.isJoinProperty())
 
-        return _ids
+        if (!joinProperties.length)
+            throw new Error(`[MergeModel:joinKeys] no any join property defined.`)
+
+        return Array.from(new Set(joinProperties.map(x => x.name)))
     }
 
     associationInfo: FxOrmModel.Class_MergeModel['associationInfo']
@@ -954,8 +1041,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     constructor (opts: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmModel.Class_MergeModel>[0]) {
         const {
             mergeCollection, source, target, onFindByRef,
-            sourceJoinKey, targetJoinKey,
-            defineMergeProperties,
+            defineMergeProperties, howToGetIdPropertyNames,
             howToCheckExistenceForSource,
             howToSaveForSource, howToFetchForSource, howToUnlinkForSource,
             howToCheckHasForSource,
@@ -972,6 +1058,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
         this.type = opts.type
         this.associationInfo = {
             collection: mergeCollection,
+            howToGetIdPropertyNames: howToGetIdPropertyNames,
             onFindByRef: onFindByRef,
             howToCheckExistenceForSource,
             howToSaveForSource,
@@ -988,61 +1075,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
             sourceModel: source,
             targetModel: target,
             mergeModel: this
-        })
-        // generate associated properties
-        ;false && (() => {
-            switch (this.type) {
-                case 'm2m':
-                    ;(() => {
-                        if (!(this.sourceJoinKey = sourceJoinKey))
-                            if (this.sourceModel.ids.length > 1)
-                                return new Error(
-                                    `[MergeModel::constructor/m2m] source model(collection: ${this.sourceModel.collection})`
-                                    + `has more than one id properties, you must specify sourceJoinKey`,
-                                )
-                            else if (!this.sourceModel.ids.length)
-                                return new Error(
-                                    `[MergeModel::constructor/m2m] source model(collection: ${this.sourceModel.collection})`
-                                    + `has no any id property, you must specify sourceJoinKey`,
-                                )
-
-                        const sProperty = this.sourceModel.properties[this.sourceModel.id]
-                        const sname = this.sourceJoinKey = `${this.sourceModel.collection}_id`
-
-                        this.addProperty(
-                            sname,
-                            sProperty
-                                .renameTo({ name: sname })
-                                .useForAssociationMatch()
-                                .deKeys()
-                        )
-
-                        if (!(this.targetJoinKey = targetJoinKey))
-                            if (this.targetModel.ids.length > 1)
-                                return new Error(
-                                    `[MergeModel::constructor/m2m] target model(collection: ${this.targetModel.collection})`
-                                    + `has more than one id properties, you must specify targetJoinKey`,
-                                )
-                            else if (!this.targetModel.ids.length)
-                                return new Error(
-                                    `[MergeModel::constructor/m2m] target model(collection: ${this.sourceModel.collection})`
-                                    + `has no any id property, you must specify targetJoinKey`,
-                                )
-
-                        const tProperty = this.targetModel.properties[this.targetModel.id]
-                        const tname = this.targetJoinKey = `${this.targetModel.collection}_id`
-
-                        this.addProperty(
-                            tname,
-                            tProperty
-                                .renameTo({ name: tname })
-                                .useForAssociationMatch()
-                                .deKeys()
-                        )
-                    })()
-                    break
-            }
-        })();
+        });
     }
 
     isSourceModel (model: FxOrmModel.Class_Model): boolean {
@@ -1087,38 +1120,6 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
         })
 
         return sourceInstance
-
-        let inputs = <FxOrmInstance.Class_Instance[]>[]
-        let targetInstances = []
-
-        switch (this.type) {
-            case 'm2m':
-                inputs = arraify(this.targetModel.New(targetDataSet));
-
-                // don't change it it no inputs
-                if (inputs && inputs.length)
-                    sourceInstance[this.name] = sourceInstance[this.name] || []
-
-                targetInstances = coroutine.parallel(
-                    inputs,
-                    // TODO: try to use trans here
-                    (targetInst: FxOrmInstance.Class_Instance) => {
-                        targetInst.$save()
-
-                        const mergeInstance = this.New({
-                            [this.sourceJoinKey]: sourceInstance[sourceInstance.$model.id],
-                            [this.targetJoinKey]: targetInst[targetInst.$model.id],
-                        })
-
-                        if (!mergeInstance.$exists()) mergeInstance.$save()
-
-                        return targetInst.toJSON()
-                    }
-                )
-
-                sourceInstance[this.name] = this.targetModel.New(targetInstances)
-                break
-        }
     }
 
     findForSource ({

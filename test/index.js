@@ -51,7 +51,7 @@ function t() {
     // // run('./integration/helpers.js');
 
     // run('./integration/association-o2m.js');
-    // run('./integration/association-belongsToMany.js');
+    run('./integration/association-belongsToMany.js');
     // // run('./integration/association-extend.js');
 
     run('./integration/association-hasone.js');

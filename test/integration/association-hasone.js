@@ -132,6 +132,8 @@ odescribe("hasOne", function () {
               ],
               filterQueryResult (list) {
                 return list.map(leaf => {
+                  console.log('leaf', leaf);
+
                   const { tree_id, tree_type } = leaf
                   if (tree_id) {
                     leaf.tree = leaf.tree || {}

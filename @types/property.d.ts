@@ -41,6 +41,21 @@ declare namespace FxOrmProperty {
         lazyname: string
         enumerable: boolean
 
+        /**
+         * @description if joinNode is not empty, which means this property is used as join key between
+         * collections
+         */
+        joinNode: {
+            /**
+             * @description column name of this property refered
+             */
+            refColumn: string
+            /**
+             * @description if refCollection if empty, (maybe) this property was used in where its located
+             */
+            refCollection?: string
+        }
+
         // klass?: KlassType
         // alwaysValidate?: boolean
         [ext_k: string]: any
@@ -79,6 +94,11 @@ declare namespace FxOrmProperty {
         enumerable: boolean
 
         customType?: FxOrmProperty.CustomPropertyType
+        /**
+         * @description if joinNode is not empty, which means this property is used as join key between
+         * collections
+         */
+        joinNode: FxOrmProperty.NormalizedProperty['joinNode']
 
         static filterDefaultValue (
             property: FxOrmSqlDDLSync__Column.Property,
@@ -136,7 +156,10 @@ declare namespace FxOrmProperty {
             lazyname?: Class_Property['lazyname']
         }): Class_Property
 
-        useForAssociationMatch(): this
+        useAsJoinColumn(
+            opts: Class_Property | { column: string, collection?: string }
+        ): this
+        isJoinProperty (): boolean
 
         toJSON(): NormalizedProperty
     }

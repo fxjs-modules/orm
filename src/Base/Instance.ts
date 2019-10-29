@@ -132,7 +132,7 @@ class Instance implements FxOrmInstance.Class_Instance {
         if (instanceBase instanceof Instance) instanceBase = instanceBase.toJSON()
 
         this.$bornsnapshot = JSON.stringify(instanceBase)
-        
+
         this.$model.normalizeDataIntoInstance({...instanceBase}, {
             onPropertyField: ({ fieldname, transformedValue }) => {
                 // dont use $set, never leave change history now.
@@ -328,7 +328,7 @@ class Instance implements FxOrmInstance.Class_Instance {
                 associationInfos.push(this.$model.fieldInfo(x))
         })
         if (!associationInfos.length)
-            throw new Error(`[Instance::$getRef] invalid reference names given`)
+            throw new Error(`[Instance::$getRef] no any valid reference name given`)
 
         const refs = <any>[];
 

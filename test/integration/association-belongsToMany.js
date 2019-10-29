@@ -43,7 +43,7 @@ describe("Association belongsToMany", function () {
         db.close();
     });
 
-    describe("Model existence", function () {
+    odescribe("Model existence", function () {
         before(setup);
 
         it("association models has corresponding association", function () {
@@ -54,7 +54,7 @@ describe("Association belongsToMany", function () {
             assert.equal(db.models.person.associations.pets.sourceModel, db.models.pet)
             assert.equal(db.models.person.associations.pets.targetModel, db.models.person)
             assert.equal(db.models.person.associations.pets, PersonPets)
-            
+
             assert.notProperty(db.models.person.associations, 'owners')
 
             assert.property(db.models.pet.associations, 'owners')
@@ -122,9 +122,9 @@ describe("Association belongsToMany", function () {
             assert.ok(Array.isArray(John.pets));
 
             assert.propertyVal(John.pets[0], "name", "Deco");
-            
+
             assert.property(John.pets[0], Pet.ids[0]);
-            
+
             assert.ok(John.pets[0].$saved);
             assert.ok(John.pets[0].$isPersisted);
         });
