@@ -10,10 +10,9 @@ import * as SYMBOLS from '../Utils/symbols';
 import Property from './Property';
 import { configurable } from '../Decorators/accessor';
 
-import { arraify, deduplication, isEmptyArray } from '../Utils/array';
+import { arraify } from '../Utils/array';
 import { normalizeCollectionColumn } from '../Utils/endpoints';
 import { buildDescriptor } from '../Decorators/property';
-import { isEmptyPlainObject } from '../Utils/object';
 
 function isProperty (input: any): input is FxOrmProperty.Class_Property {
   return input instanceof Property

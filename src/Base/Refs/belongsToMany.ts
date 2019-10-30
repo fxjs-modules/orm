@@ -297,6 +297,75 @@ export = function defineRef (
             if (removeAll) sourceInstance[mergeModel.name] = null
         },
         onFindByRef: ({ mergeModel, complexWhere, mergeModelFindOptions: findOptions }) => {
+            const { targetModel, sourceModel } = mergeModel
+            if (!findOptions) findOptions = {}
+
+            const ss = <any>{};
+            const sourceons = <any>{};
+            const targetons = <any>{};
+
+            const uuid = snowflake()
+            const sprefix = `s${uuid}_`
+            const tprefix = `t${uuid}_`
+
+            iterateJoinKeysInMergeCollection({
+                onSourceRefProperty: (property) => {
+                    ss[property.mapsTo] = property.mapsTo
+                    sourceModel.propertyList.forEach(sproperty => {
+                        ss[`${sprefix}${sproperty.name}`] = sourceModel.propIdentifier(sproperty.mapsTo)
+                    })
+                    sourceons[mergeModel.propIdentifier(property.mapsTo)] = sourceModel.refTableCol({
+                        table: property.joinNode.refCollection,
+                        column: property.joinNode.refColumn
+                    })
+                },
+                onTargetRefProperty: (property) => {
+                    ss[property.mapsTo] = property.mapsTo
+                    targetModel.propertyList.forEach(tproperty => {
+                        ss[`${tprefix}${tproperty.name}`] = targetModel.propIdentifier(tproperty.mapsTo)
+                    })
+
+                    targetons[mergeModel.propIdentifier(property.mapsTo)] = targetModel.refTableCol({
+                        table: property.joinNode.refCollection,
+                        column: property.joinNode.refColumn
+                    })
+                }
+            })
+
+            return sourceModel.find({
+                ...findOptions,
+                select: ss,
+                joins: [
+                    sourceModel.leftJoin({
+                        collection: mergeModel.collection,
+                        on: sourceons
+                    }),
+                    targetModel.leftJoin({
+                        collection: targetModel.collection,
+                        on: targetons
+                    })
+                ],
+                where: complexWhere,
+                filterQueryResult (_results) {
+                    let targetKv = <any>{}
+                    const tlen = tprefix.length
+                    let sourceKv = <any>{}
+                    const slen = sprefix.length
+
+                    return _results.map((item: any) => {
+                        targetKv = {}
+                        sourceKv = {}
+                        Object.keys(item).forEach(itemk => {
+                            if (itemk.startsWith(tprefix)) {
+                                targetKv[itemk.slice(tlen)] = item[itemk]
+                            } else if (itemk.startsWith(sprefix)) {
+                                sourceKv[itemk.slice(slen)] = item[itemk]
+                            }
+                        })
+                        return sourceKv
+                    })
+                }
+            })
         },
     })
 

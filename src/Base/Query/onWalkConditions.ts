@@ -244,6 +244,9 @@ export function gnrWalkWhere<
           break
         /* ref verb :end */
         /* comparison verb :start */
+        case QueryGrammers.Qlfn.Operators.startsWith:
+        case QueryGrammers.Qlfn.Operators.endsWith:
+        case QueryGrammers.Qlfn.Operators.substring:
         case QueryGrammers.Qlfn.Operators.notLike: isNot = true
         case QueryGrammers.Qlfn.Operators.like: {
           parsedNode = onNode({
@@ -398,7 +401,7 @@ export function gnrWalkJoinOn<
     if (Array.isArray(input)) {
       if (!input.length) return null
       if (input.length === 1) return walk_fn(idify(input), context)
-      
+
       return input.map(item => walk_fn(item, context))
     }
 

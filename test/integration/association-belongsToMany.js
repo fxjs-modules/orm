@@ -154,8 +154,8 @@ odescribe("Association belongsToMany", function () {
     describe("accessors", function () {
         before(setup);
         var John, Deco
-        
-        function initData ({ doSave = true} = {}) {
+
+        function initData ({ doSave = true } = {}) {
             return () => {
                 John = Person.create({
                     name: "John Doe",
@@ -165,12 +165,12 @@ odescribe("Association belongsToMany", function () {
                     John.$saveRef('pets', {
                         name: "Deco"
                     });
-        
+
                     Deco = John.pets[0];
                 }
             }
         }
-        
+
         odescribe("#$saveRef", function () {
             before(initData())
 
@@ -190,6 +190,13 @@ odescribe("Association belongsToMany", function () {
             before(initData({ doSave: false }))
 
             it("basic", function () {
+                var _Deco = John.$getRef('pets')[0];
+
+                assert.exist(_Deco.id)
+                assert.equal(Deco.id, _Deco.id)
+            });
+
+            it("use where conditions to filter", function () {
                 var _Deco = John.$getRef('pets', {
                     where: {
                         [Pet.propIdentifier('name')]: 'Deco'
@@ -198,7 +205,16 @@ odescribe("Association belongsToMany", function () {
 
                 assert.exist(_Deco.id)
                 assert.equal(Deco.id, _Deco.id)
-            })
+
+                var found = John.$getRef('pets', {
+                      where: {
+                        [Pet.propIdentifier('name')]: 'Invalid Name'
+                      }
+                  });
+
+                assert.isArray(found)
+                assert.equal(found.length, 0)
+            });
 
             it("valid ref name is requried", function () {
                 assert.throws(() => {
@@ -211,7 +227,7 @@ odescribe("Association belongsToMany", function () {
             });
         });
 
-        describe("#$hasRef", function () {
+        odescribe("#$hasRef", function () {
             before(initData())
 
             it("basic", function () {
@@ -225,7 +241,7 @@ odescribe("Association belongsToMany", function () {
             })
         });
 
-        describe("#$unlinkRef", function () {
+        odescribe("#$unlinkRef", function () {
             before(initData())
 
             it("basic", function () {
@@ -235,12 +251,74 @@ odescribe("Association belongsToMany", function () {
 
                 assert.isTrue(John.$hasRef('pets').final)
                 John.$unlinkRef('pets')
+
                 assert.isFalse(John.$hasRef('pets').final)
                 John.$addRef('pets', Deco)
                 assert.isTrue(John.$hasRef('pets').final)
+
                 John.$unlinkRef('pets', Deco)
                 assert.isFalse(John.$hasRef('pets').final)
             });
         });
     });
+
+    describe("findByRef", function () {
+        before(setup);
+        var John, Jane
+
+        function getPets ({ ownerName }) {
+          return Array(20).fill(undefined).map((_, idx) => (
+            {
+              name: `${ownerName}'s Pet ${idx}`
+            }
+          ));
+        }
+
+        function initData ({ doSave = true } = {}) {
+            return () => {
+                John = Person.create({
+                    name: "John Doe",
+                });
+                Jane = Person.create({
+                    name: "Jane Dan",
+                });
+
+                if (doSave) {
+                    John.$saveRef('pets', getPets({ ownerName: 'John' }));
+                    Jane.$saveRef('pets', getPets({ ownerName: 'Jane' }));
+
+                    Deco = John.pets[0];
+                }
+            }
+        }
+
+        describe("findByRef() - A belongsToMany B", function () {
+          before(initData())
+
+          it("basic", function () {
+            var _John = Person.findByRef('pets', {
+              [Pet.propIdentifier('name')]: Pet.Opf.startsWith('John\'s')
+            })[0];
+
+            assert.exist(_John.id)
+            assert.equal(_John.id, John.id)
+
+            var _Jane = Person.findByRef('pets', {
+              [Pet.propIdentifier('name')]: Pet.Opf.startsWith('Jane\'s')
+            })[0];
+
+            assert.exist(_Jane.id)
+            assert.equal(_Jane.id, Jane.id)
+          });
+
+          it("not found", function () {
+            var found = Person.findByRef('pets', {
+              [Pet.propIdentifier('name')]: Pet.Opf.startsWith('Invalid\'s')
+            });
+
+            assert.isArray(found)
+            assert.equal(found.length, 0)
+          });
+        });
+    })
 });
