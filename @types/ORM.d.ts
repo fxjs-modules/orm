@@ -76,7 +76,7 @@ declare namespace FxOrmNS {
         define (
           name: string,
           properties: Fibjs.AnyObject,
-          config: FxOrmModel.Class_ModelDefinitionOptions
+          config?: FxOrmModel.Class_ModelDefinitionOptions
         ): FxOrmModel.Class_Model
 
         useTrans (callback: (orm: FxOrmNS.Class_ORM) => any): void

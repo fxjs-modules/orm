@@ -621,7 +621,7 @@ describe("Model Property", function () {
         })
     })
 
-    odescribe("Property Specs", function () {
+    describe("Property Specs", function () {
         before(setup);
 
         describe(`#useAsJoinColumn`, () => {

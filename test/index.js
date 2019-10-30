@@ -8,6 +8,8 @@ function t() {
     run('./integration/orm-operator.js');
     run('./integration/orm-parseHQL.js');
 
+    run('./integration/orm-plugin.js');
+
     run('./integration/utils-linked-list.js');
 
     run('./integration/model-property.js');
@@ -50,9 +52,8 @@ function t() {
 
     // // run('./integration/helpers.js');
 
-    // run('./integration/association-o2m.js');
     run('./integration/association-belongsToMany.js');
-    // // run('./integration/association-extend.js');
+    run('./integration/association-extendsTo.js');
 
     run('./integration/association-hasone.js');
     // run('./integration/association-hasone-required.js');

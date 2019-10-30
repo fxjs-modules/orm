@@ -97,7 +97,6 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
 
         const {
             connection = this.connection,
-            where = undefined,
             countParams = undefined,
             beforeQuery = HOOK_DEFAULT,
             filterQueryResult = (result: any) => Object.values(result[0])[0]
@@ -105,15 +104,8 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
 
         let kbuilder = this.sqlQuery.knex(table)
 
-        if (where)
-            kbuilder.where.apply(kbuilder, arraify(where))
-
-        if (countParams)
-            kbuilder.count.apply(kbuilder, arraify(countParams))
-        else
-            kbuilder.count()
-
         kbuilder = filterKnexBuilderBeforeQuery(kbuilder, beforeQuery, { knex: this.sqlQuery.knex, dml: this })
+        kbuilder.count.apply(kbuilder, countParams ? arraify(countParams) : [])
 
         return filterResultAfterQuery(
             this.execSqlQuery<number>(connection, kbuilder.toString(), []),
@@ -141,15 +133,16 @@ class DML_KnexBased<CONN_TYPE = any> extends Base<CONN_TYPE> implements FxOrmDML
         if (!idPropertyList) return null;
 
         const ids: {[k: string]: any} = {};
-
-        if (idPropertyList.length == 1/*  && idPropertyList[0].type == 'serial' */) {
+        if (idPropertyList.length == 1) {
             ids[idPropertyList[0].name] = info.insertId;
         } else {
-            for (let i = 0, prop; i < idPropertyList.length; i++) {
-                prop = idPropertyList[i];
-                // Zero is a valid value for an ID column
-                ids[prop.name] = data[prop.mapsTo] !== undefined ? data[prop.mapsTo] : null;
-            }
+            idPropertyList.forEach(prop => {
+                if (prop.joinNode && prop.joinNode.refColumn)
+                    // Zero is a valid value for an ID column
+                    ids[prop.name] = data[prop.mapsTo] !== undefined ? data[prop.mapsTo] : null;
+                else
+                    ids[prop.name] = info.insertId;
+            });
         }
 
         return ids;

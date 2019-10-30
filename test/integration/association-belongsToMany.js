@@ -344,8 +344,8 @@ describe("Association belongsToMany", function () {
               Email.belongsToMany(Station, {
                 as: 'emails',
                 collection: 'custom_station_emails',
-                sourceJoinPropertyName: 'custom_stationid',
-                targetJoinPropertyName: 'custom_emailid',
+                joinNodeSource: 'custom_stationid',
+                joinNodeTarget: 'custom_emailid',
               });
 
               helper.dropSync([Email, Station]);

@@ -39,7 +39,18 @@ describe("Model.find() - advanced", function () {
               tag_id: Tag.idPropertyList[0].renameTo({ name: 'tag_id' }).deKeys(),
               post_id: Post.idPropertyList[0].renameTo({ name: 'post_id' }).deKeys(),
             }, {
-              keys: false
+              keys: false,
+              howToCheckExistenceWhenNoKeys: ({ instance }) => {
+                if (!instance.$isFieldFilled('tag_id') || !instance['tag_id']) return false
+                if (!instance.$isFieldFilled('post_id') || !instance['post_id']) return false
+
+                return !!PostTagRel.count({
+                  where: {
+                    tag_id: instance['tag_id'],
+                    post_id: instance['post_id'],
+                  }
+                })
+              }
             })
 
             helper.dropSync([Person, Post, Tag, Category, PostTagRel], function () {

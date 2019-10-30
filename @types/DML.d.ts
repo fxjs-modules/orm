@@ -39,8 +39,11 @@ declare namespace FxOrmDML {
                 collection: string,
                 opts?: {
                     connection?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
-                    joins?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['joins'],
                     where?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['where'],
+                    joins?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['joins'],
+                    fields?: string[],
+                    select?: { [k: string]: string },
+
                     countParams?: FxOrmTypeHelpers.Parameters<FKnexNS.KnexInstance['count']>
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                     filterQueryResult?: <T2 = any>(result: any) => T2
@@ -64,7 +67,7 @@ declare namespace FxOrmDML {
                 data: FxSqlQuerySql.DataToSet,
                 opts?: {
                     connection?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
-                    idPropertyList?: FxOrmProperty.NormalizedProperty[],
+                    idPropertyList?: FxOrmProperty.Class_Property[],
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                 }
             ): Fibjs.AnyObject
@@ -76,7 +79,7 @@ declare namespace FxOrmDML {
                 opts?: {
                     connection?: FxOrmTypeHelpers.SecondParameter<FxOrmDML.DMLDialect['find']>['connection'],
                     where?: Fibjs.AnyObject,
-                    idPropertyList?: FxOrmProperty.NormalizedProperty[],
+                    // idPropertyList?: FxOrmProperty.Class_Property[],
                     beforeQuery?: FxOrmTypeHelpers.ItOrListOfIt<BeforeQueryItem>
                 }
             ): T

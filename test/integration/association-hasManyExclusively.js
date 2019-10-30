@@ -32,6 +32,8 @@ describe("hasManyExclusively", function () {
     });
 
     describe("normal", function () {
+        var John, Jane
+
         var setup = function (opts) {
             opts = opts || {};
 
@@ -68,7 +70,7 @@ describe("hasManyExclusively", function () {
                      * John --+---> Ac_1
                      *        '---> Ac_2 <----- Jane
                      *
-                     * Justin
+                     * Justin +---> Ac_3
                      */
                     Person.create([{
                         name: "Bob",
@@ -105,13 +107,9 @@ describe("hasManyExclusively", function () {
             before(setup());
 
             oit("should allow to specify order as string", function () {
-                var people = Person.find({
-                    where: {
-                        name: "John"
-                    }
-                });
+                var _John = Person.one({ where: { name: "John" } });
 
-                var stations = people[0].$getRef("stations", {
+                var stations = _John.$getRef("stations", {
                     orderBy: ['name', 'desc']
                 });
 
@@ -187,8 +185,8 @@ describe("hasManyExclusively", function () {
                 John = Person.one({ where: { name: "John" } });
             });
 
-            oit("add from raw object", function () {
-                // reassign station to Jane
+            it("add from raw object", function () {
+                // assign station to Jane
                 JaneStations = Jane.$addRef('stations', { name: "station of Jane" });
 
                 assert.exist(Jane, 'stations')
@@ -196,24 +194,26 @@ describe("hasManyExclusively", function () {
                 assert.equal(JaneStations, Jane.stations)
 
                 assert.equal(JaneStations[0].name, "station of Jane")
+                assert.equal(JaneStations.length, 1)
             });
 
-            oit("update for linked instance", function () {
+            it("update for linked instance", function () {
                 Jane.$addRef("stations", JaneStations)
 
-                var stations = Jane.$getRef("stations")
-                assert.isArray(stations)
-                assert.equal(stations.length, 1)
+                var _JaneStations = Jane.$getRef("stations")
+                assert.isArray(_JaneStations)
+                assert.equal(_JaneStations.length, 1)
+                assert.equal(Jane.stations.length, 1)
             });
 
-            oit("add again", function () {
+            it("add again", function () {
                 var _JaneStations = Jane.$addRef('stations', { name: "station2 of Jane" });
 
                 assert.equal(JaneStations.length, 1);
                 assert.equal(_JaneStations.length, 2);
             });
 
-            oit("add non-linked instance", function () {
+            it("add non-linked instance", function () {
                 var _JaneStations = Jane.$addRef("stations", Station.create({
                     name: "station3 of Jane"
                 }));
@@ -221,7 +221,7 @@ describe("hasManyExclusively", function () {
                 assert.equal(_JaneStations.length, 3);
             });
 
-            oit("add other instance linked instance", function () {
+            it("add other instance linked instance", function () {
                 var JohnStations = John.$getRef("stations");
                 assert.equal(JohnStations.length, 2);
 
@@ -235,87 +235,26 @@ describe("hasManyExclusively", function () {
                 before(setup())
             });
 
-            xit("might add duplicates", function () {
-                var stations = Station.find({
-                    name: "Ac_2"
-                });
-                var people = Person.find({
-                    name: "Jane"
-                });
+            it("could not add duplicates", function () {
+                var _Ac_2 = Station.find({ where: { name: "Ac_2" } });
+                var _Jane = Person.one({ where: { name: "Jane" } });
 
-                people[0].addPetsSync(stations[0]);
+                _Jane.$addRef("stations", _Ac_2);
 
-                var stations = people[0].getPetsSync("name");
+                var stations = _Jane.$getRef("stations", {
+                    orderBy: "name"
+                });
 
                 assert.ok(Array.isArray(stations));
-                assert.equal(stations.length, 2);
+                assert.equal(stations.length, 1);
                 assert.equal(stations[0].name, "Ac_2");
-                assert.equal(stations[1].name, "Ac_2");
             });
 
-            xit("should keep associations and add new ones", function () {
-                var Ac_1 = Station.find({
-                    name: "Ac_1"
-                }).firstSync();
-                var Jane = Person.find({
-                    name: "Jane"
-                }).firstSync();
-
-                var janesPets = Jane.getPetsSync();
-
-                var petsAtStart = janesPets.length;
-
-                Jane.addPetsSync(Ac_1);
-
-                var stations = Jane.getPetsSync("name");
-
-                assert.ok(Array.isArray(stations));
-                assert.equal(stations.length, petsAtStart + 1);
-                assert.equal(stations[0].name, "Ac_1");
-                assert.equal(stations[1].name, "Ac_2");
-            });
-
-            xit("should accept several arguments as associations", function () {
-                var stations = Station.find();
-                var Justin = Person.find({
-                    name: "Justin"
-                }).firstSync();
-                Justin.addPetsSync(stations[0], stations[1]);
-
-                var stations = Justin.getPetsSync();
-
-                assert.ok(Array.isArray(stations));
-                assert.equal(stations.length, 2);
-            });
-
-            xit("should accept array as list of associations", function () {
-                var stations = Station.create([{
-                    name: 'Ruff'
-                }, {
-                    name: 'Spotty'
-                }]);
-                var Justin = Person.find({
-                    name: "Justin"
-                }).firstSync();
-
-                var justinsPets = Justin.getPetsSync();
-
-                var petCount = justinsPets.length;
-
-                Justin.addPetsSync(stations);
-
-                justinsPets = Justin.getPetsSync();
-
-                assert.ok(Array.isArray(justinsPets));
-                // Mongo doesn't like adding duplicates here, so we add new ones.
-                assert.equal(justinsPets.length, petCount + 2);
-            });
-
-            xit("should throw if no items passed", function () {
-                var person = Person.oneSync();
+            it("should throw if no items passed", function () {
+                var _Jane = Person.one({ where: { name: "Jane" } });
 
                 assert.throws(function () {
-                    person.addPetsSync();
+                    _Jane.$addRef("stations");
                 });
             });
         });
@@ -356,39 +295,10 @@ describe("hasManyExclusively", function () {
                 assert.equal(Jane.$getRef('stations').length, 2);
             });
 
-            it("save as clean", function () {
+            it("save as clear", function () {
                 assert.equal(Jane.$getRef('stations').length, 2);
                 Jane.$saveRef('stations', []);
                 assert.equal(Jane.$getRef('stations').length, 0);
-            });
-
-
-            xit("should accept several arguments as associations", function () {
-                var stations = Station.find();
-                var Justin = Person.find({
-                    name: "Justin"
-                }).firstSync();
-
-                Justin.setPetsSync(stations[0], stations[1]);
-
-                var stations = Justin.getPetsSync();
-
-                assert.ok(Array.isArray(stations));
-                assert.equal(stations.length, 2);
-            });
-
-            xit("should accept an array of associations", function () {
-                var stations = Station.find();
-                var Justin = Person.find({
-                    name: "Justin"
-                }).firstSync();
-
-                Justin.setPetsSync(stations);
-
-                var all_pets = Justin.getPetsSync();
-
-                assert.ok(Array.isArray(all_pets));
-                assert.equal(all_pets.length, stations.length);
             });
 
             xit("should remove all associations if an empty array is passed", function () {
@@ -508,17 +418,19 @@ describe("hasManyExclusively", function () {
                 Ac_2 = Station.one({ where: { name: "Ac_2" } });
             });
 
-            oit("should unlink specific associations if passed", function () {
+            it("should unlink specific associations if passed", function () {
+                var pstations = John.$getRef("stations");
+                assert.equal(pstations.length, 2);
+
                 John.$unlinkRef("stations", Ac_2);
 
                 var pstations = John.$getRef("stations");
-
-                assert.ok(Array.isArray(pstations));
                 assert.equal(pstations.length, 1);
+
                 assert.equal(pstations[0].name, "Ac_1");
             });
 
-            oit("should unlink all associations if none passed", function () {
+            it("should unlink all associations if none passed", function () {
                 John.$addRef("stations", Ac_2);
                 assert.equal(John.$getRef("stations").length, 2);
                 John.$unlinkRef("stations");

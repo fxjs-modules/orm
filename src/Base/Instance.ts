@@ -79,7 +79,13 @@ class Instance implements FxOrmInstance.Class_Instance {
     }
     @DecoratorsProperty.buildDescriptor({ enumerable: false })
     get $isPersisted (): boolean {
-        return this.$model.keyPropertyNames.every(x => this.$isFieldFilled(x))
+        let noKeys = true
+        const allKeysFilled = this.$model.keyPropertyNames.every(x => {
+            noKeys = false
+            return this.$isFieldFilled(x)
+        })
+
+        return noKeys || allKeysFilled
     }
 
     $$getWheres () {
@@ -187,7 +193,8 @@ class Instance implements FxOrmInstance.Class_Instance {
 
         const whereCond = <any>{};
         this.$model.idPropertyList.forEach((property) => {
-            whereCond[property.name] = this[property.name];
+            if (this.$isFieldFilled(property.name))
+                whereCond[property.name] = this[property.name];
         });
         if (isEmptyPlainObject(whereCond))
             throw new Error(`[Instance::$get] invalid where conditions generated, check if id properties(${this.$model.ids.join(', ')}) of your model(collection: ${this.$model.collection}) filled in this instance!`)
@@ -247,7 +254,7 @@ class Instance implements FxOrmInstance.Class_Instance {
         })
         /* fill default value :end */
 
-        if (isEmptyPlainObject(kvs) && isEmptyPlainObject(refs) && !this.$model.noKey)
+        if (isEmptyPlainObject(kvs) && isEmptyPlainObject(refs) && !this.$model.noKeys)
             throw new Error(`[Instance::save] for instance of model(collection: ${this.$model.collection}), at least one non-empty object in "kvs" and "refs" should be provided!`)
 
             if (this.$isPersisted && this.$exists()) {
@@ -271,9 +278,7 @@ class Instance implements FxOrmInstance.Class_Instance {
                     this.$model.$dml.update(
                         this.$model.collection,
                         changes,
-                        {
-                            where: whereCond
-                        }
+                        { where: whereCond }
                     );
                 }
             } else {
@@ -281,9 +286,7 @@ class Instance implements FxOrmInstance.Class_Instance {
                 const insertResult = this.$model.$dml.insert(
                     this.$model.collection,
                     creates,
-                    {
-                        idPropertyList: this.$model.idPropertyList
-                    }
+                    { idPropertyList: this.$model.idPropertyList }
                 );
 
                 if (insertResult)
@@ -445,12 +448,9 @@ class Instance implements FxOrmInstance.Class_Instance {
     }
 
     $exists (): boolean {
-        if (this.$model.noKey) {
-            // const fn = this.$model.settings.get('instance.checkExists')
-            // if (typeof fn === 'function') return fn(this)
-            if (this.$model.isMergeModel) return (<FxOrmModel.Class_MergeModel>this.$model).checkExistenceForSource({
-                mergeInstance: this
-            })
+        if (this.$model.noKeys) {
+            if (typeof this.$model.checkExistenceWhenNoKeys === 'function')
+                return this.$model.checkExistenceWhenNoKeys({ instance: this })
 
             return false
         }
@@ -479,9 +479,7 @@ class Instance implements FxOrmInstance.Class_Instance {
         // if no any id filled, return false directly
         if (!withIdFilled) return false
 
-        return this.$model.$dml.exists(this.$model.collection, {
-            where
-        })
+        return this.$model.$dml.exists(this.$model.collection, { where })
     }
 
     toJSON () {

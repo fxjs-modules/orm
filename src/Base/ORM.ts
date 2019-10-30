@@ -126,6 +126,8 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
     
                 collection: config.collection || name,
                 indexes: [],
+
+                howToCheckExistenceWhenNoKeys: config.howToCheckExistenceWhenNoKeys || undefined,
     
                 cascadeRemove: config.cascadeRemove,
     

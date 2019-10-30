@@ -1,5 +1,5 @@
 import { arraify } from "../../Utils/array";
-import { snowflake } from "../../Utils/uuid";
+import { getRefPrefixInfo } from "../../Utils/select-property";
 
 export = function defineRef (
     this: FxOrmModel.Class_Model,
@@ -10,10 +10,10 @@ export = function defineRef (
     const {
         as: asKey = `${this.collection}s`,
         collection = `${sM.collection}_${this.collection}s`,
-        sourceJoinPropertyName = `${sM.collection}_id`,
-        sourcePropertyForJoin = sM.id,
-        targetJoinPropertyName = `${this.collection}_id`,
-        targetPropertyForJoin = this.id
+        joinNodeSource = `${sM.collection}_id`,
+        sourceForJoin = sM.id,
+        joinNodeTarget = `${this.collection}_id`,
+        targetForJoin = this.id
     } = opts || {}
 
     if (sM.fieldInfo(asKey))
@@ -42,54 +42,63 @@ export = function defineRef (
         defineMergeProperties: ({ mergeModel }) => {
             const { targetModel, sourceModel } = mergeModel
 
-            if (!sourcePropertyForJoin)
+            if (!sourceForJoin)
                 if (sourceModel.ids.length > 1)
                     throw new Error(
                         `[MergeModel::constructor/belongsToMany] source model(collection: ${sourceModel.collection})`
-                        + `has more than one id properties, you must specify sourcePropertyForJoin`,
+                        + `has more than one id properties, you must specify sourceForJoin`,
                     )
                 else if (!sourceModel.ids.length)
                     throw new Error(
                         `[MergeModel::constructor/belongsToMany] source model(collection: ${sourceModel.collection})`
-                        + `has no any id property, you must specify sourcePropertyForJoin`,
+                        + `has no any id property, you must specify sourceForJoin`,
                     )
 
-            const sProperty = sourceModel.prop(sourcePropertyForJoin)
+            const sProperty = sourceModel.prop(sourceForJoin)
 
             mergeModel.addProperty(
-                sourceJoinPropertyName,
+                joinNodeSource,
                 sProperty
-                    .renameTo({ name: sourceJoinPropertyName })
+                    .renameTo({ name: joinNodeSource })
                     .useAsJoinColumn({ column: sProperty.name, collection: sourceModel.collection })
                     .deKeys()
             )
 
-            if (!targetPropertyForJoin)
+            if (!targetForJoin)
                 if (targetModel.ids.length > 1)
                     throw new Error(
                         `[MergeModel::constructor/belongsToMany] target model(collection: ${targetModel.collection})`
-                        + `has more than one id properties, you must specify targetPropertyForJoin`,
+                        + `has more than one id properties, you must specify targetForJoin`,
                     )
                 else if (!targetModel.ids.length)
                     throw new Error(
                         `[MergeModel::constructor/belongsToMany] target model(collection: ${sourceModel.collection})`
-                        + `has no any id property, you must specify targetPropertyForJoin`,
+                        + `has no any id property, you must specify targetForJoin`,
                     )
 
-            const tProperty = targetModel.prop(targetPropertyForJoin)
+            const tProperty = targetModel.prop(targetForJoin)
 
             mergeModel.addProperty(
-                targetJoinPropertyName,
+                joinNodeTarget,
                 tProperty
-                    .renameTo({ name: targetJoinPropertyName })
+                    .renameTo({ name: joinNodeTarget })
                     .useAsJoinColumn({ column: tProperty.name, collection: targetModel.collection })
                     .deKeys()
             )
         },
+        howToCheckExistenceWhenNoKeys: ({ instance }) => {
+            if (!instance.$isFieldFilled(joinNodeSource) || !instance[joinNodeSource]) return false
+            if (!instance.$isFieldFilled(joinNodeTarget) || !instance[joinNodeTarget]) return false
+            
+            return !!mergeModel.count({
+                where: {
+                    [joinNodeSource]: instance[joinNodeSource],
+                    [joinNodeTarget]: instance[joinNodeTarget]
+                }
+            })
+        },
         howToGetIdPropertyNames: ({ mergeModel }) => {
             return mergeModel.joinKeys
-        },
-        howToCheckExistenceForSource: ({ mergeModel, mergeInstance }) => {
         },
         howToCheckHasForSource: ({ mergeModel, sourceInstance, targetInstances }) => {
             const { targetModel, sourceModel } = mergeModel
@@ -175,9 +184,7 @@ export = function defineRef (
             const sourceons = <any>{};
             const targetons = <any>{};
 
-            const uuid = snowflake()
-            const sprefix = `s${uuid}_`
-            const tprefix = `t${uuid}_`
+            const { sprefix, tprefix } = getRefPrefixInfo()
 
             iterateJoinKeysInMergeCollection({
                 onSourceRefProperty: (property) => {
@@ -296,9 +303,7 @@ export = function defineRef (
             const sourceons = <any>{};
             const targetons = <any>{};
 
-            const uuid = snowflake()
-            const sprefix = `s${uuid}_`
-            const tprefix = `t${uuid}_`
+            const { sprefix, splen, tprefix, tplen } = getRefPrefixInfo()
 
             iterateJoinKeysInMergeCollection({
                 onSourceRefProperty: (property) => {
@@ -340,18 +345,16 @@ export = function defineRef (
                 where: complexWhere,
                 filterQueryResult (_results) {
                     let targetKv = <any>{}
-                    const tlen = tprefix.length
                     let sourceKv = <any>{}
-                    const slen = sprefix.length
 
                     return _results.map((item: any) => {
                         targetKv = {}
                         sourceKv = {}
                         Object.keys(item).forEach(itemk => {
                             if (itemk.startsWith(tprefix)) {
-                                targetKv[itemk.slice(tlen)] = item[itemk]
+                                targetKv[itemk.slice(tplen)] = item[itemk]
                             } else if (itemk.startsWith(sprefix)) {
-                                sourceKv[itemk.slice(slen)] = item[itemk]
+                                sourceKv[itemk.slice(splen)] = item[itemk]
                             }
                         })
                         return sourceKv

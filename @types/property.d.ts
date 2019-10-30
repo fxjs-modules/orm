@@ -108,6 +108,7 @@ declare namespace FxOrmProperty {
                 driver: FxDbDriverNS.Driver
             }
         ): any
+        static isProperty (input: any): input is FxOrmProperty.Class_Property
 
         // static create (...args: FxOrmTypeHelpers.ConstructorParams<Class_Property>): Class_Property
         constructor (
@@ -140,7 +141,7 @@ declare namespace FxOrmProperty {
         /**
          * @description get one normalized non-key property snapshot
          */
-        deKeys(): NormalizedProperty
+        deKeys(opts?: { removeIndexes?: boolean }): NormalizedProperty
         /**
          * @description if this is one key-property, which is:
          * `property.key === true`
@@ -151,6 +152,7 @@ declare namespace FxOrmProperty {
         isSerial(): boolean
         isIncrementable(): boolean
 
+        setMeta (metaKey: keyof NormalizedProperty, metaValue: any): this
         renameTo (opts: {
             name: Class_Property['name'],
             mapsTo?: Class_Property['mapsTo'],
@@ -161,6 +163,7 @@ declare namespace FxOrmProperty {
             opts: Class_Property | { column: string, collection?: string }
         ): this
         isJoinProperty (): boolean
+
 
         toJSON(): NormalizedProperty
     }

@@ -1,5 +1,5 @@
 import uuid = require('uuid')
 
-export function snowflake() {
+export function snowflakeUUID() {
     return uuid.snowflake().hex()
 }

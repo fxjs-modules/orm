@@ -220,14 +220,13 @@ function isValidCustomizedType(
     )
 }
 
-function isProperty (input: any): input is FxOrmProperty.Class_Property {
-    return input instanceof Property
-}
-
 export default class Property<
   T_CTX extends Fibjs.AnyObject & { sqlQuery?: FxSqlQuery.Class_Query } = any
 > implements FxOrmProperty.Class_Property<T_CTX> {
     static filterDefaultValue = filterDefaultValue;
+    static isProperty (input: any): input is FxOrmProperty.Class_Property {
+        return input instanceof Property
+    }
 
     $storeType: FxDbDriverNS.Driver<any>['type'];
     $ctx: FxOrmProperty.Class_Property<T_CTX>['$ctx'];
@@ -349,10 +348,12 @@ export default class Property<
         })
     }
 
-    deKeys () {
+    deKeys ({ removeIndexes = true } = {}) {
         const json = this.toJSON()
-        json.unique = false
-        json.index = false
+        if (removeIndexes) {
+            json.unique = false
+            json.index = false
+        }
         json.big = false
         json.key = false
         json.primary = false
@@ -361,6 +362,16 @@ export default class Property<
         if (json.type === 'serial') json.type = 'integer'
 
         return json
+    }
+
+    setMeta (...args: FxOrmTypeHelpers.Parameters<FxOrmProperty.Class_Property['setMeta']>) {
+        const [metaKey, metaValue] = args
+        if (!PROPERTIES_KEYS.includes(<any>metaKey))
+            throw new Error(`[Property::set] metaKey must be one of ${PROPERTIES_KEYS.join(', ')}`)
+
+        ;(<any>this)[metaKey] = metaValue
+
+        return this
     }
 
     renameTo ({ name, mapsTo = name, lazyname = name }: FxOrmTypeHelpers.FirstParameter<FxOrmProperty.Class_Property['renameTo']>) {
@@ -397,7 +408,7 @@ export default class Property<
     useAsJoinColumn (opts: FxOrmTypeHelpers.FirstParameter<FxOrmProperty.Class_Property['useAsJoinColumn']>) {
         this.required = false
 
-        if (isProperty(opts)) {
+        if (Property.isProperty(opts)) {
             this.joinNode.refColumn = opts.name
             delete this.joinNode.refCollection
         } else {

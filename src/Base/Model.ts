@@ -1,6 +1,3 @@
-import util = require('util');
-import coroutine = require('coroutine');
-
 import DDLSync = require('@fxjs/sql-ddl-sync');
 
 import Class_QueryBuilder from './QueryBuilder';
@@ -146,7 +143,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return Object.keys(this.keyProperties);
     }
     @configurable(false)
-    get noKey () { return !this.keyPropertyNames.length }
+    get noKeys () { return !this.keyPropertyNames.length }
 
     orm: FxOrmModel.Class_Model['orm']
 
@@ -170,6 +167,8 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
               return this.$dml.sqlQuery
       }
     }
+
+    checkExistenceWhenNoKeys: FxOrmModel.Class_Model['checkExistenceWhenNoKeys']
 
     get propertyContext() {
         return {
@@ -224,6 +223,19 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                         if (maybeId.isIncrementable()) maybeId.serial = true
                     }
                 }
+
+            if (this.noKeys && typeof config.howToCheckExistenceWhenNoKeys !== 'function')
+                throw new Error(`[${this.isMergeModel ? 'MergeModel' : 'Model'}::constructor] model(collection: ${this.collection}) has no keys and no function config.howToCheckExistenceWhenNoKeys provided.`)
+
+            Object.defineProperty(
+                this,
+                'checkExistenceWhenNoKeys',
+                {
+                    value: config.howToCheckExistenceWhenNoKeys,
+                    configurable: false,
+                    writable: false,
+                    enumerable: true
+            });
         })();
     }
 
@@ -489,9 +501,10 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     ): FxOrmModel.Class_MergeModel {
         const {
             name, collection, properties,
+            howToCheckExistenceWhenNoKeys,
+            
             defineMergeProperties,
             howToGetIdPropertyNames,
-            howToCheckExistenceForSource,
             howToCheckHasForSource,
             howToFetchForSource,
             howToSaveForSource,
@@ -509,9 +522,10 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                 orm: this.orm,
                 properties: properties,
                 settings: this.settings.clone(),
+                howToCheckExistenceWhenNoKeys,
+
                 defineMergeProperties,
                 howToGetIdPropertyNames,
-                howToCheckExistenceForSource,
                 howToCheckHasForSource,
                 howToFetchForSource,
                 howToSaveForSource,
@@ -534,6 +548,10 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return require('./Refs/hasOne').apply(this, args);
     }
 
+    extendsTo (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['extendsTo']>) {
+        return require('./Refs/extendsTo').apply(this, args);
+    }
+
     hasMany (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['hasMany']>) {
         return require('./Refs/hasMany').apply(this, args);
     }
@@ -551,11 +569,11 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     name: string
     type: 'o2o' | 'o2m' | 'm2o' | 'm2m'
     sourceModel: FxOrmModel.Class_Model
-    // sourcePropertyForJoin: string
+    // sourceForJoin: string
     get sourceKeys () { return this.sourceModel.keys }
 
     targetModel: FxOrmModel.Class_Model
-    // targetPropertyForJoin: string
+    // targetForJoin: string
     get targetKeys () { return this.targetModel.keys }
 
     @configurable(false)
@@ -592,7 +610,6 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
         const {
             mergeCollection, source, target, onFindByRef,
             defineMergeProperties, howToGetIdPropertyNames,
-            howToCheckExistenceForSource,
             howToSaveForSource, howToFetchForSource, howToUnlinkForSource,
             howToCheckHasForSource,
             /**
@@ -610,7 +627,6 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
             collection: mergeCollection,
             howToGetIdPropertyNames: howToGetIdPropertyNames,
             onFindByRef: onFindByRef,
-            howToCheckExistenceForSource,
             howToSaveForSource,
             howToFetchForSource,
             howToUnlinkForSource,
@@ -621,7 +637,7 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
         this.targetModel = target
 
         if (!isModel(source)) throw new Error(`[MergeModel::constructor] source must be valid model, but got (type: ${typeof source})`)
-        if (!isModel(target)) throw new Error(`[MergeModel::constructor] target must be valid model, but got (type: ${typeof target})`)
+        // if (!isModel(target)) throw new Error(`[MergeModel::constructor] target must be valid model, but got (type: ${typeof target})`)
 
         // TODO: forbid changing source model here
         defineMergeProperties({
@@ -638,17 +654,11 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
         return model === this.targetModel
     }
 
-    checkExistenceForSource ({
-        mergeInstance
-    }: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['checkExistenceForSource']>) {
-        return this.associationInfo.howToCheckExistenceForSource({ mergeModel: this, mergeInstance })
-    }
-
     checkHasForSource ({
         sourceInstance,
         targetInstances
     }: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['checkHasForSource']>
-    ) {
+    ): ReturnType<FxOrmModel.Class_MergeModel['checkHasForSource']> {
         if (Array.isArray(targetInstances)) {
             const unfilledTargetInstance = targetInstances.find(inst => !inst.$isPersisted)
 

@@ -12,7 +12,8 @@ export = function defineRef (
         as: asKey = `${targetModel.collection}`,
     } = opts || {}
 
-    const mergePropertyNameInSource = `${asKey}_id`
+    const joinNodeSource = `${asKey}_id`
+    const sid = this.id
     if (this.fieldInfo(asKey))
         throw new Error(`[MergeModel::hasOne] source model(collection: ${targetModel.collection}) already has field "${asKey}", it's not allowed to add one associated field to it.`)
 
@@ -26,6 +27,14 @@ export = function defineRef (
         properties: {},
         type: 'o2o',
         target: targetModel,
+        howToCheckExistenceWhenNoKeys: ({ instance }) => {
+            if (instance.$isFieldFilled(sid))
+                return !!mergeModel.count({ where: { [sid]: instance[sid] } })
+                
+            if (!instance.$isFieldFilled(joinNodeSource) || !instance[joinNodeSource]) return false
+            
+            return !!mergeModel.count({ where: { [joinNodeSource]: instance[joinNodeSource] } })
+        },
         howToGetIdPropertyNames: ({ mergeModel }) => {
             return mergeModel.targetModel.ids
         },
@@ -36,9 +45,9 @@ export = function defineRef (
                 throw new Error(`[MergeModel::defineMergeProperties/hasOne] no target property "${targetModel.id}" in target model, check your definition about 'defineMergeProperties'`)
 
             mergeModel.addProperty(
-                mergePropertyNameInSource,
+                joinNodeSource,
                 tProperty
-                    .renameTo({ name: mergePropertyNameInSource })
+                    .renameTo({ name: joinNodeSource })
                     .useAsJoinColumn({ column: tProperty.name, collection: targetModel.collection })
                     .deKeys()
             )
@@ -54,9 +63,6 @@ export = function defineRef (
                 )
             })
         },
-        howToCheckExistenceForSource: ({ mergeModel, mergeInstance }) => {
-            return mergeModel.sourceModel.idPropertyList.every(prop => mergeInstance.$isFieldFilled(prop.name))
-        },
         howToSaveForSource: ({ mergeModel, targetDataSet, sourceInstance }) => {
             let targetInst = <FxOrmInstance.Class_Instance>util.last(arraify(targetDataSet))
 
@@ -66,7 +72,7 @@ export = function defineRef (
 
             const mergeInst = mergeModel.New(sourceInstance.toJSON())
 
-            mergeInst[mergePropertyNameInSource] = targetInst[mergeModel.targetModel.id]
+            mergeInst[joinNodeSource] = targetInst[mergeModel.targetModel.id]
 
             mergeInst.$save();
 
@@ -89,24 +95,24 @@ export = function defineRef (
 
             ;<FxOrmInstance.Class_Instance[]>(mergeModel.find({
                 select: (() => {
-                    const ss = { [mergePropertyNameInSource]: sourceModel.propIdentifier(sourceModel.id) };
+                    const ss = { [joinNodeSource]: sourceModel.propIdentifier(sourceModel.id) };
                     /**
                      * @todo reduce unnecesary property
                      */
-                    ss[alias] = mergeModel.propIdentifier(mergePropertyNameInSource)
+                    ss[alias] = mergeModel.propIdentifier(joinNodeSource)
 
                     return ss
                 })(),
                 where: {
                     [targetModel.Op.and]: {
-                        ...targetIds.length && { [mergePropertyNameInSource]: targetModel.Opf.in(targetIds) }
+                        ...targetIds.length && { [joinNodeSource]: targetModel.Opf.in(targetIds) }
                     }
                 },
                 joins: [
                     mergeModel.leftJoin({
                         collection: targetModel.collection,
                         on: {
-                            [mergePropertyNameInSource]: mergeModel.refTableCol({
+                            [joinNodeSource]: mergeModel.refTableCol({
                                 table: targetModel.collection,
                                 column: targetModel.id
                             }),
@@ -144,12 +150,12 @@ export = function defineRef (
                 [mergeModel.targetModel.id]: sourceInstance[mergeModel.targetModel.id]
             });
 
-            if (mergeInst[mergePropertyNameInSource] === null) {
+            if (mergeInst[joinNodeSource] === null) {
                 sourceInstance[mergeModel.name] = null;
                 return
             }
 
-            targetInst[targetModel.id] = mergeInst[mergePropertyNameInSource]
+            targetInst[targetModel.id] = mergeInst[joinNodeSource]
             targetInst.$fetch();
 
             sourceInstance[mergeModel.name] = targetInst;
@@ -160,7 +166,7 @@ export = function defineRef (
             });
 
             mergeInst.$fetch();
-            mergeInst.$set(mergePropertyNameInSource, null).$save();
+            mergeInst.$set(joinNodeSource, null).$save();
 
             sourceInstance[mergeModel.name] = null;
         },
@@ -174,7 +180,7 @@ export = function defineRef (
             return sourceModel.find({
                 ...findOptions,
                 select: (() => {
-                    const ss = <Record<string, string>>{[mergePropertyNameInSource]: targetModel.propIdentifier(targetModel.id)};
+                    const ss = <Record<string, string>>{[joinNodeSource]: targetModel.propIdentifier(targetModel.id)};
                     sourceModel.propertyList.forEach(property =>
                         ss[property.mapsTo] = sourceModel.propIdentifier(property)
                     )
@@ -187,7 +193,7 @@ export = function defineRef (
                         on: {
                             [sourceModel.Op.and]: [
                                 {
-                                    [mergeModel.propIdentifier(mergePropertyNameInSource)]: targetModel.refTableCol({
+                                    [mergeModel.propIdentifier(joinNodeSource)]: targetModel.refTableCol({
                                         table: targetModel.collection,
                                         column: targetModel.id
                                     }),

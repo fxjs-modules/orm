@@ -11,6 +11,7 @@ declare namespace FxOrmModel {
         collection?: Class_ModelConstructOptions['collection']
         indexes?: Class_ModelConstructOptions['indexes']
         keys?: Class_ModelConstructOptions['keys']
+        howToCheckExistenceWhenNoKeys?: Class_ModelConstructOptions['howToCheckExistenceWhenNoKeys']
 
         autoSave?: boolean
         autoFetch?: boolean
@@ -49,7 +50,7 @@ declare namespace FxOrmModel {
          * @description if this model has no key
          * @default false
          */
-        readonly noKey: boolean
+        readonly noKeys: boolean
         /* meta :end */
 
         /**
@@ -76,6 +77,10 @@ declare namespace FxOrmModel {
         readonly queryBuilder: FxOrmTypeHelpers.ReturnType<FKnexNS.KnexInstance['queryBuilder']>
         readonly sqlQuery: FxSqlQuery.Class_Query
 
+        readonly checkExistenceWhenNoKeys?: (payload: {
+            instance: FxOrmInstance.Class_Instance
+        }) => boolean
+
         readonly propertyContext: {
             model: FxOrmModel.Class_Model,
             sqlQuery: FxOrmDML.DMLDialect<any>['sqlQuery']
@@ -96,6 +101,8 @@ declare namespace FxOrmModel {
              * if keys === false, all properties are not key
              */
             keys?: string[] | false
+
+            howToCheckExistenceWhenNoKeys?: FxOrmModel.Class_Model['checkExistenceWhenNoKeys']
 
             autoSave?: boolean
             autoFetch?: boolean
@@ -245,7 +252,16 @@ declare namespace FxOrmModel {
             model: FxOrmModel.Class_Model,
             opts?: {
                 as?: string,
-                associationKey?: string | ((ctx: any) => string)
+            }
+        ): Class_MergeModel
+
+        extendsTo (
+            properties: Fibjs.AnyObject,
+            opts: {
+                as: string
+                collection?: string
+                sourceForJoin?: string
+                joinNodeSource?: string
             }
         ): Class_MergeModel
 
@@ -275,10 +291,10 @@ declare namespace FxOrmModel {
             opts?: {
                 as?: string
                 collection?: string
-                sourceJoinPropertyName?: string
-                sourcePropertyForJoin?: string
-                targetJoinPropertyName?: string
-                targetPropertyForJoin?: string
+                joinNodeSource?: string
+                sourceForJoin?: string
+                joinNodeTarget?: string
+                targetForJoin?: string
             }
         ): Class_MergeModel
 
@@ -306,14 +322,11 @@ declare namespace FxOrmModel {
                  * as join properties, all of them MUST be non-key
                  */
                 defineMergeProperties: ConstructorParameters<typeof Class_MergeModel>[0]['defineMergeProperties']
+                howToCheckExistenceWhenNoKeys?: ConstructorParameters<typeof Class_Model>[0]['howToCheckExistenceWhenNoKeys']
                 /**
                  * @description determine how to get id names for merge model
                  */
                 howToGetIdPropertyNames: ConstructorParameters<typeof Class_MergeModel>[0]['howToGetIdPropertyNames']
-                /**
-                 * @description ???
-                 */
-                howToCheckExistenceForSource: ConstructorParameters<typeof Class_MergeModel>[0]['howToCheckExistenceForSource']
                 /**
                  * @description determine how to check if source-model-instance HAS target-model-instance(s)
                  */
@@ -391,11 +404,6 @@ declare namespace FxOrmModel {
               mergeModelFindOptions?: FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_Model['find']>
             }) => Fibjs.AnyObject
 
-            howToCheckExistenceForSource: (
-                payload: { mergeModel: FxOrmModel.Class_MergeModel }
-                & FxOrmTypeHelpers.FirstParameter<FxOrmModel.Class_MergeModel['checkExistenceForSource']>
-            ) => any
-
             howToCheckHasForSource: FxOrmTypeHelpers.MergeToFunctionArgOption0<
                 FxOrmModel.Class_MergeModel['checkHasForSource'],
                 { mergeModel: FxOrmModel.Class_MergeModel }
@@ -434,7 +442,6 @@ declare namespace FxOrmModel {
                 }
             ) => any
             howToGetIdPropertyNames: FxOrmModel.Class_MergeModel['associationInfo']['howToGetIdPropertyNames']
-            howToCheckExistenceForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToCheckExistenceForSource']
             howToSaveForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToSaveForSource']
             howToFetchForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToFetchForSource']
             howToUnlinkForSource: FxOrmModel.Class_MergeModel['associationInfo']['howToUnlinkForSource']
@@ -444,10 +451,6 @@ declare namespace FxOrmModel {
 
         isSourceModel (model: Class_Model): boolean
         isTarget (model: Class_Model): boolean
-
-        checkExistenceForSource (opts: {
-            mergeInstance: FxOrmInstance.Class_Instance,
-        }): boolean
 
         checkHasForSource: (opts: {
             sourceInstance: FxOrmInstance.Class_Instance,

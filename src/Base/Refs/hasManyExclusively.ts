@@ -8,12 +8,13 @@ export = function defineRef (
 
     const {
         as: asKey = `${targetModel.collection}s`,
-        reverseAs = `of_${asKey}`,
+        reverseAs: sourceAsKey = `of_${asKey}`,
     } = opts
 
     if (!asKey) throw new Error(`[hasManyExclusively] "as" is required for association name`)
 
-    const mergePropertyNameInTarget = `${reverseAs}_id`
+    const joinNodeSource = `${sourceAsKey}_id`
+    const joinNodeTarget = targetModel.id
 
     const mergeModel = this.defineAssociation({
         name: asKey,
@@ -25,17 +26,28 @@ export = function defineRef (
         properties: {},
         type: 'o2m',
         target: targetModel,
+        howToCheckExistenceWhenNoKeys: ({ instance }) => {
+            if (!instance.$isFieldFilled(joinNodeTarget) || !instance[joinNodeTarget]) return false
+            // if (!instance.$isFieldFilled(joinNodeSource) || !instance[joinNodeSource]) return false
+
+            return !!mergeModel.count({
+                where: {
+                    // [joinNodeSource]: instance[joinNodeSource],
+                    [joinNodeTarget]: instance[joinNodeTarget],
+                }
+            })
+        },
         defineMergeProperties: ({ mergeModel }) => {
             const { targetModel, sourceModel } = mergeModel
 
-            if (targetModel.fieldInfo(mergePropertyNameInTarget)) return ;
+            if (targetModel.fieldInfo(joinNodeSource)) return ;
 
             const sProperty = sourceModel.prop(sourceModel.id)
 
             mergeModel.addProperty(
-                mergePropertyNameInTarget,
+                joinNodeSource,
                 sProperty
-                    .renameTo({ name: mergePropertyNameInTarget })
+                    .renameTo({ name: joinNodeSource })
                     .useAsJoinColumn({ column: sProperty.name, collection: sourceModel.collection })
                     .deKeys()
             )
@@ -52,10 +64,8 @@ export = function defineRef (
             })
         },
         howToGetIdPropertyNames: ({ mergeModel }) => {
-            return mergeModel.sourceModel.ids
-        },
-        howToCheckExistenceForSource: ({ mergeModel, mergeInstance }) => {
-            return mergeModel.targetModel.idPropertyList.every(prop => mergeInstance.$isFieldFilled(prop.name))
+            // return targetModel.ids.concat(joinNodeSource)
+            return targetModel.ids
         },
         howToCheckHasForSource: ({ mergeModel, sourceInstance, targetInstances }) => {
             const { targetModel, sourceModel } = mergeModel
@@ -67,18 +77,18 @@ export = function defineRef (
 
             const results = <{[k: string]: boolean}>{};
             const targetIds = (targetInstances || []).map(x => {
-                results[x[targetModel.id]] = false;
-                return x[targetModel.id];
+                results[x[joinNodeTarget]] = false;
+                return x[joinNodeTarget];
             })
-            const joinPropertyInTarget = targetModel.propIdentifier(targetModel.id)
+            const joinPropertyInTarget = targetModel.propIdentifier(joinNodeTarget)
 
             ;<FxOrmInstance.Class_Instance[]>(mergeModel.find({
                 select: (() => {
-                    const ss = { [mergePropertyNameInTarget]: mergeModel.propIdentifier(mergePropertyNameInTarget) };
+                    const ss = { [joinNodeSource]: mergeModel.propIdentifier(joinNodeSource) };
                     /**
                      * @todo reduce unnecesary property
                      */
-                    ss[joinPropertyInTarget] = targetModel.propIdentifier(targetModel.id)
+                    ss[joinPropertyInTarget] = targetModel.propIdentifier(joinNodeTarget)
 
                     return ss
                 })(),
@@ -87,7 +97,7 @@ export = function defineRef (
                      * @todo support where default and
                      */
                     [targetModel.Op.and]: {
-                        [mergePropertyNameInTarget]: sourceInstance[mergeModel.sourceModel.id],
+                        [joinNodeSource]: sourceInstance[mergeModel.sourceModel.id],
                         ...targetIds.length && { [joinPropertyInTarget]: targetModel.Opf.in(targetIds) }
                     }
                 },
@@ -95,7 +105,7 @@ export = function defineRef (
                     mergeModel.leftJoin({
                         collection: sourceModel.collection,
                         on: {
-                            [mergePropertyNameInTarget]: mergeModel.refTableCol({
+                            [joinNodeSource]: mergeModel.refTableCol({
                                 table: sourceModel.collection,
                                 column: sourceModel.id
                             }),
@@ -132,58 +142,57 @@ export = function defineRef (
             sourceInstance[mergeModel.name] = <FxOrmInstance.Class_Instance[]>(mergeModel.find({
                 ...findOptions,
                 select: (() => {
-                    const ss = { [mergePropertyNameInTarget]: mergeModel.propIdentifier(mergePropertyNameInTarget) };
+                    const ss = { [joinNodeSource]: mergeModel.propIdentifier(joinNodeSource) };
                     targetModel.propertyList.forEach(property => {
                         ss[property.mapsTo] = targetModel.propIdentifier(property)
                     })
                     return ss
                 })(),
                 where: {
-                    [mergePropertyNameInTarget]: sourceInstance[mergeModel.sourceModel.id]
+                    [joinNodeSource]: sourceInstance[mergeModel.sourceModel.id]
                 },
                 joins: [
                     mergeModel.leftJoin({
                         collection: sourceModel.collection,
                         on: {
-                            [mergeModel.Op.and]: [
-                                {
-                                    [mergePropertyNameInTarget]: mergeModel.refTableCol({
-                                        table: sourceModel.collection,
-                                        column: sourceModel.id
-                                    }),
-                                }
-                            ]
+                            [joinNodeSource]: mergeModel.refTableCol({
+                                table: sourceModel.collection,
+                                column: sourceModel.id
+                            }),
                         }
                     })
-                ],
-            })).map(x => x.$set(reverseAs, sourceInstance))
+                ]
+            })).map(x => x.$set(sourceAsKey, sourceInstance))
         },
         howToSaveForSource: ({ mergeModel, targetDataSet, sourceInstance, isAddOnly }) => {
             if (isEmptyArray(targetDataSet)) sourceInstance.$unlinkRef(mergeModel.name)
+            const { targetModel, sourceModel } = mergeModel
 
             const mergeInsts = arraify(mergeModel.New(targetDataSet));
             if (mergeInsts && mergeInsts.length)
                 sourceInstance[mergeModel.name] = sourceInstance[mergeModel.name] || []
 
             const mergeDataList = mergeInsts.map((mergeInst: FxOrmInstance.Class_Instance) => {
-                if (!sourceInstance[mergeModel.sourceModel.id]) return ;
-                mergeInst[mergePropertyNameInTarget] = sourceInstance[mergeModel.sourceModel.id]
+                if (!sourceInstance[sourceModel.id]) return ;
+                mergeInst[joinNodeSource] = sourceInstance[sourceModel.id]
 
                 mergeInst.$save()
 
                 return mergeInst.toJSON()
             })
 
-            if (!isAddOnly && Array.isArray(sourceInstance[mergeModel.name]))
+            if (isAddOnly && !mergeDataList.length)
+                throw new Error(`[hasManyExclusively::howToSaveForSource(isAddOnly: true)] no any item provided`)
+            else if (!isAddOnly && Array.isArray(sourceInstance[mergeModel.name]))
                 sourceInstance[mergeModel.name].splice(0)
 
             sourceInstance[mergeModel.name] =
                 deduplication(
                     <FxOrmInstance.Class_Instance[]>(sourceInstance[mergeModel.name] || [])
                         .concat(mergeDataList),
-                    (item) => item[targetModel.id]
+                    (item) => item[joinNodeTarget]
                 )
-                .map((x: Fibjs.AnyObject) => mergeModel.New(x).$set(reverseAs, sourceInstance))
+                .map((x: Fibjs.AnyObject) => mergeModel.New(x).$set(sourceAsKey, sourceInstance))
 
         },
         howToUnlinkForSource: ({ mergeModel, targetInstances, sourceInstance }) => {
@@ -191,24 +200,22 @@ export = function defineRef (
 
             const targetIds = <string[]>[];
             targetInstances.forEach(x => {
-                if (x.$isFieldFilled(targetModel.id)) targetIds.push(x[targetModel.id])
-            })
+                if (x.$isFieldFilled(joinNodeTarget)) targetIds.push(x[joinNodeTarget])
+            });
 
             mergeModel.$dml.update(
                 mergeModel.collection,
-                {
-                    [mergePropertyNameInTarget]: null
-                },
+                { [joinNodeSource]: null },
                 {
                     connection: this.orm.connection,
                     where: {
-                        [mergePropertyNameInTarget]: sourceInstance[mergeModel.sourceModel.id],
-                        ...targetIds.length && { [targetModel.id]: targetModel.Opf.in(targetIds) }
+                        [joinNodeSource]: sourceInstance[mergeModel.sourceModel.id],
+                        ...targetIds.length && { [joinNodeTarget]: targetModel.Opf.in(targetIds) }
                     }
                 }
             )
 
-            targetInstances.forEach(x => x.$set(reverseAs, null))
+            targetInstances.forEach(x => x.$set(sourceAsKey, null))
         },
         onFindByRef: ({ mergeModel, complexWhere, mergeModelFindOptions: findOptions }) => {
             const { sourceModel } = mergeModel
@@ -217,7 +224,7 @@ export = function defineRef (
             return sourceModel.find({
                 ...findOptions,
                 select: (() => {
-                    // const ss = { [mergePropertyNameInTarget]: mergeModel.propIdentifier(mergePropertyNameInTarget) };
+                    // const ss = { [joinNodeSource]: mergeModel.propIdentifier(joinNodeSource) };
                     const ss = <Record<string, string>>{};
                     sourceModel.propertyList.forEach(property =>
                         ss[property.mapsTo] = sourceModel.propIdentifier(property)
@@ -233,7 +240,7 @@ export = function defineRef (
                                 {
                                     [sourceModel.id]: mergeModel.refTableCol({
                                         table: mergeModel.collection,
-                                        column: mergePropertyNameInTarget
+                                        column: joinNodeSource
                                     }),
                                 },
                             ]
