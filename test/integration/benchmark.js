@@ -115,7 +115,8 @@ describe("benchmark", function () {
     describe("model-create/dml-insert", function () {
         before(setup());
 
-        var c_bare_input = 1e4;
+        var c_bare_input = common.protocol() === 'sqlite' ? 1e5 : 1e4;
+        var seeds = Array(c_bare_input).fill(undefined)
 
         /**
          * @levels_sqlite_orm
@@ -132,7 +133,6 @@ describe("benchmark", function () {
          * native / dml / orm: 1 / (2 ~ 3) / (5 ~ 6)
          *
          */
-        var seeds = Array(c_bare_input).fill(undefined)
         var infos = {
             orm: undefined,
             orm_batch_outer: undefined,
@@ -144,8 +144,6 @@ describe("benchmark", function () {
         before(() => {
             Person.clear()
             Station.clear()
-            if (db.driver.type === 'sqlite')
-              c_bare_input = 1e5
         })
 
         beforeEach(() => {
