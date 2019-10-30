@@ -16,8 +16,6 @@ describe("hasOne", function () {
     var setup = function (opts) {
         opts = opts || {};
         return function () {
-            db.settings.set('instance.identityCache', false);
-            db.settings.set('instance.returnAllErrors', true);
             Tree = db.define("tree", {
                 type: {
                     type: 'text'
@@ -159,12 +157,66 @@ describe("hasOne", function () {
 
             assert.property(leaf, 'tree')
         });
-    })
+    });
+
+    describe("source model must have id property", function () {
+        var Tree, Leaf
+        before(() => {
+            Tree = db.define("tree", {
+                type: {
+                    type: 'text'
+                }
+            }, { howToCheckExistenceWhenNoKeys: () => false });
+
+            Leaf = db.define("leaf", {
+                size: {
+                    type: 'integer'
+                },
+                holeId: {
+                    type: 'integer',
+                    mapsTo: 'hole_id'
+                }
+            }, { howToCheckExistenceWhenNoKeys: () => false, keys: false });
+        });
+
+        it("throw error if source model has no id property", function () {
+            assert.throws(() => {
+                Leaf.hasOne("tree", Tree);
+            });
+        });
+    });
+
+    describe("target model must have id property", function () {
+        var Tree, Leaf
+        before(() => {
+            Tree = db.define("tree", {
+                type: {
+                    type: 'text'
+                }
+            }, { howToCheckExistenceWhenNoKeys: () => false, keys: false });
+
+            Leaf = db.define("leaf", {
+                size: {
+                    type: 'integer'
+                },
+                holeId: {
+                    type: 'integer',
+                    mapsTo: 'hole_id'
+                }
+            }, { howToCheckExistenceWhenNoKeys: () => false });
+        });
+
+        it("throw error if target model has no id property", function () {
+            assert.throws(() => {
+                Leaf.hasOne("tree", Tree);
+            });
+        });
+    });
 
     describe("accessors", function () {
         before(setup());
 
-        oit("#$getRef: should get the association", function () {
+        it("#$getRef: should get the association", function () {
             var leaf = Leaf.one({
                 size: 14
             });
@@ -179,7 +231,7 @@ describe("hasOne", function () {
             assert.strictEqual(treeId, tree.id);
         });
 
-        oit("#$getRef: should return proper instance model", function () {
+        it("#$getRef: should return proper instance model", function () {
             var leaf = Leaf.one({
                 size: 14
             });
@@ -188,13 +240,13 @@ describe("hasOne", function () {
             assert.equal(tree.$model, Tree);
         });
 
-        oit("#$getRef: get should get the association with a shell model", function () {
+        it("#$getRef: get should get the association with a shell model", function () {
             var tree = Leaf.New(leafId).$getRef('tree');
             assert.exist(tree);
             assert.equal(tree[Tree.id], treeId);
         });
 
-        oit("#$hasRef: has should indicate if there is an association present", function () {
+        it("#$hasRef: has should indicate if there is an association present", function () {
             var leaf = Leaf.one({
                 size: 14
             });
@@ -207,7 +259,7 @@ describe("hasOne", function () {
             assert.equal(has.final, false);
         });
 
-        oit("#$saveRef: set should associate another instance", function () {
+        it("#$saveRef: set should associate another instance", function () {
             var stalk = Stalk.one({
                 length: 20
             });
@@ -224,7 +276,7 @@ describe("hasOne", function () {
             assert.equal(leaf.stalk.id, stalk[Stalk.id]);
         });
 
-        oit("#$unlinkRef: remove should unassociation another instance", function () {
+        it("#$unlinkRef: remove should unassociation another instance", function () {
             var stalk = Stalk.one({
                 length: 20
             });

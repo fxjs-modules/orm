@@ -13,9 +13,11 @@ export = function defineRef (
     } = opts || {}
 
     const joinNodeSource = `${asKey}_id`
+    if (!this.id) throw new Error(`[hasOne] source model(collection: ${this.collection}) must has one single id`)
     const sid = this.id
+    
     if (this.fieldInfo(asKey))
-        throw new Error(`[MergeModel::hasOne] source model(collection: ${targetModel.collection}) already has field "${asKey}", it's not allowed to add one associated field to it.`)
+        throw new Error(`[hasOne::hasOne] source model(collection: ${targetModel.collection}) already has field "${asKey}", it's not allowed to add one associated field to it.`)
 
     const mergeModel = this.defineAssociation({
         name: asKey,
@@ -42,7 +44,7 @@ export = function defineRef (
             const { targetModel, sourceModel } = mergeModel
             const tProperty = targetModel.properties[targetModel.id]
             if (!tProperty)
-                throw new Error(`[MergeModel::defineMergeProperties/hasOne] no target property "${targetModel.id}" in target model, check your definition about 'defineMergeProperties'`)
+                throw new Error(`[hasOne::defineMergeProperties] no target property "${targetModel.id}" in target model, check your definition about 'defineMergeProperties'`)
 
             mergeModel.addProperty(
                 joinNodeSource,
@@ -172,7 +174,7 @@ export = function defineRef (
         },
         onFindByRef: ({ mergeModel, complexWhere, mergeModelFindOptions: findOptions }) => {
             if (!complexWhere || isEmptyPlainObject(complexWhere))
-                throw new Error(`[MergeModel::hasOne::onFindByRef] find where options is required! check your input`)
+                throw new Error(`[hasOne::hasOne::onFindByRef] find where options is required! check your input`)
 
             const { sourceModel, targetModel } = mergeModel
             findOptions = {...findOptions}
