@@ -28,8 +28,7 @@ export = function defineRef (
         defineMergeProperties: ({ mergeModel }) => {
             const { targetModel, sourceModel } = mergeModel
 
-            if (targetModel.fieldInfo(mergePropertyNameInTarget))
-                return ;
+            if (targetModel.fieldInfo(mergePropertyNameInTarget)) return ;
 
             const sProperty = sourceModel.prop(sourceModel.id)
 
@@ -53,7 +52,7 @@ export = function defineRef (
             })
         },
         howToGetIdPropertyNames: ({ mergeModel }) => {
-            return [mergeModel.sourceModel.id]
+            return mergeModel.sourceModel.ids
         },
         howToCheckExistenceForSource: ({ mergeModel, mergeInstance }) => {
             return mergeModel.targetModel.idPropertyList.every(prop => mergeInstance.$isFieldFilled(prop.name))

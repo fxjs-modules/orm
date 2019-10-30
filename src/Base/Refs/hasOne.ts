@@ -27,7 +27,7 @@ export = function defineRef (
         type: 'o2o',
         target: targetModel,
         howToGetIdPropertyNames: ({ mergeModel }) => {
-            return [mergeModel.targetModel.id]
+            return mergeModel.targetModel.ids
         },
         defineMergeProperties: ({ mergeModel }) => {
             const { targetModel, sourceModel } = mergeModel

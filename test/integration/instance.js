@@ -6,17 +6,6 @@ var ORM = require('../../');
 
 function assertModelInstance (instance) {
     assert.property(instance, '$changes')
-    
-    // assert.property(instance, '__opts')
-    // assert.isObject(instance.__opts, 'one_associations')
-
-    // assert.isObject(instance.__opts, 'many_associations')
-    // assert.isObject(instance.__opts, 'extend_associations')
-
-    // assert.property(instance.__opts, 'association_properties')
-    // assert.property(instance.__opts, 'fieldToPropertyMap')
-
-    // assert.property(instance.__opts, 'associations')
 }
 
 describe("Model instance", function () {
@@ -118,7 +107,7 @@ describe("Model instance", function () {
             var mainItem = main_item.one({
                 name: "Main Item"
             });
-            
+
             mainItem.$save({
                 name: "new name"
             });
@@ -347,7 +336,7 @@ describe("Model instance", function () {
                 });
 
                 var result = JSON.parse(JSON.stringify(p));
-                
+
                 assert.notExist(result.secret);
                 assert.exist(result.weight);
                 assert.exist(result.data);

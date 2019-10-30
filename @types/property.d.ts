@@ -149,6 +149,7 @@ declare namespace FxOrmProperty {
          */
         isKeyProperty(): boolean
         isSerial(): boolean
+        isIncrementable(): boolean
 
         renameTo (opts: {
             name: Class_Property['name'],

@@ -17,7 +17,8 @@ describe("Model.create()", function () {
             }
         });
         Person.hasMany(Pet, {
-            as: "pets"
+            as: "pets",
+            type: 'm2m'
         });
 
         Person.drop();

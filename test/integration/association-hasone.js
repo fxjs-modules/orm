@@ -1,7 +1,7 @@
 var ORM = require('../../');
 var helper = require('../support/spec_helper');
 
-odescribe("hasOne", function () {
+describe("hasOne", function () {
     var db = null;
     var Tree = null;
     var Stalk = null;
@@ -93,7 +93,7 @@ odescribe("hasOne", function () {
         db.close();
     });
 
-    odescribe("manual find", function () {
+    describe("manual find", function () {
         before(setup());
 
         it("left join", function () {
@@ -161,7 +161,7 @@ odescribe("hasOne", function () {
         });
     })
 
-    odescribe("accessors", function () {
+    describe("accessors", function () {
         before(setup());
 
         oit("#$getRef: should get the association", function () {
@@ -245,7 +245,7 @@ odescribe("hasOne", function () {
         });
     });
 
-    odescribe("findByRef", function () {
+    describe("findByRef", function () {
       var tree, leaf
       describe("findByRef() - A hasOne B", function () {
         before(setup());
@@ -281,7 +281,7 @@ odescribe("hasOne", function () {
       })
     });
 
-    describe("association name letter case", function () {
+    xdescribe("association name letter case", function () {
         it("should be kept", function () {
             db.settings.set('instance.identityCache', false);
             db.settings.set('instance.returnAllErrors', true);
@@ -310,7 +310,7 @@ odescribe("hasOne", function () {
         });
     });
 
-    describe("mapsTo", function () {
+    xdescribe("mapsTo", function () {
         describe("with `mapsTo` set via `hasOne`", function () {
             var leaf = null;
 

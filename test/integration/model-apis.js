@@ -39,7 +39,8 @@ describe("Model APIs", function () {
             }
         });
 
-         models["pets"] = PersonPets = Person.hasMany(Pet, { as: "pets" });
+         Person.belongsToMany(Pet, { as: "owners" });
+         Pet.belongsToMany(Person, { as: "pets" });
     };
 
     before(function () {
@@ -173,8 +174,8 @@ describe("Model APIs", function () {
                 assert.deepEqual(
                     Pet.normalizeDataIntoInstance({
                         id: 1,
-                        name: 'Deco',
-                        age: 10
+                        name1: 'Deco',
+                        age1: 10
                     }),
                     {
                         id: 1,
@@ -200,14 +201,14 @@ describe("Model APIs", function () {
 
         describe("#addProperty", function () {
             before(setup);
-            
+
             it("add non-existed property", function () {
                 Person.addProperty("non-existed", {
                     type: "text",
                     mapsTo: "non_exsited"
                 });
             });
-            
+
             it("add existed name of property", function () {
                 assert.throws(() => {
                     Person.addProperty("name", String);
@@ -219,7 +220,7 @@ describe("Model APIs", function () {
                     Person.addProperty("pets", String);
                 });
             });
-            
+
             it("add property safely", function () {
                 let added = false
                 if (!Person.fieldInfo("name")) {
@@ -244,7 +245,7 @@ describe("Model APIs", function () {
         before(setup);
 
         describe("#filterOutAssociatedData", function () {
-            it("o2m", function () {
+            it("basic", function () {
                 assert.deepEqual(
                     Person.filterOutAssociatedData({
                         id: 1,
@@ -260,8 +261,9 @@ describe("Model APIs", function () {
                             }
                         ]
                     })
-                    .filter(x => x.association.collection === 'pet')
-                    .map(x => x.dataset)[0], [
+                    .filter(x => x.association.targetModel === Pet)
+                    .map(x => x.dataset)[0],
+                    [
                         {
                             id: 1,
                             name: "Deco"

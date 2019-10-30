@@ -390,6 +390,10 @@ export default class Property<
         return this.type === 'serial'
     }
 
+    isIncrementable () {
+        return this.type === 'serial' || this.type === 'integer'
+    }
+
     useAsJoinColumn (opts: FxOrmTypeHelpers.FirstParameter<FxOrmProperty.Class_Property['useAsJoinColumn']>) {
         this.required = false
 

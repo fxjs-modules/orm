@@ -252,11 +252,9 @@ declare namespace FxOrmModel {
         hasMany(
             model: FxOrmModel.Class_Model,
             opts?: {
-                as: string
-                reverseAs?: string
-                collection: string
-                type: 'm2m' | 'o2m'
-                on?: Class_MergeModel['associationInfo']['onFindByRef']
+                as?: string
+                collection?: string
+                type?: 'm2m' | 'o2m'
             }
         ): Class_MergeModel
 
@@ -266,9 +264,9 @@ declare namespace FxOrmModel {
         hasManyExclusively(
             model: FxOrmModel.Class_Model,
             opts?: {
-                as: string
+                as?: string
+                collection?: string
                 reverseAs?: string
-                collection: string
             }
         ): Class_MergeModel
 
@@ -276,9 +274,11 @@ declare namespace FxOrmModel {
             model: Class_Model,
             opts?: {
                 as?: string
-                collection: string
-                sourceJoinKey?: string
-                targetJoinKey?: string
+                collection?: string
+                sourceJoinPropertyName?: string
+                sourcePropertyForJoin?: string
+                targetJoinPropertyName?: string
+                targetPropertyForJoin?: string
             }
         ): Class_MergeModel
 
@@ -353,12 +353,7 @@ declare namespace FxOrmModel {
          * @description name of collection which used as association table/collection in remote endpoints
          */
         sourceModel: FxOrmModel.Class_Model
-        // readonly sourceKeys: string[]
-        // sourceJoinKey: string
-
         targetModel: FxOrmModel.Class_Model
-        // readonly targetKeys: string[]
-        // targetJoinKey: string
 
         /**
          * @description this is fully determined by `options.matchKeys` in constructor

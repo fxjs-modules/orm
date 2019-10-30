@@ -1,7 +1,7 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-describe("Model.queryByHQL()", function () {
+xdescribe("Model.queryByHQL()", function () {
     var db = null;
     var Person = null;
 

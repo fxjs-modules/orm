@@ -1,7 +1,7 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-odescribe("Association belongsToMany", function () {
+describe("Association belongsToMany", function () {
     var db = null;
     var Pet = null;
     var Person = null;
@@ -171,7 +171,7 @@ odescribe("Association belongsToMany", function () {
             }
         }
 
-        odescribe("#$saveRef", function () {
+        describe("#$saveRef", function () {
             before(initData())
 
             it("basic", function () {
@@ -186,7 +186,7 @@ odescribe("Association belongsToMany", function () {
             })
         });
 
-        odescribe("#$getRef", function () {
+        describe("#$getRef", function () {
             before(initData({ doSave: false }))
 
             it("basic", function () {
@@ -227,7 +227,7 @@ odescribe("Association belongsToMany", function () {
             });
         });
 
-        odescribe("#$hasRef", function () {
+        describe("#$hasRef", function () {
             before(initData())
 
             it("basic", function () {
@@ -241,7 +241,7 @@ odescribe("Association belongsToMany", function () {
             })
         });
 
-        odescribe("#$unlinkRef", function () {
+        describe("#$unlinkRef", function () {
             before(initData())
 
             it("basic", function () {
@@ -321,4 +321,54 @@ odescribe("Association belongsToMany", function () {
           });
         });
     })
+
+    describe("accessors - source no serial id", function () {
+        var Email;
+        var Station;
+
+        var setup = function (opts) {
+            return function () {
+              Email = db.define('email', {
+                  text: {
+                      type: 'text',
+                      key: true,
+                      required: true
+                  },
+                  bounced: Boolean
+              });
+
+              Station = db.define('station', {
+                  name: String
+              });
+
+              Email.belongsToMany(Station, {
+                as: 'emails',
+                collection: 'custom_station_emails',
+                sourceJoinPropertyName: 'custom_stationid',
+                targetJoinPropertyName: 'custom_emailid',
+              });
+
+              helper.dropSync([Email, Station]);
+            }
+        };
+
+        describe('#addRef', function () {
+            before(setup({}))
+
+            it("basic", function () {
+              var emails = Email.create([{
+                  bounced: true,
+                  text: 'a@test.com'
+              }, {
+                  bounced: false,
+                  text: 'z@test.com'
+              }]);
+
+              var station = Station.create({
+                  name: "Stuff"
+              });
+              station.$addRef('emails', emails);
+            });
+        });
+    });
 });

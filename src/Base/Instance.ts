@@ -154,11 +154,7 @@ class Instance implements FxOrmInstance.Class_Instance {
         if (!fieldname) return ;
 
         if (typeof fieldname === 'string') {
-            if (this.$model.isPropertyName(fieldname))
-                setTarget(fieldname, value, this);
-            else if (this.$model.isAssociationName(fieldname)) {
-                this.$refs[fieldname] = value
-            }
+            setTarget(fieldname, value, this);
         } if (Array.isArray(fieldname)) {
             fieldname = fieldname.filter(x => x && typeof x === 'string').join('.');
             this.$set(fieldname, value);
@@ -260,6 +256,7 @@ class Instance implements FxOrmInstance.Class_Instance {
                     const whereCond = <typeof changes>{};
 
                     let hasWhere = false
+
                     this.$model.idPropertyList.forEach(property => {
                         if (changes.hasOwnProperty(property.mapsTo)) {
                             whereCond[property.mapsTo] = changes[property.mapsTo]

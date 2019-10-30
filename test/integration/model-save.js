@@ -38,7 +38,7 @@ describe("Model.Instance.$save()", function () {
         return db.close();
     });
 
-    odescribe("if properties have default values", function () {
+    describe("if properties have default values", function () {
         before(setup({
             type: "text",
             defaultValue: "John"
@@ -52,7 +52,7 @@ describe("Model.Instance.$save()", function () {
         });
     });
 
-    odescribe("without event", function () {
+    describe("without event", function () {
         before(setup());
 
         it("should save item and return id", function () {
@@ -70,7 +70,7 @@ describe("Model.Instance.$save()", function () {
         });
     });
 
-    odescribe("with event", function () {
+    describe("with event", function () {
         before(setup());
 
         it("should still save item and return id", function (done) {
@@ -87,7 +87,7 @@ describe("Model.Instance.$save()", function () {
 
                 assert.equal(JohnCopy[Person.id], John[Person.id]);
                 assert.equal(JohnCopy.name, John.name);
-                
+
                 count++;
 
                 if (count >= 3) done();
@@ -99,7 +99,7 @@ describe("Model.Instance.$save()", function () {
         });
     });
 
-    odescribe("with properties object", function () {
+    describe("with properties object", function () {
         before(setup());
 
         it("should update properties, save item and return id", function () {
@@ -120,7 +120,7 @@ describe("Model.Instance.$save()", function () {
         });
     });
 
-    odescribe("with unknown argument type", function () {
+    describe("with unknown argument type", function () {
         before(setup());
 
         it("should should throw", function () {
@@ -134,7 +134,7 @@ describe("Model.Instance.$save()", function () {
         });
     });
 
-    odescribe("if passed an association instance", function () {
+    describe("if passed an association instance", function () {
         before(setup());
 
         it("should save association first and then save item and return id", function () {
@@ -155,7 +155,7 @@ describe("Model.Instance.$save()", function () {
         });
     });
 
-    odescribe("if passed an association object", function () {
+    describe("if passed an association object", function () {
         before(setup());
 
         it("should save association first and then save item and return id", function () {
@@ -176,7 +176,7 @@ describe("Model.Instance.$save()", function () {
         });
     });
 
-    describe("if autoSave is on", function () {
+    xdescribe("if autoSave is on", function () {
         before(setup(null, {
             autoSave: true
         }));
@@ -197,7 +197,7 @@ describe("Model.Instance.$save()", function () {
         });
     });
 
-    describe("with saveAssociations", function () {
+    xdescribe("with saveAssociations", function () {
         var afterSaveCalled = false;
 
         describe("default on in settings", function () {
@@ -405,7 +405,7 @@ describe("Model.Instance.$save()", function () {
         });
     });
 
-    describe("with a point property", function () {
+    xdescribe("with a point property", function () {
         if (common.protocol() == 'sqlite' || common.protocol() == 'mongodb') return;
 
         it("should save the instance as a geospatial point", function (done) {
@@ -417,7 +417,7 @@ describe("Model.Instance.$save()", function () {
                     assert.equal(err, null);
 
                     assert.isTrue(John.name instanceof Object);
-                    
+
                     assert.property(John.name, 'x');
                     assert.equal(John.name.x, 51.5177);
                     assert.property(John.name, 'y');
@@ -429,7 +429,7 @@ describe("Model.Instance.$save()", function () {
         });
     });
 
-    describe("mockable", function () {
+    xdescribe("mockable", function () {
         before(setup());
 
         it("save should be writable", function (done) {

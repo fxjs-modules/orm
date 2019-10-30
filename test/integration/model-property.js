@@ -28,7 +28,7 @@ describe("Model Property", function () {
             }
         });
 
-        models["pets"] = PersonPets = Person.hasMany(Pet, { as: "pets" });
+        PersonPets = Person.hasMany(Pet, { as: "pets" });
 
         models["type_test"] = db.define("type_test", {
             String: String,
@@ -128,6 +128,9 @@ describe("Model Property", function () {
                     "primary": false,
                     "unsigned": false,
                     "unique": false,
+                    "joinNode": {
+                      "refColumn": ""
+                    },
                     "serial": false
                 })
             });
@@ -179,6 +182,9 @@ describe("Model Property", function () {
                     "primary": false,
                     "unsigned": false,
                     "unique": false,
+                    "joinNode": {
+                      "refColumn": ""
+                    },
                     "serial": false
                 })
             });
@@ -230,6 +236,9 @@ describe("Model Property", function () {
                     "primary": false,
                     "unsigned": false,
                     "unique": false,
+                    "joinNode": {
+                      "refColumn": ""
+                    },
                     "serial": false
                 })
             });
@@ -281,6 +290,9 @@ describe("Model Property", function () {
                     "primary": false,
                     "unsigned": false,
                     "unique": false,
+                    "joinNode": {
+                      "refColumn": ""
+                    },
                     "serial": false
                 })
             });
@@ -332,6 +344,9 @@ describe("Model Property", function () {
                     "primary": false,
                     "unsigned": false,
                     "unique": false,
+                    "joinNode": {
+                      "refColumn": ""
+                    },
                     "serial": false
                 })
             });
@@ -383,6 +398,9 @@ describe("Model Property", function () {
                     "primary": true,
                     "unsigned": true,
                     "unique": true,
+                    "joinNode": {
+                      "refColumn": ""
+                    },
                     "serial": true
                 })
             });
@@ -434,6 +452,9 @@ describe("Model Property", function () {
                     "primary": false,
                     "unsigned": false,
                     "unique": true,
+                    "joinNode": {
+                      "refColumn": ""
+                    },
                     "serial": false
                 })
             });
@@ -485,6 +506,9 @@ describe("Model Property", function () {
                     "primary": false,
                     "unsigned": false,
                     "unique": false,
+                    "joinNode": {
+                      "refColumn": ""
+                    },
                     "serial": false
                 })
             });
@@ -559,6 +583,9 @@ describe("Model Property", function () {
                     "primary": false,
                     "unsigned": false,
                     "unique": false,
+                    "joinNode": {
+                      "refColumn": ""
+                    },
                     "serial": false
                 });
             });
@@ -585,82 +612,86 @@ describe("Model Property", function () {
                     "primary": false,
                     "unsigned": true,
                     "unique": false,
+                    "joinNode": {
+                      "refColumn": ""
+                    },
                     "serial": false
                 })
             });
         })
-
-        // TODO: add test about it
-        xdescribe('For dsefined Id Key', () => {
-
-        });
     })
-    
-    xdescribe("MergeModel Property --- [o2m]", function () {
+
+    odescribe("Property Specs", function () {
         before(setup);
 
-        it(`never effect sourceModel and targetModel's properties`, () => {
-            assert.equal(PersonPets.sourceModel.properties, Person.properties)
-            assert.equal(PersonPets.targetModel.properties, Pet.properties)
+        describe(`#useAsJoinColumn`, () => {
+            it("column is required", function () {
+              assert.throws(() => {
+                Person.properties['id'].useAsJoinColumn({})
+              });
+            });
+
+            it("column", function () {
+              assert.deepEqual(
+                Person.properties['id'].useAsJoinColumn({ column: 'person_id' }),
+                {
+                  "key": true,
+                  "index": false,
+                  "rational": false,
+                  "time": false,
+                  "big": false,
+                  "values": null,
+                  "lazyload": false,
+                  "name": "id",
+                  "type": "serial",
+                  "size": 4,
+                  "required": false,
+                  "defaultValue": undefined,
+                  "lazyname": "id",
+                  "enumerable": true,
+                  "mapsTo": "id",
+                  "primary": true,
+                  "unsigned": true,
+                  "unique": true,
+                  "joinNode": {
+                    "refColumn": "person_id",
+                    "refCollection": undefined
+                  },
+                  "serial": true
+                }
+              )
+            });
+
+            it("column, collection", function () {
+              assert.deepEqual(
+                Person.properties['id'].useAsJoinColumn({ column: 'person_id', collection: 'other' }),
+                {
+                  "key": true,
+                  "index": false,
+                  "rational": false,
+                  "time": false,
+                  "big": false,
+                  "values": null,
+                  "lazyload": false,
+                  "name": "id",
+                  "type": "serial",
+                  "size": 4,
+                  "required": false,
+                  "defaultValue": undefined,
+                  "lazyname": "id",
+                  "enumerable": true,
+                  "mapsTo": "id",
+                  "primary": true,
+                  "unsigned": true,
+                  "unique": true,
+                  "joinNode": {
+                    "refColumn": "person_id",
+                    "refCollection": "other"
+                  },
+                  "serial": true
+                }
+              )
+            });
         })
-
-        describe('merge model has all properties of targetModel', function () {
-            it('yep', function () {
-                assert.property(PersonPets.properties, 'id')
-                assert.property(PersonPets.properties, 'name')
-            });
-
-            it(`dekey targetModel's id properties`, function () {
-                assert.propertyVal(PersonPets.properties.id, 'name', 'id')
-                assert.propertyVal(PersonPets.properties.id, 'type', 'integer')
-                assert.propertyVal(PersonPets.properties.id, 'key', false)
-                assert.propertyVal(PersonPets.properties.id, 'mapsTo', 'id')
-                assert.propertyVal(PersonPets.properties.id, 'unique', false)
-                assert.propertyVal(PersonPets.properties.id, 'index', false)
-                assert.propertyVal(PersonPets.properties.id, 'serial', false)
-                assert.propertyVal(PersonPets.properties.id, 'unsigned', true)
-                assert.propertyVal(PersonPets.properties.id, 'primary', false)
-                // coerce associated [property].required = false as in merge model
-                assert.propertyVal(PersonPets.properties.id, 'required', false)
-                assert.propertyVal(PersonPets.properties.id, 'defaultValue', undefined)
-                assert.propertyVal(PersonPets.properties.id, 'size', 4)
-                assert.propertyVal(PersonPets.properties.id, 'rational', false)
-                assert.propertyVal(PersonPets.properties.id, 'time', false)
-                assert.propertyVal(PersonPets.properties.id, 'big', false)
-                assert.propertyVal(PersonPets.properties.id, 'values', null)
-                assert.propertyVal(PersonPets.properties.id, 'lazyload', false)
-                assert.propertyVal(PersonPets.properties.id, 'lazyname', 'id')
-                assert.propertyVal(PersonPets.properties.id, 'enumerable', true)
-            });
-        });
-
-        it('merge model has corresponding property with associated model', function () {
-            assert.property(PersonPets.properties, 'person_id')
-
-            assert.propertyVal(PersonPets.properties.person_id, 'name', 'person_id')
-            assert.propertyVal(PersonPets.properties.person_id, 'type', 'integer')
-            assert.propertyVal(PersonPets.properties.person_id, 'key', false)
-            assert.propertyVal(PersonPets.properties.person_id, 'mapsTo', 'person_id')
-            assert.propertyVal(PersonPets.properties.person_id, 'unique', false)
-            assert.propertyVal(PersonPets.properties.person_id, 'index', false)
-            assert.propertyVal(PersonPets.properties.person_id, 'serial', false)
-            assert.propertyVal(PersonPets.properties.person_id, 'unsigned', true)
-            assert.propertyVal(PersonPets.properties.person_id, 'primary', false)
-            // coerce associated [property].required = false as in merge model
-            assert.propertyVal(PersonPets.properties.person_id, 'required', false)
-            assert.propertyVal(PersonPets.properties.person_id, 'defaultValue', undefined)
-            assert.propertyVal(PersonPets.properties.person_id, 'size', 4)
-            assert.propertyVal(PersonPets.properties.person_id, 'rational', false)
-            assert.propertyVal(PersonPets.properties.person_id, 'time', false)
-            assert.propertyVal(PersonPets.properties.person_id, 'big', false)
-            assert.propertyVal(PersonPets.properties.person_id, 'values', null)
-            assert.propertyVal(PersonPets.properties.person_id, 'lazyload', false)
-            assert.propertyVal(PersonPets.properties.person_id, 'lazyname', 'person_id')
-            assert.propertyVal(PersonPets.properties.person_id, 'enumerable', true)
-        });
-
-        xit('merge model always has non-empty association Ids(id property names)', function () {
-            // assert.property(PersonPets.ids, ['person_id'])
-        });
     });
 });

@@ -18,6 +18,10 @@ function isProperty (input: any): input is FxOrmProperty.Class_Property {
   return input instanceof Property
 }
 
+function isModel (input: any): input is FxOrmModel.Class_Model {
+  return input instanceof Model
+}
+
 /**
  * @description Model is meta definition about database-like remote endpoints.
  *
@@ -115,11 +119,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     }
     @configurable(false)
     get ids (): string[] {
-        const _ids = []
-        if (this.id)
-            _ids.push(this.id)
-
-        return _ids
+        return this.id ? [this.id] : []
     }
     @configurable(false)
     get idPropertyList () {
@@ -217,7 +217,12 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                         }
                     )
                 } else {
-                    this.idPropertyList[0].serial = this.idPropertyList[0].primary = true
+                    // when there's no id property but id rqeuired, fallback to first key property
+                    const [maybeId] = this.idPropertyList
+                    if (maybeId) {
+                        maybeId.primary = true
+                        if (maybeId.isIncrementable()) maybeId.serial = true
+                    }
                 }
         })();
     }
@@ -526,19 +531,19 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
     }
 
     hasOne (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['hasOne']>) {
-        return require('./Refs/hasOne').apply(this, args)
+        return require('./Refs/hasOne').apply(this, args);
     }
 
     hasMany (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['hasMany']>) {
-        return null as any
+        return require('./Refs/hasMany').apply(this, args);
     }
 
     hasManyExclusively (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['hasManyExclusively']>) {
-        return require('./Refs/hasManyExclusively').apply(this, args)
+        return require('./Refs/hasManyExclusively').apply(this, args);
     }
 
     belongsToMany (...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['belongsToMany']>) {
-        return require('./Refs/belongsToMany').apply(this, args)
+        return require('./Refs/belongsToMany').apply(this, args);
     }
 }
 
@@ -546,11 +551,11 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
     name: string
     type: 'o2o' | 'o2m' | 'm2o' | 'm2m'
     sourceModel: FxOrmModel.Class_Model
-    // sourceJoinKey: string
+    // sourcePropertyForJoin: string
     get sourceKeys () { return this.sourceModel.keys }
 
     targetModel: FxOrmModel.Class_Model
-    // targetJoinKey: string
+    // targetPropertyForJoin: string
     get targetKeys () { return this.targetModel.keys }
 
     @configurable(false)
@@ -614,6 +619,9 @@ class MergeModel extends Model implements FxOrmModel.Class_MergeModel {
 
         this.sourceModel = source
         this.targetModel = target
+
+        if (!isModel(source)) throw new Error(`[MergeModel::constructor] source must be valid model, but got (type: ${typeof source})`)
+        if (!isModel(target)) throw new Error(`[MergeModel::constructor] target must be valid model, but got (type: ${typeof target})`)
 
         // TODO: forbid changing source model here
         defineMergeProperties({

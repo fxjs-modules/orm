@@ -17,7 +17,7 @@ function assertModelInstanceWithHasMany(instance) {
     assert.property(instance.__opts, 'associations')
 }
 
-odescribe("hasManyExclusively", function () {
+describe("hasManyExclusively", function () {
     var db = null;
     var Person = null;
     var Station = null;
@@ -31,7 +31,7 @@ odescribe("hasManyExclusively", function () {
         db.close();
     });
 
-    odescribe("normal", function () {
+    describe("normal", function () {
         var setup = function (opts) {
             opts = opts || {};
 
@@ -530,7 +530,7 @@ odescribe("hasManyExclusively", function () {
         });
 
         describe("findByRef", function () {
-            odescribe("findByRef() - A hasManyExclusively B", function () {
+            describe("findByRef() - A hasManyExclusively B", function () {
                 before(setup({}));
                 var xJohn, Justin
                 before(() => {
@@ -650,7 +650,7 @@ odescribe("hasManyExclusively", function () {
         });
     });
 
-    describe("with non-standard keys", function () {
+    xdescribe("with non-standard keys", function () {
         var Email;
         var Station;
 
@@ -754,64 +754,6 @@ odescribe("hasManyExclusively", function () {
                 assert.equal(data[1].pk, 2);
             }
         });
-    });
-
-    describe("accessors", function () {
-        var Email;
-        var Station;
-
-        var setup = function (opts) {
-            Email = db.define('email', {
-                text: {
-                    type: 'text',
-                    key: true,
-                    required: true
-                },
-                bounced: Boolean
-            });
-
-            Station = db.define('station', {
-                name: String
-            });
-
-            Station.hasManyExclusively('emails', Email, {}, {
-                mergeTable: 'custom_station_emails',
-                mergeId: 'custom_stationid',
-                mergeAssocId: 'custom_emailid',
-                key: opts.key
-            });
-
-            helper.dropSync([Email, Station]);
-        };
-
-        it('should query association model data with getAccessor', function () {
-            setup({})
-            var emails = Email.create([{
-                bounced: true,
-                text: 'a@test.com'
-            }, {
-                bounced: false,
-                text: 'z@test.com'
-            }]);
-
-            var station = Station.create({
-                name: "Stuff"
-            });
-            station.addEmailsSync(emails);
-
-            var assoc = station.__opts.many_associations.find(x => x.name === 'emails')
-
-                ;['bounced', 'text'].forEach((field) => {
-                    emails.forEach((email) => {
-                        assert.equal(
-                            email[field],
-                            station[assoc['getAccessor']]()
-                                .find({ [field]: email[field] })
-                                .firstSync()[field]
-                        )
-                    })
-                });
-        })
     });
 });
 

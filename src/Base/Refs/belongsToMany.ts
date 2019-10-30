@@ -5,17 +5,19 @@ export = function defineRef (
     this: FxOrmModel.Class_Model,
     ...args: FxOrmTypeHelpers.Parameters<FxOrmModel.Class_Model['belongsToMany']>
 ) {
-    const [ tM = this, opts ] = args;
+    const [ sM = this, opts ] = args;
 
     const {
         as: asKey = `${this.collection}s`,
-        collection = `${tM.collection}_${this.collection}s`,
-        sourceJoinKey = this.id,
-        targetJoinKey = tM.id
+        collection = `${sM.collection}_${this.collection}s`,
+        sourceJoinPropertyName = `${sM.collection}_id`,
+        sourcePropertyForJoin = sM.id,
+        targetJoinPropertyName = `${this.collection}_id`,
+        targetPropertyForJoin = this.id
     } = opts || {}
 
-    if (tM.fieldInfo(asKey))
-        throw new Error(`[MergeModel::belongsToMany] target model(collection: ${tM.collection}) already has field "${asKey}", it's not allowed to add one associated field to it.`)
+    if (sM.fieldInfo(asKey))
+        throw new Error(`[MergeModel::belongsToMany] target model(collection: ${sM.collection}) already has field "${asKey}", it's not allowed to add one associated field to it.`)
 
     const iterateJoinKeysInMergeCollection = function (opts: {
         onSourceRefProperty: (property: FxOrmProperty.Class_Property) => any,
@@ -31,7 +33,7 @@ export = function defineRef (
         })
     }
 
-    const mergeModel: FxOrmModel.Class_MergeModel = tM.defineAssociation({
+    const mergeModel: FxOrmModel.Class_MergeModel = sM.defineAssociation({
         name: asKey,
         collection: collection,
         properties: {},
@@ -40,56 +42,46 @@ export = function defineRef (
         defineMergeProperties: ({ mergeModel }) => {
             const { targetModel, sourceModel } = mergeModel
 
-            if (!sourceJoinKey)
+            if (!sourcePropertyForJoin)
                 if (sourceModel.ids.length > 1)
                     throw new Error(
                         `[MergeModel::constructor/belongsToMany] source model(collection: ${sourceModel.collection})`
-                        + `has more than one id properties, you must specify sourceJoinKey`,
+                        + `has more than one id properties, you must specify sourcePropertyForJoin`,
                     )
                 else if (!sourceModel.ids.length)
                     throw new Error(
                         `[MergeModel::constructor/belongsToMany] source model(collection: ${sourceModel.collection})`
-                        + `has no any id property, you must specify sourceJoinKey`,
-                    )
-                else if (!sourceModel.isPropertyName(sourceJoinKey))
-                    throw new Error(
-                        `[MergeModel::constructor/belongsToMany] source model(collection: ${sourceModel.collection}) has no property(name: ${sourceJoinKey})`
+                        + `has no any id property, you must specify sourcePropertyForJoin`,
                     )
 
-            const sProperty = sourceModel.properties[sourceJoinKey]
-            const sname = `${sourceModel.collection}_id`
+            const sProperty = sourceModel.prop(sourcePropertyForJoin)
 
             mergeModel.addProperty(
-                sname,
+                sourceJoinPropertyName,
                 sProperty
-                    .renameTo({ name: sname })
+                    .renameTo({ name: sourceJoinPropertyName })
                     .useAsJoinColumn({ column: sProperty.name, collection: sourceModel.collection })
                     .deKeys()
             )
 
-            if (!targetJoinKey)
+            if (!targetPropertyForJoin)
                 if (targetModel.ids.length > 1)
                     throw new Error(
                         `[MergeModel::constructor/belongsToMany] target model(collection: ${targetModel.collection})`
-                        + `has more than one id properties, you must specify targetJoinKey`,
+                        + `has more than one id properties, you must specify targetPropertyForJoin`,
                     )
                 else if (!targetModel.ids.length)
                     throw new Error(
                         `[MergeModel::constructor/belongsToMany] target model(collection: ${sourceModel.collection})`
-                        + `has no any id property, you must specify targetJoinKey`,
-                    )
-                else if (!targetModel.isPropertyName(targetJoinKey))
-                    throw new Error(
-                        `[MergeModel::constructor/belongsToMany] target model(collection: ${sourceModel.collection}) has no property(name: ${targetJoinKey})`
+                        + `has no any id property, you must specify targetPropertyForJoin`,
                     )
 
-            const tProperty = targetModel.properties[targetJoinKey]
-            const tname = `${targetModel.collection}_id`
+            const tProperty = targetModel.prop(targetPropertyForJoin)
 
             mergeModel.addProperty(
-                tname,
+                targetJoinPropertyName,
                 tProperty
-                    .renameTo({ name: tname })
+                    .renameTo({ name: targetJoinPropertyName })
                     .useAsJoinColumn({ column: tProperty.name, collection: targetModel.collection })
                     .deKeys()
             )
