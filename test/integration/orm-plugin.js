@@ -26,9 +26,6 @@ xdescribe("ORM Plugin", function () {
             Profile = User.extendsTo("profile", {
                 firstname: String,
                 lastname: String
-            }, {
-                reverse: 'user',
-                required: true
             });
 
             Group = db.define("group", {
@@ -39,36 +36,36 @@ xdescribe("ORM Plugin", function () {
             }, {
                 id: 'name'
             });
-            Group.hasMany('users', User, {}, {
-                reverse: 'groups'
+            Group.hasMany(User, {
+                as: 'users',
+                reverseAs: 'groups'
             });
 
             Post = db.define("post", {
                 content: String
-            }, {
-
             });
-            Post.hasOne('user', User, {
-                reverse: 'posts'
+            Post.hasOne(User, {
+                as: 'author',
             });
 
-            ORM.singleton.clear();
             return helper.dropSync([User, Profile, Group, Post], function () {
-                var billy = User.createSync({
+                var billy = User.create({
                     username: 'billy',
                     password: 'hashed password'
                 });
-
-                var profile = billy.setProfileSync(new Profile({
+                var profile = billy.$saveRef("profile", new Profile({
                     firstname: 'William',
                     lastname: 'Franklin'
                 }));
-                var groups = billy.addGroupsSync([new Group({
-                    name: 'admins'
-                }), new Group({
-                    name: 'developers'
-                })]);
-                var posts = billy.setPostsSync(new Post({
+                var groups = billy.$addRef("groups", [
+                    new Group({
+                        name: 'admins'
+                    }),
+                    new Group({
+                        name: 'developers'
+                    })
+                ]);
+                var posts = billy.$saveRef("posts", new Post({
                     content: 'Hello world!'
                 }));
             });
@@ -86,16 +83,34 @@ xdescribe("ORM Plugin", function () {
     describe("Cache", function () {
         before(setup());
 
-        it("use", function () {
+        it("define", function () {
+            ORM.definePlugin("cache", {
+                onBootstrap () {
+                    new routing = new mq.Routing()
+                },
+                onSynchronized () {},
+                onDroped () {},
+                onFoundItems () {},
+                onCreatedItems () {},
+                onUpdatedItems () {},
+                onRemovedItems () {},
 
+                onDMLInsert () {},
+                onDMLFind () {},
+                onDMLUpdate () {},
+                onDMLRemove () {},
+                onDMLClear () {},
+            });
         });
     });
 
-    describe("http plugin", function () {
+    describe("Http Endpoints", function () {
         before(setup());
 
-        it("use", function () {
-
+        it("define", function () {
+            ORM.definePlugin("http-routes", {
+                
+            });
         });
     });
 });
