@@ -70,7 +70,7 @@ export = function defineRef (
                 results[x[targetModel.id]] = false;
                 return x[targetModel.id];
             })
-            const alias = `${targetModel.collection}_${targetModel.id}`
+            const joinPropertyInTarget = targetModel.propIdentifier(targetModel.id)
 
             ;<FxOrmInstance.Class_Instance[]>(mergeModel.find({
                 select: (() => {
@@ -78,7 +78,7 @@ export = function defineRef (
                     /**
                      * @todo reduce unnecesary property
                      */
-                    ss[alias] = targetModel.propIdentifier(targetModel.id)
+                    ss[joinPropertyInTarget] = targetModel.propIdentifier(targetModel.id)
 
                     return ss
                 })(),
@@ -88,7 +88,7 @@ export = function defineRef (
                      */
                     [targetModel.Op.and]: {
                         [mergePropertyNameInTarget]: sourceInstance[mergeModel.sourceModel.id],
-                        ...targetIds.length && { [alias]: targetModel.Opf.in(targetIds) }
+                        ...targetIds.length && { [joinPropertyInTarget]: targetModel.Opf.in(targetIds) }
                     }
                 },
                 joins: [
@@ -104,9 +104,9 @@ export = function defineRef (
                 ],
                 filterQueryResult (_results) {
                     if (zeroChecking.is) {
-                        zeroChecking.existed = !!_results.length && _results.some((x: any) => x && !!x[alias])
+                        zeroChecking.existed = !!_results.length && _results.some((x: any) => x && !!x[joinPropertyInTarget])
                     } else {
-                        _results.forEach(({[alias]: alias_id}: any) => {
+                        _results.forEach(({[joinPropertyInTarget]: alias_id}: any) => {
                             if (alias_id && results.hasOwnProperty(alias_id)) results[alias_id] = true
                         })
                     }

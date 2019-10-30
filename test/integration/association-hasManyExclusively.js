@@ -437,19 +437,19 @@ describe("hasManyExclusively", function () {
             });
             var Jane, John
 
-            oit("should return { final: true } if instance has associated item", function () {
+            it("should return { final: true } if instance has associated item", function () {
                 var station = Station.one({ where: { name: "Ac_2" } });
 
                 assert.isTrue(John.$hasRef("stations", station).final);
                 assert.isFalse(Jane.$hasRef("stations", station).final);
             });
 
-            oit("should return { final: true } if not passing any instance and has associated items", function () {
+            it("should return { final: true } if not passing any instance and has associated items", function () {
                 assert.isFalse(Jane.$hasRef("stations").final);
                 assert.isTrue(John.$hasRef("stations").final);
             });
 
-            oit("should return { final: true } if all passed instances are associated", function () {
+            it("should return { final: true } if all passed instances are associated", function () {
                 var stations = Station.find({ where: { name: ["Ac_2", "Ac_1"] } });
 
                 assert.deepEqual(
@@ -464,7 +464,7 @@ describe("hasManyExclusively", function () {
                 );
             });
 
-            oit("should return { final: false } if any passed instances are not associated", function () {
+            it("should return { final: false } if any passed instances are not associated", function () {
                 var stations = Station.find();
 
                 assert.deepEqual(

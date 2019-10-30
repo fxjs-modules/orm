@@ -115,7 +115,7 @@ describe("benchmark", function () {
     describe("model-create/dml-insert", function () {
         before(setup());
 
-        var c_bare_input = 1e5;
+        var c_bare_input = 1e4;
 
         /**
          * @levels_sqlite_orm
@@ -144,6 +144,8 @@ describe("benchmark", function () {
         before(() => {
             Person.clear()
             Station.clear()
+            if (db.driver.type === 'sqlite')
+              c_bare_input = 1e5
         })
 
         beforeEach(() => {
