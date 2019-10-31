@@ -86,7 +86,6 @@ xdescribe("ORM Plugin", function () {
         it("define", function () {
             ORM.definePlugin("cache", {
                 onBootstrap () {
-                    new routing = new mq.Routing()
                 },
                 onSynchronized () {},
                 onDroped () {},
@@ -109,7 +108,9 @@ xdescribe("ORM Plugin", function () {
 
         it("define", function () {
             ORM.definePlugin("http-routes", {
-                
+                onBootstrap () {
+                  const routing = new mq.Routing()
+                }
             });
         });
     });
