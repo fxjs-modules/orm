@@ -208,6 +208,8 @@ export const Model = function (
 			throw new ORMError("Driver does not support Model.drop()", 'NO_SUPPORT', { model: m_opts.table });
 		}
 
+		Singleton.modelClear(this)
+
 		return m_opts.driver.doDrop({
 			table             : m_opts.table,
 			properties        : m_opts.properties,
