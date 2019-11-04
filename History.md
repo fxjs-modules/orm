@@ -1,7 +1,13 @@
 
-v1.11.4 / 2019-11-04
+v1.11.5 / 2019-11-04
 ==================
 
+  * bugfix: clear model's cache when dropping model.
+
+v1.11.4 / 2019-11-04
+====================
+
+  * Release v1.11.4
   * bugfix: dont cache global models.
   * bugfix: miss defaultCacheSize default setting (#25)
   * package, db-driver: Release v0.0.5
