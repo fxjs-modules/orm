@@ -580,6 +580,10 @@ function convertIndexRows(
 	const indexes = <FxOrmSqlDDLSync__DbIndex.DbIndexInfoHash>{};
 
 	for (let i = 0; i < rows.length; i++) {
+		for (let j in rows[i]) {
+			rows[i][j.toLowerCase()] = rows[i][j];
+			delete (rows[i][j]);
+		}
 		if (rows[i].index_name == 'PRIMARY') {
 			continue;
 		}
