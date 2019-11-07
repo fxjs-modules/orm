@@ -40,11 +40,6 @@ export const get: FxOrmNS.SingletonModule['get'] = function (key, opts, reFetchS
 };
 
 export const modelGet: FxOrmNS.SingletonModule['modelGet'] = function (model, key, opts, reFetchSync) {
-	const { driver_table_uid } = Helpers.parseDriverUidAndTableNameFromUID(key);
-
-	if (!models[driver_table_uid])
-		models[driver_table_uid] = model;
-	
 	if (opts.identityCache === false)
 		return reFetchSync();
 

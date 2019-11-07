@@ -1,7 +1,20 @@
 
-v1.11.3 / 2019-08-19
+v1.11.4 / 2019-11-04
 ==================
 
+  * bugfix: dont cache global models.
+  * bugfix: miss defaultCacheSize default setting (#25)
+  * package, db-driver: Release v0.0.5
+  * package, db-driver: robust change, and add `connectionPool` to driver.
+  * package, db-driver:  add `getConnection` to driver.
+  * package, db-driver: Release v0.0.4
+  * package, db-driver: support false as boolean-value in querystring.
+  * support `ModelDefineOptions.useSelfSettings`
+
+v1.11.3 / 2019-08-19
+====================
+
+  * Release v1.11.3
   * package, sql-ddl-sync: Release v0.6.2
   * feat, main: add comment for type `FxOrmAssociation.AssociationKeyComputation`.
   * package, sql-ddl-sync: use better strategy to check if one collection has column for `mysql`, add test cases about it.
