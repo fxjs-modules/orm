@@ -1,7 +1,6 @@
 import { isOperatorFunction } from './Operator'
 import * as QueryGrammers from './QueryGrammar'
-import { idify, preDestruct, arraify } from '../../Utils/array'
-import { mapObjectToTupleList } from '../../Utils/object'
+import { idify, arraify } from '../../Utils/array'
 
 export function normalizeWhereInput (input: any) {
   if (Array.isArray(input))
@@ -311,7 +310,7 @@ type WalkJoinOnOnNodeCallback<T_CTX> = WalkThroughNodeCallback<
   'inputIs:opfn:joinVerb'
 >
 export function gnrWalkJoinOn<
-  T_NODE extends FxOrmQueries.Class_QueryNormalizer['joins'][any],
+  T_NODE extends FxOrmQueries.HqLNormalizer['joins'][any],
   T_CTX extends Fibjs.AnyObject = Fibjs.AnyObject
 > ({
   onJoinNode = noOp,
@@ -327,9 +326,9 @@ export function gnrWalkJoinOn<
         source_collection: string,
         is_top_output?: boolean
         joinParams?: {
-          side?: FxOrmQueries.Class_QueryNormalizer['joins'][any]['side']
-          specific_outer?: FxOrmQueries.Class_QueryNormalizer['joins'][any]['specific_outer']
-          inner?: FxOrmQueries.Class_QueryNormalizer['joins'][any]['inner']
+          side?: FxOrmQueries.HqLNormalizer['joins'][any]['side']
+          specific_outer?: FxOrmQueries.HqLNormalizer['joins'][any]['specific_outer']
+          inner?: FxOrmQueries.HqLNormalizer['joins'][any]['inner']
         }
       }
     ): FxOrmTypeHelpers.ItOrListOfIt<T_NODE>,

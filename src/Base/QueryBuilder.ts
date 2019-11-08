@@ -5,7 +5,7 @@ import { configurable } from '../Decorators/accessor';
 import { buildDescriptor } from '../Decorators/property';
 import { arraify } from '../Utils/array';
 import { isEmptyPlainObject } from '../Utils/object';
-import Normalizer from './Query/Normalizer';
+import getNormalizedHQLObject from './Query/Normalizer';
 import { dfltWalkWhere, dfltWalkOn } from './Query/walkOnHQL';
 
 import * as QueryGrammers from './Query/QueryGrammar'
@@ -181,8 +181,8 @@ class Class_QueryBuilder<TUPLE_ITEM = any> implements FxOrmQueries.Class_QueryBu
      * @description build one query from hql
      */
     @transformToQCIfModel
-    queryByHQL <T = any> (hql: string): any {
-      const normalizedQ = new Normalizer(hql, {
+    parseHQL <T = any> (hql: string): any {
+      const normalizedQ = getNormalizedHQLObject(hql, {
         models: {
           [this.model.collection]: this.model
         }

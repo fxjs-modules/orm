@@ -13,7 +13,7 @@ import { configurable } from '../Decorators/accessor';
 import { buildDescriptor } from '../Decorators/property';
 import { getDML } from '../DXL/DML';
 import { getDDL } from '../DXL/DDL';
-import QueryNormalizer from './Query/Normalizer';
+import getNormalizedHQLObject from './Query/Normalizer';
 
 class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
     static Op = QueryGrammers.Ql.Operators
@@ -35,8 +35,8 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
         return orm;
     }
 
-    static parseHQL (...args: FxOrmTypeHelpers.Parameters<(typeof FxOrmNS.Class_ORM)['parseHQL']>): FxOrmQueries.Class_QueryNormalizer {
-        return new QueryNormalizer(...args);
+    static parseHQL (...args: FxOrmTypeHelpers.Parameters<(typeof FxOrmNS.Class_ORM)['parseHQL']>): FxOrmQueries.HqLNormalizer {
+        return getNormalizedHQLObject(...args);
     }
 
     settings = new Setting({
@@ -120,17 +120,17 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
                 name,
                 properties: <FxOrmProperty.NormalizedPropertyHash>properties,
                 keys: config.keys,
-    
+
                 orm,
                 settings: settings.clone(),
-    
+
                 collection: config.collection || name,
                 indexes: [],
 
                 howToCheckExistenceWhenNoKeys: config.howToCheckExistenceWhenNoKeys || undefined,
-    
+
                 cascadeRemove: config.cascadeRemove,
-    
+
                 methods: {},
                 validations: {},
             })
@@ -152,16 +152,16 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
          */
         const modelDefinitions = this.modelDefinitions
 
-        this.driver.useTrans((conn) => {
+        this.driver.useTrans((conn: any) => {
             const orm = new ORM(this.driver, {
                 connection: conn,
                 ddl: <any>this.$ddl.fromNewConnection(conn),
                 dml: <any>this.$dml.fromNewConnection(conn),
             })
-        
+
             // get one fresh orm
             Object.values(modelDefinitions).forEach(def => def(orm))
-    
+
             callback(orm)
         })
     }

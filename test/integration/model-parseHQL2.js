@@ -1,7 +1,7 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-xdescribe("Model.queryByHQL()", function () {
+xdescribe("Model.parseHQL()", function () {
     var db = null;
     var Person = null;
 
@@ -55,12 +55,12 @@ xdescribe("Model.queryByHQL()", function () {
         before(setup);
 
         it("normalize input to where object", function () {
-            var people = Person.queryByHQL(`select * from ${Person.collection} where a = 1`);
+            var people = Person.parseHQL(`select * from ${Person.collection} where a = 1`);
 
         });
 
         xit("select all", function () {
-            var people = Person.queryByHQL(`select * from ${Person.collection}`);
+            var people = Person.parseHQL(`select * from ${Person.collection}`);
 
             // assert.isObject(people);
             // assert.propertyVal(people, "length", 5);

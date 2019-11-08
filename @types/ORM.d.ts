@@ -43,7 +43,14 @@ declare namespace FxOrmNS {
         /**
          * @description return one query normalizer
          */
-        static parseHQL (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmQueries.Class_QueryNormalizer>): FxOrmQueries.Class_QueryNormalizer
+        static parseHQL (
+            sql: string,
+            opts?: {
+                models?: {
+                    [k: string]: FxOrmModel.Class_Model
+                }
+            }
+        ): FxOrmQueries.HqLNormalizer
 
         constructor (
             driver: FxDbDriverNS.Driver<ConnType> | string | FxDbDriverNS.ConnectionInputArgs,

@@ -2,7 +2,7 @@ var helper = require("../support/spec_helper");
 var common = require("../common");
 var ORM = require("../../");
 
-describe("ORM parseHQL", function() {
+describe("Model parseHQL", function() {
   var db = null;
   var Person = null;
   var Pet = null;

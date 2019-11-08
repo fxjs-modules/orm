@@ -77,23 +77,15 @@ declare namespace FxOrmQueries {
      * }
      * ```
      */
-    class Class_QueryNormalizer {
-        readonly collection: string
-        readonly select: FxHQLParser.ParsedResult['returnColumns'] | symbol
+    interface HqLNormalizer {
+        collection: string
+        select: FxHQLParser.ParsedResult['returnColumns'] | symbol
 
-        readonly selectableFields: string[]
+        selectableFields: string[]
 
         readonly isSelectAll: boolean
         readonly isEmptyWhere: boolean
         readonly isJoined: boolean
-
-        // joins: {
-        //     type: 'left' | 'right' | 'inner'
-        //     /**
-        //      * one joined normalizer cannot join with other normalizer
-        //      */
-        //     normalizer: Class_QueryNormalizer
-        // }[]
         /**
          * @integer
          */
@@ -117,15 +109,6 @@ declare namespace FxOrmQueries {
          * @default -1
          */
         limit: number
-
-        constructor (
-            sql: string,
-            opts?: {
-              models?: {
-                [k: string]: FxOrmModel.Class_Model
-              }
-            }
-        )
     }
     // next generation model :start
     class Class_QueryBuilder<T_RETURN = any> {
@@ -272,9 +255,8 @@ declare namespace FxOrmQueries {
         last (): T_RETURN
         all (): T_RETURN[]
 
-        queryByHQL <T = any> (
-          hql: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmQueries.Class_QueryNormalizer>[0],
-          opts?: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmQueries.Class_QueryNormalizer>[1]
-        ): any
+        parseHQL <T = any> (
+          hql: FxOrmTypeHelpers.Parameters<typeof FxOrmNS.Class_ORM['parseHQL']>[0]
+        ): ReturnType<typeof FxOrmNS.Class_ORM['parseHQL']>
     }
 }

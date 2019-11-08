@@ -6,7 +6,6 @@ test.setup();
 function t() {
     run('./integration/orm-exports.js');
     run('./integration/orm-operator.js');
-    run('./integration/orm-parseHQL.js');
 
     run('./integration/orm-plugin.js');
 
@@ -17,7 +16,7 @@ function t() {
 
     /* these cases are used for check if internal processing `filterWhereToKnexActionsInternal` correct */
     run('./integration/model-walkConditions.js');
-    run('./integration/model-queryByHQL.js');
+    // run('./integration/model-parseHQL.js');
 
     // run('./integration/model-aggregate.js');
     run('./integration/model-clear.js');
@@ -34,6 +33,8 @@ function t() {
     run('./integration/model-remove.js');
     run('./integration/model-save.js');
     run('./integration/model-sync.js');
+
+    run('./integration/helpers-parseHQL.js');
 
     // // run('./integration/predefined-validators.js');
 

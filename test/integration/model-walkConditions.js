@@ -168,7 +168,7 @@ describe("Model -- walkConditions", function () {
               const [whereInput, hql] = getter({})
               var walked = Person.walkWhere(whereInput);
 
-              var struct = Person.queryByHQL(hql);
+              var struct = Person.parseHQL(hql);
 
               assert.deepEqual(
                 walked,
@@ -182,7 +182,7 @@ describe("Model -- walkConditions", function () {
               const [whereInput, hql] = getter({ source_collection: Person.collection })
               var walked = Person.walkWhere(whereInput, { source_collection: Person.collection });
 
-              var struct = Person.queryByHQL(hql);
+              var struct = Person.parseHQL(hql);
 
               assert.deepEqual(
                 walked,
@@ -429,7 +429,7 @@ describe("Model -- walkConditions", function () {
               const [whereInput, hql] = getter()
               var walked = Person.walkWhere(whereInput);
 
-              var struct = Person.queryByHQL(hql);
+              var struct = Person.parseHQL(hql);
 
               assert.deepEqual(
                 walked,
@@ -595,7 +595,7 @@ describe("Model -- walkConditions", function () {
               const [inputConds, hql] = getter()
               var walked = Person.walkJoinOn(inputConds);
 
-              var struct = Person.queryByHQL(hql);
+              var struct = Person.parseHQL(hql);
 
               // console.notice('struct.joins', struct.joins)
               assert.deepEqual(walked, struct.joins)
