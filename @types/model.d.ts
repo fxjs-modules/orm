@@ -113,6 +113,10 @@ declare namespace FxOrmModel {
 
         isPropertyName (name: string): boolean
         isAssociationName (name: string): boolean
+        /**
+         * @description check if input is instanceof THIS model
+         * @param input
+         */
         isInstance (input: any): input is FxOrmInstance.Class_Instance
 
         prop (propertyname: string | FxOrmProperty.Class_Property): Class_Model['properties'][any]

@@ -7,6 +7,7 @@ import FxDbDriver = require('@fxjs/db-driver');
 import * as ORMRuntime from '../Decorators/orm-runtime';
 
 import Setting from './Setting';
+import Property from './Property';
 import Model from './Model';
 import * as QueryGrammers from './Query/QueryGrammar';
 import { configurable } from '../Decorators/accessor';
@@ -20,6 +21,8 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
     static Opf = QueryGrammers.Qlfn.Operators
     static Ql = QueryGrammers.Ql
     static Qlfn = QueryGrammers.Qlfn
+
+    static Property = Property
 
     static create (connection: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmNS.Class_ORM>[0]) {
         const orm = new ORM(connection);
@@ -68,6 +71,9 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
 
     @buildDescriptor({ configurable: false, enumerable: false })
     modelDefinitions: FxOrmNS.Class_ORM['modelDefinitions'] = {}
+
+    @buildDescriptor({ configurable: false, enumerable: false })
+    customProperties: FxOrmNS.Class_ORM['customProperties'] = {}
 
     @buildDescriptor({ configurable: false, enumerable: false })
     $dml: FxOrmTypeHelpers.InstanceOf<ReturnType<typeof getDML>>;
@@ -141,6 +147,10 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
         };
 
         return def(this)
+    }
+
+    defineProperty (...args: Parameters<FxOrmNS.Class_ORM['defineProperty']>) {
+        return null as any
     }
 
     useTrans (callback: (orm: FxOrmNS.Class_ORM) => void) {

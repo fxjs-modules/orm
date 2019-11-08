@@ -1,6 +1,6 @@
-import * as mysql from './mysql'
-import * as sqlite from './sqlite'
-import * as mongodb from './mongodb'
+import sqlite = require('./sqlite')
+import mysql = require('./mysql')
+import mongodb = require('./mongodb')
 
 export function getDataStoreTransformer (
     type: FxDbDriverNS.Driver['type'],

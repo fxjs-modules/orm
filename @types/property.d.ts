@@ -1,12 +1,18 @@
 declare namespace FxOrmProperty {
-    interface CustomPropertyType extends FxOrmSqlDDLSync__Driver.CustomPropertyType {
+    interface CustomProperty {
         datastoreType: {
-            (prop?: FxOrmProperty.NormalizedProperty): string
+            (
+                prop?: FxOrmProperty.NormalizedProperty,
+                opts?: {
+                    collection: string
+                    driver: FxDbDriverNS.Driver<any>
+                }
+            ): string
         }
         valueToProperty?: {
             (value?: any, prop?: FxOrmProperty.NormalizedProperty): any
         }
-        propertyToValue?: {
+        propertyToStoreValue?: {
             (propertyValue?: any, prop?: FxOrmProperty.NormalizedProperty): any
         }
     }
@@ -62,38 +68,38 @@ declare namespace FxOrmProperty {
     }
 
     class Class_Property<
-      T_CTX extends Fibjs.AnyObject & { sqlQuery?: FxSqlQuery.Class_Query } = any
+      T_CTX extends Fibjs.AnyObject = any
     > implements NormalizedProperty {
         $storeType: FxDbDriverNS.Driver<any>['type']
         $ctx: T_CTX
 
         name: string
 
-        type: FxOrmSqlDDLSync__Column.Property['type']
+        type: NormalizedProperty['type']
 
-        key: FxOrmSqlDDLSync__Column.Property['key']
-        mapsTo: FxOrmSqlDDLSync__Column.Property['mapsTo']
+        key: NormalizedProperty['key']
+        mapsTo: NormalizedProperty['mapsTo']
 
-        unique: FxOrmSqlDDLSync__Column.Property['unique']
-        index: FxOrmSqlDDLSync__Column.Property['index']
+        unique: NormalizedProperty['unique']
+        index: NormalizedProperty['index']
 
-        serial: FxOrmSqlDDLSync__Column.Property['serial']
-        unsigned: FxOrmSqlDDLSync__Column.Property['unsigned']
-        primary: FxOrmSqlDDLSync__Column.Property['primary']
-        required: FxOrmSqlDDLSync__Column.Property['required']
+        serial: NormalizedProperty['serial']
+        unsigned: NormalizedProperty['unsigned']
+        primary: NormalizedProperty['primary']
+        required: NormalizedProperty['required']
 
-        defaultValue: FxOrmSqlDDLSync__Column.Property['defaultValue']
-        size: FxOrmSqlDDLSync__Column.Property['size']
-        rational: FxOrmSqlDDLSync__Column.Property['rational']
-        time: FxOrmSqlDDLSync__Column.Property['time']
-        big: FxOrmSqlDDLSync__Column.Property['big']
-        values: FxOrmSqlDDLSync__Column.Property['values']
+        defaultValue: NormalizedProperty['defaultValue']
+        size: NormalizedProperty['size']
+        rational: NormalizedProperty['rational']
+        time: NormalizedProperty['time']
+        big: NormalizedProperty['big']
+        values: NormalizedProperty['values']
 
-        lazyload: boolean
-        lazyname: string
-        enumerable: boolean
+        lazyload: NormalizedProperty['lazyload']
+        lazyname: NormalizedProperty['lazyname']
+        enumerable: NormalizedProperty['enumerable']
 
-        customType?: FxOrmProperty.CustomPropertyType
+        customType?: FxOrmProperty.CustomProperty
         /**
          * @description if joinNode is not empty, which means this property is used as join key between
          * collections
@@ -109,6 +115,13 @@ declare namespace FxOrmProperty {
             }
         ): any
         static isProperty (input: any): input is FxOrmProperty.Class_Property
+        static normalize (
+            input: any,
+            /**
+             * @description property key name in properties dictionary
+             */
+            prop_name: string
+        ): NormalizedProperty
 
         // static create (...args: FxOrmTypeHelpers.ConstructorParams<Class_Property>): Class_Property
         constructor (
@@ -123,16 +136,8 @@ declare namespace FxOrmProperty {
         )
 
         readonly transformer: {
-            valueToProperty(
-                value: any,
-                property: FxOrmProperty.NormalizedProperty,
-                customTypes: FxOrmDTransformer.CustomTypes
-            ): any
-            propertyToValue (
-                value: any,
-                property: FxOrmProperty.NormalizedProperty,
-                customTypes: FxOrmDTransformer.CustomTypes
-            ): any
+            valueToProperty: FxOrmDTransformer.Transformer['valueToProperty']
+            propertyToStoreValue: FxOrmDTransformer.Transformer['propertyToStoreValue']
         }
 
         fromStoreValue (storeValue: any): any

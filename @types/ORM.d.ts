@@ -27,8 +27,11 @@ declare namespace FxOrmNS {
     /* next generation :start */
     class Class_ORM<ConnType = any> {
         static Op: FxOrmQueries.Class_QueryBuilder['Op']
+        static Opf: FxOrmQueries.Class_QueryBuilder['Opf']
         static Ql: FxOrmQueries.Class_QueryBuilder['Ql']
         static Qlfn: FxOrmQueries.Class_QueryBuilder['Qlfn']
+
+        static Property: typeof FxOrmProperty.Class_Property
 
         /**
          * @description create one orm, but never do any real connection
@@ -67,6 +70,7 @@ declare namespace FxOrmNS {
         settings: any
 
         readonly models: {[k: string]: FxOrmModel.Class_Model}
+        readonly customProperties: {[k: string]: FxOrmProperty.CustomProperty}
         readonly modelDefinitions: {
             [k: string]: ((orm: FxOrmNS.Class_ORM, ...args: any) => FxOrmModel.Class_Model)
         }
@@ -85,6 +89,15 @@ declare namespace FxOrmNS {
           properties: Fibjs.AnyObject,
           config?: FxOrmModel.Class_ModelDefinitionOptions
         ): FxOrmModel.Class_Model
+
+        defineProperty (
+            name: string,
+            opts: {
+                datastoreType: FxOrmProperty.CustomProperty['datastoreType'],
+                valueToProperty: FxOrmProperty.CustomProperty['valueToProperty'],
+                propertyToStoreValue: FxOrmProperty.CustomProperty['propertyToStoreValue']
+            }
+        ): FxOrmProperty.CustomProperty
 
         useTrans (callback: (orm: FxOrmNS.Class_ORM) => any): void
         /**

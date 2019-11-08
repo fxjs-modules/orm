@@ -11,6 +11,14 @@ function t() {
 
     run('./integration/utils-linked-list.js');
 
+    run('./integration/property.js');
+    run('./integration/property-custom.js');
+    // // run('./integration/predefined-validators.js');
+    // // run('./integration/smart-types.js');
+
+    // // run('./integration/property-lazyload.js');
+    // // run('./integration/property-maps-to.js');
+
     run('./integration/model-property.js');
     run('./integration/model-apis.js');
 
@@ -36,16 +44,7 @@ function t() {
 
     run('./integration/helpers-parseHQL.js');
 
-    // // run('./integration/predefined-validators.js');
-
-    // // run('./integration/property-custom.js');
-    // // run('./integration/property-lazyload.js');
-    // // run('./integration/property-maps-to.js');
-    // // run('./integration/property.js');
-
     // // run('./integration/settings.js');
-
-    // // run('./integration/smart-types.js');
 
     // // run('./integration/validation.js');
 

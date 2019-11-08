@@ -195,7 +195,7 @@ describe("Model Property", function () {
                 assert.property(models["type_test"].properties, 'Number')
 
                 assert.propertyVal(models["type_test"].properties.Number, 'name', 'Number')
-                assert.propertyVal(models["type_test"].properties.Number, 'type', 'integer')
+                assert.propertyVal(models["type_test"].properties.Number, 'type', 'number')
                 assert.propertyVal(models["type_test"].properties.Number, 'key', false)
                 assert.propertyVal(models["type_test"].properties.Number, 'mapsTo', 'Number')
                 assert.propertyVal(models["type_test"].properties.Number, 'unique', false)
@@ -226,7 +226,7 @@ describe("Model Property", function () {
                     "values": null,
                     "lazyload": false,
                     "name": "Number",
-                    "type": "integer",
+                    "type": "number",
                     "size": 4,
                     "required": false,
                     "defaultValue": undefined,

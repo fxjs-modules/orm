@@ -4,16 +4,18 @@
 [![Build Status](https://travis-ci.org/fxjs-modules/orm.svg)](https://travis-ci.org/fxjs-modules/orm)
 [![Build status](https://ci.appveyor.com/api/projects/status/gjqno52nm2ff2a92?svg=true)](https://ci.appveyor.com/project/richardo2016/orm)
 
+## Introduction
+
+This is a fibjs object relational mapping module.
+
+## Pre-requisites
+
+- fibjs >= 0.26.0
+
 ## Install
 
 ```sh
 npm install @fxjs/orm
-```
-
-## Test
-
-```sh
-npm run ci
 ```
 
 ## DBMS Support
@@ -21,18 +23,13 @@ npm run ci
 - MySQL & MariaDB
 - SQLite
 
-## Features
-
-## Introduction
-
-This is a fibjs object relational mapping module.
-
+## Basic Usages
 An example:
 
 ```js
-var orm = require("@fxjs/orm");
+var ORM = require("@fxjs/orm");
 
-var db = orm.connectSync("mysql://username:password@host/database");
+var db = ORM.connect("mysql://username:password@host/database");
 var Person = db.define("person", {
 	name      : String,
 	surname   : String,
@@ -48,105 +45,59 @@ var Person = db.define("person", {
 		}
 	},
 	validations: {
-		age: orm.enforce.ranges.number(18, undefined, "under-age")
+		age: ORM.enforce.ranges.number(18, undefined, "under-age")
 	}
 });
 
-// add the table to the database
-db.syncSync();
+// add local definition to remote endpoints
+db.sync();
 
-// add a row to the person table
-Person.createSync({ id: 1, name: "John", surname: "Doe", age: 27 });
+// add a row to the person collection
+Person.create({ id: 1, name: "John", surname: "Doe", age: 27 });
 
-// query the person table by surname
-var people = Person.findSync({ surname: "Doe" });
+// query the person collection by surname
+var people = Person.find({
+  where: { surname: "Doe" }
+});
 // SQL: "SELECT * FROM person WHERE surname = 'Doe'"
 
 console.log("People found: %d", people.length);
 console.log("First person: %s, age %d", people[0].fullName(), people[0].age);
 
 people[0].age = 16;
-people[0].saveSync();
+people[0].save();
 ```
 
-The callback version like this:
-```js
-var orm = require("orm");
+## Test
 
-orm.connect("mysql://username:password@host/database", function (err, db) {
-  if (err) throw err;
-
-	var Person = db.define("person", {
-		name      : String,
-		surname   : String,
-		age       : Number, // FLOAT
-		male      : Boolean,
-		continent : [ "Europe", "America", "Asia", "Africa", "Australia", "Antartica" ], // ENUM type
-		photo     : Buffer, // BLOB/BINARY
-		data      : Object // JSON encoded
-	}, {
-		methods: {
-			fullName: function () {
-				return this.name + ' ' + this.surname;
-			}
-		},
-		validations: {
-			age: orm.enforce.ranges.number(18, undefined, "under-age")
-		}
-	});
-
-    // add the table to the database
-	db.sync(function(err) {
-		if (err) throw err;
-
-		// add a row to the person table
-		Person.create({ id: 1, name: "John", surname: "Doe", age: 27 }, function(err) {
-			if (err) throw err;
-
-				// query the person table by surname
-				Person.find({ surname: "Doe" }, function (err, people) {
-			        // SQL: "SELECT * FROM person WHERE surname = 'Doe'"
-		        	if (err) throw err;
-
-			        console.log("People found: %d", people.length);
-			        console.log("First person: %s, age %d", people[0].fullName(), people[0].age);
-
-			        people[0].age = 16;
-			        people[0].save(function (err) {
-			            // err.msg = "under-age";
-		        });
-		    });
-		});
-	});
-});
+```sh
+# sqlite
+npm run ci-sqlite
+# mysql & mariadb
+npm run ci-mysql
 ```
 
-## Documentation
-
-
-Fibjs did not add new functions, the development of documents can refer to node-orm, only need to change the asynchronous call to synchronous version.  [wiki](https://github.com/fxjs-modules/orm/wiki/).
-
-## Settings
+<!-- ## Settings
 
 See information in the [wiki](https://github.com/fxjs-modules/orm/wiki/Settings).
 
 ## Connecting
 
-See information in the [wiki](https://github.com/fxjs-modules/orm/wiki/Connecting-to-Database).
+See information in the [wiki](https://github.com/fxjs-modules/orm/wiki/Connecting-to-Database). -->
 
 ## Models
 
-A Model is an abstraction over one or more database tables. Models support associations (more below). The name of the model is assumed to match the table name.
+A Model is an abstraction over one or more database collections. Models support associations, which is one sub-class of Model (more below). By default, The name of the model is assumed to match the collection name.
 
-Models support behaviours for accessing and manipulating table data.
+Models support behaviours for accessing and manipulating collection data.
 
 ## Defining Models
 
-See information in the [wiki](https://github.com/fxjs-modules/orm/wiki/Defining-Models).
+See information in the [docs](https://github.com/fxjs-modules/orm/wiki/Defining-Models).
 
 ### Properties
 
-See information in the [wiki](https://github.com/fxjs-modules/orm/wiki/Model-Properties).
+See information in the [docs](https://github.com/fxjs-modules/orm/wiki/Model-Properties).
 
 ### Instance Methods
 
@@ -178,13 +129,13 @@ var Person = db.define('person', {
     height  : { type: 'integer' }
 });
 Person.tallerThan = function(height) {
-    return this.findSync({ height: orm.gt(height) });
+    return this.find({ height: ORM.gt(height) });
 };
 
 var tallPeople = Person.tallerThan( 192);
 ```
 
-<!-- 
+<!--
 ## Loading Models [NOT SUPPORT]
 
 Models can be in separate modules. Simply ensure that the module holding the models uses module.exports to publish a function that accepts the database connection, then load your models however you like.
@@ -226,7 +177,7 @@ See information in the [wiki](https://github.com/fxjs-modules/orm/wiki/Syncing-a
 
 ORM2 allows you some advanced tweaks on your Model definitions. You can configure these via settings or in the call to `define` when you setup the Model.
 
-For example, each Model instance has a unique ID in the database. This table column is added automatically, and called "id" by default.<br/>
+For example, each Model instance has a unique ID in the database. This collection column is added automatically, and called "id" by default.<br/>
 If you define your own `key: true` column, "id" will not be added:
 
 ```js
@@ -278,22 +229,22 @@ var person = Person.getSync(123);
 // finds person with id = 123
 ```
 
-### Model.findSync([ conditions ] [, options ] [, limit ] [, order ])
+### Model.find([ conditions ] [, options ] [, limit ] [, order ])
 
 Finding one or more elements has more options, each one can be given in no specific parameter order. Only `options` has to be after `conditions` (even if it's an empty object).
 
 ```js
-var people = Person.findSync({ name: "John", surname: "Doe" }, 3);
+var people = Person.find({ name: "John", surname: "Doe" }, 3);
 // finds people with name='John' AND surname='Doe' and returns the first 3
 ```
 
 If you need to sort the results because you're limiting or just because you want them sorted do:
 
 ```js
-var people = Person.findSync({ surname: "Doe" }, "name");
+var people = Person.find({ surname: "Doe" }, "name");
 // finds people with surname='Doe' and returns sorted by name ascending
 
-people = Person.findSync({ surname: "Doe" }, [ "name", "Z" ]);
+people = Person.find({ surname: "Doe" }, [ "name", "Z" ]);
 // finds people with surname='Doe' and returns sorted by name descending
 // ('Z' means DESC; 'A' means ASC - default)
 ```
@@ -301,7 +252,7 @@ people = Person.findSync({ surname: "Doe" }, [ "name", "Z" ]);
 There are more options that you can pass to find something. These options are passed in a second object:
 
 ```js
-var people = Person.findSync({ surname: "Doe" }, { offset: 2 });
+var people = Person.find({ surname: "Doe" }, { offset: 2 });
 // finds people with surname='Doe', skips the first 2 and returns the others
 ```
 
@@ -424,11 +375,11 @@ Of course you could do this directly on `.find()`, but for some more complicated
 In the end (or during the process..) you can call:
 - `.countSync()` if you just want to know how many items there are;
 - `.getSync()` to retrieve the list;
-- `.saveSync()` to save all item changes.
+- `.save()` to save all item changes.
 
 #### Conditions
 
-Conditions are defined as an object where every key is a property (table column). All keys are supposed
+Conditions are defined as an object where every key is a property (collection column). All keys are supposed
 to be concatenated by the logical `AND`. Values are considered to match exactly, unless you're passing
 an `Array`. In this case it is considered a list to compare the property with.
 
@@ -441,17 +392,17 @@ If you need other comparisons, you have to use a special object created by some 
 a few examples to describe it:
 
 ```js
-{ col1: orm.eq(123) } // `col1` = 123 (default)
-{ col1: orm.ne(123) } // `col1` <> 123
-{ col1: orm.gt(123) } // `col1` > 123
-{ col1: orm.gte(123) } // `col1` >= 123
-{ col1: orm.lt(123) } // `col1` < 123
-{ col1: orm.lte(123) } // `col1` <= 123
-{ col1: orm.between(123, 456) } // `col1` BETWEEN 123 AND 456
-{ col1: orm.not_between(123, 456) } // `col1` NOT BETWEEN 123 AND 456
-{ col1: orm.like(12 + "%") } // `col1` LIKE '12%'
-{ col1: orm.not_like(12 + "%") } // `col1` NOT LIKE '12%'
-{ col1: orm.not_in([1, 4, 8]) } // `col1` NOT IN (1, 4, 8)
+{ col1: ORM.eq(123) } // `col1` = 123 (default)
+{ col1: ORM.ne(123) } // `col1` <> 123
+{ col1: ORM.gt(123) } // `col1` > 123
+{ col1: ORM.gte(123) } // `col1` >= 123
+{ col1: ORM.lt(123) } // `col1` < 123
+{ col1: ORM.lte(123) } // `col1` <= 123
+{ col1: ORM.between(123, 456) } // `col1` BETWEEN 123 AND 456
+{ col1: ORM.not_between(123, 456) } // `col1` NOT BETWEEN 123 AND 456
+{ col1: ORM.like(12 + "%") } // `col1` LIKE '12%'
+{ col1: ORM.not_like(12 + "%") } // `col1` NOT LIKE '12%'
+{ col1: ORM.not_in([1, 4, 8]) } // `col1` NOT IN (1, 4, 8)
 ```
 
 #### Raw queries
@@ -492,7 +443,7 @@ var Person = db.define('person', {
 and also globally:
 
 ```js
-var db = orm.connectSync('...');
+var db = ORM.connectSync('...');
 db.settings.set('instance.identityCache', true);
 ```
 
@@ -504,12 +455,12 @@ you fetch a Person and then change it, while it doesn't get saved it won't be pa
 
 ## Creating Items
 
-### Model.createSync(items)
+### Model.create(items)
 
 To insert new elements to the database use `Model.create`.
 
 ```js
-var items = Person.createSync([
+var items = Person.create([
 	{
 		name: "John",
 		surname: "Doe",
@@ -535,7 +486,7 @@ use to change each item.
 var John = Person.getSync(1);
 John.name = "Joe";
 John.surname = "Doe";
-John.saveSync();
+John.save();
 console.log("saved!");
 ```
 
@@ -543,7 +494,7 @@ Updating and then saving an instance can be done in a single call:
 
 ```js
 var John = Person.getSync(1);
-John.saveSync({ name: "Joe", surname: "Doe" });
+John.save({ name: "Joe", surname: "Doe" });
 console.log("saved!");
 ```
 
@@ -562,7 +513,7 @@ See information in the [wiki](https://github.com/fxjs-modules/orm/wiki/Model-Val
 
 ## Associations
 
-An association is a relation between one or more tables.
+An association is a relation between one or more collections.
 
 ### hasOne
 
@@ -606,11 +557,11 @@ Person.findByPets({ /* options */ }) // returns ChainFind object
 
 ### hasMany
 
-Is a **many to many** relationship (includes join table).<br/>
+Is a **many to many** relationship (includes join collection).<br/>
 Eg: `Patient.hasMany('doctors', Doctor, { why: String }, { reverse: 'patients', key: true })`.<br/>
 Patient can have many different doctors. Each doctor can have many different patients.
 
-This will create a join table `patient_doctors` when you call `Patient.sync()`:
+This will create a join collection `patient_doctors` when you call `Patient.sync()`:
 
  column name | type
  :-----------|:--------
@@ -622,17 +573,17 @@ The following functions will be available:
 
 ```js
 patient.getDoctorsSync()        // List of doctors
-patient.addDoctorsSync(docs)    // Adds entries to join table
-patient.setDoctorsSync(docs)    // Removes existing entries in join table, adds new ones
+patient.addDoctorsSync(docs)    // Adds entries to join collection
+patient.setDoctorsSync(docs)    // Removes existing entries in join collection, adds new ones
 patient.hasDoctorsSync(docs)    // Checks if patient is associated to specified doctors
-patient.removeDoctorsSync(docs) // Removes specified doctors from join table
+patient.removeDoctorsSync(docs) // Removes specified doctors from join collection
 
 doctor.getPatientsSync()
 // etc...
 
 // You can also do:
 patient.doctors = [doc1, doc2];
-patient.saveSync()
+patient.save()
 
 // Model methods
 Patient.findByDoctorsSync({ /* conditions */ }) // Find patients by conditions for doctors
@@ -644,7 +595,7 @@ To associate a doctor to a patient:
 patient.addDoctorSync(surgeon, {why: "remove appendix"})
 ```
 
-which will add `{patient_id: 4, doctor_id: 6, why: "remove appendix"}` to the join table.
+which will add `{patient_id: 4, doctor_id: 6, why: "remove appendix"}` to the join collection.
 
 #### getAccessor
 
@@ -657,7 +608,7 @@ var doctors = patient.getDoctors().order("name").offset(1).runSync());
 
 ### extendsTo
 
-If you want to split maybe optional properties into different tables or collections. Every extension will be in a new table,
+If you want to split maybe optional properties into different collections or collections. Every extension will be in a new collection,
 where the unique identifier of each row is the main model instance id. For example:
 
 ```js
@@ -670,12 +621,12 @@ var PersonAddress = Person.extendsTo("address", {
 });
 ```
 
-This will create a table `person` with columns `id` and `name`. The extension will create a table `person_address` with
+This will create a collection `person` with columns `id` and `name`. The extension will create a collection `person_address` with
 columns `person_id`, `street` and `number`. The methods available in the `Person` model are similar to an `hasOne`
 association. In this example you would be able to call `.getAddress(cb)`, `.setAddress(Address, cb)`, ..
 
 **Note:** you don't have to save the result from `Person.extendsTo`. It returns an extended model. You can use it to query
-directly this extended table (and even find the related model) but that's up to you. If you only want to access it using the
+directly this extended collection (and even find the related model) but that's up to you. If you only want to access it using the
 original model you can just discard the return.
 
 ### Examples & options
@@ -689,7 +640,7 @@ var Person = db.define('person', {
 var Animal = db.define('animal', {
     name : String
 });
-Animal.hasOne("owner", Person); // creates column 'owner_id' in 'animal' table
+Animal.hasOne("owner", Person); // creates column 'owner_id' in 'animal' collection
 
 // get animal with id = 123
 var animal = Animal.getSync(123);
@@ -717,7 +668,7 @@ db.settings.set("properties.association_key", "{field}_{name}"); // {name} will 
 
 **Note: This has to be done before the association is specified.**
 
-The `hasMany` associations can have additional properties in the association table.
+The `hasMany` associations can have additional properties in the association collection.
 
 ```js
 var Person = db.define('person', {
@@ -729,7 +680,7 @@ Person.hasMany("friends", {
 
 var John = Person.getSync(123);
 var friends = John.getFriendsSync();
-// assumes rate is another column on table person_friends
+// assumes rate is another column on collection person_friends
 // you can access it by going to friends[N].extra.rate
 ```
 
@@ -743,7 +694,7 @@ var Person = db.define('person', {
 Person.hasMany("friends", {
     rate : Number
 }, {
-    key       : true, // Turns the foreign keys in the join table into a composite key
+    key       : true, // Turns the foreign keys in the join collection into a composite key
     autoFetch : true
 });
 

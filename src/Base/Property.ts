@@ -3,7 +3,7 @@ import uuid = require('uuid')
 
 import * as DecoratorsProperty from '../Decorators/property';
 
-import { getDataStoreTransformer } from '../Utils/transfomers';
+import { getDataStoreTransformer } from '../Utils/transformers';
 
 function getNormalizedProperty (
     overwrite?: Fibjs.AnyObject
@@ -95,22 +95,27 @@ function filterComplexPropertyDefinition (
     prop_name: string
 ): FxOrmProperty.NormalizedProperty {
     if (input && typeof input === 'object')
-        input = Array.isArray(input) ? Array.from(input) : {...input}
+        if (Property.isProperty(input))
+            input = input.toJSON()
+        else if (Array.isArray(input))
+            input = Array.from(input)
+        else
+            input = {...input}
 
-    const normalizedNameStruct = <FxOrmProperty.NormalizedProperty>{ name: prop_name }
+    const normalized = <FxOrmProperty.NormalizedProperty>{ name: prop_name }
 
     // built-in types
     switch (input) {
         case null:
         case undefined:
             return getNormalizedProperty({
-                ...normalizedNameStruct,
+                ...normalized,
                 type: 'text',
                 defaultValue: null
             })
         case Boolean:
             return getNormalizedProperty({
-                ...normalizedNameStruct,
+                ...normalized,
                 type: 'boolean',
                 defaultValue: false
             })
@@ -118,40 +123,44 @@ function filterComplexPropertyDefinition (
             return filterComplexPropertyDefinition(input.toString(), prop_name)
         case String:
             return getNormalizedProperty({
-                ...normalizedNameStruct,
+                ...normalized,
                 type: 'text',
                 size: 0,
             })
-        // @TODO: make it more meaningful
         case Number:
             return getNormalizedProperty({
-                ...normalizedNameStruct,
-                type: 'integer',
+                ...normalized,
+                type: 'number',
                 size: 4
             })
         case Date:
             return getNormalizedProperty({
-                ...normalizedNameStruct,
+                ...normalized,
                 type: 'date',
                 time: true,
             })
+        case Object:
+            return getNormalizedProperty({
+                ...normalized,
+                type: 'object'
+            })
         case Buffer:
             return getNormalizedProperty({
-                ...normalizedNameStruct,
+                ...normalized,
                 type: 'binary',
                 big: false,
                 lazyload: true
             })
         case Array:
-            throw new Error(`[filterComplexPropertyDefinition] invalid property definition Array, maybe you wanna give one non-empty plain array used as enum values??`)
+            throw new Error(`[filterComplexPropertyDefinition] invalid property definition Array, maybe you wanna give one non-empty plain array used as enum values?`)
         case 'serial':
             return getNormalizedProperty({
-                ...normalizedNameStruct,
+                ...normalized,
                 type: 'serial'
             })
         case 'uuid':
             return getNormalizedProperty({
-                ...normalizedNameStruct,
+                ...normalized,
                 type: 'text',
                 unique: true,
                 serial: false,
@@ -159,14 +168,14 @@ function filterComplexPropertyDefinition (
             })
         case 'point':
             return getNormalizedProperty({
-                ...normalizedNameStruct,
+                ...normalized,
                 type: 'point'
             })
     }
 
     if (Array.isArray(input))
         return getNormalizedProperty({
-            ...normalizedNameStruct,
+            ...normalized,
             type: 'enum',
             values: input,
             defaultValue: input[0] || undefined
@@ -174,12 +183,14 @@ function filterComplexPropertyDefinition (
 
     if (!input || typeof input !== 'object')
         throw new Error(`property must be valid descriptor or built-in type, got "${typeof input}"`)
+    else if (input.type !== undefined && typeof input.type !== 'string')
+        throw new Error(`customized type must be non-empty string type! but ${typeof input.type} given`)
 
     if (input instanceof Function)
         throw new Error(`invalid property type 'function'`)
 
     return getNormalizedProperty({
-        ...normalizedNameStruct,
+        ...normalized,
         ...input,
     });
 }
@@ -216,22 +227,23 @@ function isValidCustomizedType(
     return (
         typeof customType.datastoreType === 'function'
         || typeof customType.valueToProperty === 'function'
-        || typeof customType.propertyToValue === 'function'
+        || typeof customType.propertyToStoreValue === 'function'
     )
 }
 
 export default class Property<
-  T_CTX extends Fibjs.AnyObject & { sqlQuery?: FxSqlQuery.Class_Query } = any
+  T_CTX extends Fibjs.AnyObject = any
 > implements FxOrmProperty.Class_Property<T_CTX> {
     static filterDefaultValue = filterDefaultValue;
     static isProperty (input: any): input is FxOrmProperty.Class_Property {
         return input instanceof Property
     }
+    static normalize = filterComplexPropertyDefinition
 
     $storeType: FxDbDriverNS.Driver<any>['type'];
     $ctx: FxOrmProperty.Class_Property<T_CTX>['$ctx'];
 
-    customType?: FxOrmProperty.CustomPropertyType
+    customType?: FxOrmProperty.CustomProperty
 
     /* meta :start */
     name: FxOrmProperty.Class_Property['name']
@@ -278,7 +290,7 @@ export default class Property<
     }
 
     toStoreValue (value: any): any {
-        let raw = this.transformer.propertyToValue(
+        let raw = this.transformer.propertyToStoreValue(
             value, this as any,
             this.customType ? {[this.$definition.type]: this.customType} : {}
         )
@@ -305,7 +317,7 @@ export default class Property<
         this.$storeType = storeType
 
         const $definition = this.$definition = <Property<T_CTX>['$definition']>filterComplexPropertyDefinition(
-            input instanceof Property ? input.toJSON() : input,
+            input,
             propertyName
         );
 
