@@ -47,7 +47,7 @@
         "@fxjs/db-driver": "^0.0.7",
         "@fxjs/knex": "^0.2.0",
         "@fxjs/orm-core": "^0.0.1",
-        "@fxjs/orm-hql": "file:packages/orm-hql",
+        "@fxjs/orm-hql": "0.0.2",
         "@fxjs/sql-ddl-sync": "^0.6.4",
         "@fxjs/sql-query": "^0.6.1",
         "fib-pool": "^1.5.3",
