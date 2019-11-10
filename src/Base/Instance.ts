@@ -139,7 +139,7 @@ class Instance implements FxOrmInstance.Class_Instance {
 
         this.$bornsnapshot = JSON.stringify(instanceBase)
 
-        this.$model.normalizeDataIntoInstance({...instanceBase}, {
+        this.$model.normalizeDataByProperties({...instanceBase}, {
             onPropertyField: ({ fieldname, transformedValue }) => {
                 // dont use $set, never leave change history now.
                 this.$kvs[fieldname] = transformedValue
@@ -290,7 +290,7 @@ class Instance implements FxOrmInstance.Class_Instance {
                 );
 
                 if (insertResult)
-                    this.$model.normalizeDataIntoInstance(
+                    this.$model.normalizeDataByProperties(
                         insertResult,
                         {
                             onPropertyField: ({ fieldname, transformedValue }) => {
@@ -391,7 +391,7 @@ class Instance implements FxOrmInstance.Class_Instance {
             Instance.isInstance(dataset) && Instance.isInstance(this[refName])
             && this[refName].$model === dataset.$model
         ) {
-            (<FxOrmInstance.Class_Instance>this[refName]).$model.normalizeDataIntoInstance(
+            (<FxOrmInstance.Class_Instance>this[refName]).$model.normalizeDataByProperties(
                 this[refName].$kvs,
                 {
                     onPropertyField: ({ fieldname, transformedValue }) => {
@@ -619,7 +619,10 @@ function getPhHandler ({
             if (REVERSE_KEYS.includes(prop) || !instance.$isModelField(prop))
                 return false;
 
-            if (target.$model.isAssociationName(prop)) {
+            const fI = target.$model.fieldInfo(prop)
+            if (!fI) return false;
+
+            if (fI.type === 'association') {
                 target.$refs[prop] = value;
                 return true;
             }
@@ -637,7 +640,7 @@ function getPhHandler ({
                     via_path: prop
                 });
 
-            target.$kvs[prop] = value;
+            target.$kvs[prop] = fI.property.fromInputValue(value);
             return true;
         },
         has (target: typeof instance, prop: string) {

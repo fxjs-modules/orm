@@ -1,8 +1,8 @@
 declare namespace FxOrmProperty {
     interface CustomProperty {
-        datastoreType: {
+        datastoreType?: {
             (
-                prop?: FxOrmProperty.NormalizedProperty,
+                prop?: FxOrmProperty.Class_Property,
                 opts?: {
                     collection: string
                     driver: FxDbDriverNS.Driver<any>
@@ -10,10 +10,10 @@ declare namespace FxOrmProperty {
             ): string
         }
         valueToProperty?: {
-            (value?: any, prop?: FxOrmProperty.NormalizedProperty): any
+            (value?: any, prop?: FxOrmProperty.Class_Property): any
         }
         propertyToStoreValue?: {
-            (propertyValue?: any, prop?: FxOrmProperty.NormalizedProperty): any
+            (propertyValue?: any, prop?: FxOrmProperty.Class_Property): any
         }
     }
 
@@ -68,7 +68,7 @@ declare namespace FxOrmProperty {
     }
 
     class Class_Property<
-      T_CTX extends Fibjs.AnyObject = any
+      T_CTX extends FxOrmModel.Class_Model['propertyContext'] = any
     > implements NormalizedProperty {
         $storeType: FxDbDriverNS.Driver<any>['type']
         $ctx: T_CTX
@@ -131,6 +131,8 @@ declare namespace FxOrmProperty {
                 propertyName: string
                 storeType: FxOrmProperty.Class_Property['$storeType']
                 customType?: FxOrmProperty.Class_Property['customType']
+                valueToProperty?: FxOrmProperty.Class_Property['customType']['valueToProperty']
+                propertyToStoreValue?: FxOrmProperty.Class_Property['customType']['propertyToStoreValue']
                 $ctx?: FxOrmProperty.Class_Property['$ctx']
             }
         )
@@ -140,7 +142,7 @@ declare namespace FxOrmProperty {
             propertyToStoreValue: FxOrmDTransformer.Transformer['propertyToStoreValue']
         }
 
-        fromStoreValue (storeValue: any): any
+        fromInputValue (storeValue: any): any
         toStoreValue (value: any): any
 
         /**

@@ -158,13 +158,13 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
     get $dml (): FxOrmModel.Class_Model['$dml'] { return this.orm.$dml };
     get $ddl (): FxOrmModel.Class_Model['$ddl'] { return this.orm.$ddl };
-    get schemaBuilder () { return this.$ddl.sqlQuery.knex.schema }
-    get queryBuilder () { return this.$ddl.sqlQuery.knex.queryBuilder() }
+    get schemaBuilder () { return this.orm.$context['_sqlQuery'].knex.schema }
+    get queryBuilder () { return this.orm.$context['_sqlQuery'].knex.queryBuilder() }
     get sqlQuery (): FxSqlQuery.Class_Query {
       switch (this.orm.driver.type) {
           case 'mysql':
           case 'sqlite':
-              return this.$dml.sqlQuery
+              return this.orm.$context['_sqlQuery']
       }
     }
 
@@ -174,7 +174,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return {
             model: this,
             sqlQuery: this.sqlQuery,
-            knex: this.$dml.sqlQuery.knex
+            knex: this.orm.$context['_sqlQuery'].knex
         }
     }
 
@@ -195,9 +195,9 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
              */
             Object.keys(config.properties)
                 .forEach((prop: string) => {
-                    const property = this.properties[prop] = new Property(
+                    const property = this.addProperty(
+                        prop,
                         config.properties[prop],
-                        { propertyName: prop, storeType: this.storeType, $ctx: this.propertyContext }
                     );
 
                     if (specKeyPropertyNames)
@@ -207,13 +207,9 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
 
             if (specKeyPropertyNames)
                 if (this.ids.length === 0) {
-                    this.keyProperties[DFLT_ID_DEF.name] = this.properties[DFLT_ID_DEF.name] = new Property(
-                        {...DFLT_ID_DEF},
-                        {
-                            propertyName: DFLT_ID_DEF.name,
-                            storeType: this.storeType,
-                            $ctx: this.propertyContext
-                        }
+                    this.keyProperties[DFLT_ID_DEF.name] = this.addProperty(
+                        DFLT_ID_DEF.name,
+                        {...DFLT_ID_DEF}
                     )
                 } else {
                     // when there's no id property but id rqeuired, fallback to first key property
@@ -279,7 +275,15 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         });
 
         syncor.defineCollection(this.collection, this.properties)
-
+        Object.keys(this.orm.customPropertyTypes).forEach(key => {
+            const t = this.orm.customPropertyTypes[key]
+            syncor.defineType(key, {
+                datastoreType: t.datastoreType,
+                valueToProperty: t.valueToProperty,
+                propertyToValue: t.propertyToStoreValue
+            })
+        });
+        
         syncor.sync()
 
         /* avoid loop */
@@ -388,9 +392,9 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return target
     }
 
-    normalizeDataIntoInstance (
+    normalizeDataByProperties (
         storeData: Fibjs.AnyObject = {},
-        opts?: FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['normalizeDataIntoInstance']>
+        opts?: FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['normalizeDataByProperties']>
     ) {
         const {
             onPropertyField = undefined,
@@ -407,7 +411,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             if (!fname) return ;
 
             if (storeData.hasOwnProperty(fname)) {
-                target[prop.name] = prop.fromStoreValue(storeData[fname])
+                target[prop.name] = prop.fromInputValue(storeData[fname])
                 if (call_prop) onPropertyField({
                     origValue: storeData[fname], transformedValue: target[prop.name],
                     fieldname: prop.name, mapsTo: fname
@@ -467,18 +471,25 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         return kvs
     }
 
-    addProperty (name: string, property: FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['addProperty']>) {
-        if (this.fieldInfo(name))
-            throw new Error(`[Model] property '${name}' existed in model '${this.name}'`)
+    addProperty (
+        name: string,
+        propDef: FxOrmTypeHelpers.SecondParameter<FxOrmModel.Class_Model['addProperty']>
+    ) {
+        if (this.fieldInfo(name)) throw new Error(`[Model] propDef '${name}' existed in model '${this.name}'`)
 
-        if ((property instanceof Property))
-            return this.properties[name] = property
+        if ((propDef instanceof Property))
+            return this.properties[name] = propDef
 
-        return this.properties[name] = new Property({...property, name}, {
+        const property = this.properties[name] = new Property(propDef, {
             propertyName: name,
             storeType: this.storeType,
             $ctx: this.propertyContext
-        })
+        });
+
+        if (this.orm.customPropertyTypes.hasOwnProperty(property.type) && !property.customType)
+            property.customType = this.orm.customPropertyTypes[property.type]
+
+        return this.properties[name]
     }
 
     fieldInfo (propertyName: string) {

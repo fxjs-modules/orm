@@ -1,6 +1,5 @@
 import util = require('util')
 import { coerceNumber } from '../number';
-import { use_propertyToStoreValue, use_valueToProperty } from './_utils';
 
 module SQLite {
     export const storeType = 'sqlite'
@@ -70,7 +69,6 @@ module SQLite {
                 }
                 break;
             default:
-                value = use_valueToProperty(value, customTypes[property.type])
                 break;
         }
         return value;
@@ -102,7 +100,6 @@ module SQLite {
                 }
                 break
             default:
-                value = use_propertyToStoreValue(value, customTypes[property.type])
                 break
         }
         return value;

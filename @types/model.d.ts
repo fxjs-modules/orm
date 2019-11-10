@@ -185,36 +185,36 @@ declare namespace FxOrmModel {
          *  filter out properties-about key-value in dataset only,
          *  and transform [key] to correspoding `mapsTo` field in property
          */
-        normalizeDataIntoInstance (
+        normalizeDataByProperties (
             dataset: Fibjs.AnyObject,
             opts?: {
                 onPropertyField?: (payload: { origValue: any, transformedValue: any, fieldname: string, mapsTo: string }) => void
                 onAssociationField?: (payload: { origValue: any, transformedValue: any, fieldname: string }) => void
             }
-        ): any
+        ): Record<keyof any, any>
         /**
          * @description
          *  filter out properties-about key-value in datastore only,
          *  and transform [key] to correspoding `name` field in property
          */
-        normalizePropertiesToData (datastore: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        normalizePropertiesToData (datastore: Fibjs.AnyObject, target?: Fibjs.AnyObject): Record<keyof any, any>
         /**
          * @description
          *  filter out properties-about key-value in `mixed` only,
          *  and transform [key] to correspoding `name` field in property
          */
-        pickPropertyData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        pickPropertyData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): Record<keyof any, any>
         /**
          * @description
          * similar with `pickPropertyData`, but only pick id properties
          */
-        pickIdPropertyData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        pickIdPropertyData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): Record<keyof any, any>
         /**
          * @description
          *  filter out association-about key-value in `mixed` only,
          *  and transform [key] to correspoding `name` field in property
          */
-        pickAssociationData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        pickAssociationData (mixed: Fibjs.AnyObject, target?: Fibjs.AnyObject): Record<keyof any, any>
         /**
          * @description
          *  normalize data set to where conditions, just normalize key in dataset, never change anything of
@@ -224,7 +224,7 @@ declare namespace FxOrmModel {
          *
          * @return []
          */
-        normalizeDataSetToWhere (dataset: Fibjs.AnyObject, target?: Fibjs.AnyObject): any
+        normalizeDataSetToWhere (dataset: Fibjs.AnyObject, target?: Fibjs.AnyObject): Record<keyof any, any>
         /**
          * @description
          *  filter out association-about key-value in dataset only,
@@ -237,10 +237,10 @@ declare namespace FxOrmModel {
             dataset: any,
         }[]
 
-
         addProperty(
             name: string,
-            propertyDefinition: ModelProperty | FxOrmProperty.NormalizedProperty
+            propertyDefinition: ConstructorParameters<typeof FxOrmProperty.Class_Property>[0],
+            opts?: Omit<ConstructorParameters<typeof FxOrmProperty.Class_Property>[1], 'propertyName' | 'storeType' | '$ctx'>
         ): ModelProperty
 
         fieldInfo(propertyName: string): {

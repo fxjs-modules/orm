@@ -14,7 +14,7 @@ declare namespace FxOrmDTransformer {
          * @param property
          * @param customTypes
          */
-        valueToProperty<T_CTX = any> (value: any, property: FxOrmModel.Class_Model['properties'][any], customTypes: CustomTypes): any
+        valueToProperty (value: any, property: FxOrmModel.Class_Model['properties'][any], customTypes: CustomTypes): any
 
         /**
          * @description ONLY transform local data value to remote format
@@ -23,6 +23,6 @@ declare namespace FxOrmDTransformer {
          * @param property
          * @param customTypes
          */
-        propertyToStoreValue<T_CTX = any> (propertyValue: any, property: FxOrmModel.Class_Model['properties'][any], customTypes: CustomTypes): any
+        propertyToStoreValue (propertyValue: any, property: FxOrmModel.Class_Model['properties'][any], customTypes: CustomTypes): any
     }
 }

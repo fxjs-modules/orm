@@ -85,7 +85,7 @@ function getNormalizedProperty (
     }
 }
 
-const PROPERTIES_KEYS = Object.keys(getNormalizedProperty({name: 'fake'}))
+const PROPERTY_META_KEYS = Object.keys(getNormalizedProperty({name: 'fake'}))
 
 function filterComplexPropertyDefinition (
     input: any,
@@ -219,21 +219,17 @@ function filterDefaultValue (
     return _dftValue
 }
 
-function isValidCustomizedType(
-    customType?: FxOrmProperty.Class_Property['customType']
-) {
-    if (!customType) return
+function isValidCustomizedType(input?: any): input is Partial<FxOrmProperty.Class_Property['customType']> {
+    if (!input) return false
 
     return (
-        typeof customType.datastoreType === 'function'
-        || typeof customType.valueToProperty === 'function'
-        || typeof customType.propertyToStoreValue === 'function'
+        typeof input.datastoreType === 'function'
+        || typeof input.valueToProperty === 'function'
+        || typeof input.propertyToStoreValue === 'function'
     )
 }
 
-export default class Property<
-  T_CTX extends Fibjs.AnyObject = any
-> implements FxOrmProperty.Class_Property<T_CTX> {
+export default class Property<T_CTX extends FxOrmModel.Class_Model['propertyContext'] = any> implements FxOrmProperty.Class_Property<T_CTX> {
     static filterDefaultValue = filterDefaultValue;
     static isProperty (input: any): input is FxOrmProperty.Class_Property {
         return input instanceof Property
@@ -282,20 +278,20 @@ export default class Property<
 
     get transformer () { return getDataStoreTransformer(this.$storeType) }
 
-    fromStoreValue (storeValue: any): any {
-        return this.transformer.valueToProperty(
-            storeValue, this as any,
-            this.customType ? {[this.$definition.type]: this.customType} : {}
-        )
+    fromInputValue (storeValue: any): any {
+        if (this.customType && typeof this.customType.valueToProperty === 'function') {
+            storeValue = this.customType.valueToProperty(storeValue, this);
+        }
+
+        return this.transformer.valueToProperty(storeValue, this, {})
     }
 
     toStoreValue (value: any): any {
-        let raw = this.transformer.propertyToStoreValue(
-            value, this as any,
-            this.customType ? {[this.$definition.type]: this.customType} : {}
-        )
+        if (this.customType && typeof this.customType.propertyToStoreValue === 'function') {
+            value = this.customType.propertyToStoreValue(value, this);
+        }
 
-        return raw
+        return this.transformer.propertyToStoreValue(value, this, {})
     }
 
     constructor (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmProperty.Class_Property>) {
@@ -304,14 +300,13 @@ export default class Property<
         const {
             storeType = 'unknown',
             propertyName = '',
-            customType = undefined,
             $ctx = undefined
         } = opts || {};
+        let { customType = undefined } = opts || {};
 
         if (!storeType) throw new Error(`[Property] storeType is required!`)
         if (!propertyName) throw new Error(`[Property] propertyName is required!`)
 
-        if (isValidCustomizedType(customType)) this.customType = customType
         this.$ctx = $ctx
 
         this.$storeType = storeType
@@ -322,16 +317,33 @@ export default class Property<
         );
 
         const self = this as any
-        PROPERTIES_KEYS.forEach((k: any) => self[k] = $definition[k])
+        PROPERTY_META_KEYS.forEach((k: any) => self[k] = $definition[k])
+
+        if (!customType && input && typeof input === 'object') {
+            const cM = <FxOrmProperty.Class_Property['customType']>{
+                valueToProperty: input.valueToProperty,
+                propertyToStoreValue: input.propertyToStoreValue
+            }
+            if (isValidCustomizedType(cM)) customType = cM
+        }
+        if (isValidCustomizedType(customType)) this.customType = customType
 
         return new Proxy(this, {
             set (target: any, setKey: string, value: any) {
                 if (setKey === '$definition')
                     return false
 
-                if (PROPERTIES_KEYS.includes(setKey))
+                if (PROPERTY_META_KEYS.includes(setKey))
                     $definition[setKey] = value
-                else
+                else if (setKey === 'customType') {
+                    if (!isValidCustomizedType(value)) return false
+                    
+                    target['customType'] = {
+                        datastoreType: value.datastoreType,
+                        valueToProperty: value.valueToProperty,
+                        propertyToStoreValue: value.propertyToStoreValue
+                    }
+                } else
                     target[setKey] = value
 
                 return true
@@ -340,13 +352,13 @@ export default class Property<
                 if (getKey === '$definition')
                     return false
 
-                if (PROPERTIES_KEYS.includes(getKey))
+                if (PROPERTY_META_KEYS.includes(getKey))
                     return $definition[getKey]
 
                 return target[getKey]
             },
             deleteProperty (target: any, delKey:string) {
-                if (delKey === '$definition' || PROPERTIES_KEYS.includes(delKey))
+                if (delKey === '$definition' || PROPERTY_META_KEYS.includes(delKey))
                     // never allow delete it
                     return false
                 else
@@ -355,7 +367,7 @@ export default class Property<
                 return true
             },
             ownKeys () {
-                return PROPERTIES_KEYS
+                return PROPERTY_META_KEYS
             },
         })
     }
@@ -378,8 +390,8 @@ export default class Property<
 
     setMeta (...args: FxOrmTypeHelpers.Parameters<FxOrmProperty.Class_Property['setMeta']>) {
         const [metaKey, metaValue] = args
-        if (!PROPERTIES_KEYS.includes(<any>metaKey))
-            throw new Error(`[Property::set] metaKey must be one of ${PROPERTIES_KEYS.join(', ')}`)
+        if (!PROPERTY_META_KEYS.includes(<any>metaKey))
+            throw new Error(`[Property::set] metaKey must be one of ${PROPERTY_META_KEYS.join(', ')}`)
 
         ;(<any>this)[metaKey] = metaValue
 
@@ -443,7 +455,7 @@ export default class Property<
     toJSON () {
         const kvs = <FxOrmProperty.NormalizedProperty>{}
         const self = this as any
-        PROPERTIES_KEYS.forEach(k => {
+        PROPERTY_META_KEYS.forEach(k => {
             kvs[k] = self[k]
         });
 

@@ -1,5 +1,4 @@
 import util = require('util')
-import { use_propertyToStoreValue, use_valueToProperty } from './_utils';
 import { coerceNumber } from '../number';
 
 module MySQL {
@@ -19,7 +18,7 @@ module MySQL {
                 value = !!value;
                 break;
             case "object":
-                if (typeof value == "object" && !Buffer.isBuffer(value)) {
+                if (typeof value === 'object' && !Buffer.isBuffer(value)) {
                     break;
                 }
                 try {
@@ -29,7 +28,6 @@ module MySQL {
                 }
                 break;
             default:
-                value = use_valueToProperty(value, customTypes[property.type])
                 break;
 
         }
@@ -64,7 +62,6 @@ module MySQL {
                 value = property.$ctx.knex.raw(`GeomFromText('${value}')`)
                 break
             default:
-                value = use_propertyToStoreValue(value, customTypes[property.type])
                 break
         }
         return value;

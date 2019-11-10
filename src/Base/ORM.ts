@@ -1,8 +1,8 @@
-import coroutine = require('coroutine')
 import events = require('events')
 const EventEmitter = events.EventEmitter;
 
 import FxDbDriver = require('@fxjs/db-driver');
+import SqlQuery = require('@fxjs/sql-query');
 
 import * as ORMRuntime from '../Decorators/orm-runtime';
 
@@ -10,7 +10,6 @@ import Setting from './Setting';
 import Property from './Property';
 import Model from './Model';
 import * as QueryGrammers from './Query/QueryGrammar';
-import { configurable } from '../Decorators/accessor';
 import { buildDescriptor } from '../Decorators/property';
 import { getDML } from '../DXL/DML';
 import { getDDL } from '../DXL/DDL';
@@ -73,12 +72,15 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
     modelDefinitions: FxOrmNS.Class_ORM['modelDefinitions'] = {}
 
     @buildDescriptor({ configurable: false, enumerable: false })
-    customProperties: FxOrmNS.Class_ORM['customProperties'] = {}
+    customPropertyTypes: FxOrmNS.Class_ORM['customPropertyTypes'] = {}
 
     @buildDescriptor({ configurable: false, enumerable: false })
     $dml: FxOrmTypeHelpers.InstanceOf<ReturnType<typeof getDML>>;
     @buildDescriptor({ configurable: false, enumerable: false })
     $ddl: FxOrmTypeHelpers.InstanceOf<ReturnType<typeof getDDL>>;
+
+    @buildDescriptor({ configurable: false, enumerable: false })
+    $context: any = {};
 
     driver: FxOrmNS.Class_ORM['driver']
     connection: FxOrmNS.Class_ORM['connection']
@@ -101,11 +103,13 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
 
         this.connection = connection || driver.getConnection()
 
+        const sqlQuery = this.$context['_sqlQuery'] = new SqlQuery.Query({ dialect: <any>this.driver.type })
+
         const DDL = getDDL(this.driver.type)
-        this.$ddl = ddl instanceof DDL ? ddl : new DDL({ dialect: this.driver.type, connection: this.connection });
+        this.$ddl = ddl instanceof DDL ? ddl : new DDL({ dialect: this.driver.type, connection: this.connection, sqlQuery });
 
         const DML = getDML(this.driver.type)
-        this.$dml = dml instanceof DML ? dml : new DML({ dialect: this.driver.type, connection: this.connection });
+        this.$dml = dml instanceof DML ? dml : new DML({ dialect: this.driver.type, connection: this.connection, sqlQuery });
     }
 
     /**
@@ -149,8 +153,12 @@ class ORM<ConnType = any> extends EventEmitter implements FxOrmNS.Class_ORM {
         return def(this)
     }
 
-    defineProperty (...args: Parameters<FxOrmNS.Class_ORM['defineProperty']>) {
-        return null as any
+    defineType (...args: Parameters<FxOrmNS.Class_ORM['defineType']>) {
+        const [name, opts] = args
+        if (!name) throw new Error(`[ORM::defineType] name is required!`)
+        if (!opts) throw new Error(`[ORM::defineType] opts is required!`)
+
+        return this.customPropertyTypes[name] = opts
     }
 
     useTrans (callback: (orm: FxOrmNS.Class_ORM) => void) {

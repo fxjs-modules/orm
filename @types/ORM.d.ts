@@ -70,12 +70,14 @@ declare namespace FxOrmNS {
         settings: any
 
         readonly models: {[k: string]: FxOrmModel.Class_Model}
-        readonly customProperties: {[k: string]: FxOrmProperty.CustomProperty}
+        readonly customPropertyTypes: {[k: string]: FxOrmProperty.CustomProperty}
         readonly modelDefinitions: {
             [k: string]: ((orm: FxOrmNS.Class_ORM, ...args: any) => FxOrmModel.Class_Model)
         }
         $dml: FxOrmDML.DMLDialect<ConnType>;
         $ddl: FxOrmDDL.DDLDialect<ConnType>;
+
+        $context: Record<keyof any, any>
 
         /**
          * @description define one model with modelName(name) and properties(props)
@@ -90,7 +92,7 @@ declare namespace FxOrmNS {
           config?: FxOrmModel.Class_ModelDefinitionOptions
         ): FxOrmModel.Class_Model
 
-        defineProperty (
+        defineType (
             name: string,
             opts: {
                 datastoreType: FxOrmProperty.CustomProperty['datastoreType'],

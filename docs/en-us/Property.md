@@ -155,9 +155,15 @@ db.define('user', {
     propertyToStoreValue (propertyValue, property) {
       if (db.models.profile.isInstance(propertyValue))
         return rawValue.id
+
+      return 0
     }
   }
 })
+
+The specifications:
+
+- `valueToProperty (rawValue: any, property: Class_Property)`: transform any input value to 
 ```
 
 #### ORM-customized type
