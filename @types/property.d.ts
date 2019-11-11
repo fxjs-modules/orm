@@ -1,5 +1,5 @@
 declare namespace FxOrmProperty {
-    interface CustomProperty {
+    interface CustomPropertyType {
         datastoreType?: {
             (
                 prop?: FxOrmProperty.Class_Property,
@@ -36,7 +36,7 @@ declare namespace FxOrmProperty {
         primary: FxOrmSqlDDLSync__Column.Property['primary']
         required: FxOrmSqlDDLSync__Column.Property['required']
 
-        defaultValue: FxOrmSqlDDLSync__Column.Property['defaultValue']
+        defaultValue: undefined | FxOrmSqlDDLSync__Column.Property['defaultValue']
         size: FxOrmSqlDDLSync__Column.Property['size']
         rational: FxOrmSqlDDLSync__Column.Property['rational']
         time: FxOrmSqlDDLSync__Column.Property['time']
@@ -99,21 +99,17 @@ declare namespace FxOrmProperty {
         lazyname: NormalizedProperty['lazyname']
         enumerable: NormalizedProperty['enumerable']
 
-        customType?: FxOrmProperty.CustomProperty
         /**
          * @description if joinNode is not empty, which means this property is used as join key between
          * collections
          */
         joinNode: FxOrmProperty.NormalizedProperty['joinNode']
 
-        static filterDefaultValue (
-            property: FxOrmSqlDDLSync__Column.Property,
-            ctx: {
-                collection: string,
-                property: FxOrmSqlDDLSync__Column.Property,
-                driver: FxDbDriverNS.Driver
-            }
-        ): any
+        transformer: {
+            valueToProperty?: FxOrmProperty.CustomPropertyType['valueToProperty']
+            propertyToStoreValue?: FxOrmProperty.CustomPropertyType['propertyToStoreValue']
+        }
+
         static isProperty (input: any): input is FxOrmProperty.Class_Property
         static normalize (
             input: any,
@@ -130,20 +126,13 @@ declare namespace FxOrmProperty {
             {
                 propertyName: string
                 storeType: FxOrmProperty.Class_Property['$storeType']
-                customType?: FxOrmProperty.Class_Property['customType']
-                valueToProperty?: FxOrmProperty.Class_Property['customType']['valueToProperty']
-                propertyToStoreValue?: FxOrmProperty.Class_Property['customType']['propertyToStoreValue']
                 $ctx?: FxOrmProperty.Class_Property['$ctx']
             }
         )
 
-        readonly transformer: {
-            valueToProperty: FxOrmDTransformer.Transformer['valueToProperty']
-            propertyToStoreValue: FxOrmDTransformer.Transformer['propertyToStoreValue']
-        }
-
         fromInputValue (storeValue: any): any
         toStoreValue (value: any): any
+        useDefaultValue (ctx: T_CTX): any
 
         /**
          * @description get one normalized non-key property snapshot
@@ -160,7 +149,7 @@ declare namespace FxOrmProperty {
         isIncrementable(): boolean
 
         setMeta (metaKey: keyof NormalizedProperty, metaValue: any): this
-        renameTo (opts: {
+        rebuildTo (opts: {
             name: Class_Property['name'],
             mapsTo?: Class_Property['mapsTo'],
             lazyname?: Class_Property['lazyname']

@@ -38,7 +38,7 @@ describe("Model Property", function () {
             Buffer: Buffer,
             'uuid': 'uuid',
             'serial': 'serial',
-            arraylist: ['foo', 'bar']
+            enumlist: ['foo', 'bar']
         });
     };
 
@@ -71,7 +71,7 @@ describe("Model Property", function () {
                 assert.propertyVal(Person.properties.id, 'unsigned', true)
                 assert.propertyVal(Person.properties.id, 'primary', true)
                 assert.propertyVal(Person.properties.id, 'required', true)
-                assert.propertyVal(Person.properties.id, 'defaultValue', undefined)
+                assert.isUndefined(Person.properties.id.defaultValue)
                 // maybe there should not be 4, just upgrade @fxjs/sql-ddl-sync to make it better
                 assert.propertyVal(Person.properties.id, 'size', 4)
                 assert.propertyVal(Person.properties.id, 'rational', false)
@@ -96,7 +96,7 @@ describe("Model Property", function () {
                 assert.propertyVal(Person.properties.name, 'unsigned', false)
                 assert.propertyVal(Person.properties.name, 'primary', false)
                 assert.propertyVal(Person.properties.name, 'required', false)
-                assert.propertyVal(Person.properties.name, 'defaultValue', undefined)
+                assert.isUndefined(Person.properties.name.defaultValue)
                 // TODO: check here, should property in any endpoints should be like this?
                 assert.propertyVal(Person.properties.name, 'size', 0)
                 assert.propertyVal(Person.properties.name, 'rational', false)
@@ -150,7 +150,7 @@ describe("Model Property", function () {
                 assert.propertyVal(models["type_test"].properties.Boolean, 'unsigned', false)
                 assert.propertyVal(models["type_test"].properties.Boolean, 'primary', false)
                 assert.propertyVal(models["type_test"].properties.Boolean, 'required', false)
-                assert.propertyVal(models["type_test"].properties.Boolean, 'defaultValue', false)
+                assert.isUndefined(models["type_test"].properties.Boolean.defaultValue)
                 // maybe there should not be 4, just upgrade @fxjs/sql-ddl-sync to make it better
                 assert.propertyVal(models["type_test"].properties.Boolean, 'size', 0)
                 assert.propertyVal(models["type_test"].properties.Boolean, 'rational', false)
@@ -175,7 +175,7 @@ describe("Model Property", function () {
                     "type": "boolean",
                     "size": 0,
                     "required": false,
-                    "defaultValue": false,
+                    "defaultValue": models["type_test"].properties.Boolean.defaultValue,
                     "lazyname": "Boolean",
                     "enumerable": true,
                     "mapsTo": "Boolean",
@@ -204,7 +204,7 @@ describe("Model Property", function () {
                 assert.propertyVal(models["type_test"].properties.Number, 'unsigned', false)
                 assert.propertyVal(models["type_test"].properties.Number, 'primary', false)
                 assert.propertyVal(models["type_test"].properties.Number, 'required', false)
-                assert.propertyVal(models["type_test"].properties.Number, 'defaultValue', undefined)
+                assert.isUndefined(models["type_test"].properties.Number.defaultValue)
                 // maybe there should not be 4, just upgrade @fxjs/sql-ddl-sync to make it better
                 assert.propertyVal(models["type_test"].properties.Number, 'size', 4)
                 assert.propertyVal(models["type_test"].properties.Number, 'rational', false)
@@ -283,7 +283,7 @@ describe("Model Property", function () {
                     "type": "date",
                     "size": 0,
                     "required": false,
-                    "defaultValue": undefined,
+                    "defaultValue": models["type_test"].properties.Date.defaultValue,
                     "lazyname": "Date",
                     "enumerable": true,
                     "mapsTo": "Date",
@@ -312,7 +312,7 @@ describe("Model Property", function () {
                 assert.propertyVal(models["type_test"].properties.Buffer, 'unsigned', false)
                 assert.propertyVal(models["type_test"].properties.Buffer, 'primary', false)
                 assert.propertyVal(models["type_test"].properties.Buffer, 'required', false)
-                assert.propertyVal(models["type_test"].properties.Buffer, 'defaultValue', undefined)
+                assert.isUndefined(models["type_test"].properties.Buffer.defaultValue)
                 // maybe there should not be 4, just upgrade @fxjs/sql-ddl-sync to make it better
                 assert.propertyVal(models["type_test"].properties.Buffer, 'size', 0)
                 assert.propertyVal(models["type_test"].properties.Buffer, 'rational', false)
@@ -337,7 +337,7 @@ describe("Model Property", function () {
                     "type": "binary",
                     "size": 0,
                     "required": false,
-                    "defaultValue": undefined,
+                    "defaultValue": models["type_test"].properties.Buffer.defaultValue,
                     "lazyname": "Buffer",
                     "enumerable": true,
                     "mapsTo": "Buffer",
@@ -420,7 +420,7 @@ describe("Model Property", function () {
                 assert.propertyVal(models["type_test"].properties.uuid, 'unsigned', false)
                 assert.propertyVal(models["type_test"].properties.uuid, 'primary', false)
                 assert.propertyVal(models["type_test"].properties.uuid, 'required', false)
-                assert.propertyVal(models["type_test"].properties.uuid, 'defaultValue', undefined)
+                assert.isFunction(models["type_test"].properties.uuid.defaultValue)
                 // maybe there should not be 4, just upgrade @fxjs/sql-ddl-sync to make it better
                 assert.propertyVal(models["type_test"].properties.uuid, 'size', 0)
                 assert.propertyVal(models["type_test"].properties.uuid, 'rational', false)
@@ -445,7 +445,7 @@ describe("Model Property", function () {
                     "type": "text",
                     "size": 0,
                     "required": false,
-                    "defaultValue": undefined,
+                    "defaultValue": models["type_test"].properties.uuid.defaultValue,
                     "lazyname": "uuid",
                     "enumerable": true,
                     "mapsTo": "uuid",
@@ -462,32 +462,32 @@ describe("Model Property", function () {
 
         describe('[Array]', () => {
             it('transform', function () {
-                assert.property(models["type_test"].properties, 'arraylist')
+                assert.property(models["type_test"].properties, 'enumlist')
 
-                assert.propertyVal(models["type_test"].properties.arraylist, 'name', 'arraylist')
-                assert.propertyVal(models["type_test"].properties.arraylist, 'type', 'enum')
-                assert.propertyVal(models["type_test"].properties.arraylist, 'key', false)
-                assert.propertyVal(models["type_test"].properties.arraylist, 'mapsTo', 'arraylist')
-                assert.propertyVal(models["type_test"].properties.arraylist, 'unique', false)
-                assert.propertyVal(models["type_test"].properties.arraylist, 'index', false)
-                assert.propertyVal(models["type_test"].properties.arraylist, 'serial', false)
-                assert.propertyVal(models["type_test"].properties.arraylist, 'unsigned', false)
-                assert.propertyVal(models["type_test"].properties.arraylist, 'primary', false)
-                assert.propertyVal(models["type_test"].properties.arraylist, 'required', false)
-                assert.propertyVal(models["type_test"].properties.arraylist, 'defaultValue', 'foo')
+                assert.propertyVal(models["type_test"].properties.enumlist, 'name', 'enumlist')
+                assert.propertyVal(models["type_test"].properties.enumlist, 'type', 'enum')
+                assert.propertyVal(models["type_test"].properties.enumlist, 'key', false)
+                assert.propertyVal(models["type_test"].properties.enumlist, 'mapsTo', 'enumlist')
+                assert.propertyVal(models["type_test"].properties.enumlist, 'unique', false)
+                assert.propertyVal(models["type_test"].properties.enumlist, 'index', false)
+                assert.propertyVal(models["type_test"].properties.enumlist, 'serial', false)
+                assert.propertyVal(models["type_test"].properties.enumlist, 'unsigned', false)
+                assert.propertyVal(models["type_test"].properties.enumlist, 'primary', false)
+                assert.propertyVal(models["type_test"].properties.enumlist, 'required', false)
+                assert.isFunction(models["type_test"].properties.enumlist.defaultValue)
                 // maybe there should not be 4, just upgrade @fxjs/sql-ddl-sync to make it better
-                assert.propertyVal(models["type_test"].properties.arraylist, 'size', 0)
-                assert.propertyVal(models["type_test"].properties.arraylist, 'rational', false)
-                assert.propertyVal(models["type_test"].properties.arraylist, 'time', false)
-                assert.propertyVal(models["type_test"].properties.arraylist, 'big', false)
-                assert.deepEqual(models["type_test"].properties.arraylist.values, ['foo', 'bar'])
-                assert.propertyVal(models["type_test"].properties.arraylist, 'lazyload', false)
-                assert.propertyVal(models["type_test"].properties.arraylist, 'lazyname', 'arraylist')
-                assert.propertyVal(models["type_test"].properties.arraylist, 'enumerable', true)
+                assert.propertyVal(models["type_test"].properties.enumlist, 'size', 0)
+                assert.propertyVal(models["type_test"].properties.enumlist, 'rational', false)
+                assert.propertyVal(models["type_test"].properties.enumlist, 'time', false)
+                assert.propertyVal(models["type_test"].properties.enumlist, 'big', false)
+                assert.deepEqual(models["type_test"].properties.enumlist.values, ['foo', 'bar'])
+                assert.propertyVal(models["type_test"].properties.enumlist, 'lazyload', false)
+                assert.propertyVal(models["type_test"].properties.enumlist, 'lazyname', 'enumlist')
+                assert.propertyVal(models["type_test"].properties.enumlist, 'enumerable', true)
             });
 
             it('#toJSON', function () {
-                assert.deepEqual(models["type_test"].properties.arraylist.toJSON(), {
+                assert.deepEqual(models["type_test"].properties.enumlist.toJSON(), {
                     "key": false,
                     "index": false,
                     "rational": false,
@@ -495,14 +495,14 @@ describe("Model Property", function () {
                     "big": false,
                     "values": ['foo', 'bar'],
                     "lazyload": false,
-                    "name": "arraylist",
+                    "name": "enumlist",
                     "type": "enum",
                     "size": 0,
                     "required": false,
-                    "defaultValue": 'foo',
-                    "lazyname": "arraylist",
+                    "defaultValue": models["type_test"].properties.enumlist.defaultValue,
+                    "lazyname": "enumlist",
                     "enumerable": true,
-                    "mapsTo": "arraylist",
+                    "mapsTo": "enumlist",
                     "primary": false,
                     "unsigned": false,
                     "unique": false,
@@ -552,7 +552,7 @@ describe("Model Property", function () {
                 assert.propertyVal(Pet.properties.name, 'unsigned', false)
                 assert.propertyVal(Pet.properties.name, 'primary', false)
                 assert.propertyVal(Pet.properties.name, 'required', false)
-                assert.propertyVal(Pet.properties.name, 'defaultValue', 'Mutt')
+                assert.isFunction(Pet.properties.name.defaultValue)
                 assert.propertyVal(Pet.properties.name, 'size', 0)
                 assert.propertyVal(Pet.properties.name, 'rational', false)
                 assert.propertyVal(Pet.properties.name, 'time', false)
@@ -576,7 +576,7 @@ describe("Model Property", function () {
                     "type": "text",
                     "size": 0,
                     "required": false,
-                    "defaultValue": "Mutt",
+                    "defaultValue": Pet.properties.name.defaultValue,
                     "lazyname": "name",
                     "enumerable": true,
                     "mapsTo": "name",

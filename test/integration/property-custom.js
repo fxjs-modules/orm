@@ -14,7 +14,7 @@ describe("custom types", function () {
     describe("defineType", function () {
         describe("simple", function () {
             var LottoTicket = null;
-    
+
             before(function () {
                 db.defineType('numberArray', {
                     datastoreType: function (prop) {
@@ -35,34 +35,34 @@ describe("custom types", function () {
                         return value.join(',')
                     }
                 });
-    
+
                 LottoTicket = db.define('lotto_ticket', {
                     numbers: {
                         type: 'numberArray'
                     }
                 });
-    
+
                 return helper.dropSync(LottoTicket);
             });
-    
+
             it("should create the table", function () {
                 assert.ok(true);
             });
-    
+
             it("should store data in the table", function () {
                 var ticket = LottoTicket.New({
                     numbers: [4, 23, 6, 45, 9, 12, 3, 29]
                 });
-    
+
                 ticket.$save();
-    
+
                 var items = LottoTicket.find();
                 assert.equal(items.length, 1);
                 assert.ok(Array.isArray(items[0].numbers));
-    
+
                 assert.deepEqual([4, 23, 6, 45, 9, 12, 3, 29], items[0].numbers);
             });
-    
+
             xdescribe("hasMany extra properties", function () {
                 it("should work", function () {
                     db.defineType('customDate', {
@@ -85,22 +85,22 @@ describe("custom types", function () {
                     }, {
                         autoFetch: true
                     });
-    
+
                     return helper.dropSync([Person, Pet], function () {
                         var person = Person.createSync({
                             name: "John",
                             surname: "Doe",
                             age: 20
                         });
-    
+
                         var pet = Pet.createSync({
                             name: 'Fido'
                         });
-    
+
                         person.addPetsSync(pet, {
                             date: '2014-05-20'
                         });
-    
+
                         var freshPerson = Person.get(person.id);
                         assert.equal(freshPerson.pets.length, 1);
                         assert.equal(freshPerson.pets[0].extra.date, '2014-05-20');
@@ -108,10 +108,10 @@ describe("custom types", function () {
                 });
             });
         });
-    
+
         describe("complex", function () {
             var WonkyTotal = null;
-    
+
             before(function () {
                 db.defineType('wonkyNumber', {
                     datastoreType: function (prop) {
@@ -128,7 +128,7 @@ describe("custom types", function () {
                         }
                     }
                 });
-    
+
                 WonkyTotal = db.define('wonky', {
                     name: String,
                     total: {
@@ -136,21 +136,21 @@ describe("custom types", function () {
                         mapsTo: 'blah_total'
                     }
                 });
-    
+
                 return helper.dropSync(WonkyTotal);
             });
-    
+
             it("should store wonky total in a differently named field", function () {
                 var item = WonkyTotal.New();
-    
+
                 item.name = "cabbages";
                 item.total = 8;
-    
+
                 item.$save();
                 assert.equal(item.total, 15);
-    
+
                 var item = WonkyTotal.get(item.id);
-    
+
                 assert.equal(item.total, 20); // (15 - 2) + 7
             });
         });
@@ -159,8 +159,8 @@ describe("custom types", function () {
     describe("when Model.define", function () {
         describe("simple", function () {
             var LottoTicket = null;
-    
-            before(function () {    
+
+            before(function () {
                 LottoTicket = db.define('lotto_ticket', {
                     numbers: {
                         type: 'text',
@@ -180,33 +180,33 @@ describe("custom types", function () {
                         }
                     }
                 });
-    
+
                 return helper.dropSync(LottoTicket);
             });
-    
+
             it("should create the table", function () {
                 assert.ok(true);
             });
-    
+
             it("should store data in the table", function () {
                 var ticket = LottoTicket.New({
                     numbers: [4, 23, 6, 45, 9, 12, 3, 29]
                 });
-    
+
                 ticket.$save();
-    
+
                 var items = LottoTicket.find();
                 assert.equal(items.length, 1);
                 assert.ok(Array.isArray(items[0].numbers));
-    
+
                 assert.deepEqual([4, 23, 6, 45, 9, 12, 3, 29], items[0].numbers);
             });
         });
-    
+
         describe("complex", function () {
             var WonkyTotal = null;
-    
-            before(function () {    
+
+            before(function () {
                 WonkyTotal = db.define('wonky', {
                     name: String,
                     total: {
@@ -219,26 +219,26 @@ describe("custom types", function () {
                             if (value == null) {
                                 return value;
                             }
-                            
+
                             return prop.$ctx.knex.raw('(? - 2)', [value])
                         }
                     }
                 });
-    
+
                 return helper.dropSync(WonkyTotal);
             });
-    
+
             it("should store wonky total in a differently named field", function () {
                 var item = WonkyTotal.New();
-    
+
                 item.name = "cabbages";
                 item.total = 8;
-    
+
                 item.$save();
                 assert.equal(item.total, 15);
-    
+
                 var item = WonkyTotal.get(item.id);
-    
+
                 assert.equal(item.total, 20); // (15 - 2) + 7
             });
         });

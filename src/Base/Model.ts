@@ -283,7 +283,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
                 propertyToValue: t.propertyToStoreValue
             })
         });
-        
+
         syncor.sync()
 
         /* avoid loop */
@@ -486,8 +486,10 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
             $ctx: this.propertyContext
         });
 
-        if (this.orm.customPropertyTypes.hasOwnProperty(property.type) && !property.customType)
-            property.customType = this.orm.customPropertyTypes[property.type]
+        if (this.orm.customPropertyTypes.hasOwnProperty(property.type)) {
+            if (!property.transformer.valueToProperty) property.transformer.valueToProperty = this.orm.customPropertyTypes[property.type].valueToProperty
+            if (!property.transformer.propertyToStoreValue) property.transformer.propertyToStoreValue = this.orm.customPropertyTypes[property.type].propertyToStoreValue
+        }
 
         return this.properties[name]
     }
@@ -513,7 +515,7 @@ class Model extends Class_QueryBuilder implements FxOrmModel.Class_Model {
         const {
             name, collection, properties,
             howToCheckExistenceWhenNoKeys,
-            
+
             defineMergeProperties,
             howToGetIdPropertyNames,
             howToCheckHasForSource,

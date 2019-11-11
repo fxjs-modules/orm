@@ -31,8 +31,11 @@ function getNormalizedProperty (
         joinNode
     } = overwrite || {} as any
 
-    if (util.isFunction(defaultValue) || util.isSymbol(defaultValue))
-        defaultValue = undefined
+    if (defaultValue !== undefined && typeof defaultValue !== 'function') {
+        const value = defaultValue
+        defaultValue = () => value
+        defaultValue = defaultValue.bind(null)
+    }
 
     let isPrimary = !!overwrite.primary
     const isSerial = type === 'serial'
@@ -116,8 +119,7 @@ function filterComplexPropertyDefinition (
         case Boolean:
             return getNormalizedProperty({
                 ...normalized,
-                type: 'boolean',
-                defaultValue: false
+                type: 'boolean'
             })
         case Symbol:
             return filterComplexPropertyDefinition(input.toString(), prop_name)
@@ -202,35 +204,27 @@ function filterComplexPropertyDefinition (
  * @param ctx
  */
 function filterDefaultValue (
-    property: FxOrmSqlDDLSync__Column.Property,
-    ctx: {
-        collection: string,
+    {
+        property,
+        collection,
+        driver
+    }: {
         property: FxOrmSqlDDLSync__Column.Property,
+        collection: string,
         driver: FxDbDriverNS.Driver
     }
 ) {
     let _dftValue
     if (property.hasOwnProperty('defaultValue'))
         if (typeof property.defaultValue === 'function')
-            _dftValue = property.defaultValue(ctx)
+            _dftValue = property.defaultValue({ collection, property, driver })
         else
             _dftValue = property.defaultValue
 
     return _dftValue
 }
 
-function isValidCustomizedType(input?: any): input is Partial<FxOrmProperty.Class_Property['customType']> {
-    if (!input) return false
-
-    return (
-        typeof input.datastoreType === 'function'
-        || typeof input.valueToProperty === 'function'
-        || typeof input.propertyToStoreValue === 'function'
-    )
-}
-
 export default class Property<T_CTX extends FxOrmModel.Class_Model['propertyContext'] = any> implements FxOrmProperty.Class_Property<T_CTX> {
-    static filterDefaultValue = filterDefaultValue;
     static isProperty (input: any): input is FxOrmProperty.Class_Property {
         return input instanceof Property
     }
@@ -238,8 +232,6 @@ export default class Property<T_CTX extends FxOrmModel.Class_Model['propertyCont
 
     $storeType: FxDbDriverNS.Driver<any>['type'];
     $ctx: FxOrmProperty.Class_Property<T_CTX>['$ctx'];
-
-    customType?: FxOrmProperty.CustomProperty
 
     /* meta :start */
     name: FxOrmProperty.Class_Property['name']
@@ -273,26 +265,7 @@ export default class Property<T_CTX extends FxOrmModel.Class_Model['propertyCont
     @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
     $definition: FxOrmProperty.NormalizedProperty
 
-    // @DecoratorsProperty.buildDescriptor({ configurable: false, enumerable: false })
-    // $remote: FxOrmProperty.NormalizedProperty
-
-    get transformer () { return getDataStoreTransformer(this.$storeType) }
-
-    fromInputValue (storeValue: any): any {
-        if (this.customType && typeof this.customType.valueToProperty === 'function') {
-            storeValue = this.customType.valueToProperty(storeValue, this);
-        }
-
-        return this.transformer.valueToProperty(storeValue, this, {})
-    }
-
-    toStoreValue (value: any): any {
-        if (this.customType && typeof this.customType.propertyToStoreValue === 'function') {
-            value = this.customType.propertyToStoreValue(value, this);
-        }
-
-        return this.transformer.propertyToStoreValue(value, this, {})
-    }
+    transformer: FxOrmProperty.Class_Property['transformer'] = {}
 
     constructor (...args: FxOrmTypeHelpers.ConstructorParams<typeof FxOrmProperty.Class_Property>) {
         const [ input, opts ] = args
@@ -302,7 +275,6 @@ export default class Property<T_CTX extends FxOrmModel.Class_Model['propertyCont
             propertyName = '',
             $ctx = undefined
         } = opts || {};
-        let { customType = undefined } = opts || {};
 
         if (!storeType) throw new Error(`[Property] storeType is required!`)
         if (!propertyName) throw new Error(`[Property] propertyName is required!`)
@@ -319,14 +291,14 @@ export default class Property<T_CTX extends FxOrmModel.Class_Model['propertyCont
         const self = this as any
         PROPERTY_META_KEYS.forEach((k: any) => self[k] = $definition[k])
 
-        if (!customType && input && typeof input === 'object') {
-            const cM = <FxOrmProperty.Class_Property['customType']>{
-                valueToProperty: input.valueToProperty,
-                propertyToStoreValue: input.propertyToStoreValue
-            }
-            if (isValidCustomizedType(cM)) customType = cM
+        if (input && util.isObject(input)) {
+            const { valueToProperty, propertyToStoreValue } = util.pick(
+                input || {}, [ 'valueToProperty', 'propertyToStoreValue' ]
+            );
+
+            if (util.isFunction(valueToProperty)) this.transformer.valueToProperty = valueToProperty
+            if (util.isFunction(propertyToStoreValue)) this.transformer.propertyToStoreValue = propertyToStoreValue
         }
-        if (isValidCustomizedType(customType)) this.customType = customType
 
         return new Proxy(this, {
             set (target: any, setKey: string, value: any) {
@@ -335,15 +307,7 @@ export default class Property<T_CTX extends FxOrmModel.Class_Model['propertyCont
 
                 if (PROPERTY_META_KEYS.includes(setKey))
                     $definition[setKey] = value
-                else if (setKey === 'customType') {
-                    if (!isValidCustomizedType(value)) return false
-                    
-                    target['customType'] = {
-                        datastoreType: value.datastoreType,
-                        valueToProperty: value.valueToProperty,
-                        propertyToStoreValue: value.propertyToStoreValue
-                    }
-                } else
+                else
                     target[setKey] = value
 
                 return true
@@ -369,6 +333,28 @@ export default class Property<T_CTX extends FxOrmModel.Class_Model['propertyCont
             ownKeys () {
                 return PROPERTY_META_KEYS
             },
+        })
+    }
+
+    fromInputValue (storeValue: any): any {
+        if (typeof this.transformer.valueToProperty === 'function')
+            return this.transformer.valueToProperty(storeValue, this)
+
+        return getDataStoreTransformer(this.$storeType).valueToProperty(storeValue, this, {})
+    }
+
+    toStoreValue (value: any): any {
+        if (typeof this.transformer.propertyToStoreValue === 'function')
+            return this.transformer.propertyToStoreValue(value, this)
+
+        return getDataStoreTransformer(this.$storeType).propertyToStoreValue(value, this, {})
+    }
+
+    useDefaultValue (ctx: Parameters<FxOrmProperty.Class_Property<T_CTX>['useDefaultValue']>[0]) {
+        return filterDefaultValue({
+            property: this,
+            collection: ctx.model.collection,
+            driver: ctx.model.orm.driver
         })
     }
 
@@ -398,19 +384,21 @@ export default class Property<T_CTX extends FxOrmModel.Class_Model['propertyCont
         return this
     }
 
-    renameTo ({ name, mapsTo = name, lazyname = name }: FxOrmTypeHelpers.FirstParameter<FxOrmProperty.Class_Property['renameTo']>) {
+    rebuildTo ({ name, mapsTo = name, lazyname = name }: FxOrmTypeHelpers.FirstParameter<FxOrmProperty.Class_Property['rebuildTo']>) {
         if (!name)
-            throw new Error('[Property::renameTo] new name is required')
+            throw new Error('[Property::rebuildTo] new name is required')
 
         const newVal = new Property<T_CTX>({
             ...this.toJSON(),
             name,
             mapsTo,
-            lazyname
+            lazyname,
+
+            valueToProperty: this.transformer.valueToProperty,
+            propertyToStoreValue: this.transformer.propertyToStoreValue,
         }, {
             propertyName: name,
             storeType: this.$storeType,
-            customType: this.customType,
             $ctx: this.$ctx
         })
 
@@ -454,9 +442,8 @@ export default class Property<T_CTX extends FxOrmModel.Class_Model['propertyCont
 
     toJSON () {
         const kvs = <FxOrmProperty.NormalizedProperty>{}
-        const self = this as any
         PROPERTY_META_KEYS.forEach(k => {
-            kvs[k] = self[k]
+            kvs[k] = (<any>this)[k]
         });
 
         kvs.name = this.name

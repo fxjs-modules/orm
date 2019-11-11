@@ -2,7 +2,7 @@
 /// <reference path="property.d.ts" />
 
 declare namespace FxOrmDTransformer {
-    type CustomTypes = Record<keyof any, FxOrmProperty.CustomProperty>
+    type CustomTypes = Record<keyof any, FxOrmProperty.CustomPropertyType>
 
     interface Transformer {
         storeType: 'sqlite' | 'mysql' | 'mongodb' | string

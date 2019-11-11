@@ -49,7 +49,7 @@ export = function defineRef (
             mergeModel.addProperty(
                 joinNodeSource,
                 sProperty
-                    .renameTo({ name: joinNodeSource })
+                    .rebuildTo({ name: joinNodeSource })
                     .useAsJoinColumn({ column: sProperty.name, collection })
                     .deKeys()
             )

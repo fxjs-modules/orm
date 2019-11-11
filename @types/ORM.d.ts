@@ -70,7 +70,7 @@ declare namespace FxOrmNS {
         settings: any
 
         readonly models: {[k: string]: FxOrmModel.Class_Model}
-        readonly customPropertyTypes: {[k: string]: FxOrmProperty.CustomProperty}
+        readonly customPropertyTypes: {[k: string]: FxOrmProperty.CustomPropertyType}
         readonly modelDefinitions: {
             [k: string]: ((orm: FxOrmNS.Class_ORM, ...args: any) => FxOrmModel.Class_Model)
         }
@@ -95,11 +95,11 @@ declare namespace FxOrmNS {
         defineType (
             name: string,
             opts: {
-                datastoreType: FxOrmProperty.CustomProperty['datastoreType'],
-                valueToProperty: FxOrmProperty.CustomProperty['valueToProperty'],
-                propertyToStoreValue: FxOrmProperty.CustomProperty['propertyToStoreValue']
+                datastoreType: FxOrmProperty.CustomPropertyType['datastoreType'],
+                valueToProperty: FxOrmProperty.CustomPropertyType['valueToProperty'],
+                propertyToStoreValue: FxOrmProperty.CustomPropertyType['propertyToStoreValue']
             }
-        ): FxOrmProperty.CustomProperty
+        ): FxOrmProperty.CustomPropertyType
 
         useTrans (callback: (orm: FxOrmNS.Class_ORM) => any): void
         /**

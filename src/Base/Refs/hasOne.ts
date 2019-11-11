@@ -15,7 +15,7 @@ export = function defineRef (
     const joinNodeSource = `${asKey}_id`
     if (!this.id) throw new Error(`[hasOne] source model(collection: ${this.collection}) must has one single id`)
     const sid = this.id
-    
+
     if (this.fieldInfo(asKey))
         throw new Error(`[hasOne::hasOne] source model(collection: ${targetModel.collection}) already has field "${asKey}", it's not allowed to add one associated field to it.`)
 
@@ -32,9 +32,9 @@ export = function defineRef (
         howToCheckExistenceWhenNoKeys: ({ instance }) => {
             if (instance.$isFieldFilled(sid))
                 return !!mergeModel.count({ where: { [sid]: instance[sid] } })
-                
+
             if (!instance.$isFieldFilled(joinNodeSource) || !instance[joinNodeSource]) return false
-            
+
             return !!mergeModel.count({ where: { [joinNodeSource]: instance[joinNodeSource] } })
         },
         howToGetIdPropertyNames: ({ mergeModel }) => {
@@ -49,7 +49,7 @@ export = function defineRef (
             mergeModel.addProperty(
                 joinNodeSource,
                 tProperty
-                    .renameTo({ name: joinNodeSource })
+                    .rebuildTo({ name: joinNodeSource })
                     .useAsJoinColumn({ column: tProperty.name, collection: targetModel.collection })
                     .deKeys()
             )
@@ -60,7 +60,7 @@ export = function defineRef (
                 mergeModel.addProperty(
                     sProperty.name,
                     sProperty
-                        .renameTo({ name: sProperty.name })
+                        .rebuildTo({ name: sProperty.name })
                         .deKeys()
                 )
             })

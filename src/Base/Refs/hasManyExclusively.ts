@@ -47,7 +47,7 @@ export = function defineRef (
             mergeModel.addProperty(
                 joinNodeSource,
                 sProperty
-                    .renameTo({ name: joinNodeSource })
+                    .rebuildTo({ name: joinNodeSource })
                     .useAsJoinColumn({ column: sProperty.name, collection: sourceModel.collection })
                     .deKeys()
             )
@@ -58,7 +58,7 @@ export = function defineRef (
                 mergeModel.addProperty(
                     tProperty.name,
                     tProperty
-                        .renameTo({ name: tProperty.name })
+                        .rebuildTo({ name: tProperty.name })
                         .deKeys()
                 )
             })

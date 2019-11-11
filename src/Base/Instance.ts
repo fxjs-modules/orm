@@ -6,7 +6,6 @@ import LinkedList from '../Utils/linked-list';
 import { setTarget } from '../Utils/deep-kv';
 import * as DecoratorsProperty from '../Decorators/property';
 import { isEmptyPlainObject } from '../Utils/object';
-import Property from './Property';
 import { arraify } from '../Utils/array';
 
 const { EventEmitter } = events
@@ -238,18 +237,10 @@ class Instance implements FxOrmInstance.Class_Instance {
                 (kvs[property.name] === undefined)
                 && (kvs[property.mapsTo] === undefined)
             ) {
-                let dfltValue = Property.filterDefaultValue(
-                    property,
-                    {
-                        collection: this.$model.name,
-                        property,
-                        driver: this.$model.orm.driver
-                    }
-                )
+                const dfltValue = property.useDefaultValue(this.$model.propertyContext)
 
                 if (dfltValue !== undefined)
                     kvs[property.name] = dfltValue
-
             }
         })
         /* fill default value :end */

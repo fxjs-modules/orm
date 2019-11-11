@@ -59,7 +59,7 @@ export = function defineRef (
             mergeModel.addProperty(
                 joinNodeSource,
                 sProperty
-                    .renameTo({ name: joinNodeSource })
+                    .rebuildTo({ name: joinNodeSource })
                     .useAsJoinColumn({ column: sProperty.name, collection: sourceModel.collection })
                     .deKeys()
             )
@@ -81,7 +81,7 @@ export = function defineRef (
             mergeModel.addProperty(
                 joinNodeTarget,
                 tProperty
-                    .renameTo({ name: joinNodeTarget })
+                    .rebuildTo({ name: joinNodeTarget })
                     .useAsJoinColumn({ column: tProperty.name, collection: targetModel.collection })
                     .deKeys()
             )
@@ -89,7 +89,7 @@ export = function defineRef (
         howToCheckExistenceWhenNoKeys: ({ instance }) => {
             if (!instance.$isFieldFilled(joinNodeSource) || !instance[joinNodeSource]) return false
             if (!instance.$isFieldFilled(joinNodeTarget) || !instance[joinNodeTarget]) return false
-            
+
             return !!mergeModel.count({
                 where: {
                     [joinNodeSource]: instance[joinNodeSource],

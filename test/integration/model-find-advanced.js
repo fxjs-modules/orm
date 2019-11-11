@@ -36,8 +36,8 @@ describe("Model.find() - advanced", function () {
             });
 
             PostTagRel = db.define("post_tag", {
-              tag_id: Tag.idPropertyList[0].renameTo({ name: 'tag_id' }).deKeys(),
-              post_id: Post.idPropertyList[0].renameTo({ name: 'post_id' }).deKeys(),
+              tag_id: Tag.idPropertyList[0].rebuildTo({ name: 'tag_id' }).deKeys(),
+              post_id: Post.idPropertyList[0].rebuildTo({ name: 'post_id' }).deKeys(),
             }, {
               keys: false,
               howToCheckExistenceWhenNoKeys: ({ instance }) => {
