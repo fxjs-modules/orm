@@ -2,7 +2,7 @@ import util = require('util')
 import { coerceNumber } from '../number';
 
 module MySQL {
-    export const storeType = 'sqlite'
+    export const storeType = 'mysql'
 
     export function valueToProperty(
         value: any,
@@ -10,10 +10,6 @@ module MySQL {
         customTypes: FxOrmDTransformer.CustomTypes
     ) {
         switch (property.type) {
-            case "date":
-                if (util.isNumber(value) || util.isString(value))
-                    value = new Date(value);
-                break;
             case "boolean":
                 value = !!value;
                 break;
@@ -26,6 +22,25 @@ module MySQL {
                 } catch (e) {
                     value = null;
                 }
+                break;
+            case "number":
+                if (typeof value === 'string') {
+                    const v = parseFloat(value);
+                    if (Number.isFinite(v)) {
+                        value = v;
+                    }
+                }
+                break;
+            case "integer":
+                if (typeof value === 'string') {
+                    const v = parseInt(value);
+
+                    if (Number.isFinite(v)) value = v;
+                }
+                break;
+            case "date":
+                if (util.isNumber(value) || util.isString(value))
+                    value = new Date(value);
                 break;
             default:
                 break;

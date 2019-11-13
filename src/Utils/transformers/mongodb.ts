@@ -1,5 +1,5 @@
 module MongoDB {
-    export const storeType = 'sqlite'
+    export const storeType = 'mongodb'
 
     export function valueToProperty(
         value: any,
