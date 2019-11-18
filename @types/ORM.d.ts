@@ -72,7 +72,7 @@ declare namespace FxOrmNS {
         readonly models: {[k: string]: FxOrmModel.Class_Model}
         readonly customPropertyTypes: {[k: string]: FxOrmProperty.CustomPropertyType}
         readonly modelDefinitions: {
-            [k: string]: ((orm: FxOrmNS.Class_ORM, ...args: any) => FxOrmModel.Class_Model)
+            [k: string]: (orm: FxOrmNS.Class_ORM, ...args: any) => FxOrmModel.Class_Model
         }
         $dml: FxOrmDML.DMLDialect<ConnType>;
         $ddl: FxOrmDDL.DDLDialect<ConnType>;

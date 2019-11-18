@@ -3,10 +3,9 @@
 
 > One Cool Object Relationship Mapping for [fibjs](http://fibjs.org)
 
-* Simple and lightweight
-* Built-in support for popular driver(MySQL, SQLite, etc)
-* EXTENSIBLE abstract driver
-* Transaction supported
+* Simple and Lightweight
+* Built-in Popular DB(MySQL, SQLite, etc)
+* Transaction Supported
 
 Just Install With
 
@@ -14,5 +13,5 @@ Just Install With
 fibjs --install @fxjs/orm
 ```
 
+[Get Started](en-us/quick-start)
 [GitHub](https://github.com/fxjs-modules/orm)
-<!-- [Get Started](#quick-start) -->

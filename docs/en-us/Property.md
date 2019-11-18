@@ -78,7 +78,7 @@ Built-in types:
 Each type can have additional options. Here's a model definition using most of them:
 
 ```js
-var Person = db.define("person", {
+var Person = orm.define("person", {
 	name    : { type: "text", size: 50 },
 	surname : { type: "text", defaultValue: "Doe" },
 	male    : { type: "boolean" },
@@ -93,7 +93,7 @@ var Person = db.define("person", {
 If you're using default options, you can use native types as abbreviated types:
 
 ```js
-var Person = db.define("person", {
+var Person = orm.define("person", {
   // equivelant to {"type": "text"}
 	name    : String,
   // equivelant to {"type": "boolean"}
@@ -117,7 +117,7 @@ var Person = db.define("person", {
 Mapping ORM fields to differently named database columns
 
 ```js
-var Person = db.define("person", {
+var Person = orm.define("person", {
 	name    : { type: 'text', mapsTo: 'fullname' }
 });
 ```
@@ -129,7 +129,7 @@ ORM property `name` maps to person table column `fullname`.
 Just customize when defining orm's property:
 
 ```js
-db.define('user', {
+orm.define('user', {
   username: String,
   email: String,
   avatar_url: {
@@ -153,7 +153,7 @@ db.define('user', {
   profile_id: {
     type: 'integer',
     propertyToStoreValue (propertyValue, property) {
-      if (db.models.profile.isInstance(propertyValue))
+      if (orm.models.profile.isInstance(propertyValue))
         return rawValue.id
 
       return 0
@@ -163,7 +163,7 @@ db.define('user', {
 
 The specifications:
 
-- `valueToProperty (rawValue: any, property: Class_Property)`: transform any input value to 
+- `valueToProperty (rawValue: any, property: Class_Property)`: transform any input value to
 ```
 
 #### ORM-customized type
@@ -171,7 +171,7 @@ The specifications:
 You can add your own types to ORM like so:
 
 ```js
-db.defineType('numberArray', {
+orm.defineType('numberArray', {
   datastoreType: function(prop) {
     return 'TEXT'
   },
@@ -190,7 +190,7 @@ db.defineType('numberArray', {
   }
 });
 
-var LottoTicket = db.define('lotto_ticket', {
+var LottoTicket = orm.define('lotto_ticket', {
   numbers: { type: 'numberArray' }
 });
 ```
