@@ -1,71 +1,10 @@
 {
-    "name": "@fxjs/orm",
-    "version": "1.11.3",
-    "description": "Object Relational Mapping for fibjs",
-    "main": "lib",
-    "types": "@types/index.d.ts",
-    "repository": "git://github.com/fxjs-modules/orm.git",
-    "author": "Liu Hu <lion@9465.net>",
-    "contributors": [
-        {
-            "email": "richardo2016@gmail.com",
-            "name": "Richard"
-        }
-    ],
-    "homepage": "https://github.com/fxjs-modules/orm",
-    "license": "MIT",
-    "keywords": [
-        "orm",
-        "database",
-        "fibjs"
-    ],
-    "scripts": {
-        "build": "fib-typify src -o lib",
-        "test": "rm -rf fibjs-*.log && fibjs --prof --prof-interval=10 test",
-        "prof": "fibjs --prof-process fibjs-*.log fibjsprof.svg",
-        "ci": "npm run build && npm run test",
-        "ci-mysql": "npm run build && cross-env ORM_PROTOCOL=mysql npm run test",
-        "ci-sqlite": "npm run build && cross-env ORM_PROTOCOL=sqlite npm run test",
-        "ci-mongodb": "npm run build && cross-env ORM_PROTOCOL=mongodb npm run test",
-        "prepublishOnly": "npm run build"
-    },
-    "ci": {
-        "type": "travis, appveyor",
-        "version": [
-            "0.26.0",
-            "0.26.1",
-            "0.27.0",
-            "0.28.0"
-        ],
-        "travis_services": [
-            "mysql"
-        ]
-    },
-    "dependencies": {
-        "@fibjs/chalk": "^1.0.0",
-        "@fibjs/enforce": "^0.1.1",
-        "@fxjs/db-driver": "^0.0.7",
-        "@fxjs/knex": "^0.2.0",
-        "@fxjs/orm-core": "^0.0.1",
-        "@fxjs/orm-hql": "0.0.2",
-        "@fxjs/sql-ddl-sync": "^0.6.4",
-        "@fxjs/sql-query": "^0.6.1",
-        "fib-pool": "^1.5.3",
-        "knex": "^0.19.5",
-        "reflect-metadata": "^0.1.13"
-    },
-    "devDependencies": {
-        "@fibjs/ci": "^2.2.0",
-        "@fibjs/types": "^0.27.1",
-        "cross-env": "^5.2.0",
-        "fib-typify": "^0.6.0",
-        "lodash": "^4.17.11",
-        "semver": "^5.6.0"
-    },
-    "peerDependencies": {
-        "@fxjs/sql-ddl-sync": ">= 0.6.3 < 7",
-        "@fxjs/sql-query": ">= 0.6 < 0.7",
-        "@fibjs/enforce": ">= 0.1.1 < 0.2",
-        "@fxjs/knex": ">= 0.2 < 0.3"
-    }
+  "name": "monorepo",
+  "private": true,
+  "scripts": {
+    "ci": "lerna run ci"
+  },
+  "devDependencies": {
+    "lerna": "^3.20.2"
+  }
 }

@@ -17,10 +17,9 @@
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {},
   "devDependencies": {
     "@fibjs/types": "^0.27.1",
+    "fib-pool": "^1.6.0",
     "fib-typify": "^0.6.0"
-  },
-  "peerDependencies": {}
+  }
 }

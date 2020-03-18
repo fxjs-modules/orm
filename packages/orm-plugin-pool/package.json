@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "@fxjs/orm": "^1.10.x",
+    "fib-pool": "^1.6.0",
     "fib-typify": "^0.6.0"
   },
   "peerDependencies": {

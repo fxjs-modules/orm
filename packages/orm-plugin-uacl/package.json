@@ -19,6 +19,7 @@
     "rxjs": "^6.5.2"
   },
   "devDependencies": {
+    "fib-pool": "^1.6.0",
     "fib-typify": "^0.6.0"
   },
   "peerDependencies": {

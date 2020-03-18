@@ -31,15 +31,17 @@
 	},
 	"analyse": false,
 	"peerDependencies": {
-		"@fxjs/sql-query": ">= 0.4 < 0.6",
-		"@fxjs/db-driver": "*"
+		"@fxjs/db-driver": "*",
+		"@fxjs/sql-query": ">= 0.4 < 0.6"
 	},
 	"devDependencies": {
 		"@fibjs/ci": "^2.2.0",
 		"@fibjs/types": "^0.27.1",
 		"@fxjs/db-driver": "0.0.5",
+		"@fxjs/orm-core": "^0.0.1",
 		"@fxjs/sql-query": "^0.4.0",
 		"cross-env": "^5.2.0",
+		"fib-pool": "^1.6.0",
 		"fib-rollup": "^0.4.0",
 		"fib-typify": "^0.6.0",
 		"rollup-plugin-commonjs": "^9.2.1",
