@@ -1,4 +1,5 @@
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.throwErrOrCallabckErrResult = exports.exposeErrAndResultFromSyncMethod = void 0;
 exports.exposeErrAndResultFromSyncMethod = function (exec, args = [], opts) {
     let error, result;
     const { thisArg = null } = opts || {};

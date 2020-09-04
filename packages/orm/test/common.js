@@ -1,8 +1,13 @@
 var common      = exports;
-var _           = require('lodash');
+var fs           = require('fs');
+var path           = require('path');
+
 var util        = require('util');
 var querystring = require('querystring');
 var Semver      = require('semver');
+
+var _           = require('lodash');
+
 var ORM         = require('../');
 
 common.ORM = ORM;
@@ -34,14 +39,23 @@ common.hasConfig = function (proto) {
 };
 
 common.getConfig = function () {
+  var protocol = this.protocol();
+  console.log(`get test config for protocol ${protocol}`);
+  
   if (common.isTravis()) {
-    var config = require("./config.ci")[this.protocol()];
+    var config = require("./config.ci")[protocol];
   } else {
-    var config = require("./config")[this.protocol()];
+    if (!fs.exists(path.resolve(__dirname, "./config.js"))) {
+      fs.copy(
+        path.resolve(__dirname, "./config.example.js"),
+        path.resolve(__dirname, "./config.js")
+      )
+    }
+    var config = require("./config")[protocol];
   }
   
   if (typeof config == "string") {
-    config = require("url").parse(config, this.protocol());
+    config = require("url").parse(config, protocol);
   }
 
   if (config.hasOwnProperty("auth")) {

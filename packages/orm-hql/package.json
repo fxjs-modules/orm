@@ -11,6 +11,7 @@
   "homepage": "https://github.com/fxjs-modules/orm/tree/master/packages/core",
   "scripts": {
     "compile": "fibjs ./build-ne.js",
+    "prebuild": "fibjs build-ne.js",
     "build": "fib-typify ./src -o ./lib",
     "test": "fibjs test",
     "ci": "npm run build && npm run compile && npm run test",
@@ -25,6 +26,6 @@
   "devDependencies": {
     "@fibjs/types": "^0.27.1",
     "fib-pool": "^1.6.0",
-    "fib-typify": "^0.6.0"
+    "fib-typify": "^0.8.5"
   }
 }

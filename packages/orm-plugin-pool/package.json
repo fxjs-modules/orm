@@ -17,7 +17,7 @@
   "devDependencies": {
     "@fxjs/orm": "^1.10.x",
     "fib-pool": "^1.6.0",
-    "fib-typify": "^0.6.0"
+    "fib-typify": "^0.8.5"
   },
   "peerDependencies": {
     "@fxjs/orm": ">= 1.10.1 <= 2.0"
