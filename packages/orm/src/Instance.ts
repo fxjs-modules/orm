@@ -546,7 +546,7 @@ export const Instance = function (
 		});
 	};
 	var addInstanceExtraProperty = function (key: string) {
-		if (!instance.hasOwnProperty("extra")) {
+		if (!instance.hasOwnProperty("extra") || instance.extra === "") {
 			instance.extra = {};
 		}
 		Object.defineProperty(instance.extra, key, {
