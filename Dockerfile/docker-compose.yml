@@ -7,7 +7,7 @@ services:
     ports:
       - "3356:3306"
     volumes:
-      - "./mydata5.6:/var/lib/mysql"
+      - "./dbdata_mysql5.6:/var/lib/mysql"
     environment:
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
       - MYSQL_DATABASE=fxjs-orm-test
@@ -18,7 +18,7 @@ services:
     ports:
       - "3357:3306"
     volumes:
-      - "./mydata5.7:/var/lib/mysql"
+      - "./dbdata_mysql5.7:/var/lib/mysql"
     environment:
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
       - MYSQL_DATABASE=fxjs-orm-test
@@ -33,7 +33,7 @@ services:
       - "3380:3306"
       - "3306:3306"
     volumes:
-      - "./mydata8.0:/var/lib/mysql"
+      - "./dbdata_mysql8.0:/var/lib/mysql"
     environment:
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
       - MYSQL_DATABASE=fxjs-orm-test
@@ -50,7 +50,16 @@ services:
       - POSTGRES_DB=fxjs-orm-test
     # Uncomment this if you want to persist the data.
     volumes:
-      - "./pgdata:/var/lib/postgresql/data"
-
+      - "./dbdata_pg14:/var/lib/postgresql/data"
+  # mongodb:
+  #   image: mongo:5.0
+  #   ports:
+  #     - "27017:27017"
+  #     - "27050:27017"
+  #   volumes:
+  #     - ./dbdata_mongo5.0:/data/db
+  #   environment:
+  #     - MONGO_INITDB_ROOT_USERNAME=
+  #     - MONGO_INITDB_ROOT_PASSWORD=
 volumes:
   db_data: null

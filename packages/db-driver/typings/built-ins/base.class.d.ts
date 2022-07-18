@@ -2,21 +2,21 @@
 /// <reference types="fib-pool" />
 import { FxDbDriverNS } from '../Typo';
 import { FxOrmCoreCallbackNS } from '@fxjs/orm-core';
-declare function getDriver(name: 'mysql'): typeof MySQLDriver;
-declare function getDriver(name: 'psql' | 'postgresql' | 'pg'): typeof MySQLDriver;
-declare function getDriver(name: 'sqlite'): typeof SQLiteDriver;
-declare function getDriver(name: 'redis'): typeof RedisDriver;
+declare function getDriver(name: 'mysql'): typeof import('./driver-mysql').default;
+declare function getDriver(name: 'psql' | 'postgresql' | 'pg'): typeof import('./driver-postgresql').default;
+declare function getDriver(name: 'sqlite'): typeof import('./driver-sqlite').default;
+declare function getDriver(name: 'redis'): typeof import('./driver-redis').default;
 export declare namespace Driver {
     export type IConnTypeEnum = Class_DbConnection | Class_MongoDB | Class_Redis;
     type IClass_PostgreSQL = Class_DbConnection;
     type IClass_MSSQL = Class_DbConnection;
     export type ISQLConn = IClass_PostgreSQL | IClass_MSSQL | Class_SQLite | Class_MySQL;
-    export type ITypedDriver<T extends IConnTypeEnum = IConnTypeEnum> = T extends ISQLConn ? SQLDriver<T> : T extends Class_MongoDB ? MongoDriver : T extends Class_Redis ? RedisDriver : Driver<T>;
+    export type ITypedDriver<T extends IConnTypeEnum = IConnTypeEnum> = T extends ISQLConn ? SQLDriver<T> : T extends Class_MongoDB ? import('./driver-mongodb').default : T extends Class_Redis ? import('./driver-redis').default : Driver<T>;
     export {};
 }
 export declare class Driver<CONN_TYPE extends Driver.IConnTypeEnum = Driver.IConnTypeEnum> {
     static getDriver: typeof getDriver;
-    static create(input: FxDbDriverNS.ConnectionInputArgs | string): MySQLDriver;
+    static create(input: FxDbDriverNS.ConnectionInputArgs | string): import("./driver-mysql").default;
     /**
      * @descritpin there's a bug in fibjs <= 0.35.x, only string type `field` would be
      * used by `url.format`
@@ -34,6 +34,11 @@ export declare class Driver<CONN_TYPE extends Driver.IConnTypeEnum = Driver.ICon
     get isNoSql(): boolean;
     get isCommand(): boolean;
     constructor(options: FxDbDriverNS.ConnectionInputArgs | string);
+    /**
+     * @description switch to another database, pointless for some databases such as sqlite
+     * @param targetDb
+     */
+    switchDb(targetDb: string): void;
     /**
      * @description re open db connection
      */
@@ -60,7 +65,6 @@ export declare class Driver<CONN_TYPE extends Driver.IConnTypeEnum = Driver.ICon
 }
 export declare class SQLDriver<CONN_TYPE extends Driver.IConnTypeEnum> extends Driver<CONN_TYPE> implements FxDbDriverNS.SQLDriver {
     currentDb: FxDbDriverNS.SQLDriver['currentDb'];
-    switchDb(targetDb: string): void;
     /**
      * @override
      */
@@ -79,66 +83,9 @@ export declare class SQLDriver<CONN_TYPE extends Driver.IConnTypeEnum> extends D
     rollback(): void;
     execute<T>(sql: string): T;
 }
-export declare class MySQLDriver extends SQLDriver<Class_MySQL> implements FxDbDriverNS.SQLDriver {
-    constructor(conn: FxDbDriverNS.ConnectionInputArgs | string);
-    switchDb(targetDb: string): void;
-    open(): Class_MySQL;
-    close(): void;
-    ping(): void;
-    begin(): void;
-    commit(): void;
-    trans<T = any>(cb: FxOrmCoreCallbackNS.ExecutionCallback<T>): boolean;
-    rollback(): void;
-    getConnection(): Class_MySQL;
-    execute<T = any>(sql: string): T;
-}
-export declare class PostgreSQLDriver extends SQLDriver<Class_DbConnection> implements FxDbDriverNS.SQLDriver {
-    constructor(conn: FxDbDriverNS.ConnectionInputArgs | string);
-    switchDb(targetDb: string): void;
-    open(): Class_DbConnection;
-    close(): void;
-    ping(): void;
-    begin(): void;
-    commit(): void;
-    trans<T = any>(cb: FxOrmCoreCallbackNS.ExecutionCallback<T>): boolean;
-    rollback(): void;
-    getConnection(): Class_DbConnection;
-    execute<T = any>(sql: string): T;
-}
-export declare class SQLiteDriver extends SQLDriver<Class_SQLite> implements FxDbDriverNS.SQLDriver {
-    constructor(conn: FxDbDriverNS.ConnectionInputArgs | string);
-    open(): Class_SQLite;
-    close(): void;
-    ping(): void;
-    begin(): void;
-    commit(): void;
-    trans<T = any>(cb: FxOrmCoreCallbackNS.ExecutionCallback<T>): boolean;
-    rollback(): void;
-    getConnection(): Class_SQLite;
-    execute<T = any>(sql: string): T;
-}
-export declare class RedisDriver extends Driver<Class_Redis> implements FxDbDriverNS.CommandDriver {
-    constructor(conn: FxDbDriverNS.ConnectionInputArgs | string);
-    open(): Class_Redis;
-    close(): void;
-    ping(): void;
-    command<T = any>(cmd: string, ...args: any[]): T;
-    commands<T = any>(cmds: Fibjs.AnyObject, opts?: FxDbDriverNS.CommandDriverCommandOptions): T;
-    getConnection(): Class_Redis;
-}
-export declare class MongoDriver extends Driver<Class_MongoDB> implements FxDbDriverNS.CommandDriver {
-    constructor(conn: FxDbDriverNS.ConnectionInputArgs);
-    reopen(): Class_MongoDB;
-    open(): Class_MongoDB;
-    close(): void;
-    ping(): void;
-    command<T = any>(cmd: string, arg: any): T;
-    commands<T = any>(cmds: Fibjs.AnyObject, opts?: FxDbDriverNS.CommandDriverCommandOptions): T;
-    getConnection(): Class_MongoDB;
-}
 export declare type IClsSQLDriver = typeof SQLDriver;
-export declare type IClsMySQLDriver = typeof MySQLDriver;
-export declare type IClsPostgreSQLDriver = typeof PostgreSQLDriver;
-export declare type IClsSQLiteDriver = typeof SQLiteDriver;
-export declare type IClsRedisDriver = typeof RedisDriver;
+export declare type IClsMySQLDriver = typeof import('./driver-mysql').default;
+export declare type IClsPostgreSQLDriver = typeof import('./driver-postgresql').default;
+export declare type IClsSQLiteDriver = typeof import('./driver-sqlite').default;
+export declare type IClsRedisDriver = typeof import('./driver-redis').default;
 export {};

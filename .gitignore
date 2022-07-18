@@ -5,5 +5,4 @@ lib
 
 config.js*
 
-Dockerfile/mydata*
-Dockerfile/pgdata*
+Dockerfile/dbdata_*

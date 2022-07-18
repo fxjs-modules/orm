@@ -1,6 +1,5 @@
 /// <reference types="fib-pool" />
 
-import db = require('db')
 import url = require('url');
 import assert = require('assert');
 import coroutine = require('coroutine')
@@ -30,25 +29,26 @@ function setReactivePool (driver: Driver) {
 	})
 }
 
-function getDriver (name: 'mysql'): typeof MySQLDriver
-function getDriver (name: 'psql' | 'postgresql' | 'pg'): typeof MySQLDriver
-function getDriver (name: 'sqlite'): typeof SQLiteDriver
-function getDriver (name: 'redis'): typeof RedisDriver
+function getDriver (name: 'mysql'): typeof import('./driver-mysql').default
+function getDriver (name: 'psql' | 'postgresql' | 'pg'): typeof import('./driver-postgresql').default
+function getDriver (name: 'sqlite'): typeof import('./driver-sqlite').default
+function getDriver (name: 'redis'): typeof import('./driver-redis').default
+// function getDriver (name: 'mongodb'): typeof import('./driver-mongodb').default
 function getDriver (name: FxDbDriverNS.DriverType | string) {
     switch (name) {
         case 'mysql':
-            return MySQLDriver
+            return require('./driver-mysql').default
         case 'postgresql':
         case 'postgres':
         case 'pg':
         case 'psql':
-            return PostgreSQLDriver
+            return require('./driver-postgresql').default
         case 'sqlite':
-            return SQLiteDriver
+            return require('./driver-sqlite').default
         case 'redis':
-            return RedisDriver
-        case 'mongodb':
-            return MongoDriver
+            return require('./driver-redis').default
+        // case 'mongodb':
+        //     return require('./driver-mongodb').default
         default:
             if (name) {
                 const type = Utils.filterDriverType(url.parse(name).protocol)
@@ -56,7 +56,8 @@ function getDriver (name: FxDbDriverNS.DriverType | string) {
                     return getDriver(type as any)
             }
             
-            return Driver
+            // throw new Error(`[feature] driver type ${name} is not supported`)
+            return Driver;
     }
 }
 
@@ -68,8 +69,8 @@ export namespace Driver {
 
     export type ITypedDriver<T extends IConnTypeEnum = IConnTypeEnum> =
         T extends ISQLConn ? SQLDriver<T>
-        : T extends Class_MongoDB ? MongoDriver
-        : T extends Class_Redis ? RedisDriver
+        : T extends Class_MongoDB ? import('./driver-mongodb').default
+        : T extends Class_Redis ? import('./driver-redis').default
         : Driver<T>
 }
 
@@ -183,6 +184,12 @@ export class Driver<CONN_TYPE extends Driver.IConnTypeEnum = Driver.IConnTypeEnu
 		Object.defineProperty(this, 'uid', { value: Utils.driverUUid(), writable: false, configurable: false })
 	}
 
+    /**
+     * @description switch to another database, pointless for some databases such as sqlite
+     * @param targetDb 
+     */
+    switchDb (targetDb: string): void {};
+
 
     /**
      * @description re open db connection
@@ -249,7 +256,6 @@ export class Driver<CONN_TYPE extends Driver.IConnTypeEnum = Driver.IConnTypeEnu
 
 export class SQLDriver<CONN_TYPE extends Driver.IConnTypeEnum> extends Driver<CONN_TYPE> implements FxDbDriverNS.SQLDriver {
     currentDb: FxDbDriverNS.SQLDriver['currentDb'] = null;
-    switchDb (targetDb: string): void {};
 
 	/**
 	 * @override
@@ -274,180 +280,9 @@ export class SQLDriver<CONN_TYPE extends Driver.IConnTypeEnum> extends Driver<CO
 	execute<T> (sql: string): T { return }
 }
 
-export class MySQLDriver extends SQLDriver<Class_MySQL> implements FxDbDriverNS.SQLDriver {
-    constructor (conn: FxDbDriverNS.ConnectionInputArgs | string) {
-        super(conn);
-
-        this.connection = null
-    }
-
-    switchDb (targetDb: string) {
-        this.execute(`use \`${targetDb}\``);
-    }
-    
-    open (): Class_MySQL { return super.open() }
-    close (): void {
-        if (this.connection) this.connection.close()
-    }
-    ping (): void { return }
-    begin (): void { return this.connection.begin() }
-    commit (): void { return this.connection.commit() }
-    trans<T = any> (cb: FxOrmCoreCallbackNS.ExecutionCallback<T>): boolean { return this.connection.trans(cb); }
-    rollback (): void { return this.connection.rollback() }
-
-    getConnection (): Class_MySQL { return db.openMySQL(this.uri) }
-
-    execute<T = any> (sql: string): T {
-        if (this.isPool)
-            return this.pool(conn => conn.execute(sql)) as any;
-
-        if (!this.connection) this.open()
-        return this.connection.execute(sql) as any;
-    }
-}
-
-export class PostgreSQLDriver extends SQLDriver<Class_DbConnection> implements FxDbDriverNS.SQLDriver {
-    constructor (conn: FxDbDriverNS.ConnectionInputArgs | string) {
-        super(conn);
-
-        this.connection = null
-    }
-
-    switchDb (targetDb: string) {
-        this.execute(`\\c ${targetDb};`);
-    }
-    
-    open (): Class_DbConnection { return super.open() }
-    close (): void {
-        if (this.connection) this.connection.close()
-    }
-    ping (): void { return }
-    begin (): void { return this.connection.begin() }
-    commit (): void { return this.connection.commit() }
-    trans<T = any> (cb: FxOrmCoreCallbackNS.ExecutionCallback<T>): boolean { return this.connection.trans(cb); }
-    rollback (): void { return this.connection.rollback() }
-
-    getConnection (): Class_DbConnection { return db.openPSQL(this.uri) }
-
-    execute<T = any> (sql: string): T {
-        if (this.isPool)
-            return this.pool(conn => conn.execute(sql)) as any;
-
-        if (!this.connection) this.open()
-        return this.connection.execute(sql) as any;
-    }
-}
-
-export class SQLiteDriver extends SQLDriver<Class_SQLite> implements FxDbDriverNS.SQLDriver {
-    constructor (conn: FxDbDriverNS.ConnectionInputArgs | string) {
-        super(conn);
-
-        this.connection = null
-    }
-    
-    open (): Class_SQLite { return super.open() }
-
-    close (): void {
-        if (this.connection) this.connection.close()
-    }
-    ping (): void { return }
-    begin (): void { return this.connection.begin() }
-    commit (): void { return this.connection.commit() }
-    trans<T = any> (cb: FxOrmCoreCallbackNS.ExecutionCallback<T>): boolean { return this.connection.trans(cb); }
-    rollback (): void { return this.connection.rollback() }
-
-    getConnection (): Class_SQLite { return db.openSQLite(this.uri) }
-
-    execute<T = any> (sql: string): T {
-        if (this.isPool)
-            return this.pool(conn => conn.execute(sql)) as any;
-
-        if (!this.connection) this.open()
-        return this.connection.execute(sql) as any;
-    }
-}
-
-export class RedisDriver extends Driver<Class_Redis> implements FxDbDriverNS.CommandDriver {
-    constructor (conn: FxDbDriverNS.ConnectionInputArgs | string) {
-        super(conn);
-
-        this.connection = null
-    }
-
-    open (): Class_Redis { return super.open() }
-
-    close (): void {
-        if (this.connection) this.connection.close()
-    }
-    
-    ping (): void {}
-
-    command<T = any> (cmd: string, ...args: any[]): T {
-        if (this.isPool)
-            return this.pool(conn => conn.command(cmd, ...args));
-
-        if (!this.connection) this.open()
-        return this.connection.command(cmd, ...args) as any;
-    }
-
-    commands<T = any> (
-        cmds: Fibjs.AnyObject,
-        opts?: FxDbDriverNS.CommandDriverCommandOptions
-    ): T {
-        const { parallel = false } = opts || {};
-
-        if (parallel)
-            return coroutine.parallel(Object.keys(cmds), (cmd: string) => {
-                return { cmd, result: this.command(cmd, ...Utils.arraify(cmds[cmd])) }
-            }) as any
-        else
-            return Object.keys(cmds).map((cmd: string) => {
-                return { cmd, result: this.command(cmd, ...Utils.arraify(cmds[cmd])) }
-            }) as any
-    }
-
-    getConnection (): Class_Redis { return db.openRedis(this.uri) }
-}
-
-export class MongoDriver extends Driver<Class_MongoDB> implements FxDbDriverNS.CommandDriver {
-    constructor (conn: FxDbDriverNS.ConnectionInputArgs) {
-        super(conn);
-
-        this.connection = null
-    }
-
-    reopen () {
-        try { this.close() } catch (error) {}
-        return this.open()
-    }
-
-    open (): Class_MongoDB { return super.open() }
-    close (): void {
-        if (this.connection) this.connection.close()
-    }
-    
-    ping (): void {}
-
-    command<T = any> (cmd: string, arg: any): T {
-        return this.commands({ [cmd]: arg })
-    }
-
-    commands<T = any> (
-        cmds: Fibjs.AnyObject,
-        opts?: FxDbDriverNS.CommandDriverCommandOptions
-    ): T {
-        if (this.isPool)
-            return this.pool(conn => conn.runCommand(cmds)) as any;
-
-        if (!this.connection) this.open()
-        return this.connection.runCommand(cmds) as any;
-    }
-
-    getConnection (): Class_MongoDB { return db.openMongoDB(this.uri) }
-}
-
 export type IClsSQLDriver = typeof SQLDriver;
-export type IClsMySQLDriver = typeof MySQLDriver;
-export type IClsPostgreSQLDriver = typeof PostgreSQLDriver;
-export type IClsSQLiteDriver = typeof SQLiteDriver;
-export type IClsRedisDriver = typeof RedisDriver;
+
+export type IClsMySQLDriver = typeof import('./driver-mysql').default;
+export type IClsPostgreSQLDriver = typeof import('./driver-postgresql').default;
+export type IClsSQLiteDriver = typeof import('./driver-sqlite').default;
+export type IClsRedisDriver = typeof import('./driver-redis').default;

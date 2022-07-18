@@ -2,7 +2,7 @@
 /// <reference types="fib-pool" />
 import { FxOrmCoreCallbackNS } from "@fxjs/orm-core";
 export declare namespace FxDbDriverNS {
-    type DriverType = 'mysql' | 'sqlite' | 'psql' | 'mssql' | 'redis' | 'mongodb' | 'unknown';
+    type DriverType = 'mysql' | 'sqlite' | 'psql' | 'redis' | 'unknown';
     interface ConnectionInputArgs {
         protocol?: string;
         /**
@@ -90,7 +90,6 @@ export declare namespace FxDbDriver__Driver_SQLShared {
 export declare namespace FxDbDriverNS {
     interface SQLDriver extends DriverExtendTransaction {
         currentDb: string;
-        switchDb(targetDb: string): void;
         execute: {
             <T = any>(sql: string): T;
         };

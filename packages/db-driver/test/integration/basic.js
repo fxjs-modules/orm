@@ -58,7 +58,7 @@ describe("DBDriver", function () {
       [ 'postgresql', 'psql://user:@localhost:5432/db'     ],
       [ 'sqlite', 'sqlite:test.db'                      ],
       [ 'redis', 'redis://localhost:6379/db'           ],
-      [ 'mongodb', 'mongodb://localhost:27017/db'       ],
+      // [ 'mongodb', 'mongodb://localhost:27017/db'       ],
     ].forEach(function ([driverType, driverConnString]) {
       describe(`should expose ${driverType} driver`, function () {
         var driver = new (DBDriver.getDriver(driverType))(driverConnString);

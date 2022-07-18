@@ -1,7 +1,14 @@
 import { FxOrmCoreCallbackNS } from "@fxjs/orm-core"
 
 export namespace FxDbDriverNS {
-    export type DriverType = 'mysql' | 'sqlite' | 'psql' | 'mssql' | 'redis' | 'mongodb' | 'unknown'
+    export type DriverType =
+        'mysql'
+        | 'sqlite'
+        | 'psql'
+        // | 'mssql'
+        | 'redis'
+        // | 'mongodb'
+        | 'unknown'
 
     export interface ConnectionInputArgs {
         protocol?: string;
@@ -108,7 +115,6 @@ export namespace FxDbDriver__Driver_SQLShared {
 export namespace FxDbDriverNS {
     export interface SQLDriver extends DriverExtendTransaction {
         currentDb: string
-        switchDb (targetDb: string): void
 
         execute: {
             <T=any>(sql: string): T;

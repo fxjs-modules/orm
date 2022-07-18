@@ -38,7 +38,7 @@ export function getSqlQueryDialect (type: FxDbDriverNS.DriverType | 'postgresql'
         default:
             // some times others libs could mount faked dialect to sqlQueryDialects, allow return it
             return (sqlQueryDialects as any)[type] || null;
-        case 'mongodb':
+        // case 'mongodb':
         case 'redis':
             throw new Error('[getSqlQueryDialect] unsupported driver type: ' + type)
         case 'postgresql':
@@ -46,7 +46,7 @@ export function getSqlQueryDialect (type: FxDbDriverNS.DriverType | 'postgresql'
             return sqlQueryDialects['postgresql'];
         case 'sqlite':
         case 'mysql':
-        case 'mssql':
+        // case 'mssql':
 	        return sqlQueryDialects[type];
     }
 }

@@ -1,5 +1,5 @@
 var common  = require("../common");
-var Driver = require("../..").Driver.getDriver('sqlite');
+var Driver = require("../..").Driver.getDriver('redis');
 
 describe("Redis", function () {
 	var driver;
