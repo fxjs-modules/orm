@@ -1,4 +1,4 @@
-import { FxOrmCoreCallbackNS } from "@fxjs/orm-core";
+import { FxOrmCoreCallbackNS, FxOrmDialect } from "@fxjs/orm-core";
 import { FxOrmSqlDDLSync__Collection } from "./Collection";
 import { FxOrmSqlDDLSync__DbIndex } from "./DbIndex";
 import { FxOrmSqlDDLSync } from "./_common";
@@ -10,25 +10,7 @@ export declare namespace FxOrmSqlDDLSync__Dialect {
         for?: 'alter_table' | 'create_table' | 'add_column' | 'alter_column';
     }
     type ITypedDriver<T extends IDbDriver.ISQLConn> = IDbDriver.ITypedDriver<T>;
-    export interface Dialect<ConnType extends IDbDriver.ISQLConn> {
-        hasCollection: {
-            (driver: ITypedDriver<ConnType>, name: string, cb: FxOrmCoreCallbackNS.ExecutionCallback<boolean>): void;
-        };
-        hasCollectionSync: {
-            (driver: ITypedDriver<ConnType>, name: string): boolean;
-        };
-        addPrimaryKey: {
-            (driver: ITypedDriver<ConnType>, tableName: string, columnName: string, cb: FxOrmCoreCallbackNS.ExecutionCallback<any>): void;
-        };
-        addPrimaryKeySync: {
-            (driver: ITypedDriver<ConnType>, tableName: string, columnName: string): any;
-        };
-        dropPrimaryKey: {
-            (driver: ITypedDriver<ConnType>, tableName: string, columnName: string, cb: FxOrmCoreCallbackNS.ExecutionCallback<any>): void;
-        };
-        dropPrimaryKeySync: {
-            (driver: ITypedDriver<ConnType>, tableName: string, columnName: string): any;
-        };
+    export interface Dialect<ConnType extends IDbDriver.ISQLConn> extends FxOrmDialect.DDLDialect<ITypedDriver<ConnType>> {
         addForeignKey: {
             (driver: ITypedDriver<ConnType>, tableName: string, options: any, cb: FxOrmCoreCallbackNS.ExecutionCallback<any>): void;
         };
@@ -41,59 +23,11 @@ export declare namespace FxOrmSqlDDLSync__Dialect {
         dropForeignKeySync: {
             (driver: ITypedDriver<ConnType>, tableName: string, columnName: string): any;
         };
-        getCollectionColumns: {
-            <T extends any = any>(driver: ITypedDriver<ConnType>, name: string, cb: FxOrmCoreCallbackNS.ExecutionCallback<T[]>): void;
-        };
-        getCollectionColumnsSync: {
-            <T extends any = any>(driver: ITypedDriver<ConnType>, name: string): T[];
-        };
         getCollectionProperties: {
             (driver: ITypedDriver<ConnType>, name: string, cb: FxOrmCoreCallbackNS.ExecutionCallback<Record<string, FxOrmSqlDDLSync__Column.Property>>): void;
         };
         getCollectionPropertiesSync: {
             (driver: ITypedDriver<ConnType>, name: string): Record<string, FxOrmSqlDDLSync__Column.Property>;
-        };
-        createCollection: {
-            (driver: ITypedDriver<ConnType>, name: string, columns: string[], keys: string[], cb: FxOrmCoreCallbackNS.ExecutionCallback<any>): void;
-        };
-        createCollectionSync: {
-            (driver: ITypedDriver<ConnType>, name: string, columns: string[], keys: string[]): any;
-        };
-        dropCollection: {
-            (driver: ITypedDriver<ConnType>, name: string, cb: FxOrmCoreCallbackNS.ExecutionCallback<any>): void;
-        };
-        dropCollectionSync: {
-            (driver: ITypedDriver<ConnType>, name: string): any;
-        };
-        hasCollectionColumnsSync: {
-            (driver: ITypedDriver<ConnType>, name: string, column: string | string[]): boolean;
-        };
-        hasCollectionColumns: {
-            (driver: ITypedDriver<ConnType>, name: string, column: string | string[], cb: FxOrmCoreCallbackNS.ExecutionCallback<boolean>): any;
-        };
-        addCollectionColumn: {
-            (driver: ITypedDriver<ConnType>, name: string, column: string, after_column: string | false, cb: FxOrmCoreCallbackNS.ExecutionCallback<any>): void;
-        };
-        addCollectionColumnSync: {
-            (driver: ITypedDriver<ConnType>, name: string, column: string, after_column: string | false): any;
-        };
-        renameCollectionColumn: {
-            (driver: ITypedDriver<ConnType>, name: string, oldColName: string, newColName: string, cb: FxOrmCoreCallbackNS.ExecutionCallback<any>): void;
-        };
-        renameCollectionColumnSync: {
-            (driver: ITypedDriver<ConnType>, name: string, oldColName: string, newColName: string): any;
-        };
-        modifyCollectionColumn: {
-            (driver: ITypedDriver<ConnType>, name: string, column: string, cb: FxOrmCoreCallbackNS.ExecutionCallback<any>): void;
-        };
-        modifyCollectionColumnSync: {
-            (driver: ITypedDriver<ConnType>, name: string, column: string): any;
-        };
-        dropCollectionColumn: {
-            (driver: ITypedDriver<ConnType>, name: string, column: string, cb: FxOrmCoreCallbackNS.ExecutionCallback<any>): void;
-        };
-        dropCollectionColumnSync: {
-            (driver: ITypedDriver<ConnType>, name: string, column: string): any;
         };
         getCollectionIndexes: {
             (driver: ITypedDriver<ConnType>, name: string, cb: FxOrmCoreCallbackNS.ExecutionCallback<FxOrmSqlDDLSync__DbIndex.DbIndexInfoHash>): void;

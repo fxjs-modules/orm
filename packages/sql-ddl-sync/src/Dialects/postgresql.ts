@@ -163,13 +163,6 @@ export const dropForeignKey: IDialect['dropForeignKey'] = function (
 	FxORMCore.Utils.throwErrOrCallabckErrResult(exposedErrResults, { no_throw: true, callback: cb });
 };
 
-//exports.renameTable =  function(dbdriver, oldCollectionName, newCollectionName, cb) {
-//  return dbdriver.execute(SQL.RENAME_TABLE({
-//    oldCollectionName : oldCollectionName,
-//    newCollectionName : newCollectionName
-//  }, driver), cb);
-//}
-
 export const getCollectionColumnsSync: IDialect['getCollectionColumnsSync'] = function (
 	dbdriver, name
 ) {
@@ -251,7 +244,7 @@ export const renameCollectionColumn: IDialect['renameCollectionColumn'] = functi
 	FxORMCore.Utils.throwErrOrCallabckErrResult(exposedErrResults, { no_throw: true, callback: cb });
 };
 
-export const modifyCollectionColumnSync: IDialect['modifyCollectionColumnSync'] = function (dbdriver, name, column) {
+export const modifyCollectionColumnSync: IDialect['modifyCollectionColumnSync'] = function (dbdriver, name, column): any {
 	let p        = column.indexOf(" ");
 	const col_name = column.substr(0, p);
 	let col_type: string;
