@@ -12,6 +12,7 @@ export declare namespace Driver {
     type IClass_MSSQL = Class_DbConnection;
     export type ISQLConn = IClass_PostgreSQL | IClass_MSSQL | Class_SQLite | Class_MySQL;
     export type ITypedDriver<T extends IConnTypeEnum = IConnTypeEnum> = T extends ISQLConn ? SQLDriver<T> : T extends Class_MongoDB ? import('./driver-mongodb').default : T extends Class_Redis ? import('./driver-redis').default : Driver<T>;
+    export type ISQLDriver = ITypedDriver<ISQLConn>;
     export {};
 }
 export declare class Driver<CONN_TYPE extends Driver.IConnTypeEnum = Driver.IConnTypeEnum> {
@@ -83,9 +84,4 @@ export declare class SQLDriver<CONN_TYPE extends Driver.IConnTypeEnum> extends D
     rollback(): void;
     execute<T>(sql: string): T;
 }
-export declare type IClsSQLDriver = typeof SQLDriver;
-export declare type IClsMySQLDriver = typeof import('./driver-mysql').default;
-export declare type IClsPostgreSQLDriver = typeof import('./driver-postgresql').default;
-export declare type IClsSQLiteDriver = typeof import('./driver-sqlite').default;
-export declare type IClsRedisDriver = typeof import('./driver-redis').default;
 export {};

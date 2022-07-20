@@ -72,6 +72,8 @@ export namespace Driver {
         : T extends Class_MongoDB ? import('./driver-mongodb').default
         : T extends Class_Redis ? import('./driver-redis').default
         : Driver<T>
+
+    export type ISQLDriver = ITypedDriver<ISQLConn>
 }
 
 export class Driver<CONN_TYPE extends Driver.IConnTypeEnum = Driver.IConnTypeEnum> {
@@ -279,10 +281,3 @@ export class SQLDriver<CONN_TYPE extends Driver.IConnTypeEnum> extends Driver<CO
 
 	execute<T> (sql: string): T { return }
 }
-
-export type IClsSQLDriver = typeof SQLDriver;
-
-export type IClsMySQLDriver = typeof import('./driver-mysql').default;
-export type IClsPostgreSQLDriver = typeof import('./driver-postgresql').default;
-export type IClsSQLiteDriver = typeof import('./driver-sqlite').default;
-export type IClsRedisDriver = typeof import('./driver-redis').default;

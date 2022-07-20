@@ -39,13 +39,18 @@ export namespace FxOrmDMLDriver {
     }
 
     export interface DMLDriverConstructor {
-        new (config: FxDbDriverNS.DBConnectionConfig, connection: FxOrmDb.DatabaseBase, opts: FxOrmDMLDriver.DMLDriverOptions): DMLDriver
+        new (config: FxDbDriverNS.DBConnectionConfig, connection: FxOrmDb.Database, opts: FxOrmDMLDriver.DMLDriverOptions): DMLDriver
         prototype: DMLDriver
     }
 
-    export interface DMLDriver<ConnType extends IDbDriver.ISQLConn = IDbDriver.ISQLConn> {
-        readonly db: FxOrmDb.DatabaseBase<ConnType>
-        readonly config: FxOrmDb.DatabaseBase<ConnType>['config']
+    export interface DMLDriver<TConn extends IDbDriver.ISQLConn = IDbDriver.ISQLConn> {
+        readonly db: FxOrmDb.Database<TConn>
+        readonly config: FxOrmDb.Database<TConn>['config']
+        /**
+         * @description driver object for SQL-type backend
+         */
+        readonly sqlDriver: TConn extends IDbDriver.ISQLConn ? IDbDriver.ITypedDriver<TConn> : undefined
+        readonly isSql: TConn extends IDbDriver.ISQLConn ? true : false
 
         customTypes: {[key: string]: FxOrmProperty.CustomPropertyType}
 
@@ -131,7 +136,6 @@ export namespace FxOrmDMLDriver {
         propertyToValue: {
             (value: any, property: FxOrmProperty.NormalizedProperty): any
         }
-        readonly isSql: boolean
 
         /* patched :start */
         // uniq id
@@ -165,11 +169,11 @@ export namespace FxOrmDMLDriver {
     /* ============================= typed db :start ============================= */
 
     export interface DMLDriverConstructor_MySQL extends DMLDriverConstructor {
-        (this: DMLDriver_MySQL, config: FxDbDriverNS.DBConnectionConfig, connection: FxOrmDb.DatabaseBase<Class_MySQL>, opts: FxOrmDMLDriver.DMLDriverOptions): void
+        (this: DMLDriver_MySQL, config: FxDbDriverNS.DBConnectionConfig, connection: FxOrmDb.Database<Class_MySQL>, opts: FxOrmDMLDriver.DMLDriverOptions): void
         prototype: DMLDriver_MySQL
     }
     export interface DMLDriver_MySQL extends DMLDriver {
-        db: FxOrmDb.DatabaseBase<Class_MySQL>
+        db: FxOrmDb.Database<Class_MySQL>
         config: DMLDriver['config'] & {
             timezone: string
         }

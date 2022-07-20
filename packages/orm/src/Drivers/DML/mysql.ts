@@ -5,32 +5,36 @@ import type { FxOrmQuery } from "../../Typo/query";
 import type { FxOrmProperty } from "../../Typo/property";
 import type { FxOrmCommon } from "../../Typo/_common";
 
-import util    = require("util");
+import util = require("util");
 
-import mysql 		= require("../DB/mysql");
-import shared  		= require("./_shared");
-import DDL     		= require("../DDL/SQL");
-import { FxSqlQuery, Query }	from "@fxjs/sql-query";
-import Sync			= require("@fxjs/sql-ddl-sync");
-import utils		= require("./_utils");
+import { Database } from "../DB/mysql";
+import shared = require("./_shared");
+import DDL = require("../DDL/SQL");
+import { FxSqlQuery, Query } from "@fxjs/sql-query";
+import Sync = require("@fxjs/sql-ddl-sync");
+import utils = require("./_utils");
 import * as Utilities from "../../Utilities";
 
-export const Driver: FxOrmDMLDriver.DMLDriverConstructor_MySQL = function(
+export const Driver: FxOrmDMLDriver.DMLDriverConstructor_MySQL = function (
 	this: FxOrmDMLDriver.DMLDriver_MySQL,
 	config: FxDbDriverNS.DBConnectionConfig,
-	connection: FxOrmDb.DatabaseBase<Class_MySQL>,
+	connection: FxOrmDb.Database<Class_MySQL>,
 	opts: FxOrmDMLDriver.DMLDriverOptions
 ) {
 	this.dialect = 'mysql';
-	this.opts   = opts || <FxOrmDMLDriver.DMLDriverOptions>{};
+	this.opts = opts || <FxOrmDMLDriver.DMLDriverOptions>{};
 
 	this.customTypes = {};
 
-	if (connection) {
-		this.db = connection;
-	} else {
-		this.db = new mysql.Database(config)
-	}
+	Object.defineProperty(this, 'db', {
+		value: connection || new Database(config),
+		writable: false
+	});
+	
+	Object.defineProperty(this, 'sqlDriver', {
+		value: this.db,
+		writable: false
+	});
 
 	Object.defineProperty(this, 'config', {
 		value: this.db.config,
@@ -50,13 +54,13 @@ export const Driver: FxOrmDMLDriver.DMLDriverConstructor_MySQL = function(
 	utils.setCouldPool(this);
 	utils.getKnexInstance(this);
 
-	this.aggregate_functions = [ "ABS", "CEIL", "FLOOR", "ROUND",
-	                             "AVG", "MIN", "MAX",
-	                             "LOG", "LOG2", "LOG10", "EXP", "POWER",
-	                             "ACOS", "ASIN", "ATAN", "COS", "SIN", "TAN",
-	                             "CONV", [ "RANDOM", "RAND" ], "RADIANS", "DEGREES",
-	                             "SUM", "COUNT",
-	                             "DISTINCT"];
+	this.aggregate_functions = ["ABS", "CEIL", "FLOOR", "ROUND",
+		"AVG", "MIN", "MAX",
+		"LOG", "LOG2", "LOG10", "EXP", "POWER",
+		"ACOS", "ASIN", "ATAN", "COS", "SIN", "TAN",
+		"CONV", ["RANDOM", "RAND"], "RADIANS", "DEGREES",
+		"SUM", "COUNT",
+		"DISTINCT"];
 } as any as FxOrmDMLDriver.DMLDriverConstructor_MySQL;
 
 util.extend(Driver.prototype, shared, DDL);
@@ -100,7 +104,7 @@ Driver.prototype.reconnect = function (
 ) {
 	const connOpts = this.config.href || this.config;
 
-	this.db = new mysql.Database(connOpts);
+	this.db = new Database(connOpts);
 
 	const syncResponse = Utilities.catchBlocking(() => {
 		return this.connect()
@@ -127,13 +131,13 @@ Driver.prototype.getQuery = function (this: FxOrmDMLDriver.DMLDriver_MySQL): FxS
 	return this.query;
 };
 
-Driver.prototype.execSimpleQuery = function<T=any> (
+Driver.prototype.execSimpleQuery = function <T = any>(
 	query: string, cb: FxOrmCommon.GenericCallback<T>
 ) {
 	if (this.opts.debug) {
 		require("../../Debug").sql('mysql', query);
 	}
-	
+
 	return this.db.query(query, cb);
 };
 
@@ -141,8 +145,8 @@ Driver.prototype.find = function (
 	this: FxOrmDMLDriver.DMLDriver_MySQL, fields, table, conditions, opts, cb?
 ) {
 	var q = this.query.select()
-					  .from(table)
-					  .select(fields);
+		.from(table)
+		.select(fields);
 
 	if (opts.offset) {
 		q.offset(opts.offset);
@@ -153,7 +157,7 @@ Driver.prototype.find = function (
 		// OFFSET cannot be used without LIMIT so we use the biggest BIGINT number possible
 		q.limit('18446744073709551615');
 	}
-	
+
 	utils.buildOrderToQuery.apply(this, [q, opts.order]);
 	q = utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
 	utils.buildExistsToQuery.apply(this, [q, table, opts.exists]);
@@ -165,8 +169,8 @@ Driver.prototype.count = function (
 	this: FxOrmDMLDriver.DMLDriver_MySQL, table, conditions, opts, cb?
 ) {
 	var q = this.query.select()
-	                  .from(table)
-	                  .count(null, 'c');
+		.from(table)
+		.count(null, 'c');
 
 	q = utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
 	utils.buildExistsToQuery.apply(this, [q, table, opts.exists]);
@@ -178,9 +182,9 @@ Driver.prototype.insert = function (
 	this: FxOrmDMLDriver.DMLDriver_MySQL, table, data, keyProperties, cb?
 ) {
 	const q = this.query.insert()
-	                  .into(table)
-	                  .set(data)
-	                  .build();
+		.into(table)
+		.set(data)
+		.build();
 
 	const syncResponse = Utilities.catchBlocking(() => {
 		const info = this.execSimpleQuery(q);
@@ -188,10 +192,10 @@ Driver.prototype.insert = function (
 		const ids: FxOrmQuery.InsertResult = {};
 
 		if (keyProperties) {
-			if (keyProperties.length == 1 && info.hasOwnProperty("insertId") && info.insertId !== 0 ) {
+			if (keyProperties.length == 1 && info.hasOwnProperty("insertId") && info.insertId !== 0) {
 				ids[keyProperties[0].name] = info.insertId;
 			} else {
-				for(let i = 0, prop: FxOrmProperty.NormalizedProperty; i < keyProperties.length; i++) {
+				for (let i = 0, prop: FxOrmProperty.NormalizedProperty; i < keyProperties.length; i++) {
 					prop = keyProperties[i];
 					ids[prop.name] = data[prop.mapsTo];
 				}
@@ -210,10 +214,10 @@ Driver.prototype.update = function (
 	this: FxOrmDMLDriver.DMLDriver_MySQL, table, changes, conditions, cb?
 ) {
 	var q = this.query.update()
-	                  .into(table)
-	                  .set(changes)
-	                  .where(conditions)
-	                  .build();
+		.into(table)
+		.set(changes)
+		.where(conditions)
+		.build();
 
 	return this.execSimpleQuery(q, cb);
 };
@@ -222,9 +226,9 @@ Driver.prototype.remove = function (
 	this: FxOrmDMLDriver.DMLDriver_MySQL, table, conditions, cb?
 ) {
 	var q = this.query.remove()
-	                  .from(table)
-	                  .where(conditions)
-	                  .build();
+		.from(table)
+		.where(conditions)
+		.build();
 
 	return this.execSimpleQuery(q, cb);
 };
@@ -245,7 +249,7 @@ Driver.prototype.valueToProperty = function (
 	switch (property.type) {
 		case "date":
 			if (util.isNumber(value) || util.isString(value))
-            	value = new Date(value);
+				value = new Date(value);
 			break;
 		case "boolean":
 			value = !!value;
@@ -262,7 +266,7 @@ Driver.prototype.valueToProperty = function (
 			break;
 		default:
 			customType = this.customTypes[property.type];
-			if(customType && 'valueToProperty' in customType) {
+			if (customType && 'valueToProperty' in customType) {
 				value = customType.valueToProperty(value, property);
 			}
 	}
@@ -275,7 +279,7 @@ Driver.prototype.propertyToValue = function (
 	switch (property.type) {
 		case "date":
 			if (util.isNumber(value) || util.isString(value))
-            	value = new Date(value);
+				value = new Date(value);
 			break;
 		case "boolean":
 			value = (value) ? 1 : 0;
@@ -286,10 +290,10 @@ Driver.prototype.propertyToValue = function (
 			}
 			break;
 		case "point":
-			return function() { return 'POINT(' + value.x + ', ' + value.y + ')'; };
+			return function () { return 'POINT(' + value.x + ', ' + value.y + ')'; };
 		default:
 			const customType = this.customTypes[property.type];
-			if(customType && 'propertyToValue' in customType) {
+			if (customType && 'propertyToValue' in customType) {
 				value = customType.propertyToValue(value);
 			}
 	}
@@ -297,5 +301,5 @@ Driver.prototype.propertyToValue = function (
 };
 
 Object.defineProperty(Driver.prototype, "isSql", {
-    value: true
+	value: true
 });

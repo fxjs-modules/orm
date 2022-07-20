@@ -1,4 +1,4 @@
-import { Driver as FxDbDriver, IClsSQLiteDriver } from '@fxjs/db-driver';
+import { Driver as FxDbDriver } from '@fxjs/db-driver';
 
 import getEventEmitter = require('./base');
 
@@ -10,7 +10,7 @@ import type { FxOrmDb } from '../../Typo/Db';
 function isMemoryMode (href: string) {
     return href === ':memory:'
 }
-const Driver = FxDbDriver.getDriver('sqlite') as IClsSQLiteDriver;
+const Driver = FxDbDriver.getDriver('sqlite');
 
 export class Database extends Driver implements FxOrmDb.DatabaseBase_SQLite {
     eventor: Class_EventEmitter = getEventEmitter();

@@ -13,7 +13,7 @@ import Sync = require("@fxjs/sql-ddl-sync");
 import { FxSqlQuery, Query }	from "@fxjs/sql-query";
 import utils = require("./_utils");
 import * as Utilities from "../../Utilities";
-import PostgresqlDatabase from "../DB/postgres";
+import Database from "../DB/postgres";
 
 export const Driver: FxOrmDMLDriver.DMLDriverConstructor = function (
 	this: FxOrmDMLDriver.DMLDriver_PostgreSQL,
@@ -26,11 +26,15 @@ export const Driver: FxOrmDMLDriver.DMLDriverConstructor = function (
 	
 	this.customTypes = {};
 
-	if (connection) {
-		this.db = connection;
-	} else {
-		this.db = new PostgresqlDatabase(config)
-	}
+	Object.defineProperty(this, 'db', {
+		value: connection || new Database(config),
+		writable: false
+	});
+	
+	Object.defineProperty(this, 'sqlDriver', {
+		value: this.db,
+		writable: false
+	});
 
 	Object.defineProperty(this, 'config', {
 		value: this.db.config,
@@ -99,7 +103,7 @@ Driver.prototype.reconnect = function (
 ) {
 	const connOpts = this.config.href || this.config;
 
-	this.db = new PostgresqlDatabase(connOpts);
+	this.db = new Database(connOpts);
 
 	const syncResponse = Utilities.catchBlocking(() => {
 		return this.connect()

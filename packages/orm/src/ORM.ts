@@ -58,7 +58,7 @@ export const settings = SettingsInstance;
 export import Property   = require("./Property");
 
 export function use(
-	connection: FxOrmDb.DatabaseBase,
+	connection: FxOrmDb.Database,
 	proto: string,
 	opts: FxOrmNS.IUseOptions,
 	cb: (err: Error, db?: FxOrmNS.ORM) => void
@@ -457,6 +457,8 @@ ORM.prototype.trans = function (
 	const connection = this.driver.db.connection;
 	return connection.trans(func.bind(connection));	
 };
+
+export type ORMInstance = FxOrmNS.ORM
 
 export const ErrorCodes = ORMError.codes;
 export const addAdapter = adapters.add;

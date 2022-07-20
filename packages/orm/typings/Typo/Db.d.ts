@@ -5,7 +5,7 @@ export declare namespace FxOrmDb {
     interface DatabaseBaseConfig extends /* FxDbDriverNS.DBConnectionConfig,  */ Class_UrlObject {
         pool: FxDbDriverNS.ConnectionPoolOptions;
     }
-    interface DatabaseBase<T extends IDbDriver.IConnTypeEnum = IDbDriver.IConnTypeEnum> extends IDbDriver<T> {
+    interface Database<T extends IDbDriver.IConnTypeEnum = IDbDriver.IConnTypeEnum> extends IDbDriver<T> {
         eventor: Class_EventEmitter;
         query: {
             <T = any>(query: string, cb?: FxOrmCommon.GenericCallback<T>): T;
@@ -15,12 +15,14 @@ export declare namespace FxOrmDb {
             (): T;
         };
     }
-    interface DatabaseBase_SQLite extends DatabaseBase<Class_SQLite> {
+    interface SQLDatabase<T extends IDbDriver.ISQLConn = IDbDriver.ISQLConn> extends Database<T> {
+    }
+    interface DatabaseBase_SQLite extends SQLDatabase<Class_SQLite> {
         readonly use_memory: boolean;
         all: DatabaseBase_SQLite['query'];
         get: DatabaseBase_SQLite['query'];
     }
-    interface DatabaseBase_PostgreSQL extends DatabaseBase<IDbDriver.ISQLConn> {
+    interface DatabaseBase_PostgreSQL extends SQLDatabase<IDbDriver.ISQLConn> {
     }
     type AGGREGATION_METHOD_COMMON = "ABS" | "ROUND" | "AVG" | "MIN" | "MAX" | "SUM" | "COUNT" | "DISTINCT";
     type AGGREGATION_METHOD_TUPLE__COMMON = [

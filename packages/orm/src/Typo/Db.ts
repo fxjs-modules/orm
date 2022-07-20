@@ -8,7 +8,7 @@ export namespace FxOrmDb {
         pool: FxDbDriverNS.ConnectionPoolOptions
     }
 
-    export interface DatabaseBase<T extends IDbDriver.IConnTypeEnum = IDbDriver.IConnTypeEnum> extends IDbDriver<T> {
+    export interface Database<T extends IDbDriver.IConnTypeEnum = IDbDriver.IConnTypeEnum> extends IDbDriver<T> {
         eventor: Class_EventEmitter
 
         query: {
@@ -21,17 +21,21 @@ export namespace FxOrmDb {
         }
     }
 
-    export interface DatabaseBase_SQLite extends DatabaseBase<Class_SQLite> {
+    export interface SQLDatabase<T extends IDbDriver.ISQLConn = IDbDriver.ISQLConn> extends Database<T> {
+
+    }
+
+    export interface DatabaseBase_SQLite extends SQLDatabase<Class_SQLite> {
         readonly use_memory: boolean
         
         all: DatabaseBase_SQLite['query']
         get: DatabaseBase_SQLite['query']
     }
 
-    // interface DatabaseBase_MySQL extends DatabaseBase<Class_MySQL> {}
+    // interface DatabaseBase_MySQL extends SQLDatabase<Class_MySQL> {}
 
     // not supported now.
-    export interface DatabaseBase_PostgreSQL extends DatabaseBase<IDbDriver.ISQLConn> {
+    export interface DatabaseBase_PostgreSQL extends SQLDatabase<IDbDriver.ISQLConn> {
     }
 
     // common

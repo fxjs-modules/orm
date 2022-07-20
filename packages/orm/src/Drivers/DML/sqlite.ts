@@ -1,36 +1,40 @@
 import util = require('util')
 
-import sqlite3 		= require("../DB/sqlite3");
-import shared  		= require("./_shared");
-import DDL     		= require("../DDL/SQL");
-import Sync			= require("@fxjs/sql-ddl-sync");
-import utils		= require("./_utils");
+import { Database } from "../DB/sqlite3";
+import shared = require("./_shared");
+import DDL = require("../DDL/SQL");
+import Sync = require("@fxjs/sql-ddl-sync");
+import utils = require("./_utils");
 import * as Utilities from '../../Utilities';
 
 import { Query } from "@fxjs/sql-query";
-import type { FxSqlQuery }	from "@fxjs/sql-query";
+import type { FxSqlQuery } from "@fxjs/sql-query";
 import type { FxOrmDMLDriver } from '../../Typo/DMLDriver';
 import type { FxDbDriverNS, IDbDriver } from '@fxjs/db-driver';
 import type { FxOrmDb } from '../../Typo/Db';
 import type { FxOrmCommon } from '../../Typo/_common';
 import type { FxOrmQuery } from '../../Typo/query';
 
-export const Driver: FxOrmDMLDriver.DMLDriverConstructor_SQLite = function(
+export const Driver: FxOrmDMLDriver.DMLDriverConstructor_SQLite = function (
 	this: FxOrmDMLDriver.DMLDriver_SQLite,
 	config: FxDbDriverNS.DBConnectionConfig,
 	connection: FxOrmDb.DatabaseBase_SQLite,
 	opts: FxOrmDMLDriver.DMLDriverOptions
 ) {
 	this.dialect = 'sqlite';
-	this.opts   = opts || <FxOrmDMLDriver.DMLDriverOptions>{};
+	this.opts = opts || <FxOrmDMLDriver.DMLDriverOptions>{};
 
 	this.customTypes = {};
 
-	if (connection) {
-		this.db = connection;
-	} else {
-		this.db = new sqlite3.Database(config)
-	}
+	Object.defineProperty(this, 'db', {
+		value: connection || new Database(config),
+		writable: false
+	});
+	
+	Object.defineProperty(this, 'sqlDriver', {
+		value: this.db,
+		writable: false
+	});
 
 	Object.defineProperty(this, 'config', {
 		value: this.db.config,
@@ -51,11 +55,11 @@ export const Driver: FxOrmDMLDriver.DMLDriverConstructor_SQLite = function(
 	utils.setCouldPool(this);
 	utils.getKnexInstance(this);
 
-	this.aggregate_functions = [ "ABS", "ROUND",
-	                             "AVG", "MIN", "MAX",
-	                             "RANDOM",
-	                             "SUM", "COUNT",
-	                             "DISTINCT" ];
+	this.aggregate_functions = ["ABS", "ROUND",
+		"AVG", "MIN", "MAX",
+		"RANDOM",
+		"SUM", "COUNT",
+		"DISTINCT"];
 } as any as FxOrmDMLDriver.DMLDriverConstructor_SQLite;
 
 util.extend(Driver.prototype, shared, DDL);
@@ -67,7 +71,7 @@ Driver.prototype.ping = function (
 	return this;
 };
 
-Driver.prototype.on = function (this: FxOrmDMLDriver.DMLDriver_SQLite, 
+Driver.prototype.on = function (this: FxOrmDMLDriver.DMLDriver_SQLite,
 	ev, cb?
 ) {
 	if (ev == "error") {
@@ -99,7 +103,7 @@ Driver.prototype.close = function (
 };
 
 Driver.prototype.getQuery = function (
-	this: FxOrmDMLDriver.DMLDriver_SQLite, 
+	this: FxOrmDMLDriver.DMLDriver_SQLite,
 ) {
 	return this.query;
 };
@@ -117,8 +121,8 @@ Driver.prototype.find = function (
 	this: FxOrmDMLDriver.DMLDriver_SQLite, fields, table, conditions, opts, cb?
 ) {
 	var q = this.query.select()
-	                  .from(table)
-					  .select(fields);
+		.from(table)
+		.select(fields);
 
 	if (opts.offset) {
 		q.offset(opts.offset);
@@ -129,7 +133,7 @@ Driver.prototype.find = function (
 		// OFFSET cannot be used without LIMIT so we use the biggest INTEGER number possible
 		q.limit('9223372036854775807');
 	}
-	
+
 	utils.buildOrderToQuery.apply(this, [q, opts.order]);
 	q = utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
 	utils.buildExistsToQuery.apply(this, [q, table, opts.exists]);
@@ -141,8 +145,8 @@ Driver.prototype.count = function (
 	this: FxOrmDMLDriver.DMLDriver_SQLite, table, conditions, opts, cb?
 ) {
 	var q = this.query.select()
-	                  .from(table)
-	                  .count(null, 'c');
+		.from(table)
+		.count(null, 'c');
 
 	q = utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
 	utils.buildExistsToQuery.apply(this, [q, table, opts.exists]);
@@ -154,27 +158,27 @@ Driver.prototype.insert = function (
 	this: FxOrmDMLDriver.DMLDriver_SQLite, table, data, keyProperties, cb?
 ) {
 	var q = this.query.insert()
-	                  .into(table)
-	                  .set(data)
-	                  .build();
+		.into(table)
+		.set(data)
+		.build();
 
 	const syncResponse = Utilities.catchBlocking(() => {
 		const info = this.execSimpleQuery<FxOrmQuery.InsertResult>(q);
 
-        if (!keyProperties) return null;
+		if (!keyProperties) return null;
 
-        var ids: {[k: string]: any} = {},
-            prop;
+		var ids: { [k: string]: any } = {},
+			prop;
 
-        if (keyProperties.length == 1 && keyProperties[0].type == 'serial') {
-            ids[keyProperties[0].name] = info.insertId;
-        } else {
-            for (let i = 0; i < keyProperties.length; i++) {
-                prop = keyProperties[i];
-                // Zero is a valid value for an ID column
-                ids[prop.name] = data[prop.mapsTo] !== undefined ? data[prop.mapsTo] : null;
-            }
-        }
+		if (keyProperties.length == 1 && keyProperties[0].type == 'serial') {
+			ids[keyProperties[0].name] = info.insertId;
+		} else {
+			for (let i = 0; i < keyProperties.length; i++) {
+				prop = keyProperties[i];
+				// Zero is a valid value for an ID column
+				ids[prop.name] = data[prop.mapsTo] !== undefined ? data[prop.mapsTo] : null;
+			}
+		}
 
 		return ids;
 	});
@@ -187,10 +191,10 @@ Driver.prototype.update = function (
 	this: FxOrmDMLDriver.DMLDriver_SQLite, table, changes, conditions, cb?
 ) {
 	var q = this.query.update()
-	                  .into(table)
-	                  .set(changes)
-	                  .where(conditions)
-	                  .build();
+		.into(table)
+		.set(changes)
+		.where(conditions)
+		.build();
 
 	return this.execSimpleQuery(q, cb);
 };
@@ -199,9 +203,9 @@ Driver.prototype.remove = function (
 	this: FxOrmDMLDriver.DMLDriver_SQLite, table, conditions, cb?
 ) {
 	var q = this.query.remove()
-	                  .from(table)
-	                  .where(conditions)
-	                  .build();
+		.from(table)
+		.where(conditions)
+		.build();
 
 	return this.execSimpleQuery(q, cb);
 };
@@ -212,15 +216,15 @@ Driver.prototype.clear = function (
 	const syncResponse = Utilities.catchBlocking(() => {
 		this.execQuery(
 			this.query.remove()
-	                  .from(table)
-					  .build()
+				.from(table)
+				.build()
 		);
-		
+
 		this.execQuery(
 			this.query.remove()
-	                  .from(table)
-					  .where({ name: 'sqlite_sequence' })
-					  .build()
+				.from(table)
+				.where({ name: 'sqlite_sequence' })
+				.build()
 		);
 	})
 	Utilities.takeAwayResult(syncResponse, { callback: cb });
@@ -274,12 +278,12 @@ Driver.prototype.valueToProperty = function (
 			break;
 		case "date":
 			if (util.isNumber(value) || util.isString(value))
-            	value = new Date(value);
+				value = new Date(value);
 
 			break;
 		default:
 			customType = this.customTypes[property.type];
-			if(customType && 'valueToProperty' in customType) {
+			if (customType && 'valueToProperty' in customType) {
 				value = customType.valueToProperty(value, property);
 			}
 	}
@@ -300,11 +304,11 @@ Driver.prototype.propertyToValue = function (
 			break;
 		case "date":
 			if (util.isNumber(value) || util.isString(value))
-            	value = new Date(value);
+				value = new Date(value);
 			break;
 		default:
 			const customType = this.customTypes[property.type];
-			if(customType && 'propertyToValue' in customType) {
+			if (customType && 'propertyToValue' in customType) {
 				value = customType.propertyToValue(value);
 			}
 	}
@@ -312,7 +316,7 @@ Driver.prototype.propertyToValue = function (
 };
 
 Object.defineProperty(Driver.prototype, "isSql", {
-    value: true
+	value: true
 });
 
 function convertTimezone(tz: FxSqlQuery.FxSqlQueryTimezone) {

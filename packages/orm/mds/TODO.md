@@ -2,7 +2,7 @@
 
 ### features
 - [ ] db
-    - [ ] standalone version `@fxjs/db`, which provide variables of `FxOrmDb.DatabaseBase`
+    - [ ] standalone version `@fxjs/db`, which provide variables of `FxOrmDb.Database`
     - [ ] make test for mongodb running
     - [ ] setup travis test env for mysql/mariadb/mongodb
 - [ ] pool
