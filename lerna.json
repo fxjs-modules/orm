@@ -12,7 +12,7 @@
     },
     "bootstrap": {
       "ignore": "component-*",
-      "hoist": true,
+      "hoist": false,
       "nohoist": [
         "@fibjs/types",
         "knex",
