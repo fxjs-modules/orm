@@ -131,7 +131,7 @@ export declare namespace FxOrmQuery {
         propertyList?: string[];
         table?: string;
         conditions?: FxOrmQuery.QueryConditions;
-        properties: FxOrmProperty.NormalizedPropertyHash;
+        properties: Record<string, FxOrmProperty.NormalizedProperty>;
     }
     type AggregateConstructor = new (opts: AggregateConstructorOptions) => IAggregated;
     type ChainFindGenerator = new (Model: FxOrmModel.Model, opts: FxOrmQuery.ChainFindOptions) => IChainFind;
@@ -195,7 +195,7 @@ export declare namespace FxOrmQuery {
         table: FxOrmModel.ModelConstructorOptions['table'];
         driver: FxOrmModel.ModelConstructorOptions['driver'];
         conditions: QueryConditions;
-        properties: FxOrmProperty.NormalizedPropertyHash;
+        properties: Record<string, FxOrmProperty.NormalizedProperty>;
         keyProperties: FxOrmProperty.NormalizedProperty[];
         order: (FxOrmQuery.OrderNormalizedTuple | FxOrmQuery.OrderSqlStyleTuple)[];
         only: (string | FxSqlQueryColumns.SelectInputArgType)[];

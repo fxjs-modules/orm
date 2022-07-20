@@ -89,7 +89,7 @@ export function prepare (
 		Utilities.addHookPatchHelperForAssociation(association);
 		
 		const newProperties: FxOrmModel.DetailedPropertyDefinitionHash = _cloneDeep(properties);
-		const assoc_field = association.field as FxOrmProperty.NormalizedPropertyHash
+		const assoc_field = association.field as Record<string, FxOrmProperty.NormalizedProperty>
 
 		for (let k in assoc_field) {
 			assoc_field[k].klass = 'extendsTo';

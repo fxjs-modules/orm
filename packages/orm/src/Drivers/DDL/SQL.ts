@@ -6,7 +6,7 @@ import { FxOrmProperty } from '../../Typo/property';
 import { FxOrmDMLDriver } from '../../Typo/DMLDriver';
 import { FxOrmError } from '../../Typo/Error';
 
-function setIndex (p: FxOrmProperty.NormalizedPropertyHash, v: FxOrmProperty.NormalizedProperty, k: string) {
+function setIndex (p: Record<string, FxOrmProperty.NormalizedProperty>, v: FxOrmProperty.NormalizedProperty, k: string) {
 	v.index = true;
 	p[k] = v;
 };

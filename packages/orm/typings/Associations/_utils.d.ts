@@ -9,7 +9,7 @@ export declare const ACCESSOR_KEYS: {
     [k: string]: ACCESSOR_PREFIX;
 };
 export declare function getMapsToFromProperty(property: FxOrmProperty.NormalizedProperty): any;
-export declare function getMapsToFromPropertyHash(hash: FxOrmProperty.NormalizedPropertyHash): string[];
+export declare function getMapsToFromPropertyHash(hash: Record<string, FxOrmProperty.NormalizedProperty>): string[];
 export declare function cutOffAssociatedModelFindOptions(findby_options: FxOrmAssociation.ModelAssociationMethod__FindByOptions, association_name: string): any;
 export declare function addAssociationInfoToModel(Model: FxOrmModel.Model, association_name: string, opts: FxOrmModel.Model['associations'][any]): FxOrmModel.Model['associations'][string];
 export {};

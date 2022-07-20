@@ -152,7 +152,7 @@ export namespace FxOrmQuery {
         propertyList?: string[]
         table?: string
         conditions?: FxOrmQuery.QueryConditions
-        properties: FxOrmProperty.NormalizedPropertyHash
+        properties: Record<string, FxOrmProperty.NormalizedProperty>
     }
     
     export type AggregateConstructor = new (opts: AggregateConstructorOptions) => IAggregated
@@ -239,7 +239,7 @@ export namespace FxOrmQuery {
         driver: FxOrmModel.ModelConstructorOptions['driver']
         
         conditions: QueryConditions
-        properties: FxOrmProperty.NormalizedPropertyHash
+        properties: Record<string, FxOrmProperty.NormalizedProperty>
         keyProperties: FxOrmProperty.NormalizedProperty[]
         order: (FxOrmQuery.OrderNormalizedTuple | FxOrmQuery.OrderSqlStyleTuple)[]
         // only: string|FxSqlQueryColumns.SelectInputArgType[]

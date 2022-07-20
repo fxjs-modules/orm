@@ -46,11 +46,11 @@ export function prepare(
 	Model.hasMany = function () {
 		let name: string,
 			makeKey: boolean,
-			mergeId: FxOrmProperty.NormalizedPropertyHash,
-			mergeAssocId: FxOrmProperty.NormalizedPropertyHash;
+			mergeId: Record<string, FxOrmProperty.NormalizedProperty>,
+			mergeAssocId: Record<string, FxOrmProperty.NormalizedProperty>;
 
 		let OtherModel: FxOrmModel.Model = Model;
-		let props: FxOrmProperty.NormalizedPropertyHash | FxOrmModel.DetailedPropertyDefinitionHash = null;
+		let props: Record<string, FxOrmProperty.NormalizedProperty> | FxOrmModel.DetailedPropertyDefinitionHash = null;
 		let assoc_options: FxOrmAssociation.AssociationDefinitionOptions_HasMany = {};
 
 		for (let i = 0; i < arguments.length; i++) {
@@ -241,7 +241,7 @@ export function autoFetch(
 	)
 };
 
-function adjustForMapsTo(properties: FxOrmProperty.NormalizedPropertyHash, field: string[]) {
+function adjustForMapsTo(properties: Record<string, FxOrmProperty.NormalizedProperty>, field: string[]) {
 	if (!field)
 		return ;
 

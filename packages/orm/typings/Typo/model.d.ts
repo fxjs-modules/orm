@@ -24,14 +24,14 @@ export declare namespace FxOrmModel {
     type OrderListOrLimitOffer = number | string | string[];
     interface Model extends ModelInstanceConstructor, ModelHooks, FxOrmSynchronous.SynchronizedModel {
         name: string;
-        properties: FxOrmProperty.NormalizedPropertyHash;
+        properties: Record<string, FxOrmProperty.NormalizedProperty>;
         settings: FxOrmSettings.SettingInstance;
         table: string;
         id: string[];
         uid: string;
         caches: Class_LruCache;
         keys: string[];
-        allProperties: FxOrmProperty.NormalizedPropertyHash;
+        allProperties: Record<string, FxOrmProperty.NormalizedProperty>;
         addProperty(propIn: FxOrmProperty.NormalizedProperty, options?: {
             name?: string;
             klass?: FxOrmProperty.KlassType;
@@ -151,7 +151,7 @@ export declare namespace FxOrmModel {
         driver_name: string;
         driver: FxOrmDMLDriver.DMLDriver;
         table: string;
-        properties: FxOrmProperty.NormalizedPropertyHash;
+        properties: Record<string, FxOrmProperty.NormalizedProperty>;
         __for_extension: boolean;
         indexes: string[];
         identityCache: boolean;
@@ -246,7 +246,7 @@ export declare namespace FxOrmModel {
         lazyload?: boolean;
     }
     type OrigDetailedModelProperty = FxOrmProperty.NormalizedProperty;
-    type OrigDetailedModelPropertyHash = FxOrmProperty.NormalizedPropertyHash;
+    type OrigDetailedModelPropertyHash = Record<string, FxOrmProperty.NormalizedProperty>;
     type PrimitiveConstructor = String | Boolean | Number | Date | Object | Class_Buffer;
     type EnumTypeValues = any[];
     type PropTypeStrPropertyDefinition = string;

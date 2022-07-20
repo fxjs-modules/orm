@@ -62,7 +62,7 @@ export const Model = function (
 	 *  2. dynamic added properties by `model.addProperty(...)`, in fact, all association-about properties
 	 *  were added by `addProperty` method
 	 */
-	const allProperties: FxOrmProperty.NormalizedPropertyHash = {};
+	const allProperties: Record<string, FxOrmProperty.NormalizedProperty> = {};
 	const keyProperties: FxOrmProperty.NormalizedProperty[] = [];
 	
 	const initialHooks = Object.assign({}, m_opts.hooks)

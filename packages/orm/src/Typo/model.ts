@@ -35,7 +35,7 @@ export namespace FxOrmModel {
 
     export interface Model extends ModelInstanceConstructor, ModelHooks, FxOrmSynchronous.SynchronizedModel {
         name: string;
-        properties: FxOrmProperty.NormalizedPropertyHash;
+        properties: Record<string, FxOrmProperty.NormalizedProperty>;
         settings: FxOrmSettings.SettingInstance;
 
         table: string;
@@ -47,7 +47,7 @@ export namespace FxOrmModel {
 
         keys: string[];
 
-        allProperties: FxOrmProperty.NormalizedPropertyHash
+        allProperties: Record<string, FxOrmProperty.NormalizedProperty>
 
         /* property operation :start */
         addProperty(
@@ -217,7 +217,7 @@ export namespace FxOrmModel {
         driver_name: string
         driver: FxOrmDMLDriver.DMLDriver
         table: string
-        properties: FxOrmProperty.NormalizedPropertyHash
+        properties: Record<string, FxOrmProperty.NormalizedProperty>
         __for_extension: boolean
         indexes: string[]
         
@@ -321,7 +321,7 @@ export namespace FxOrmModel {
 
     // @deprecated
     export type OrigDetailedModelProperty = FxOrmProperty.NormalizedProperty
-    export type OrigDetailedModelPropertyHash = FxOrmProperty.NormalizedPropertyHash
+    export type OrigDetailedModelPropertyHash = Record<string, FxOrmProperty.NormalizedProperty>
 
     export type PrimitiveConstructor = String | Boolean | Number | Date | Object | Class_Buffer
     export type EnumTypeValues = any[]

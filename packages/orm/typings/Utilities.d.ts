@@ -42,7 +42,7 @@ export declare function wrapFieldObject(params: {
     model: FxOrmModel.Model;
     altName: string;
     mapsTo?: FxOrmModel.ModelPropertyDefinition['mapsTo'];
-}): FxOrmProperty.NormalizedPropertyHash;
+}): Record<string, FxOrmProperty.NormalizedProperty>;
 /**
  * TODO: add comment for this method
  * @param model related Model
@@ -51,10 +51,10 @@ export declare function wrapFieldObject(params: {
  * @param reversed is model is reversed in relationship
  */
 export declare function formatAssociatedField(model: FxOrmModel.Model, name: string, required: boolean, reversed: boolean): Record<string, FxOrmProperty.NormalizedProperty>;
-export declare function convertPropToJoinKeyProp(props: FxOrmProperty.NormalizedPropertyHash, opts: {
+export declare function convertPropToJoinKeyProp(props: Record<string, FxOrmProperty.NormalizedProperty>, opts: {
     required: boolean;
     makeKey: boolean;
-}): FxOrmProperty.NormalizedPropertyHash;
+}): Record<string, FxOrmProperty.NormalizedProperty>;
 export declare function getRealPath(path_str: string, stack_index?: number): string;
 /**
  * @description rename a field name in <dataIn> according to the name map in <properties>
@@ -69,8 +69,8 @@ export declare function getRealPath(path_str: string, stack_index?: number): str
  * @param dataIn
  * @param properties
  */
-export declare function transformPropertyNames(dataIn: FxOrmInstance.InstanceDataPayload, properties: FxOrmProperty.NormalizedPropertyHash | FxOrmModel.ModelPropertyDefinition): FxOrmInstance.InstanceDataPayload;
-export declare function transformOrderPropertyNames(order: FxOrmQuery.ChainFindOptions['order'], properties: FxOrmProperty.NormalizedPropertyHash): FxSqlQuery.OrderNormalizedResult[];
+export declare function transformPropertyNames(dataIn: FxOrmInstance.InstanceDataPayload, properties: Record<string, FxOrmProperty.NormalizedProperty> | FxOrmModel.ModelPropertyDefinition): FxOrmInstance.InstanceDataPayload;
+export declare function transformOrderPropertyNames(order: FxOrmQuery.ChainFindOptions['order'], properties: Record<string, FxOrmProperty.NormalizedProperty>): FxSqlQuery.OrderNormalizedResult[];
 export declare function renameDatastoreFieldsToPropertyNames(data: FxOrmInstance.InstanceDataPayload, fieldToPropertyMap: FxOrmProperty.FieldToPropertyMapType): FxOrmInstance.InstanceDataPayload;
 export declare function camelCaseHasMany(text: string): string;
 export declare function ucfirst(text: string): string;
@@ -98,7 +98,7 @@ export declare function parallelQueryIfPossible<T = any, RESP = any>(can_paralle
  * @param host
  */
 export declare function filterWhereConditionsInput(conditions: FxSqlQuerySubQuery.SubQueryConditions, host: {
-    allProperties: FxOrmProperty.NormalizedPropertyHash;
+    allProperties: Record<string, FxOrmProperty.NormalizedProperty>;
 }): FxSqlQuerySubQuery.SubQueryConditions;
 export declare function addUnwritableProperty(obj: any, property: string, value: any, propertyConfiguration?: PropertyDescriptor): void;
 export declare function addHiddenUnwritableMethodToInstance(instance: FxOrmInstance.Instance, method_name: 'save' | 'saveSync' | string, fn: Function, propertyConfiguration?: PropertyDescriptor): void;

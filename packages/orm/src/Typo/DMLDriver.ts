@@ -237,7 +237,7 @@ export namespace FxOrmDMLShared {
 
     export interface DropOptions {
         table: string
-        properties: FxOrmProperty.NormalizedPropertyHash
+        properties: Record<string, FxOrmProperty.NormalizedProperty>
         one_associations: FxOrmAssociation.InstanceAssociationItem_HasOne[]
         many_associations: FxOrmAssociation.InstanceAssociationItem_HasMany[]
     }

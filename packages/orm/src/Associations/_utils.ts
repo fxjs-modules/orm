@@ -33,7 +33,7 @@ export function getMapsToFromProperty (property: FxOrmProperty.NormalizedPropert
 	return property.mapsTo || property.name
 }
 
-export function getMapsToFromPropertyHash (hash: FxOrmProperty.NormalizedPropertyHash) {
+export function getMapsToFromPropertyHash (hash: Record<string, FxOrmProperty.NormalizedProperty>) {
 	return Object.keys(hash).map(k => {
 		const item = hash[k]
 

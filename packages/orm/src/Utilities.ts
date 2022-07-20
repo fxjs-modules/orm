@@ -267,7 +267,7 @@ export function wrapFieldObject (
 		altName: string
 		mapsTo?: FxOrmModel.ModelPropertyDefinition['mapsTo']
 	}
-): FxOrmProperty.NormalizedPropertyHash {
+): Record<string, FxOrmProperty.NormalizedProperty> {
 	if (!params.field) {
 		var assoc_key = params.model.settings.get("properties.association_key");
 
@@ -283,7 +283,7 @@ export function wrapFieldObject (
 		for (let k in params.field) {
 			/* 1st self-own & non-array kv */
 			if (!/[0-9]+/.test(k) && params.field.hasOwnProperty(k)) {
-				return params.field as FxOrmProperty.NormalizedPropertyHash;
+				return params.field as Record<string, FxOrmProperty.NormalizedProperty>;
 			}
 		}
 	}
@@ -377,9 +377,9 @@ export function formatAssociatedField (
 // If the parent associations key is `serial`, the join tables
 // key should be changed to `integer`.
 export function convertPropToJoinKeyProp (
-	props: FxOrmProperty.NormalizedPropertyHash,
+	props: Record<string, FxOrmProperty.NormalizedProperty>,
 	opts: { required: boolean, makeKey: boolean }
-): FxOrmProperty.NormalizedPropertyHash {
+): Record<string, FxOrmProperty.NormalizedProperty> {
 	var prop: FxOrmProperty.NormalizedProperty;
 
 	for (let k in props) {
@@ -439,7 +439,7 @@ export function getRealPath (path_str: string, stack_index?: number) {
  */
 export function transformPropertyNames (
 	dataIn: FxOrmInstance.InstanceDataPayload,
-	properties: FxOrmProperty.NormalizedPropertyHash | FxOrmModel.ModelPropertyDefinition
+	properties: Record<string, FxOrmProperty.NormalizedProperty> | FxOrmModel.ModelPropertyDefinition
 ) {
 	var prop: FxOrmModel.ModelPropertyDefinition;
 	var dataOut: FxOrmInstance.InstanceDataPayload = {};
@@ -456,7 +456,7 @@ export function transformPropertyNames (
 };
 
 export function transformOrderPropertyNames (
-	order: FxOrmQuery.ChainFindOptions['order'], properties: FxOrmProperty.NormalizedPropertyHash
+	order: FxOrmQuery.ChainFindOptions['order'], properties: Record<string, FxOrmProperty.NormalizedProperty>
 ) {
 	if (!order) return order;
 
@@ -667,7 +667,7 @@ export function parallelQueryIfPossible<T = any, RESP = any> (
  */
 export function filterWhereConditionsInput (
 	conditions: FxSqlQuerySubQuery.SubQueryConditions,
-	host: { allProperties: FxOrmProperty.NormalizedPropertyHash }
+	host: { allProperties: Record<string, FxOrmProperty.NormalizedProperty> }
 ): FxSqlQuerySubQuery.SubQueryConditions {
 	filterDate(conditions, host);
 

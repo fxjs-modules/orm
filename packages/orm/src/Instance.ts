@@ -387,7 +387,7 @@ export const Instance = function (
 		return assocSaved;
 	};
 	var getNormalizedExtraDataAtPropertyTime = function () {
-		return opts.extra as FxOrmProperty.NormalizedPropertyHash
+		return opts.extra as Record<string, FxOrmProperty.NormalizedProperty>
 	};
 
 	const saveInstanceExtraSync = function (): FxOrmInstance.Instance {
@@ -787,7 +787,7 @@ export const Instance = function (
 		var asc = opts.one_associations[i];
 
 		if (!asc.reversed && !asc.__for_extension) {
-			for (let k in asc.field as FxOrmProperty.NormalizedPropertyHash) {
+			for (let k in asc.field as Record<string, FxOrmProperty.NormalizedProperty>) {
 				if (!opts.data.hasOwnProperty(k)) {
 					addInstanceProperty(k);
 				}

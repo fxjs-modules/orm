@@ -12,7 +12,7 @@ import type {
 export function extend (
 	Instance: FxOrmInstance.Instance,
 	Model: FxOrmModel.Model,
-	properties: FxOrmProperty.NormalizedPropertyHash
+	properties: Record<string, FxOrmProperty.NormalizedProperty>
 ) {
 	for (let k in properties) {
 		if (properties[k].lazyload === true) {

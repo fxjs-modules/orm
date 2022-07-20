@@ -21,7 +21,7 @@ export declare namespace FxOrmAssociation {
          */
         name?: string;
         model?: FxOrmModel.Model;
-        field?: string | FxOrmProperty.NormalizedPropertyHash;
+        field?: string | Record<string, FxOrmProperty.NormalizedProperty>;
         __for_extension?: boolean;
         required?: boolean;
         reversed?: boolean;
@@ -101,7 +101,7 @@ export declare namespace FxOrmAssociation {
     interface InstanceAssociationItem extends InstanceAssociationItemHooks {
         name: string;
         model: FxOrmModel.Model;
-        field: string | FxOrmProperty.NormalizedPropertyHash;
+        field: string | Record<string, FxOrmProperty.NormalizedProperty>;
         hooks: {
             beforeSet?: FxOrmCommon.Arraible<FxOrmHook.HookActionCallback>;
             afterSet?: FxOrmCommon.Arraible<FxOrmHook.HookResultCallback>;
@@ -136,7 +136,7 @@ export declare namespace FxOrmAssociation {
         modelFindByAccessor: string;
     }
     interface InstanceAssociationItem_HasOne extends InstanceAssociationItem {
-        field: FxOrmProperty.NormalizedPropertyHash;
+        field: Record<string, FxOrmProperty.NormalizedProperty>;
         reverse?: string;
         reverseHooks?: InstanceAssociationItem_HasOne['hooks'];
         accessor?: string;
@@ -146,10 +146,10 @@ export declare namespace FxOrmAssociation {
         __for_extension?: boolean;
     }
     interface InstanceAssociationItem_HasMany extends InstanceAssociationItem {
-        props: FxOrmProperty.NormalizedPropertyHash;
+        props: Record<string, FxOrmProperty.NormalizedProperty>;
         mergeTable: string;
-        mergeId: FxOrmProperty.NormalizedPropertyHash;
-        mergeAssocId: FxOrmProperty.NormalizedPropertyHash;
+        mergeId: Record<string, FxOrmProperty.NormalizedProperty>;
+        mergeAssocId: Record<string, FxOrmProperty.NormalizedProperty>;
         getAccessor: string;
         setAccessor: string;
         hasAccessor: string;

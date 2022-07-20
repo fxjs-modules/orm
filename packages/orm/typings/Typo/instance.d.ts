@@ -32,7 +32,7 @@ export declare namespace FxOrmInstance {
         originalKeyValues?: InstanceDataPayload;
         data?: InstanceDataPayload;
         changes?: InstanceChangeRecords;
-        extra?: string[] | FxOrmProperty.NormalizedPropertyHash;
+        extra?: string[] | Record<string, FxOrmProperty.NormalizedProperty>;
         extra_info?: {
             table: string;
             id: string[];
