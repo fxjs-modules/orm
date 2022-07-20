@@ -6,3 +6,4 @@ lib
 config.js*
 
 Dockerfile/dbdata_*
+tmp/*

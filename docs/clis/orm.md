@@ -36,3 +36,53 @@ npm i -g @fxjs/orm-cli
 
 检查并升级 orm cli 到最新版.
 
+
+### dumpModel
+
+ `orm dumpModel <modelDefine>.js`
+
+
+`<modelDefine>.js` 被预期导出一个方法, 该方法被预期使用 ORM 连接某个数据库, 从数据库中读取信息, 包括表结构, 字段类型, 字段名称等等. 这些信息会被保存到 `<modelDefine>.js` 同目录下的 `<modelDefine>-dump.json` 文件中.
+
+特别的, 对于数据库中每个表 table 的所有字段, 会根据 ORM 属性定义规范, 尝试建模, 得到一些属性定义, 记录为 `dataStoreProperties`,  同时用户定义的所有属性定位为 `userDefinedProperties`. 执行完 dumpModel 后, 会在 `<modelDefine>.js` 同目录下生成若干名为 `properties-for-t-<table>.patch` 的 patch, 表示每个表的 `dataStoreProperties` 和 `userDefinedProperties` 的差异.
+
+一个参考的 `<modelDefine>.js` 文件如下:
+
+```js
+const modelConfig = {
+    // "connection": "mysql://root@127.0.0.1/test",
+    "connection": "sqlite:./tmp/dump-model.db",
+}
+
+/**
+ * 
+ * @param {import('@fxjs/orm/typings/ORM').ORMInstance} db
+ * @param {import('@fxjs/orm')} ORM
+ */
+module.exports = (ORM) => {
+    const db = ORM.connect(modelConfig.connection)
+
+    db.define('user', {
+        name: {
+            type: 'text',
+        },
+        age: {
+            type: 'integer',
+            default: 18,
+            size: 4
+        }
+    });
+
+    // sync user definition to real database
+    // db.sync();
+
+    return {
+        orm: db,
+    };
+};
+```
+
+假设该文件路径为 `/path_to/model-define.js`, 则会生成
+
+- 一个 `/path_to/model-define-dump.json` 文件, 其中包含了该文件中定义的表结构信息.
+- 一个 `/path_to/properties-for-t-user.patch` 文件, 其中包含了该文件中定义的表结构信息的差异.

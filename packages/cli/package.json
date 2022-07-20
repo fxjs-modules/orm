@@ -28,9 +28,12 @@
 		"@fibjs/chalk": "^1.0.0",
 		"@fxjs/cli": "^0.0.6",
 		"@fxjs/db-driver": "^0.2.2",
+		"@fxjs/orm": "^1.13.6",
 		"@fxjs/sql-ddl-sync": "^0.8.5",
 		"@fxjs/sql-query": "^0.8.1",
+		"@types/diff": "^5.0.2",
 		"@types/semver": "^7.3.10",
+		"diff": "^5.1.0",
 		"semver": "^7.3.7"
 	},
 	"devDependencies": {
