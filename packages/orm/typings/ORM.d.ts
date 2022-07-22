@@ -1,11 +1,14 @@
 /// <reference types="@fibjs/enforce" />
+import events = require("events");
 import { FxDbDriverNS, IDbDriver } from "@fxjs/db-driver";
 import SqlQuery = require("@fxjs/sql-query");
 import type { FxOrmNS } from "./Typo/ORM";
 import type { FxOrmDb } from "./Typo/Db";
 import type { FxOrmError } from "./Typo/Error";
+import type { FxOrmCommon } from "./Typo/_common";
 import type { FxOrmDMLDriver } from "./Typo/DMLDriver";
 import type { FxOrmCoreCallbackNS } from "@fxjs/orm-core";
+import type { FxOrmModel } from "./Typo/model";
 import type { FxOrmSettings } from "./Typo/settings";
 export import Helpers = require("./Helpers");
 /**
@@ -32,7 +35,37 @@ export import Property = require("./Property");
 export declare function use(connection: FxOrmDb.Database, proto: string, opts: FxOrmNS.IUseOptions, cb: (err: Error, db?: FxOrmNS.ORM) => void): any;
 export declare function connectSync(opts?: string | FxDbDriverNS.DBConnectionConfig): FxOrmNS.ORMLike;
 export declare function connect<T extends IDbDriver.ISQLConn = any>(uri?: string | FxDbDriverNS.DBConnectionConfig, cb?: FxOrmCoreCallbackNS.ExecutionCallback<IDbDriver<T>>): FxOrmNS.ORMLike;
-export declare const ORM: FxOrmNS.ORMConstructor;
+export declare class ORM extends events.EventEmitter implements FxOrmNS.ORM {
+    validators: FxOrmNS.ORM['validators'];
+    enforce: FxOrmNS.ORM['enforce'];
+    settings: FxOrmNS.ORM['settings'];
+    driver_name: FxOrmNS.ORM['driver_name'];
+    driver: FxOrmNS.ORM['driver'];
+    tools: FxOrmNS.ORM['tools'];
+    models: FxOrmNS.ORM['models'];
+    plugins: FxOrmNS.ORM['plugins'];
+    customTypes: FxOrmNS.ORM['customTypes'];
+    constructor(driver_name: string, driver: FxOrmDMLDriver.DMLDriver, settings: FxOrmSettings.SettingInstance);
+    use(...[plugin_const, opts]: Parameters<FxOrmNS.ORM['use']>): this;
+    define(...[name, properties, opts]: Parameters<FxOrmNS.ORM['define']>): FxOrmModel.Model;
+    defineType(...[name, opts]: Parameters<FxOrmNS.ORM['defineType']>): this;
+    pingSync(): void;
+    ping(...[cb]: Parameters<FxOrmNS.ORM['ping']>): this;
+    closeSync(): void;
+    close(...[cb]: Parameters<FxOrmNS.ORM['close']>): this;
+    load(): any;
+    syncSync(): void;
+    sync(...[cb]: Parameters<FxOrmNS.ORM['sync']>): this;
+    dropSync(): void;
+    drop(...[cb]: Parameters<FxOrmNS.ORM['drop']>): this;
+    queryParamCastserial(...chains: any[]): {
+        get: (cb: FxOrmCommon.GenericCallback<any[]>) => any;
+    };
+    begin(): void;
+    commit(): void;
+    rollback(): void;
+    trans<T>(func: FxOrmCoreCallbackNS.ExecutionCallback<T>): boolean;
+}
 export declare type ORMInstance = FxOrmNS.ORM;
 export declare const ErrorCodes: FxOrmError.PredefineErrorCodes;
 export declare const addAdapter: (name: string, constructor: FxOrmDMLDriver.DMLDriverConstructor) => void;

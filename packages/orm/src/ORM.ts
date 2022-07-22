@@ -178,285 +178,261 @@ export function connect <T extends IDbDriver.ISQLConn = any> (
 	return orm;
 };
 
-export const ORM = function (
-	this: FxOrmNS.ORM,
-	driver_name: string,
-	driver: FxOrmDMLDriver.DMLDriver,
-	settings: FxOrmSettings.SettingInstance
-) {
-	this.validators  = validators;
-	this.enforce     = Enforces;
-	this.settings    = settings;
-	this.driver_name = driver_name;
-	this.driver      = driver;
-	this.driver.uid  = uuid.node().hex();
-	this.tools       = {...SqlQuery.comparators};
-	this.models      = {};
-	this.plugins     = [];
-	this.customTypes = {};
+export class ORM extends events.EventEmitter implements FxOrmNS.ORM {
+	validators: FxOrmNS.ORM['validators'];
+	enforce: FxOrmNS.ORM['enforce'];
+	settings: FxOrmNS.ORM['settings'];
+	driver_name: FxOrmNS.ORM['driver_name'];
+	driver: FxOrmNS.ORM['driver'];
+	tools: FxOrmNS.ORM['tools'];
+	models: FxOrmNS.ORM['models'];
+	plugins: FxOrmNS.ORM['plugins'];
+	customTypes: FxOrmNS.ORM['customTypes'];
 
-	events.EventEmitter.call(this);
+	constructor (
+		driver_name: string,
+		driver: FxOrmDMLDriver.DMLDriver,
+		settings: FxOrmSettings.SettingInstance
+	) {
+		super();
 
-	var onError = (err: Error) => {
-		if (this.settings.get("connection.reconnect")) {
-			if (typeof this.driver.reconnect === "undefined") {
-				return this.emit("error", new ORMError("Connection lost - driver does not support reconnection", 'CONNECTION_LOST'));
+		this.validators  = validators;
+		this.enforce     = Enforces;
+		this.settings    = settings;
+		this.driver_name = driver_name;
+		this.driver      = driver;
+		this.driver.uid  = uuid.node().hex();
+		this.tools       = {...SqlQuery.comparators};
+		this.models      = {};
+		this.plugins     = [];
+		this.customTypes = {};
+	
+		events.EventEmitter.call(this);
+	
+		var onError = (err: Error) => {
+			if (this.settings.get("connection.reconnect")) {
+				if (typeof this.driver.reconnect === "undefined") {
+					return this.emit("error", new ORMError("Connection lost - driver does not support reconnection", 'CONNECTION_LOST'));
+				}
+				this.driver.reconnect(() => {
+					this.driver.on("error", onError);
+				});
+	
+				if (this.listeners("error").length === 0) {
+					// since user want auto reconnect,
+					// don't emit without listeners or it will throw
+					return;
+				}
 			}
-			this.driver.reconnect(() => {
-				this.driver.on("error", onError);
-			});
+			this.emit("error", err);
+		};
+	
+		driver.on("error", onError);
+	
+		this.use(ormPluginSyncPatch);
+	}
 
-			if (this.listeners("error").length === 0) {
-				// since user want auto reconnect,
-				// don't emit without listeners or it will throw
-				return;
+	use (...[
+		plugin_const,
+		opts
+	]: Parameters<FxOrmNS.ORM['use']>) {
+		if (typeof plugin_const === "string") {
+			try {
+				plugin_const = require(Utilities.getRealPath(plugin_const));
+			} catch (e) {
+				throw e;
 			}
 		}
-		this.emit("error", err);
+	
+		var plugin: FxOrmNS.Plugin = plugin_const(this, opts || {});
+	
+		if (typeof plugin.define === "function") {
+			for (let k in this.models) {
+				plugin.define(this.models[k], this);
+			}
+		}
+	
+		this.plugins.push(plugin);
+	
+		return this;
+	};
+	define (...[
+		name, properties, opts
+	]: Parameters<FxOrmNS.ORM['define']>) {
+		properties = properties || {};
+		opts       = opts || <FxOrmModel.ModelOptions>{};
+	
+		for (let i = 0; i < this.plugins.length; i++) {
+			if (typeof this.plugins[i].beforeDefine === "function") {
+				this.plugins[i].beforeDefine(name, properties, opts);
+			}
+		}
+	
+		const m_settings = opts.useSelfSettings ? Settings.Container(this.settings.get('*')) : this.settings;
+	
+		this.models[name] = new Model({
+			name		   : name,
+			db             : this,
+			settings       : m_settings,
+			driver_name    : this.driver_name,
+			driver         : this.driver,
+			table          : opts.table || opts.collection || ((m_settings.get("model.namePrefix") || "") + name),
+			// not standard Record<string, FxOrmProperty.NormalizedProperty> here, but we should pass it firstly
+			properties     : properties as Record<string, FxOrmProperty.NormalizedProperty>,
+			__for_extension: opts.__for_extension || false,
+			indexes        : opts.indexes || [],
+			identityCache  : opts.hasOwnProperty("identityCache") ? opts.identityCache : m_settings.get("instance.identityCache"),
+			keys           : opts.id,
+			autoSave       : opts.hasOwnProperty("autoSave") ? opts.autoSave : m_settings.get("instance.autoSave"),
+			autoFetch      : opts.hasOwnProperty("autoFetch") ? opts.autoFetch : m_settings.get("instance.autoFetch"),
+			autoFetchLimit : opts.autoFetchLimit || m_settings.get("instance.autoFetchLimit"),
+			cascadeRemove  : opts.hasOwnProperty("cascadeRemove") ? opts.cascadeRemove : m_settings.get("instance.cascadeRemove"),
+			hooks          : opts.hooks || {},
+			methods        : opts.methods || {},
+			validations    : opts.validations || {},
+			ievents		   : opts.ievents || {},
+	
+			instanceCacheSize : opts.hasOwnProperty("instanceCacheSize") ? opts.instanceCacheSize : m_settings.get("instance.cacheSize"),
+		});
+	
+		for (let i = 0; i < this.plugins.length; i++) {
+			if (typeof this.plugins[i].define === "function") {
+				this.plugins[i].define(this.models[name], this);
+			}
+		}
+	
+		return this.models[name];
 	};
 
-	driver.on("error", onError);
+	defineType (...[name, opts]: Parameters<FxOrmNS.ORM['defineType']>) {
+		this.customTypes[name] = opts;
+		this.driver.customTypes[name] = opts;
+		return this;
+	};
 
-	this.use(ormPluginSyncPatch);
-} as any as FxOrmNS.ORMConstructor;
+	pingSync () {
+		this.driver.ping();
+	};
 
-util.inherits(ORM, events.EventEmitter);
+	ping (...[cb]: Parameters<FxOrmNS.ORM['ping']>) {
+		this.driver.ping(cb);
+	
+		return this;
+	};
 
-ORM.prototype.use = function (
-	this: FxOrmNS.ORM,
-	plugin_const,
-	opts
-) {
-	if (typeof plugin_const === "string") {
-		try {
-			plugin_const = require(Utilities.getRealPath(plugin_const));
-		} catch (e) {
-			throw e;
-		}
+	closeSync () {
+		this.driver.close()
 	}
-
-	var plugin: FxOrmNS.Plugin = plugin_const(this, opts || {});
-
-	if (typeof plugin.define === "function") {
-		for (let k in this.models) {
-			plugin.define(this.models[k], this);
+	close (...[cb]: Parameters<FxOrmNS.ORM['close']>) {
+		const syncResponse = Utilities.catchBlocking(this.closeSync, [], { thisArg: this});
+		Utilities.takeAwayResult(syncResponse, { callback: cb });
+		return this;
+	};
+	load () {
+		var files = util.flatten(Array.prototype.slice.apply(arguments));
+		var cb    = function (err?: Error) {};
+	
+		if (typeof files[files.length - 1] == "function") {
+			cb = files.pop();
 		}
-	}
+	
+		var loadNext = function () {
+			if (files.length === 0) {
+				return cb(null);
+			}
+	
+			var file = files.shift();
+	
+			try {
+				return require(Utilities.getRealPath(file, 4))(this, function (err: FxOrmError.ExtendedError) {
+					if (err) return cb(err);
+	
+					return loadNext();
+				});
+			} catch (ex) {
+				return cb(ex);
+			}
+		}.bind(this);
+	
+		return loadNext();
+	};
+	syncSync (): void {
+		var modelIds = Object.keys(this.models);
+	
+		if (modelIds.length === 0)
+			return ;
+			
+		modelIds.forEach(modelId => {
+			this.models[modelId].syncSync()
+		})
+	};
+	
+	sync (...[cb]: Parameters<FxOrmNS.ORM['sync']>) {
+		const syncResponse = Utilities.catchBlocking(this.syncSync, [], { thisArg: this })
+		Utilities.takeAwayResult(syncResponse, { no_throw: !!cb, callback: cb })
+	
+		return this;
+	};
+	dropSync (): void {
+		var modelIds = Object.keys(this.models);
+	
+		if (modelIds.length === 0)
+			return ;
+			
+		modelIds.forEach(modelId => {
+			this.models[modelId].dropSync()
+		})
+	};
 
-	this.plugins.push(plugin);
+	drop (...[cb]: Parameters<FxOrmNS.ORM['drop']>) {
+		const syncResponse = Utilities.catchBlocking(this.dropSync, [], { thisArg: this })
+		Utilities.takeAwayResult(syncResponse, { no_throw: !!cb, callback: cb })
+	
+		return this;
+	};
 
-	return this;
-};
-ORM.prototype.define = function (
-	this: FxOrmNS.ORM,
-	name, properties, opts
-) {
-	properties = properties || {};
-	opts       = opts || <FxOrmModel.ModelOptions>{};
-
-	for (let i = 0; i < this.plugins.length; i++) {
-		if (typeof this.plugins[i].beforeDefine === "function") {
-			this.plugins[i].beforeDefine(name, properties, opts);
-		}
-	}
-
-	const m_settings = opts.useSelfSettings ? Settings.Container(this.settings.get('*')) : this.settings;
-
-	this.models[name] = new Model({
-		name		   : name,
-		db             : this,
-		settings       : m_settings,
-		driver_name    : this.driver_name,
-		driver         : this.driver,
-		table          : opts.table || opts.collection || ((m_settings.get("model.namePrefix") || "") + name),
-		// not standard Record<string, FxOrmProperty.NormalizedProperty> here, but we should pass it firstly
-		properties     : properties as Record<string, FxOrmProperty.NormalizedProperty>,
-		__for_extension: opts.__for_extension || false,
-		indexes        : opts.indexes || [],
-		identityCache  : opts.hasOwnProperty("identityCache") ? opts.identityCache : m_settings.get("instance.identityCache"),
-		keys           : opts.id,
-		autoSave       : opts.hasOwnProperty("autoSave") ? opts.autoSave : m_settings.get("instance.autoSave"),
-		autoFetch      : opts.hasOwnProperty("autoFetch") ? opts.autoFetch : m_settings.get("instance.autoFetch"),
-		autoFetchLimit : opts.autoFetchLimit || m_settings.get("instance.autoFetchLimit"),
-		cascadeRemove  : opts.hasOwnProperty("cascadeRemove") ? opts.cascadeRemove : m_settings.get("instance.cascadeRemove"),
-		hooks          : opts.hooks || {},
-		methods        : opts.methods || {},
-		validations    : opts.validations || {},
-		ievents		   : opts.ievents || {},
-
-		instanceCacheSize : opts.hasOwnProperty("instanceCacheSize") ? opts.instanceCacheSize : m_settings.get("instance.cacheSize"),
-	});
-
-	for (let i = 0; i < this.plugins.length; i++) {
-		if (typeof this.plugins[i].define === "function") {
-			this.plugins[i].define(this.models[name], this);
-		}
-	}
-
-	return this.models[name];
-};
-ORM.prototype.defineType = function (
-	this: FxOrmNS.ORM,
-	name, opts
-) {
-	this.customTypes[name] = opts;
-	this.driver.customTypes[name] = opts;
-	return this;
-};
-
-ORM.prototype.pingSync = function (
-	this: FxOrmNS.ORM,
-) {
-	this.driver.ping();
-}
-ORM.prototype.ping = function (
-	this: FxOrmNS.ORM,
-	cb?
-) {
-	this.driver.ping(cb);
-
-	return this;
-};
-
-ORM.prototype.closeSync = function (
-	this: FxOrmNS.ORM,
-) {
-	this.driver.close()
-}
-ORM.prototype.close = function (
-	this: FxOrmNS.ORM,
-	cb?
-) {
-	const syncResponse = Utilities.catchBlocking(this.closeSync, [], { thisArg: this});
-	Utilities.takeAwayResult(syncResponse, { callback: cb });
-	return this;
-};
-
-ORM.prototype.load = function (
-	this: FxOrmNS.ORM
-) {
-	var files = util.flatten(Array.prototype.slice.apply(arguments));
-	var cb    = function (err?: Error) {};
-
-	if (typeof files[files.length - 1] == "function") {
-		cb = files.pop();
-	}
-
-	var loadNext = function () {
-		if (files.length === 0) {
-			return cb(null);
-		}
-
-		var file = files.shift();
-
-		try {
-			return require(Utilities.getRealPath(file, 4))(this, function (err: FxOrmError.ExtendedError) {
-				if (err) return cb(err);
-
-				return loadNext();
-			});
-		} catch (ex) {
-			return cb(ex);
-		}
-	}.bind(this);
-
-	return loadNext();
-};
-ORM.prototype.syncSync = function (
-	this: FxOrmNS.ORM,
-): void {
-	var modelIds = Object.keys(this.models);
-
-	if (modelIds.length === 0)
-		return ;
-		
-	modelIds.forEach(modelId => {
-		this.models[modelId].syncSync()
-	})
-};
-ORM.prototype.sync = function (
-	this: FxOrmNS.ORM,
-	cb?
-) {
-	const syncResponse = Utilities.catchBlocking(this.syncSync, [], { thisArg: this })
-	Utilities.takeAwayResult(syncResponse, { no_throw: !!cb, callback: cb })
-
-	return this;
-};
-
-ORM.prototype.dropSync = function (
-	this: FxOrmNS.ORM,
-): void {
-	var modelIds = Object.keys(this.models);
-
-	if (modelIds.length === 0)
-		return ;
-		
-	modelIds.forEach(modelId => {
-		this.models[modelId].dropSync()
-	})
-};
-ORM.prototype.drop = function (
-	this: FxOrmNS.ORM,
-	cb?
-) {
-	const syncResponse = Utilities.catchBlocking(this.dropSync, [], { thisArg: this })
-	Utilities.takeAwayResult(syncResponse, { no_throw: !!cb, callback: cb })
-
-	return this;
-};
-ORM.prototype.queryParamCastserial = function (
-	this: FxOrmNS.ORM,
-	...chains: any[]
-) {
-	return {
-		get: function (cb: FxOrmCommon.GenericCallback<any[]>) {
-			var params: any[] = [];
-			var getNext = function () {
-				if (params.length === chains.length) {
-					params.unshift(null);
-					return cb.apply(null, params);
-				}
-
-				chains[params.length].run(function (err: Error, instances: any[]) {
-					if (err) {
-						params.unshift(err);
+	queryParamCastserial (...chains: any[]) {
+		return {
+			get: function (cb: FxOrmCommon.GenericCallback<any[]>) {
+				var params: any[] = [];
+				var getNext = function () {
+					if (params.length === chains.length) {
+						params.unshift(null);
 						return cb.apply(null, params);
 					}
-
-					params.push(instances);
-					return getNext();
-				});
-			};
-
-			getNext();
-
-			return this;
-		}
+	
+					chains[params.length].run(function (err: Error, instances: any[]) {
+						if (err) {
+							params.unshift(err);
+							return cb.apply(null, params);
+						}
+	
+						params.push(instances);
+						return getNext();
+					});
+				};
+	
+				getNext();
+	
+				return this;
+			}
+		};
 	};
-};
-ORM.prototype.begin = function (
-	this: FxOrmNS.ORM,
-) {
-	return this.driver.db.connection.begin();	
-};
-ORM.prototype.commit = function (
-	this: FxOrmNS.ORM,
-) {
-	return this.driver.db.connection.commit();	
-};
-ORM.prototype.rollback = function (
-	this: FxOrmNS.ORM,
-) {
-	return this.driver.db.connection.rollback();	
-};
-ORM.prototype.trans = function (
-	this: FxOrmNS.ORM,
-	func,
-) {
-	const connection = this.driver.db.connection;
-	return connection.trans(func.bind(connection));	
-};
+
+	begin () {
+		return this.driver.db.connection.begin();	
+	};
+	commit () {
+		return this.driver.db.connection.commit();	
+	};
+	rollback () {
+		return this.driver.db.connection.rollback();	
+	};
+	trans<T> (func: FxOrmCoreCallbackNS.ExecutionCallback<T>) {
+		const connection = this.driver.db.connection;
+		return connection.trans(func.bind(connection));	
+	};
+}
 
 export type ORMInstance = FxOrmNS.ORM
 

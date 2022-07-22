@@ -241,14 +241,6 @@ export namespace FxOrmNS {
         sync(callback: FxOrmCommon.VoidCallback): this;
         drop(callback: FxOrmCommon.VoidCallback): this;
 
-        serial: {
-            (...chains: any[]): {
-                get: {
-                    (callback?: FxOrmCommon.GenericCallback<any[]>): ORM
-                }
-            }
-        }
-
         syncSync(): void;
 
         begin: FxDbDriverNS.SQLDriver['begin'];
