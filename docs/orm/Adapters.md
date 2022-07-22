@@ -1,12 +1,25 @@
-# Creating database adapters for orm2
+# Adapters
 
-To add a database adapter to `orm`, call its `addAdapter` method:
+ORM 内置了对部分数据库的支持. 而通过提供一个适配器, 可以让 ORM 在不同的数据库上运行.
  
 ```js
-require('orm2').addAdapter('cassandra', CassandraAdapter);
+require('@fxjs/orm').addAdapter('customdb', {
+  // ...
+});
 ```
 
-The first argument is the alias to register for connection URLs. For example, the above will allow you to do this:
+适配器的接口如下:
+
+```ts
+interface IAdatper {
+  /**
+   * @description protocol when connecting to database, e.g. 'customdb'
+   */
+  protocol: string;
+}
+```
+
+<!-- The first argument is the alias to register for connection URLs. For example, the above will allow you to do this:
  
 ```js
 var orm = require('orm2');
@@ -156,4 +169,4 @@ If your adapter supports dropping a table, implement this method. The following 
 
 ### on(event, cb) method (required)
 
-Your adapter should be an `EventEmitter`, and should emit the `error` event when applicable.
+Your adapter should be an `EventEmitter`, and should emit the `error` event when applicable. -->
