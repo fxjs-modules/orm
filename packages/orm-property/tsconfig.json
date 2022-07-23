@@ -12,12 +12,12 @@
             "es2016"
         ],
         "declaration": true,
-        "declarationDir": "typings",
+        "declarationDir": "lib",
         "types": [
             "@fibjs/types"
         ],
         "typeRoots": [
-            "typings/index.d.ts"
+            "lib/index.d.ts"
         ]
     }
 }

@@ -4,7 +4,7 @@
 	"private": false,
 	"description": "",
 	"main": "lib",
-	"types": "typings/index.d.ts",
+	"types": "lib/index.d.ts",
 	"repository": {
 		"type": "https",
 		"url": "https://github.com/fxjs-modules/orm/tree/master/packages/orm-property"
@@ -29,5 +29,8 @@
 	},
 	"publishConfig": {
 		"access": "public"
+	},
+	"dependencies": {
+		"@fxjs/sql-query": "^0.8.2"
 	}
 }

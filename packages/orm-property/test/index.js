@@ -1,12 +1,18 @@
 const test = require('test');
 test.setup();
 
-const Mod = require('../')
+;[
+    [0, { ENTRY: '../lib/index.js',        URI: 'sqlite:test.db' }],
+    // [0, { ENTRY: '../dist/index.js',       URI: 'sqlite:test.db' }],
+    // [0, { ENTRY: '../dist/index.min.js',   URI: 'sqlite:test.db' }],
+].forEach(([ep, envs]) => {
+    const result_p = require('child_process').run(
+        process.execPath,
+        [
+            require.resolve('./vbox')
+        ], {
+        env: envs
+    })
 
-describe("FxLib", () => {
-    it("basic", () => {
-        assert.ok(Mod.default === null)
-    });
-});
-
-test.run(console.DEBUG);
+    assert.equal(result_p, ep)
+})
