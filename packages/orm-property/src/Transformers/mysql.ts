@@ -1,10 +1,10 @@
 import { IPropTransformer, IProperty, PropertyType, __StringType, ICustomPropertyType } from "../Property"
-import { filterPropertyDefaultValue } from "../Utils"
+import { COLUMN_NUMER_TYPE_IDX, filterPropertyDefaultValue } from "../Utils"
 
 export type ColumnType_MySQL = PropertyType
 
 // item in list from `SHOW COLUMNS FROM ??`
-export interface ColumnInfo__MySQL {
+interface ColumnInfo__MySQL {
     Field: string
     Type: Class_Buffer | __StringType<
         'smallint'
@@ -42,11 +42,13 @@ export interface ColumnInfo__MySQL {
 
 const columnSizes = {
 	integer: {
-		2: 'SMALLINT', 4: 'INTEGER', 8: 'BIGINT'
+		[COLUMN_NUMER_TYPE_IDX.SHORT]: 'SMALLINT',
+        [COLUMN_NUMER_TYPE_IDX.INTEGER]: 'INTEGER',
+        [COLUMN_NUMER_TYPE_IDX.LONG]: 'BIGINT'
 	},
 	floating: {
-		4: 'FLOAT',
-		8: 'DOUBLE'
+		[COLUMN_NUMER_TYPE_IDX.FLOAT]: 'FLOAT',
+		[COLUMN_NUMER_TYPE_IDX.DOUBLE]: 'DOUBLE'
 	}
 };
 
@@ -188,10 +190,10 @@ export const toStorageType: IPropTransformer<ColumnInfo__MySQL>['toStorageType']
 			}
 			break;
 		case "integer":
-			result.typeValue = (columnSizes.integer as any)[property.size] || columnSizes.integer[4];
+			result.typeValue = (columnSizes.integer as any)[property.size] || columnSizes.integer[COLUMN_NUMER_TYPE_IDX.INTEGER];
 			break;
 		case "number":
-			result.typeValue = (columnSizes.floating as any)[property.size] || columnSizes.floating[4];
+			result.typeValue = (columnSizes.floating as any)[property.size] || columnSizes.floating[COLUMN_NUMER_TYPE_IDX.INTEGER];
 			break;
 		case "serial":
 			property.type = "number";

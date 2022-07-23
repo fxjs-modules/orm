@@ -1,12 +1,12 @@
 import { IPropTransformer, IProperty, __StringType } from "../Property";
-import { filterPropertyDefaultValue } from "../Utils";
+import { COLUMN_NUMER_TYPE_IDX, filterPropertyDefaultValue } from "../Utils";
 
 type AllNinable<T extends object> = {
     [P in keyof T]: null | T[P]
 }
 type PostgreSQLTypeValueBool = 'NO' | 'YES';
 // item in list from `SELECT * FROM information_schema.columns WHERE table_name = ?;`
-export type ColumnInfo__PostgreSQL = AllNinable<{
+type ColumnInfo__PostgreSQL = AllNinable<{
     table_catalog: string
     table_schema: string
     table_name: string
@@ -75,8 +75,15 @@ function psqlGetEnumTypeName (
 }
 
 const columnSizes = {
-    integer: { 2: 'SMALLINT', 4: 'INTEGER', 8: 'BIGINT' },
-    floating: { 4: 'REAL', 8: 'DOUBLE PRECISION' },
+    integer: {
+        [COLUMN_NUMER_TYPE_IDX.SHORT]: 'SMALLINT',
+        [COLUMN_NUMER_TYPE_IDX.INTEGER]: 'INTEGER',
+        [COLUMN_NUMER_TYPE_IDX.LONG]: 'BIGINT'
+    },
+    floating: {
+        [COLUMN_NUMER_TYPE_IDX.FLOAT]: 'REAL',
+        [COLUMN_NUMER_TYPE_IDX.DOUBLE]: 'DOUBLE PRECISION'
+    },
 };
 
 export const rawToProperty: IPropTransformer<ColumnInfo__PostgreSQL>['rawToProperty'] = function (
@@ -193,10 +200,10 @@ export const toStorageType: IPropTransformer<ColumnInfo__PostgreSQL>['toStorageT
             result.typeValue = "TEXT";
             break;
         case "integer":
-            result.typeValue = (columnSizes.integer as any)[property.size] || columnSizes.integer[4];
+            result.typeValue = (columnSizes.integer as any)[property.size] || columnSizes.integer[COLUMN_NUMER_TYPE_IDX.INTEGER];
             break;
         case "number":
-            result.typeValue = (columnSizes.floating as any)[property.size] || columnSizes.floating[4];
+            result.typeValue = (columnSizes.floating as any)[property.size] || columnSizes.floating[COLUMN_NUMER_TYPE_IDX.INTEGER];
             break;
         case "serial":
             property.serial = true;

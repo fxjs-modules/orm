@@ -13,3 +13,12 @@ export function filterPropertyDefaultValue (
 
     return _dftValue
 }
+
+export const enum COLUMN_NUMER_TYPE_IDX {
+    SHORT = 2,
+    INTEGER = 4,
+    LONG = 8,
+
+    FLOAT = 4,
+    DOUBLE = 8,
+}

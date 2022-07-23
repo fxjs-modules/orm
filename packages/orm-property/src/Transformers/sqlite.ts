@@ -2,7 +2,7 @@ import { IPropTransformer, IProperty, PropertyType, __StringType } from "../Prop
 import { filterPropertyDefaultValue } from "../Utils"
 
 // item in list from `PRAGMA table_info(??)`
-export interface ColumnInfo__SQLite {
+interface ColumnInfo__SQLite {
     cid: number
     dflt_value: string
     name: string
