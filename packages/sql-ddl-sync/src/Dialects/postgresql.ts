@@ -442,11 +442,10 @@ function checkColumnTypes(
 	collection: string,
 	columns: Record<string, FxOrmSqlDDLSync__Column.Property>
 ) {
-	coroutine.parallel(columns, (column: FxOrmSqlDDLSync__Column.Property) => {
-		const name = column.name;
-		if (columns[name].type == "enum") {
-			const col = columns[name];
-			const col_name = collection + "_enum_" + name;
+	coroutine.parallel(Object.keys(columns), (column_name: string) => {
+		const column: FxOrmSqlDDLSync__Column.Property = columns[column_name];
+		if (column?.type == "enum") {
+			const col_name = collection + "_enum_" + column_name;
 
 			const rows = dbdriver.execute<any[]>(
 				getSqlQueryDialect('psql').escape(
@@ -456,7 +455,7 @@ FROM pg_catalog.pg_type t JOIN pg_catalog.pg_enum e ON t.oid = e.enumtypid WHERE
 			);
 
 			if (rows.length) {
-				col.values = rows[0].enum_values.split("|");
+				column.values = rows[0].enum_values.split("|");
 			}
 		}
 	})
