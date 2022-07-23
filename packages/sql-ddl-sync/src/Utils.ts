@@ -22,7 +22,7 @@ export function logJson (group: string, detail: any) {
     return json
 }
 
-const sqlQueryDialects = require('@fxjs/sql-query/lib/Dialects') as typeof import('@fxjs/sql-query/typings/Dialects');
+import sqlQueryDialects = require('@fxjs/sql-query/lib/Dialects');
 type ISqlQueryDialects = typeof sqlQueryDialects;
 
 export function addSqlQueryDialect (type: string, Dialect: any) {

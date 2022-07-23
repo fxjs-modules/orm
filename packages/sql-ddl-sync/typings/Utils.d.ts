@@ -5,10 +5,10 @@ import { FxDbDriverNS } from "@fxjs/db-driver/typings/Typo";
 import { FxOrmSqlDDLSync__Collection } from "./Typo/Collection";
 import { IDbDriver } from "@fxjs/db-driver";
 export declare function logJson(group: string, detail: any): string;
-declare const sqlQueryDialects: typeof import("@fxjs/sql-query/typings/Dialects");
+import sqlQueryDialects = require('@fxjs/sql-query/lib/Dialects');
 declare type ISqlQueryDialects = typeof sqlQueryDialects;
 export declare function addSqlQueryDialect(type: string, Dialect: any): void;
-export declare function getAllSqlQueryDialects(type: string): typeof import("@fxjs/sql-query/typings/Dialects");
+export declare function getAllSqlQueryDialects(type: string): typeof sqlQueryDialects;
 export declare function getSqlQueryDialect(type: FxDbDriverNS.DriverType | 'postgresql'): ISqlQueryDialects[keyof ISqlQueryDialects];
 export declare function arraify<T = any>(item: T | T[]): T[];
 export declare function getCollectionMapsTo_PropertyNameDict(collection: FxOrmSqlDDLSync__Collection.Collection): {
