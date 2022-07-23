@@ -63,7 +63,10 @@ export default defineConfig({
 
 function getOrmSidebar() {
     return [
-        { text: '开始连接', link: '/orm/getting-started' },
+        { text: '开始连接', link: '/orm/getting-started', children: [
+            { text: 'Property', link: '/orm/property' },
+            { text: '虚拟视图', link: '/orm/virtual-view' },
+        ] },
         { text: 'Packages', link: '/orm-packages/', children: [
             { text: 'orm-core', link: '/orm-packages/orm-core' },
             { text: 'db-driver', link: '/orm-packages/db-driver' },
