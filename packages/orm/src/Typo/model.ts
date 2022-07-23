@@ -1,9 +1,6 @@
 /// <reference types="@fxjs/sql-query" />
 
-import type {
-    FxOrmSqlDDLSync,
-    FxOrmSqlDDLSync__Column,
-} from "@fxjs/sql-ddl-sync"
+import type { FxOrmSqlDDLSync } from "@fxjs/sql-ddl-sync"
 import { FxOrmAssociation } from "./assoc"
 import { FxOrmInstance } from "./instance"
 import { FxOrmProperty } from "./property"
@@ -24,7 +21,7 @@ import type {
 export namespace FxOrmModel {
     export type ModelInstanceConstructorOptions = (string | number | FxOrmInstance.InstanceDataPayload)[]
 
-    export interface ModelInstanceConstructor {
+    interface ModelInstanceConstructor {
         (): FxOrmInstance.Instance;
         new(): FxOrmInstance.Instance;
         (...data: ModelInstanceConstructorOptions): FxOrmInstance.Instance;
@@ -71,10 +68,10 @@ export namespace FxOrmModel {
         }
         hasMany: {
             (assoc_name: string, ext_model: Model, assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_HasMany): FxOrmModel.Model
-            (assoc_name: string, ext_model: Model, assoc_props: ModelPropertyDefinitionHash, assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_HasMany): FxOrmModel.Model
+            (assoc_name: string, ext_model: Model, assoc_props: Record<string, ModelPropertyDefinition>, assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_HasMany): FxOrmModel.Model
         }
         extendsTo: {
-            (name: string, properties: ModelPropertyDefinitionHash, assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_ExtendsTo): Model
+            (name: string, properties: Record<string, ModelPropertyDefinition>, assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_ExtendsTo): Model
         };
 
         associations: {
@@ -191,10 +188,6 @@ export namespace FxOrmModel {
     ]
 
     export type ModelConstructor = new (opts: ModelConstructorOptions) => Model
-    // interface ModelConstructor {
-    //     (opts: ModelConstructorOptions): void
-    //     prototype: Model
-    // }
 
     export interface ModelFindByDescriptorItem {
         // association name
@@ -334,10 +327,6 @@ export namespace FxOrmModel {
         })
         | EnumTypeValues
         | PropTypeStrPropertyDefinition
-
-    export type ModelPropertyDefinitionHash = {
-        [key: string]: ComplexModelPropertyDefinition
-    }
 
     export interface DetailedPropertyDefinitionHash {
         [key: string]: ModelPropertyDefinition

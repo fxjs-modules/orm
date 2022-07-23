@@ -48,7 +48,13 @@ export namespace FxOrmNS {
     export type OrigDetailedModelProperty = FxOrmModel.OrigDetailedModelProperty
     export type OrigDetailedModelPropertyHash = FxOrmModel.OrigDetailedModelPropertyHash
     export type OrigModelPropertyDefinition = FxOrmModel.ComplexModelPropertyDefinition
-    export type ModelPropertyDefinitionHash = FxOrmModel.ModelPropertyDefinitionHash
+
+    /**
+     * @deprecated
+     */
+    export type ModelPropertyDefinitionHash = {
+        [key: string]: ComplexModelPropertyDefinition
+    }
     export type ModelOptions = FxOrmModel.ModelOptions
     export type OrigHooks = FxOrmModel.Hooks
     
@@ -162,7 +168,7 @@ export namespace FxOrmNS {
     export type PluginConstructCallback<T1 = ORM, T2 = PluginOptions> = (orm: T1, opts: T2) => Plugin
     export interface Plugin {
         beforeDefine?: {
-            (name?: string, properties?: FxOrmModel.ModelPropertyDefinitionHash, opts?: FxOrmModel.ModelOptions): void
+            (name?: string, properties?: Record<string, ModelPropertyDefinition>, opts?: FxOrmModel.ModelOptions): void
         }
         define?: {
             (model?: FxOrmModel.Model, orm?: ORM): void
@@ -183,7 +189,7 @@ export namespace FxOrmNS {
                 opts?: {
                     association_name?: string,
                     ext_model?: Model,
-                    assoc_props?: ModelPropertyDefinitionHash,
+                    assoc_props?: Record<string, ModelPropertyDefinition>,
                     assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_HasMany
                 }
             ): void
@@ -231,7 +237,7 @@ export namespace FxOrmNS {
             (plugin: /* PluginConstructor |  */PluginConstructCallback, options?: PluginOptions): ORM;
         }
 
-        define(name: string, properties: FxOrmModel.ModelPropertyDefinitionHash, opts?: FxOrmModel.ModelOptions): FxOrmModel.Model;
+        define(name: string, properties: Record<string, ModelPropertyDefinition>, opts?: FxOrmModel.ModelOptions): FxOrmModel.Model;
         defineType(name: string, type: FxOrmProperty.CustomPropertyType): this;
         
         load(file: string, callback: FxOrmCommon.VoidCallback): any;

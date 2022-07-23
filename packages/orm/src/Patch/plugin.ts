@@ -7,7 +7,11 @@ export default function (
         enable: boolean
     }
 ): FxOrmNS.Plugin {
-	function beforeDefine (name: string, properties: FxOrmNS.ModelPropertyDefinitionHash, opts: FxOrmNS.ModelOptions) {
+	function beforeDefine (
+        name: string,
+        properties: Record<string, FxOrmModel.ModelPropertyDefinition>,
+        opts: FxOrmNS.ModelOptions
+    ) {
         opts.hooks = opts.hooks || {};
     }
 

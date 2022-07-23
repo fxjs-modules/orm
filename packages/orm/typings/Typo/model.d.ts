@@ -14,15 +14,15 @@ import { FxOrmHook } from "./hook";
 import { FxOrmNS } from "./ORM";
 import type { FxSqlQuerySubQuery, FxSqlQuerySql } from '@fxjs/sql-query';
 export declare namespace FxOrmModel {
-    type ModelInstanceConstructorOptions = (string | number | FxOrmInstance.InstanceDataPayload)[];
+    export type ModelInstanceConstructorOptions = (string | number | FxOrmInstance.InstanceDataPayload)[];
     interface ModelInstanceConstructor {
         (): FxOrmInstance.Instance;
         new (): FxOrmInstance.Instance;
         (...data: ModelInstanceConstructorOptions): FxOrmInstance.Instance;
         new (...data: ModelInstanceConstructorOptions): FxOrmInstance.Instance;
     }
-    type OrderListOrLimitOffer = number | string | string[];
-    interface Model extends ModelInstanceConstructor, ModelHooks, FxOrmSynchronous.SynchronizedModel {
+    export type OrderListOrLimitOffer = number | string | string[];
+    export interface Model extends ModelInstanceConstructor, ModelHooks, FxOrmSynchronous.SynchronizedModel {
         name: string;
         properties: Record<string, FxOrmProperty.NormalizedProperty>;
         settings: FxOrmSettings.SettingInstance;
@@ -46,10 +46,10 @@ export declare namespace FxOrmModel {
         };
         hasMany: {
             (assoc_name: string, ext_model: Model, assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_HasMany): FxOrmModel.Model;
-            (assoc_name: string, ext_model: Model, assoc_props: ModelPropertyDefinitionHash, assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_HasMany): FxOrmModel.Model;
+            (assoc_name: string, ext_model: Model, assoc_props: Record<string, ModelPropertyDefinition>, assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_HasMany): FxOrmModel.Model;
         };
         extendsTo: {
-            (name: string, properties: ModelPropertyDefinitionHash, assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_ExtendsTo): Model;
+            (name: string, properties: Record<string, ModelPropertyDefinition>, assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_ExtendsTo): Model;
         };
         associations: {
             [k: string]: {
@@ -124,27 +124,27 @@ export declare namespace FxOrmModel {
         };
         [property: string]: any;
     }
-    type FindByListStyleFunctionArgs<T = any> = [
+    export type FindByListStyleFunctionArgs<T = any> = [
         FxOrmModel.ModelFindByDescriptorItem[],
         FxOrmModel.ModelQueryConditions__Find,
         FxOrmModel.ModelOptions__Find,
         FxOrmCommon.ExecutionCallback<T>
     ];
-    type FindByItemStyleFunctionArgs<T = any> = [
+    export type FindByItemStyleFunctionArgs<T = any> = [
         FxOrmModel.ModelFindByDescriptorItem['association_name'],
         FxOrmModel.ModelFindByDescriptorItem['conditions'],
         FxOrmModel.ModelFindByDescriptorItem['options'],
         FxOrmCommon.ExecutionCallback<T>
     ];
-    type ModelConstructor = new (opts: ModelConstructorOptions) => Model;
-    interface ModelFindByDescriptorItem {
+    export type ModelConstructor = new (opts: ModelConstructorOptions) => Model;
+    export interface ModelFindByDescriptorItem {
         association_name: string;
         conditions?: ModelQueryConditions__Find;
         options?: FxOrmAssociation.ModelAssociationMethod__FindByOptions;
         join_where?: FxOrmModel.ModelQueryConditions__Find;
         extra_select?: string[];
     }
-    interface ModelConstructorOptions {
+    export interface ModelConstructorOptions {
         name: string;
         db: FxOrmNS.ORM;
         settings: FxOrmSettings.SettingInstance;
@@ -168,7 +168,7 @@ export declare namespace FxOrmModel {
         validations: FxOrmValidators.IValidatorHash;
         ievents: FxOrmInstance.InstanceConstructorOptions['events'];
     }
-    interface ModelDefineOptions {
+    export interface ModelDefineOptions {
         /**
          * pririoty: table > collection
          */
@@ -194,8 +194,8 @@ export declare namespace FxOrmModel {
         useSelfSettings?: boolean;
         [extensibleProperty: string]: any;
     }
-    type ModelOptions = ModelDefineOptions;
-    interface Hooks {
+    export type ModelOptions = ModelDefineOptions;
+    export interface Hooks {
         beforeValidation?: FxOrmCommon.Arraible<FxOrmHook.HookActionCallback>;
         beforeCreate?: FxOrmCommon.Arraible<FxOrmHook.HookActionCallback>;
         afterCreate?: FxOrmCommon.Arraible<FxOrmHook.HookResultCallback>;
@@ -206,10 +206,10 @@ export declare namespace FxOrmModel {
         beforeRemove?: FxOrmCommon.Arraible<FxOrmHook.HookActionCallback>;
         afterRemove?: FxOrmCommon.Arraible<FxOrmHook.HookResultCallback>;
     }
-    type keyofHooks = keyof Hooks;
-    interface ModelHookPatchOptions extends FxOrmHook.HookPatchOptions {
+    export type keyofHooks = keyof Hooks;
+    export interface ModelHookPatchOptions extends FxOrmHook.HookPatchOptions {
     }
-    interface ModelHooks {
+    export interface ModelHooks {
         beforeValidation?: {
             (func: FxOrmHook.HookActionCallback, opts?: ModelHookPatchOptions): any;
         };
@@ -238,28 +238,25 @@ export declare namespace FxOrmModel {
             (func: FxOrmHook.HookResultCallback, opts?: ModelHookPatchOptions): any;
         };
     }
-    interface ModelPropertyDefinition extends FxOrmProperty.DataStoreProperty {
+    export interface ModelPropertyDefinition extends FxOrmProperty.DataStoreProperty {
         key?: boolean;
         klass?: FxOrmProperty.KlassType;
         alwaysValidate?: boolean;
         enumerable?: boolean;
         lazyload?: boolean;
     }
-    type OrigDetailedModelProperty = FxOrmProperty.NormalizedProperty;
-    type OrigDetailedModelPropertyHash = Record<string, FxOrmProperty.NormalizedProperty>;
-    type PrimitiveConstructor = String | Boolean | Number | Date | Object | Class_Buffer;
-    type EnumTypeValues = any[];
-    type PropTypeStrPropertyDefinition = string;
-    type ComplexModelPropertyDefinition = ModelPropertyDefinition | (PrimitiveConstructor & {
+    export type OrigDetailedModelProperty = FxOrmProperty.NormalizedProperty;
+    export type OrigDetailedModelPropertyHash = Record<string, FxOrmProperty.NormalizedProperty>;
+    export type PrimitiveConstructor = String | Boolean | Number | Date | Object | Class_Buffer;
+    export type EnumTypeValues = any[];
+    export type PropTypeStrPropertyDefinition = string;
+    export type ComplexModelPropertyDefinition = ModelPropertyDefinition | (PrimitiveConstructor & {
         name: string;
     }) | EnumTypeValues | PropTypeStrPropertyDefinition;
-    type ModelPropertyDefinitionHash = {
-        [key: string]: ComplexModelPropertyDefinition;
-    };
-    interface DetailedPropertyDefinitionHash {
+    export interface DetailedPropertyDefinitionHash {
         [key: string]: ModelPropertyDefinition;
     }
-    interface ModelOptions__Find {
+    export interface ModelOptions__Find {
         chainfind_linktable?: string;
         only?: string[];
         limit?: number;
@@ -275,24 +272,25 @@ export declare namespace FxOrmModel {
         extra?: FxOrmAssociation.InstanceAssociationItem_HasMany['props'];
         [k: string]: any;
     }
-    interface ModelOptions__Findby extends ModelOptions__Find {
+    export interface ModelOptions__Findby extends ModelOptions__Find {
     }
-    interface ModelOptions__Get extends ModelOptions__Find {
+    export interface ModelOptions__Get extends ModelOptions__Find {
     }
-    interface ModelQueryConditions__Find extends FxSqlQuerySubQuery.SubQueryConditions {
+    export interface ModelQueryConditions__Find extends FxSqlQuerySubQuery.SubQueryConditions {
         [property: string]: any;
     }
-    type ModelQueryConditionsItem = FxSqlQuerySql.SqlFragmentStr | ModelQueryConditions__Find;
-    type ModelMethodOptions_Find = FxOrmCommon.IdType | ModelQueryConditions__Find;
-    type ModelMethodCallback__Boolean = FxOrmCommon.GenericCallback<Boolean>;
-    type ModelMethodCallback__Find = FxOrmCommon.GenericCallback<FxOrmInstance.Instance[]>;
-    type ModelMethodCallback__Get = FxOrmCommon.GenericCallback<FxOrmInstance.Instance>;
-    type ModelMethodCallback__CreateItem = FxOrmCommon.GenericCallback<FxOrmInstance.Instance>;
-    type ModelMethodCallback__UpdateItem = FxOrmCommon.GenericCallback<FxOrmInstance.Instance>;
-    type ModelMethodCallback__BatchCreate = FxOrmCommon.GenericCallback<FxOrmInstance.Instance[]>;
-    type ModelMethodCallback__BatchUpdate = FxOrmCommon.GenericCallback<FxOrmInstance.Instance[]>;
-    type ModelMethodCallback__Count = FxOrmCommon.GenericCallback<number>;
-    interface ModelOptions__Create {
+    export type ModelQueryConditionsItem = FxSqlQuerySql.SqlFragmentStr | ModelQueryConditions__Find;
+    export type ModelMethodOptions_Find = FxOrmCommon.IdType | ModelQueryConditions__Find;
+    export type ModelMethodCallback__Boolean = FxOrmCommon.GenericCallback<Boolean>;
+    export type ModelMethodCallback__Find = FxOrmCommon.GenericCallback<FxOrmInstance.Instance[]>;
+    export type ModelMethodCallback__Get = FxOrmCommon.GenericCallback<FxOrmInstance.Instance>;
+    export type ModelMethodCallback__CreateItem = FxOrmCommon.GenericCallback<FxOrmInstance.Instance>;
+    export type ModelMethodCallback__UpdateItem = FxOrmCommon.GenericCallback<FxOrmInstance.Instance>;
+    export type ModelMethodCallback__BatchCreate = FxOrmCommon.GenericCallback<FxOrmInstance.Instance[]>;
+    export type ModelMethodCallback__BatchUpdate = FxOrmCommon.GenericCallback<FxOrmInstance.Instance[]>;
+    export type ModelMethodCallback__Count = FxOrmCommon.GenericCallback<number>;
+    export interface ModelOptions__Create {
         parallel?: boolean;
     }
+    export {};
 }

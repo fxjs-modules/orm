@@ -59,7 +59,7 @@ export const Model = function (
 	 * @description compared to m_opts.properties, allProperties means all properties including:
 	 * 	1. association key properties, such as `{assoc_name}_{id}` property in default `hasOne` case,
 	 * 	which was not included by m_opts.properties;
-	 *  2. dynamic added properties by `model.addProperty(...)`, in fact, all association-about properties
+	 *  2. dynamically added properties by `model.addProperty(...)`, in fact, all association-about properties
 	 *  were added by `addProperty` method
 	 */
 	const allProperties: Record<string, FxOrmProperty.NormalizedProperty> = {};
