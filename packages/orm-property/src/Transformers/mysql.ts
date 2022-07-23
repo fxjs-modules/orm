@@ -3,6 +3,7 @@ import { filterPropertyDefaultValue } from "../Utils"
 
 export type ColumnType_MySQL = PropertyType
 
+// item in list from `SHOW COLUMNS FROM ??`
 export interface ColumnInfo__MySQL {
     Field: string
     Type: Class_Buffer | __StringType<
@@ -153,6 +154,7 @@ export const rawToProperty: IPropTransformer<ColumnInfo__MySQL>['rawToProperty']
         property.type = "serial";
     }
 
+    property.mapsTo = colInfo.Field;
 
     return {
         raw: colInfo,

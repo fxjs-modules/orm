@@ -1,5 +1,5 @@
 require("should");
-const common  = require("../common");
+const common = require("../common");
 const Transformer = require("../../lib").transformer('mysql');
 
 const ctx = {
@@ -23,7 +23,7 @@ describe("transformer('mysql').toStorageType", function () {
 	});
 
 	it("should detect rational numbers", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "number"}).typeValue.should.equal("FLOAT");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number" }).typeValue.should.equal("FLOAT");
 		Transformer.toStorageType({ mapsTo: 'abc', type: "number", size: 4 }).typeValue.should.equal("FLOAT");
 		Transformer.toStorageType({ mapsTo: 'abc', type: "number", size: 8 }).typeValue.should.equal("DOUBLE");
 	});
@@ -84,39 +84,54 @@ describe("transformer('mysql').toStorageType", function () {
 });
 
 describe("transformer('mysql').rawToProperty", function () {
-	it("varchar(255)", function () {
-		Transformer.rawToProperty({
-			"Field": "text",
-			"Type": "varchar(255)",
-			"Null": "YES",
-			"Key": "",
-			"Default": "",
-			"Extra": "",
-			"Size": ""
-		}).property.should.deepEqual({ defaultValue: '', type: 'text', size: 255 });
-	});
-
-	it("int", function () {
-		Transformer.rawToProperty({
-			"Field": "id",
-			"Type": "int",
-			"Null": "NO",
-			"Key": "PRI",
-			"Default": "",
-			"Extra": "auto_increment",
-			"Size": ""
-		}).property.should.deepEqual({
-			serial: true,
-			unsigned: true,
-			primary: true,
-			required: true,
-			defaultValue: '',
-			type: 'serial',
-			size: 4
+	;[
+		{
+			title: 'varchar(255)',
+			groups: [
+				[
+					{ "Field": "street", "Type": "varchar(255)", "Null": "YES", "Key": "", "Default": "", "Extra": "", "Size": "" },
+					{ mapsTo: 'street', defaultValue: '', type: 'text', size: 255, }
+				]
+			] 
+		},
+		{
+			title: 'int',
+			groups: [
+				[
+					{ "Field": "id", "Type": "int", "Null": "NO", "Key": "PRI", "Default": "", "Extra": "auto_increment", "Size": "" },
+					{ serial: true, unsigned: true, primary: true, required: true, mapsTo: 'id', defaultValue: '', type: 'serial', size: 4 }
+				],
+				[
+					{ "Field": "age", "Type": "int", "Null": "YES", "Key": "", "Default": "18", "Extra": "", "Size": "" },
+					{ defaultValue: '18', type: 'integer', size: 4, mapsTo: 'age' }
+				]
+			],
+		},
+		{
+			title: 'tinyint',
+			groups: [
+				[
+					{ "Field": "bounced", "Type": "tinyint(1)", "Null": "YES", "Key": "", "Default": "", "Extra": "", "Size": "" },
+					{ defaultValue: '', type: 'boolean', mapsTo: 'bounced' }
+				]
+			]
+		},
+		{
+			title: 'enum',
+			groups: [
+				[
+					{ "Field": "sex", "Type": "enum('male','female')", "Null": "YES", "Key": "", "Default": "", "Extra": "", "Size": "" },
+					{ defaultValue: '', type: 'enum', values: [ 'male', 'female' ], mapsTo: 'sex' }
+				]
+			]
+		}
+	].forEach(({ title, groups }) => {
+		it(title, function () {
+			groups.forEach(([ raw, property ]) => {
+				Transformer.rawToProperty(raw, ctx).property.should.deepEqual(property);
+			});
 		});
 	});
-
-
 });
 
 if (require.main === module) {

@@ -1,31 +1,71 @@
 import { IPropTransformer, IProperty, __StringType } from "../Property";
 import { filterPropertyDefaultValue } from "../Utils";
 
-export type ColumnInfo__PostgreSQL = {
-    is_nullable: 'NO' | 'YES'
-
-    column_default: null | string
-
-    data_type: __StringType<
-        | 'SMALLINT'
-        | 'INTEGER'
-        | 'BIGINT'
-        | 'REAL'
-        | 'DOUBLE PRECISION'
-        | 'BOOLEAN'
-        | 'TIMESTAMP WITH TIME ZONE'
-        | 'TIMESTAMP WITHOUT TIME ZONE'
-        | 'DATE'
-        | 'BYTEA'
-        | 'TEXT'
-        | 'CHARACTER VARYING'
-        | 'USER-DEFINED'
-    >
-
-    character_maximum_length: null | number
-
-    udt_name: string
+type AllNinable<T extends object> = {
+    [P in keyof T]: null | T[P]
 }
+type PostgreSQLTypeValueBool = 'NO' | 'YES';
+// item in list from `SELECT * FROM information_schema.columns WHERE table_name = ?;`
+export type ColumnInfo__PostgreSQL = AllNinable<{
+    table_catalog: string
+    table_schema: string
+    table_name: string
+    column_name: string
+    ordinal_position: string
+    column_default: string
+    is_nullable: PostgreSQLTypeValueBool
+    data_type: __StringType<
+        | 'smallint'
+        | 'integer'
+        | 'bigint'
+        | 'real'
+        | 'double precision'
+        | 'boolean'
+        | 'timestamp with time zone'
+        | 'timestamp without time zone'
+        | 'date'
+        | 'bytea'
+        | 'text'
+        | 'character varying'
+        | 'user-defined'
+    >
+    character_maximum_length: number
+    character_octet_length: number
+    numeric_precision: string
+    numeric_precision_radix: string
+    numeric_scale: string
+    datetime_precision: string
+    interval_type: string
+    interval_precision: string
+    character_set_catalog: string
+    character_set_schema: string
+    character_set_name: string
+    collation_catalog: string
+    collation_schema: string
+    collation_name: string
+    domain_catalog: string
+    domain_schema: string
+    domain_name: string
+    udt_catalog: string
+    udt_schema: string
+    udt_name: string
+    scope_catalog: string
+    scope_schema: string
+    scope_name: string
+    maximum_cardinality: string
+    dtd_identifier: string
+    is_self_referencing: PostgreSQLTypeValueBool
+    is_identity: PostgreSQLTypeValueBool
+    identity_generation: string
+    identity_start: string
+    identity_increment: string
+    identity_maximum: string
+    identity_minimum: string
+    identity_cycle: string
+    is_generated: PostgreSQLTypeValueBool
+    generation_expression: string
+    is_updatable: PostgreSQLTypeValueBool
+}>
 
 function psqlGetEnumTypeName (
     collection_name: string,
@@ -112,12 +152,14 @@ export const rawToProperty: IPropTransformer<ColumnInfo__PostgreSQL>['rawToPrope
         case "USER-DEFINED":
             if (dCol.udt_name.match(/_enum_/)) {
                 property.type = "enum";
-                property.values = [];
+                property.values = ctx?.userOptions?.enumValues || [];
                 break;
             }
         default:
             throw new Error("Unknown column type '" + dCol.data_type + "'");
     }
+
+    property.mapsTo = dCol.column_name;
 
     return {
         raw: dCol,

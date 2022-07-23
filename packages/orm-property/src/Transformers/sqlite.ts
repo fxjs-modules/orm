@@ -1,6 +1,7 @@
 import { IPropTransformer, IProperty, PropertyType, __StringType } from "../Property"
 import { filterPropertyDefaultValue } from "../Utils"
 
+// item in list from `PRAGMA table_info(??)`
 export interface ColumnInfo__SQLite {
     cid: number
     dflt_value: string
@@ -103,6 +104,8 @@ export const rawToProperty: ITransformers['rawToProperty'] = function (
 
             throw new Error(`Unknown prop type '${dCol.type}'`);
     }
+
+    prop.mapsTo = dCol.name;
 
     return {
         raw: dCol,

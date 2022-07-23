@@ -61,3 +61,36 @@ describe("transformer('sqlite').toStorageType", function () {
 		column.should.match(/AUTOINCREMENT/);
 	});
 });
+
+describe("transformer('sqlite').rawToProperty", function () {
+	;[
+		{
+			title: 'text',
+			groups: [
+				[
+					{ "cid": 0, "name": "name", "type": "TEXT", "notnull": 0, "dflt_value": null, "pk": 0 },
+					{ mapsTo: 'name', type: 'text' }
+				]
+			] 
+		},
+		{
+			title: 'int',
+			groups: [
+				[
+					{ "cid": 1, "name": "id", "type": "INTEGER", "notnull": 1, "dflt_value": null, "pk": 1 },
+					{ key: true, required: true, type: 'serial', mapsTo: 'id' }
+				],
+			],
+		},
+	].forEach(({ title, groups }) => {
+		it(title, function () {
+			groups.forEach(([ raw, property ]) => {
+				Transformer.rawToProperty(raw, ctx).property.should.deepEqual(property);
+			});
+		});
+	});
+});
+
+if (require.main === module) {
+	test.run(console.DEBUG)
+}
