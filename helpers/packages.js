@@ -20,6 +20,10 @@ module.exports = [
         _dirname: 'sql-query',
     },
     {
+        name: 'orm-property',
+        _dirname: 'orm-property',
+    },
+    {
         name: 'orm',
         _dirname: 'orm',
     },
@@ -27,10 +31,12 @@ module.exports = [
         name: 'orm-plugin-pool',
         _dirname: 'orm-plugin-pool',
         no_publish: true,
+        pkg_dir: 'plugins',
     },
     {
         name: 'orm-plugin-uacl',
         _dirname: 'orm-plugin-uacl',
         no_publish: true,
+        pkg_dir: 'plugins',
     },
 ]

@@ -29,9 +29,9 @@
 	"private": true,
 	"repository": {
 		"type": "https",
-		"url": "https://github.com/fxjs-modules/orm/tree/master/packages/orm-plugin-uacl"
+		"url": "https://github.com/fxjs-modules/orm/tree/master/plugins/orm-plugin-uacl"
 	},
-	"homepage": "https://github.com/fxjs-modules/orm/tree/master/packages/orm-plugin-uacl",
+	"homepage": "https://github.com/fxjs-modules/orm/tree/master/plugins/orm-plugin-uacl",
 	"files": [
 		"lib",
 		"typings"

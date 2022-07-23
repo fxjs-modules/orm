@@ -1,0 +1,33 @@
+{
+	"name": "@fxjs/orm-property",
+	"version": "0.1.0",
+	"private": false,
+	"description": "",
+	"main": "lib",
+	"types": "typings/index.d.ts",
+	"repository": {
+		"type": "https",
+		"url": "https://github.com/fxjs-modules/orm/tree/master/packages/orm-property"
+	},
+	"homepage": "https://github.com/fxjs-modules/orm/tree/master/packages/orm-property",
+	"scripts": {
+		"build": "ftsc ./src/* --outDir ./lib",
+		"test": "fibjs test",
+		"ci": "npm run build && npm run test",
+		"prepublishOnly": "npm run ci"
+	},
+	"author": "richardo2016 <richardo2016@gmail.com>",
+	"license": "ISC",
+	"files": [
+		"lib",
+		"typings"
+	],
+	"devDependencies": {
+		"@fibjs/types": "^0.34.1",
+		"fib-pool": "^1.6.0",
+		"fib-typify": "^0.8.3"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}

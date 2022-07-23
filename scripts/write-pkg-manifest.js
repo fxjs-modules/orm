@@ -12,7 +12,6 @@ const monoscope = monoInfo.monoScope
 const scopePrefix = monoInfo.scopePrefix
 const monoName = monoInfo.monoName
 
-const PKG_DIR = path.resolve(__dirname, '../packages')
 const TPL_PDIR = path.resolve(__dirname, '../tpls')
 const PKG_JSON_NAME = 'package.json'
 
@@ -38,10 +37,12 @@ packages.forEach(({
   no_publish,
   isTopPackage,
   _dirname,
+  pkg_dir,
 }) => {
-  const comPkgname = _dirname || `${comname}`
-  const comDirname = comPkgname
-  const comDir = path.resolve(PKG_DIR, `./${comDirname}`)
+  const comDirname = _dirname || `${comname}`
+  const comPkgname = comname || comDirname
+  pkg_dir = pkg_dir || 'packages';
+  const comDir = path.resolve(path.resolve(__dirname, '../', pkg_dir), `./${comDirname}`)
   if (!fs.existsSync(comDir)) mkdirp(comDir)
 
   const TPL_DIR = path.resolve(TPL_PDIR, './starter')
@@ -70,9 +71,9 @@ packages.forEach(({
       pkg: {
         name: comPkgname,
         npm_name: isTopPackage ? comPkgname : `${scopePrefix}/${comPkgname}`,
-        git_group: monoInfo.monoscope,
+        git_group: monoscope,
         git_path: monoInfo.gitPath || `${monoscope}/${monoName}`,
-        mono_path: `packages/${comPkgname}`,
+        mono_path: `${pkg_dir}/${comPkgname}`,
         isTopPackage,
       },
       buildmeta: {

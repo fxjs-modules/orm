@@ -27,9 +27,9 @@
 	"private": true,
 	"repository": {
 		"type": "https",
-		"url": "https://github.com/fxjs-modules/orm/tree/master/packages/orm-plugin-pool"
+		"url": "https://github.com/fxjs-modules/orm/tree/master/plugins/orm-plugin-pool"
 	},
-	"homepage": "https://github.com/fxjs-modules/orm/tree/master/packages/orm-plugin-pool",
+	"homepage": "https://github.com/fxjs-modules/orm/tree/master/plugins/orm-plugin-pool",
 	"files": [
 		"lib",
 		"typings"
