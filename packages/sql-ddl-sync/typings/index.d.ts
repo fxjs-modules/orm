@@ -1,11 +1,11 @@
 import { FxOrmSqlDDLSync__Collection } from "./Typo/Collection";
-import { FxOrmSqlDDLSync__Column } from "./Typo/Column";
 import { FxOrmSqlDDLSync__DbIndex } from "./Typo/DbIndex";
 import { FxOrmSqlDDLSync__Dialect } from "./Typo/Dialect";
 import { FxOrmSqlDDLSync__Driver } from "./Typo/Driver";
 import { FxOrmSqlDDLSync } from "./Typo/_common";
 import { FxOrmCoreCallbackNS } from '@fxjs/orm-core';
 import "./Dialects";
+import { IProperty } from '@fxjs/orm-property';
 import { IDbDriver } from "@fxjs/db-driver";
 export declare function dialect(name: FxOrmSqlDDLSync__Dialect.DialectType | 'psql'): typeof import("./Dialects/mysql") | typeof import("./Dialects/sqlite");
 export declare class Sync<T extends IDbDriver.ISQLConn = IDbDriver.ISQLConn> {
@@ -18,7 +18,6 @@ export declare class Sync<T extends IDbDriver.ISQLConn = IDbDriver.ISQLConn> {
     readonly collections: FxOrmSqlDDLSync__Collection.Collection[];
     readonly dbdriver: IDbDriver.ITypedDriver<T>;
     readonly Dialect: FxOrmSqlDDLSync__Dialect.Dialect<T>;
-    readonly transformers: FxOrmSqlDDLSync.Transformers<T>;
     /**
      * @description customTypes
      */
@@ -82,7 +81,7 @@ export declare class Sync<T extends IDbDriver.ISQLConn = IDbDriver.ISQLConn> {
      * @param property existed property in collection
      * @param column column expected to be synced
      */
-    needDefinitionToColumn(property: FxOrmSqlDDLSync__Column.Property, column: FxOrmSqlDDLSync__Column.Property, options?: {
+    needDefinitionToColumn(property: IProperty, column: IProperty, options?: {
         collection?: string;
     }): boolean;
 }

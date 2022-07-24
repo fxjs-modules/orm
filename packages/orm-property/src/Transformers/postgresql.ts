@@ -6,7 +6,7 @@ type AllNinable<T extends object> = {
 }
 type PostgreSQLTypeValueBool = 'NO' | 'YES';
 // item in list from `SELECT * FROM information_schema.columns WHERE table_name = ?;`
-type ColumnInfoPostgreSQL = AllNinable<{
+export type ColumnInfoPostgreSQL = AllNinable<{
     table_catalog: string
     table_schema: string
     table_name: string

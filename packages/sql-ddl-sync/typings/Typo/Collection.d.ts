@@ -1,10 +1,8 @@
-import { FxOrmSqlDDLSync__Column } from "./Column";
+import type { IProperty } from "@fxjs/orm-property";
 export declare namespace FxOrmSqlDDLSync__Collection {
     interface Collection {
         name: string;
-        properties: {
-            [k: string]: FxOrmSqlDDLSync__Column.Property;
-        };
+        properties: Record<string, IProperty>;
         [ext_k: string]: any;
     }
 }

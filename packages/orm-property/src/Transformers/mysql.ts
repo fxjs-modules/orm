@@ -4,7 +4,7 @@ import { COLUMN_NUMER_TYPE_IDX, filterPropertyDefaultValue } from "../Utils"
 export type ColumnType_MySQL = PropertyType
 
 // item in list from `SHOW COLUMNS FROM ??`
-interface ColumnInfoMySQL {
+export interface ColumnInfoMySQL {
     Field: string
     Type: Class_Buffer | __StringType<
         'smallint'

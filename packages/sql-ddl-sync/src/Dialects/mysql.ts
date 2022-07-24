@@ -1,11 +1,13 @@
 import FxORMCore = require("@fxjs/orm-core");
+import { IProperty, ExtractColumnInfo, transformer } from "@fxjs/orm-property";
+
 import SQL = require("../SQL");
-import { columnInfo2Property, property2ColumnType, buffer2ColumnsMeta } from "../Transformers/mysql";
-import { FxOrmSqlDDLSync__Column } from "../Typo/Column";
 import { FxOrmSqlDDLSync__DbIndex } from "../Typo/DbIndex";
 import { FxOrmSqlDDLSync__Dialect } from "../Typo/Dialect";
 import { FxOrmSqlDDLSync__Driver } from "../Typo/Driver";
-import { getSqlQueryDialect, arraify, filterPropertyDefaultValue } from '../Utils';
+import { getSqlQueryDialect, arraify } from '../Utils';
+
+const Transformer = transformer('mysql')
 
 type IDialect = FxOrmSqlDDLSync__Dialect.Dialect<Class_MySQL>;
 
@@ -116,7 +118,7 @@ export const getCollectionColumnsSync: IDialect['getCollectionColumnsSync'] = fu
 		getSqlQueryDialect('mysql').escape(
 			"SHOW COLUMNS FROM ??", [name]
 		)
-	).map(row => buffer2ColumnsMeta(row as any)) as any
+	).map(row => Transformer.filterRawColumns(row as any)) as any
 }
 
 export const getCollectionColumns: IDialect['getCollectionColumns'] = function (
@@ -131,13 +133,15 @@ export const getCollectionColumns: IDialect['getCollectionColumns'] = function (
 export const getCollectionPropertiesSync: IDialect['getCollectionPropertiesSync'] = function (
 	dbdriver, name
 ) {
-	const cols: FxOrmSqlDDLSync__Column.ColumnInfo__MySQL[] = getCollectionColumnsSync(dbdriver, name)
+	const cols = getCollectionColumnsSync<ExtractColumnInfo<typeof Transformer>>(dbdriver, name)
 
-	const props = <{ [col: string]: FxOrmSqlDDLSync__Column.Property }>{};
+	const props = <{ [col: string]: IProperty }>{};
 
 	for (let i = 0; i < cols.length; i++) {
 		const colInfo = cols[i];
-		props[colInfo.Field] = columnInfo2Property(colInfo);
+		props[colInfo.Field] = Transformer.rawToProperty(colInfo, {
+			collection: name,
+		}).property;
 	}
 
 	return props;
@@ -369,41 +373,15 @@ export const removeIndex: IDialect['removeIndex'] = function (
 export const getType: IDialect['getType'] = function (
 	collection, property, driver
 ) {
-	let customType: FxOrmSqlDDLSync__Driver.CustomPropertyType<Class_MySQL> = null;
-
-	const result = property2ColumnType(property);
-	property = result.property;
-
-	if (result.isCustomType) { // is custom type
-		if (
-			driver.customTypes && 
-			(customType = driver.customTypes[property.type])
-		) {
-			result.value = customType.datastoreType(property, { collection, driver })
-		}
-	}
-
-	if (!result.value) return false;
-
-	if (property.hasOwnProperty("defaultValue") && property.defaultValue !== undefined) {
-		const defaultValue = filterPropertyDefaultValue(property, {
-			collection,
-			property,
-			driver
-		})
-		result.value += (
-			[
-				" DEFAULT ",
-				property.type === 'date'
-				&& (['CURRENT_TIMESTAMP'].includes(defaultValue)) ? defaultValue
-				: getSqlQueryDialect(driver.type).escapeVal(defaultValue)
-			]
-		).filter(x => x).join('');
-	}
+	const result = Transformer.toStorageType(property, {
+		collection,
+		customTypes: driver?.customTypes,
+		escapeVal: getSqlQueryDialect(driver?.type || 'mysql').escapeVal
+	});
 
 	return {
-		value: result.value,
-		before: false
+		value: result.typeValue,
+		before: false as const
 	};
 };
 

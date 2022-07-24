@@ -1,9 +1,9 @@
+import { IDbDriver } from '@fxjs/db-driver';
 import { FxOrmCoreCallbackNS, FxOrmDialect } from "@fxjs/orm-core";
+import { IProperty } from "@fxjs/orm-property";
 import { FxOrmSqlDDLSync__Collection } from "./Collection";
 import { FxOrmSqlDDLSync__DbIndex } from "./DbIndex";
 import { FxOrmSqlDDLSync } from "./_common";
-import { IDbDriver } from '@fxjs/db-driver';
-import { FxOrmSqlDDLSync__Column } from "./Column";
 export declare namespace FxOrmSqlDDLSync__Dialect {
     export type DialectType = 'mysql' | 'mssql' | 'sqlite' | 'postgresql';
     export interface DielectGetTypeOpts {
@@ -24,10 +24,10 @@ export declare namespace FxOrmSqlDDLSync__Dialect {
             (driver: ITypedDriver<ConnType>, tableName: string, columnName: string): any;
         };
         getCollectionProperties: {
-            (driver: ITypedDriver<ConnType>, name: string, cb: FxOrmCoreCallbackNS.ExecutionCallback<Record<string, FxOrmSqlDDLSync__Column.Property>>): void;
+            (driver: ITypedDriver<ConnType>, collection: string, cb: FxOrmCoreCallbackNS.ExecutionCallback<Record<string, IProperty>>): void;
         };
         getCollectionPropertiesSync: {
-            (driver: ITypedDriver<ConnType>, name: string): Record<string, FxOrmSqlDDLSync__Column.Property>;
+            (driver: ITypedDriver<ConnType>, collection: string): Record<string, IProperty>;
         };
         getCollectionIndexes: {
             (driver: ITypedDriver<ConnType>, name: string, cb: FxOrmCoreCallbackNS.ExecutionCallback<FxOrmSqlDDLSync__DbIndex.DbIndexInfoHash>): void;
@@ -52,7 +52,7 @@ export declare namespace FxOrmSqlDDLSync__Dialect {
          *
          * @deprecated
          */
-        getType: (collection: FxOrmSqlDDLSync.TableName, property: FxOrmSqlDDLSync__Column.Property, driver: ITypedDriver<ConnType>, opts?: DielectGetTypeOpts) => false | TypeResult;
+        getType: (collection: FxOrmSqlDDLSync.TableName, property: IProperty, driver?: ITypedDriver<ConnType>, opts?: DielectGetTypeOpts) => false | TypeResult;
         /**
          * process composite keys
          */

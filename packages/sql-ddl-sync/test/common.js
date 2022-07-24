@@ -5,7 +5,6 @@ exports.dialect = null;
 exports.table   = "sql_ddl_sync_test_table";
 const Dialects = getAllSqlQueryDialects();
 
-
 addSqlQueryDialect('fake', {
 	escapeId  : function (id) {
 		return "$$" + id + "$$";

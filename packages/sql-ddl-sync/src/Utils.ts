@@ -1,12 +1,13 @@
 /// <reference types="@fibjs/types" />
 
 import coroutine = require('coroutine');
-import { FxOrmSqlDDLSync__Column } from "./Typo/Column";
-import { FxOrmSqlDDLSync } from "./Typo/_common";
+import type { IDbDriver } from "@fxjs/db-driver";
+import type { FxDbDriverNS } from "@fxjs/db-driver/typings/Typo";
+import type { IProperty } from "@fxjs/orm-property";
 
-import { FxDbDriverNS } from "@fxjs/db-driver/typings/Typo";
-import { FxOrmSqlDDLSync__Collection } from "./Typo/Collection";
-import { IDbDriver } from "@fxjs/db-driver";
+import type { FxOrmSqlDDLSync } from "./Typo/_common";
+
+import type { FxOrmSqlDDLSync__Collection } from "./Typo/Collection";
 
 export function logJson (group: string, detail: any) {
     let json = null;
@@ -68,10 +69,10 @@ export function getCollectionMapsTo_PropertyNameDict (collection: FxOrmSqlDDLSyn
 }
 
 export function filterPropertyDefaultValue (
-    property: FxOrmSqlDDLSync__Column.Property,
+    property: IProperty,
     ctx: {
         collection: string,
-        property: FxOrmSqlDDLSync__Column.Property,
+        property: IProperty,
         driver: IDbDriver
     }
 ) {
@@ -117,7 +118,7 @@ export function psqlGetEnumTypeName (
 }
 
 export function psqlRepairEnumTypes (
-    columns: Record<string, FxOrmSqlDDLSync__Column.Property> | FxOrmSqlDDLSync__Column.Property[],
+    columns: Record<string, IProperty> | IProperty[],
     collection_name: string,
     dbdriver: IDbDriver.ITypedDriver<Class_DbConnection>
 ) {
@@ -138,7 +139,7 @@ export function psqlRepairEnumTypes (
         psqlGetEnumTypeName(collection_name, p.name)
     ))
     
-    coroutine.parallel(missingEnumTypeProperties, (property: FxOrmSqlDDLSync__Column.Property) => {
+    coroutine.parallel(missingEnumTypeProperties, (property: IProperty) => {
         const type = psqlGetEnumTypeName(collection_name, property.mapsTo.toLowerCase());
         
         const values = property.values.map(function (val) {

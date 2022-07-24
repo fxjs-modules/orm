@@ -1,11 +1,14 @@
 import FxORMCore = require("@fxjs/orm-core");
+import { ExtractColumnInfo, transformer } from "@fxjs/orm-property";
+import type { PropertySQLite } from '@fxjs/orm-property/lib/transformers/sqlite';
+
 import SQL = require("../SQL");
-import { columnInfo2Property, property2ColumnType } from "../Transformers/sqlite";
-import { FxOrmSqlDDLSync__Column } from "../Typo/Column";
 import { FxOrmSqlDDLSync__Dialect } from "../Typo/Dialect";
 import { FxOrmSqlDDLSync__Driver } from "../Typo/Driver";
 
 import { getSqlQueryDialect, arraify, filterPropertyDefaultValue } from '../Utils';
+
+const Transformer = transformer('sqlite')
 
 type IDialect = FxOrmSqlDDLSync__Dialect.Dialect<Class_SQLite>;
 
@@ -138,12 +141,14 @@ export const getCollectionPropertiesSync: IDialect['getCollectionPropertiesSync'
 ) {
 	const cols = getCollectionColumnsSync(dbdriver, name)
 
-	let columns = <{ [col: string]: FxOrmSqlDDLSync__Column.PropertySQLite }>{};
+	let columns = <{ [col: string]: PropertySQLite }>{};
 
 	for (let i = 0; i < cols.length; i++) {
 		const dCol = cols[i];
 
-		columns[dCol.name] = columnInfo2Property(dCol);
+		columns[dCol.name] = Transformer.rawToProperty(dCol, {
+			collection: name,
+		}).property;
 	}
 
 	return columns;
@@ -199,7 +204,7 @@ export const dropCollection: IDialect['dropCollection'] = function (
 export const hasCollectionColumnsSync: IDialect['hasCollectionColumnsSync'] = function (
 	dbdriver, name, column
 ) {
-	const cols = getCollectionColumnsSync<FxOrmSqlDDLSync__Column.ColumnInfo__SQLite>(dbdriver, name)
+	const cols = getCollectionColumnsSync<ExtractColumnInfo<typeof Transformer>>(dbdriver, name)
 
 	return arraify(column).every(
 		column_name => cols.find(col => col.name === column_name)
@@ -392,54 +397,17 @@ export const getType: IDialect['getType'] = function (
 ) {
 	const { for: _for = 'create_table' } = opts || {}
 
-	let type: false | FxOrmSqlDDLSync__Column.ColumnType_SQLite = false;
-	let customType = null;
-
-	const result = property2ColumnType(property);
-	type = result.value;
-	property = result.property;
-
-	if (result.isCustomType) {
-		if (
-			driver.customTypes && 
-			(customType = driver.customTypes[property.type])
-		) {
-			type = customType.datastoreType(property, { collection, driver })
+	const result = Transformer.toStorageType(property, {
+		collection,
+		customTypes: driver?.customTypes,
+		escapeVal: getSqlQueryDialect(driver?.type || 'sqlite').escapeVal,
+		userOptions: {
+			useDefaultValue: _for === 'create_table',
 		}
-	}
-
-	if (!type) return false;
-
-	if (property.hasOwnProperty("defaultValue") && property.defaultValue !== undefined) {
-		const defaultValue = filterPropertyDefaultValue(property, {
-			collection,
-			property,
-			driver
-		})
-
-		let defaultV = ''
-
-		if (['create_table'].includes(_for)) {
-			defaultV = getSqlQueryDialect(driver.type).escapeVal(defaultValue)
-		}
-		
-		type += (
-			/**
-			 * @description
-			 * 	sqlite doens't support alter column's datetime default value,
-			 * 	you should alter table's schema to change `datetime` type column's default value
-			 * 
-			 * @see https://stackoverflow.com/questions/2614483/how-to-create-a-datetime-column-with-default-value-in-sqlite3
-			 * @see https://stackoverflow.com/questions/25911191/altering-a-sqlite-table-to-add-a-timestamp-column-with-default-value
-			 */
-			[
-				defaultV ? ` DEFAULT ${defaultV} ` : ``
-			]
-		).filter(x => x).join('');
-	}
+	});
 
 	return {
-		value: type
+		value: result.typeValue
 	};
 };
 

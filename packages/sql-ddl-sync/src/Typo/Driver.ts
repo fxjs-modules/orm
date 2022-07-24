@@ -1,13 +1,15 @@
+import { IDbDriver } from "@fxjs/db-driver";
 import { FxOrmCoreCallbackNS } from "@fxjs/orm-core";
+import { IProperty } from "@fxjs/orm-property";
+
 import { FxOrmSqlDDLSync__Column } from "./Column";
 import { FxOrmSqlDDLSync__Dialect } from "./Dialect";
 import { FxOrmSqlDDLSync__DbIndex } from "./DbIndex";
-import { IDbDriver } from "@fxjs/db-driver";
 
 export namespace FxOrmSqlDDLSync__Driver {
     export interface CustomPropertyType<T extends IDbDriver.IConnTypeEnum = IDbDriver.IConnTypeEnum> {
         datastoreType(
-            prop?: FxOrmSqlDDLSync__Column.Property,
+            prop?: IProperty,
             opts?: {
                 collection: string
                 driver: IDbDriver<T>

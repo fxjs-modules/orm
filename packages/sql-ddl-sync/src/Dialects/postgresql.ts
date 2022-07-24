@@ -1,18 +1,15 @@
-/**
- * @TODO: dbdriver.execute -> 
- * dbdriver.execute(
- * 	dbdriver.execute(getSqlQueryDialect(dbdriver.type)).escape
- * )
- */ 
 import coroutine = require('coroutine');
 import { IDbDriver } from "@fxjs/db-driver";
 import FxORMCore = require("@fxjs/orm-core");
+import { ExtractColumnInfo, transformer } from "@fxjs/orm-property";
+
 import SQL = require("../SQL");
-import { columnInfo2Property, property2ColumnType } from "../Transformers/postgresql";
 import { FxOrmSqlDDLSync__Column } from "../Typo/Column";
 import { FxOrmSqlDDLSync__Dialect } from "../Typo/Dialect";
 import { FxOrmSqlDDLSync__Driver } from "../Typo/Driver";
 import { getSqlQueryDialect, arraify, filterPropertyDefaultValue } from '../Utils';
+
+const Transformer = transformer('postgresql')
 
 type IDialect = FxOrmSqlDDLSync__Dialect.Dialect<Class_DbConnection>;
 
@@ -36,18 +33,37 @@ export const hasCollection: IDialect['hasCollection'] = function (
 	FxORMCore.Utils.throwErrOrCallabckErrResult(exposedErrResults, { no_throw: true, callback: cb });
 };
 
-export const getCollectionPropertiesSync: IDialect['getCollectionPropertiesSync'] = function (dbdriver, name) {
-	const cols = getCollectionColumnsSync(dbdriver, name);
+// TODO: add test of it in real db.
+export const getCollectionPropertiesSync: IDialect['getCollectionPropertiesSync'] = function (dbdriver, collection) {
+	const cols: ExtractColumnInfo<typeof Transformer>[] = getCollectionColumnsSync(dbdriver, collection);
 
-	let columns = <Record<string, FxOrmSqlDDLSync__Column.Property>>{}, m;
+	type IProperty = ReturnType<typeof Transformer.rawToProperty>['property'];
+	let columns = <Record<string, IProperty>>{};
 
-	for (let i = 0; i < cols.length; i++) {
-		const dCol = cols[i];
+	coroutine.parallel(cols, (col: typeof cols[number]) => {
+		const property = Transformer.rawToProperty(col, {
+			collection,
+			userOptions: { enumValues: [] },
+		}).property;
+		if (property.type == "enum") {
+			const col_name = collection + "_enum_" + col.column_name;
 
-		columns[dCol.column_name] = columnInfo2Property(dCol);
-	}
+			const rows = dbdriver.execute<{ enum_values: string }[]>(
+				getSqlQueryDialect('psql').escape(
+`SELECT t.typname, string_agg(e.enumlabel, '|' ORDER BY e.enumsortorder) AS enum_values 
+FROM pg_catalog.pg_type t JOIN pg_catalog.pg_enum e ON t.oid = e.enumtypid WHERE t.typname = ? GROUP BY 1`, [ col_name ]
+				)
+			);
 
-	return checkColumnTypes(dbdriver, name, columns);
+			if (rows.length) {
+				property.values = rows[0].enum_values.split("|");
+			}
+		}
+
+		columns[col.column_name] = property;
+	})
+
+	return columns;
 };
 
 export const getCollectionProperties: IDialect['getCollectionProperties'] = function (
@@ -375,44 +391,13 @@ export const convertIndexes: IDialect['convertIndexes'] = function (collection, 
 };
 
 export const getType: IDialect['getType'] = function (collection, property, driver) {
-	let type: false | string   = false;
-	let before: false = false;
-	let customType = null;
-
-	if (property.serial) {
-		type = "SERIAL";
-	} else {
-		const result = property2ColumnType(property, { collection });
-		property = result.property;
-		type = result.value;
-		if (result.isCustomType) {
-			if (
-				driver.customTypes && 
-				(customType = driver.customTypes[property.type])
-			) {
-				type = customType.datastoreType(property)
-			}
-		}
-
-		if (!type) return false;
-
-		if (property.hasOwnProperty("defaultValue") && property.defaultValue !== undefined) {
-			if (property.type == 'date' && property.defaultValue === Date.now){
-				type += " DEFAULT now()";
-			} else {
-				const defaultValue = filterPropertyDefaultValue(property, {
-					collection,
-					property,
-					driver
-				})
-				type += " DEFAULT " + getSqlQueryDialect('psql').escapeVal(defaultValue);
-			}
-		}
-	}
-
 	return {
-		value  : type,
-		before : before
+		value: Transformer.toStorageType(property, {
+			collection,
+			customTypes: driver?.customTypes,
+			escapeVal: getSqlQueryDialect(driver?.type || 'postgresql').escapeVal,
+		}).typeValue,
+		before: false as const
 	};
 };
 
@@ -435,30 +420,4 @@ function convertIndexRows(rows: FxOrmSqlDDLSync__Driver.DbIndexInfo_PostgreSQL[]
 	}
 
 	return indexes;
-}
-
-function checkColumnTypes(
-	dbdriver: IDbDriver.ITypedDriver<Class_DbConnection>,
-	collection: string,
-	columns: Record<string, FxOrmSqlDDLSync__Column.Property>
-) {
-	coroutine.parallel(Object.keys(columns), (column_name: string) => {
-		const column: FxOrmSqlDDLSync__Column.Property = columns[column_name];
-		if (column?.type == "enum") {
-			const col_name = collection + "_enum_" + column_name;
-
-			const rows = dbdriver.execute<any[]>(
-				getSqlQueryDialect('psql').escape(
-`SELECT t.typname, string_agg(e.enumlabel, '|' ORDER BY e.enumsortorder) AS enum_values 
-FROM pg_catalog.pg_type t JOIN pg_catalog.pg_enum e ON t.oid = e.enumtypid WHERE t.typname = ? GROUP BY 1`, [ col_name ]
-				)
-			);
-
-			if (rows.length) {
-				column.values = rows[0].enum_values.split("|");
-			}
-		}
-	})
-
-	return columns;
 }

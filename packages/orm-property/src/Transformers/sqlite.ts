@@ -2,7 +2,7 @@ import { IPropTransformer, IProperty, PropertyType, __StringType } from "../Prop
 import { filterPropertyDefaultValue } from "../Utils"
 
 // item in list from `PRAGMA table_info(??)`
-interface ColumnInfoSQLite {
+export interface ColumnInfoSQLite {
     cid: number
     dflt_value: string
     name: string
@@ -10,7 +10,7 @@ interface ColumnInfoSQLite {
     pk: 1 | 0
     type: ColumnType_SQLite
 }
-export type ColumnType_SQLite =
+type ColumnType_SQLite =
     __StringType<
         'TEXT'
         | 'INTEGER'
@@ -26,7 +26,6 @@ export type ColumnType_SQLite =
 
 export interface PropertySQLite extends IProperty {
     key?: boolean
-    type: PropertyType
 
     before?: string
     after?: string

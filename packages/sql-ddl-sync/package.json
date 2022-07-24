@@ -45,6 +45,7 @@
 	},
 	"dependencies": {
 		"@fxjs/orm-core": "^0.2.1",
+		"@fxjs/orm-property": "^0.1.0",
 		"@fxjs/sql-query": "^0.8.2"
 	},
 	"devDependencies": {
