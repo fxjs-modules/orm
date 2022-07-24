@@ -390,15 +390,12 @@ export const convertIndexes: IDialect['convertIndexes'] = function (collection, 
 	return indexes;
 };
 
-export const getType: IDialect['getType'] = function (collection, property, driver) {
-	return {
-		value: Transformer.toStorageType(property, {
-			collection,
-			customTypes: driver?.customTypes,
-			escapeVal: getSqlQueryDialect(driver?.type || 'postgresql').escapeVal,
-		}).typeValue,
-		before: false as const
-	};
+export const toRawType: IDialect['toRawType'] = function (property, ctx) {
+	return Transformer.toStorageType(property, {
+		collection: ctx.collection,
+		customTypes: ctx.driver?.customTypes,
+		escapeVal: getSqlQueryDialect(ctx.driver?.type || 'postgresql').escapeVal,
+	});
 };
 
 function convertIndexRows(rows: FxOrmSqlDDLSync__Driver.DbIndexInfo_PostgreSQL[]) {

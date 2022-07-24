@@ -40,5 +40,5 @@ export declare const removeIndexSync: IDialect['removeIndexSync'];
 export declare const removeIndex: IDialect['removeIndex'];
 export declare const processKeys: IDialect['processKeys'];
 export declare const supportsType: IDialect['supportsType'];
-export declare const getType: IDialect['getType'];
+export declare const toRawType: IDialect['toRawType'];
 export {};

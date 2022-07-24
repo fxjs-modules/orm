@@ -392,23 +392,15 @@ export const supportsType: IDialect['supportsType'] = function (type) {
 	return type;
 };
 
-export const getType: IDialect['getType'] = function (
-	collection, property, driver, opts
-) {
-	const { for: _for = 'create_table' } = opts || {}
-
-	const result = Transformer.toStorageType(property, {
-		collection,
-		customTypes: driver?.customTypes,
-		escapeVal: getSqlQueryDialect(driver?.type || 'sqlite').escapeVal,
+export const toRawType: IDialect['toRawType'] = function (property, ctx) {
+	return Transformer.toStorageType(property, {
+		collection: ctx.collection,
+		customTypes: ctx.driver?.customTypes,
+		escapeVal: getSqlQueryDialect(ctx.driver?.type || 'sqlite').escapeVal,
 		userOptions: {
-			useDefaultValue: _for === 'create_table',
+			useDefaultValue: ctx.userOptions?.useDefaultValue,
 		}
 	});
-
-	return {
-		value: result.typeValue
-	};
 };
 
 function convertIndexRows(

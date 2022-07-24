@@ -5,6 +5,7 @@
 import { IDbDriver } from '@fxjs/db-driver';
 import { FxOrmCoreCallbackNS, FxOrmDialect } from "@fxjs/orm-core"
 import { IProperty } from "@fxjs/orm-property"
+import { IPropTransformer } from '@fxjs/orm-property/lib/Property';
 
 import { FxOrmSqlDDLSync__Collection } from "./Collection"
 import { FxOrmSqlDDLSync__DbIndex } from "./DbIndex"
@@ -13,9 +14,7 @@ import { FxOrmSqlDDLSync } from "./_common"
 export namespace FxOrmSqlDDLSync__Dialect{
     export type DialectType = 'mysql' | 'mssql' | 'sqlite' | 'postgresql'
 
-    export interface DielectGetTypeOpts {
-        for?: 'alter_table' | 'create_table' | 'add_column' | 'alter_column'
-    }
+    export type PurposeToGetRawType = 'alter_table' | 'create_table' | 'add_column' | 'alter_column'
 
     type ITypedDriver<T extends IDbDriver.ISQLConn> = IDbDriver.ITypedDriver<T>;
     export interface Dialect<ConnType extends IDbDriver.ISQLConn> extends FxOrmDialect.DDLDialect<ITypedDriver<ConnType>> {
@@ -56,16 +55,18 @@ export namespace FxOrmSqlDDLSync__Dialect{
             (driver: ITypedDriver<ConnType>, name: string, collection: FxOrmSqlDDLSync.TableName): any
         }
         /**
-         * transform semantic property to raw string in db
-         * 
-         * @deprecated
+         * @description transform semantic property to raw string in db
+         * @experimental
          */
-        getType: (
-            collection: FxOrmSqlDDLSync.TableName,
-            property: IProperty,
-            driver?: ITypedDriver<ConnType>,
-            opts?: DielectGetTypeOpts
-        ) => false | TypeResult
+        toRawType: (
+            property: PropTransformerParams[0],
+            ctx: PropTransformerParams[1] & {
+                driver?: ITypedDriver<ConnType>,
+                userOptions?: {
+                    useDefaultValue?: boolean
+                }
+            }
+        ) => ReturnType<IPropTransformer<any>['toStorageType']>
 
         /**
          * process composite keys
@@ -86,6 +87,8 @@ export namespace FxOrmSqlDDLSync__Dialect{
 
         [extra: string]: any
     }
+
+    type PropTransformerParams = Parameters<IPropTransformer<any>['toStorageType']>;
 
     export interface TypeResult<T = any> {
 		value: T,

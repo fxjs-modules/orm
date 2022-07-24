@@ -9,7 +9,7 @@ import { getSqlQueryDialect, logJson, getCollectionMapsTo_PropertyNameDict, filt
 import { FxOrmCoreCallbackNS } from '@fxjs/orm-core';
 
 import "./Dialects";
-import { Transformers, IProperty }  from '@fxjs/orm-property';
+import { Transformers, IProperty, transformer }  from '@fxjs/orm-property';
 import { IDbDriver } from "@fxjs/db-driver";
 
 const noOp = () => {};
@@ -98,7 +98,7 @@ function getColumnTypeRaw (
 	collection_name: FxOrmSqlDDLSync.TableName,
 	prop: IProperty,
 	opts?: {
-		for?: FxOrmSqlDDLSync__Dialect.DielectGetTypeOpts['for']
+		for?: FxOrmSqlDDLSync__Dialect.PurposeToGetRawType
 	}
 ): false | FxOrmSqlDDLSync__Dialect.DialectResult {
 	let type: false | string | FxOrmSqlDDLSync__Dialect.TypeResult;
@@ -110,7 +110,17 @@ function getColumnTypeRaw (
 		type = syncInstance.types[prop.type].datastoreType(prop);
 	} else { // fallback to driver's types
 		const { for: _for = 'create_table' } = opts || {};
-		type = syncInstance.Dialect.getType(collection_name, prop, syncInstance.dbdriver, { for: _for });
+
+		const dbtype = syncInstance.dbdriver.type;
+		type = transformer(dbtype as any).toStorageType(prop, {
+			collection: collection_name,
+			customTypes: syncInstance.dbdriver?.customTypes,
+			escapeVal: getSqlQueryDialect(dbtype).escapeVal,
+			userOptions: {
+				useDefaultValue: _for === 'create_table',
+			}
+		}).typeValue;
+
 	}
 
 	if (!type)

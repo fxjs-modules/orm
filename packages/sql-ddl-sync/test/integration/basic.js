@@ -44,7 +44,7 @@ describe("sql-ddl-sync", function () {
           'getCollectionIndexes',
           'addIndex',
           'removeIndex',
-          'getType',
+          'toRawType',
         ]
         .concat(
           dialectName === 'sqlite' ? [

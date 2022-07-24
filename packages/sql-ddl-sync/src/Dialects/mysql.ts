@@ -370,19 +370,14 @@ export const removeIndex: IDialect['removeIndex'] = function (
 	FxORMCore.Utils.throwErrOrCallabckErrResult(exposedErrResults, { no_throw: true, callback: cb });
 };
 
-export const getType: IDialect['getType'] = function (
-	collection, property, driver
+export const toRawType: IDialect['toRawType'] = function (
+	property, ctx
 ) {
-	const result = Transformer.toStorageType(property, {
-		collection,
-		customTypes: driver?.customTypes,
-		escapeVal: getSqlQueryDialect(driver?.type || 'mysql').escapeVal
+	return Transformer.toStorageType(property, {
+		collection: ctx.collection,
+		customTypes: ctx.driver?.customTypes,
+		escapeVal: getSqlQueryDialect(ctx.driver?.type || 'mysql').escapeVal
 	});
-
-	return {
-		value: result.typeValue,
-		before: false as const
-	};
 };
 
 function convertIndexRows(

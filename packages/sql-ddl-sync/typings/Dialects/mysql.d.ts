@@ -35,5 +35,5 @@ export declare const addIndexSync: IDialect['addIndexSync'];
 export declare const addIndex: IDialect['addIndex'];
 export declare const removeIndexSync: IDialect['removeIndexSync'];
 export declare const removeIndex: IDialect['removeIndex'];
-export declare const getType: IDialect['getType'];
+export declare const toRawType: IDialect['toRawType'];
 export {};
