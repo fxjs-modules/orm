@@ -9,39 +9,39 @@ const ctx = {
 
 describe("transformer('postgresql').toStorageType", function () {
 	it("should detect text", function () {
-		Transformer.toStorageType({ mapsTo: 'abc',  type: "text" }).typeValue.should.equal("TEXT");
-		Transformer.toStorageType({ mapsTo: 'abc',  type: "text", size: 150 }).typeValue.should.equal("TEXT");
-		Transformer.toStorageType({ mapsTo: 'abc',  type: "text", size: 1000 }).typeValue.should.equal("TEXT");
+		Transformer.toStorageType({ mapsTo: 'abc',  type: "text" }, ctx).typeValue.should.equal("TEXT");
+		Transformer.toStorageType({ mapsTo: 'abc',  type: "text", size: 150 }, ctx).typeValue.should.equal("TEXT");
+		Transformer.toStorageType({ mapsTo: 'abc',  type: "text", size: 1000 }, ctx).typeValue.should.equal("TEXT");
 	});
 
 	it("should detect numbers", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "integer" }).typeValue.should.equal("INTEGER");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 4 }).typeValue.should.equal("INTEGER");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 2 }).typeValue.should.equal("SMALLINT");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 8 }).typeValue.should.equal("BIGINT");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "number", rational: false }).typeValue.should.equal("INTEGER");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "integer" }, ctx).typeValue.should.equal("INTEGER");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 4 }, ctx).typeValue.should.equal("INTEGER");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 2 }, ctx).typeValue.should.equal("SMALLINT");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 8 }, ctx).typeValue.should.equal("BIGINT");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number", rational: false }, ctx).typeValue.should.equal("INTEGER");
 	});
 
 	it("should detect rational numbers", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "number"}).typeValue.should.equal("REAL");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "number", size: 4 }).typeValue.should.equal("REAL");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "number", size: 8 }).typeValue.should.equal("DOUBLE PRECISION");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number"}, ctx).typeValue.should.equal("REAL");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number", size: 4 }, ctx).typeValue.should.equal("REAL");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number", size: 8 }, ctx).typeValue.should.equal("DOUBLE PRECISION");
 	});
 
 	it("should detect booleans", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "boolean" }).typeValue.should.equal("BOOLEAN");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "boolean" }, ctx).typeValue.should.equal("BOOLEAN");
 	});
 
 	it("should detect dates", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "date" }).typeValue.should.equal("DATE");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "date" }, ctx).typeValue.should.equal("DATE");
 	});
 
 	it("should detect dates with times", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "date", time: true }).typeValue.should.equal("TIMESTAMP WITHOUT TIME ZONE");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "date", time: true }, ctx).typeValue.should.equal("TIMESTAMP WITHOUT TIME ZONE");
 	});
 
 	it("should detect binary", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "binary" }).typeValue.should.equal("BYTEA");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "binary" }, ctx).typeValue.should.equal("BYTEA");
 	});
 
 	it("should detect custom types", function () {
@@ -49,7 +49,7 @@ describe("transformer('postgresql').toStorageType", function () {
 	});
 
 	it("should detect required items", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "boolean", required: true }).typeValue.should.match(/NOT NULL/);
+		Transformer.toStorageType({ mapsTo: 'abc', type: "boolean", required: true }, ctx).typeValue.should.match(/NOT NULL/);
 	});
 
 	it("should detect default values", function () {
@@ -226,7 +226,7 @@ describe("transformer('postgresql').rawToProperty", function () {
 	].forEach(({ title, groups }) => {
 		it(title, function () {
 			groups.forEach(([ raw, property, sampleCtx ]) => {
-				Transformer.rawToProperty(raw, {...ctx, ...sampleCtx}).property.should.deepEqual(property);
+				Transformer.rawToProperty(raw, sampleCtx).property.should.deepEqual(property);
 			});
 		});
 	});

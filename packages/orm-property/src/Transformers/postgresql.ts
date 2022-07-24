@@ -6,7 +6,7 @@ type AllNinable<T extends object> = {
 }
 type PostgreSQLTypeValueBool = 'NO' | 'YES';
 // item in list from `SELECT * FROM information_schema.columns WHERE table_name = ?;`
-type ColumnInfo__PostgreSQL = AllNinable<{
+type ColumnInfoPostgreSQL = AllNinable<{
     table_catalog: string
     table_schema: string
     table_name: string
@@ -86,7 +86,7 @@ const columnSizes = {
     },
 };
 
-export const rawToProperty: IPropTransformer<ColumnInfo__PostgreSQL>['rawToProperty'] = function (
+export const rawToProperty: IPropTransformer<ColumnInfoPostgreSQL>['rawToProperty'] = function (
 	dCol, ctx
 ) {
     let property = <IProperty>{};
@@ -174,12 +174,12 @@ export const rawToProperty: IPropTransformer<ColumnInfo__PostgreSQL>['rawToPrope
     }
 }
 
-export const toStorageType: IPropTransformer<ColumnInfo__PostgreSQL>['toStorageType'] = function (
+export const toStorageType: IPropTransformer<ColumnInfoPostgreSQL>['toStorageType'] = function (
     inputProperty, ctx
 ) {
     const property = { ...inputProperty }
 
-    const result: ReturnType<IPropTransformer<ColumnInfo__PostgreSQL>['toStorageType']> = {
+    const result: ReturnType<IPropTransformer<ColumnInfoPostgreSQL>['toStorageType']> = {
         isCustom: false,
         property,
         typeValue: '',
@@ -254,7 +254,7 @@ export const toStorageType: IPropTransformer<ColumnInfo__PostgreSQL>['toStorageT
             result.typeValue += " DEFAULT now()";
         } else {
             const defaultValue = filterPropertyDefaultValue(property, ctx)
-            result.typeValue += " DEFAULT " + ctx.escapeVal?.(defaultValue);
+            result.typeValue += " DEFAULT " + ctx.escapeVal(defaultValue);
         }
     }
 

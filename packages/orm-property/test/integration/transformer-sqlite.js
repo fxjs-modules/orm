@@ -9,37 +9,37 @@ const ctx = {
 
 describe("transformer('sqlite').toStorageType", function () {
 	it("should detect text", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "text" }).typeValue.should.equal("TEXT");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "text", size: 150 }).typeValue.should.equal("TEXT");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "text" }, ctx).typeValue.should.equal("TEXT");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "text", size: 150 }, ctx).typeValue.should.equal("TEXT");
 	});
 
 	it("should detect numbers", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "integer" }).typeValue.should.equal("INTEGER");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 4 }).typeValue.should.equal("INTEGER");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 2 }).typeValue.should.equal("INTEGER");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 8 }).typeValue.should.equal("INTEGER");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "number", rational: false }).typeValue.should.equal("INTEGER");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "integer" }, ctx).typeValue.should.equal("INTEGER");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 4 }, ctx).typeValue.should.equal("INTEGER");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 2 }, ctx).typeValue.should.equal("INTEGER");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 8 }, ctx).typeValue.should.equal("INTEGER");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number", rational: false }, ctx).typeValue.should.equal("INTEGER");
 	});
 
 	it("should detect rational numbers", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "number"}).typeValue.should.equal("REAL");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "number", size: 4 }).typeValue.should.equal("REAL");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "number", size: 8 }).typeValue.should.equal("REAL");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number"}, ctx).typeValue.should.equal("REAL");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number", size: 4 }, ctx).typeValue.should.equal("REAL");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number", size: 8 }, ctx).typeValue.should.equal("REAL");
 	});
 
 	it("should detect booleans", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "boolean" }).typeValue.should.equal("INTEGER UNSIGNED");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "boolean" }, ctx).typeValue.should.equal("INTEGER UNSIGNED");
 	});
 
 	it("should detect dates", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "date" }).typeValue.should.equal("DATETIME");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "date", time: true }).typeValue.should.equal("DATETIME");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "datetime" }).typeValue.should.equal("DATETIME");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "date" }, ctx).typeValue.should.equal("DATETIME");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "date", time: true }, ctx).typeValue.should.equal("DATETIME");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "datetime" }, ctx).typeValue.should.equal("DATETIME");
 	});
 
 	it("should detect binary", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "binary" }).typeValue.should.equal("BLOB");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "binary", big: true }).typeValue.should.equal("BLOB");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "binary" }, ctx).typeValue.should.equal("BLOB");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "binary", big: true }, ctx).typeValue.should.equal("BLOB");
 	});
 
 	it("should detect custom types", function () {
@@ -47,7 +47,7 @@ describe("transformer('sqlite').toStorageType", function () {
 	});
 
 	it("should detect required items", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "boolean", required: true }).typeValue.should.match(/NOT NULL/);
+		Transformer.toStorageType({ mapsTo: 'abc', type: "boolean", required: true }, ctx).typeValue.should.match(/NOT NULL/);
 	});
 
 	it("should detect default values", function () {
@@ -55,7 +55,7 @@ describe("transformer('sqlite').toStorageType", function () {
 	});
 
 	it("should detect serial", function () {
-		var column = Transformer.toStorageType({ mapsTo: 'abc', type: "serial" }).typeValue;
+		var column = Transformer.toStorageType({ mapsTo: 'abc', type: "serial" }, ctx).typeValue;
 
 		column.should.match(/INT/);
 		column.should.match(/AUTOINCREMENT/);
@@ -85,7 +85,7 @@ describe("transformer('sqlite').rawToProperty", function () {
 	].forEach(({ title, groups }) => {
 		it(title, function () {
 			groups.forEach(([ raw, property ]) => {
-				Transformer.rawToProperty(raw, ctx).property.should.deepEqual(property);
+				Transformer.rawToProperty(raw).property.should.deepEqual(property);
 			});
 		});
 	});

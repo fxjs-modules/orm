@@ -9,44 +9,44 @@ const ctx = {
 
 describe("transformer('mysql').toStorageType", function () {
 	it("should detect text", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "text" }).typeValue.should.equal("VARCHAR(255)");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "text", size: 150 }).typeValue.should.equal("VARCHAR(150)");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "text", size: 1000 }).typeValue.should.equal("VARCHAR(1000)");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "text" }, ctx).typeValue.should.equal("VARCHAR(255)");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "text", size: 150 }, ctx).typeValue.should.equal("VARCHAR(150)");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "text", size: 1000 }, ctx).typeValue.should.equal("VARCHAR(1000)");
 	});
 
 	it("should detect numbers", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "integer" }).typeValue.should.equal("INTEGER");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 4 }).typeValue.should.equal("INTEGER");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 2 }).typeValue.should.equal("SMALLINT");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 8 }).typeValue.should.equal("BIGINT");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "number", rational: false }).typeValue.should.equal("INTEGER");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "integer" }, ctx).typeValue.should.equal("INTEGER");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 4 }, ctx).typeValue.should.equal("INTEGER");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 2 }, ctx).typeValue.should.equal("SMALLINT");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "integer", size: 8 }, ctx).typeValue.should.equal("BIGINT");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number", rational: false }, ctx).typeValue.should.equal("INTEGER");
 	});
 
 	it("should detect rational numbers", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "number" }).typeValue.should.equal("FLOAT");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "number", size: 4 }).typeValue.should.equal("FLOAT");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "number", size: 8 }).typeValue.should.equal("DOUBLE");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number" }, ctx).typeValue.should.equal("FLOAT");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number", size: 4 }, ctx).typeValue.should.equal("FLOAT");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number", size: 8 }, ctx).typeValue.should.equal("DOUBLE");
 	});
 
 	it("should detect booleans", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "boolean" }).typeValue.should.equal("TINYINT(1)");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "boolean" }, ctx).typeValue.should.equal("TINYINT(1)");
 	});
 
 	it("should detect dates", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "date" }).typeValue.should.equal("DATE");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "date" }, ctx).typeValue.should.equal("DATE");
 	});
 
 	it("should detect dates with times", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "date", time: true }).typeValue.should.equal("DATETIME");
-		Transformer.toStorageType({ mapsTo: 'abc', type: "datetime" }).typeValue.should.equal("DATETIME");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "date", time: true }, ctx).typeValue.should.equal("DATETIME");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "datetime" }, ctx).typeValue.should.equal("DATETIME");
 	});
 
 	it("should detect binary", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "binary" }).typeValue.should.equal("BLOB");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "binary" }, ctx).typeValue.should.equal("BLOB");
 	});
 
 	it("should detect big binary", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "binary", big: true }).typeValue.should.equal("LONGBLOB");
+		Transformer.toStorageType({ mapsTo: 'abc', type: "binary", big: true }, ctx).typeValue.should.equal("LONGBLOB");
 	});
 
 	it("should detect custom types", function () {
@@ -54,7 +54,7 @@ describe("transformer('mysql').toStorageType", function () {
 	});
 
 	it("should detect required items", function () {
-		Transformer.toStorageType({ mapsTo: 'abc', type: "boolean", required: true }).typeValue.should.match(/NOT NULL/);
+		Transformer.toStorageType({ mapsTo: 'abc', type: "boolean", required: true }, ctx).typeValue.should.match(/NOT NULL/);
 	});
 
 	it("should detect default values", function () {
@@ -71,9 +71,9 @@ describe("transformer('mysql').toStorageType", function () {
 		].forEach(size => {
 			var column
 			if (size = undefined)
-				column = Transformer.toStorageType({ mapsTo: 'abc', type: "serial" }).typeValue;
+				column = Transformer.toStorageType({ mapsTo: 'abc', type: "serial" }, ctx).typeValue;
 			else
-				column = Transformer.toStorageType({ mapsTo: 'abc', type: "serial", size }).typeValue;
+				column = Transformer.toStorageType({ mapsTo: 'abc', type: "serial", size }, ctx).typeValue;
 
 			column.should.match(new RegExp(`INT\\\(${size || 11}\\\)`));
 			column.should.match(/INT/);
@@ -128,7 +128,7 @@ describe("transformer('mysql').rawToProperty", function () {
 	].forEach(({ title, groups }) => {
 		it(title, function () {
 			groups.forEach(([ raw, property ]) => {
-				Transformer.rawToProperty(raw, ctx).property.should.deepEqual(property);
+				Transformer.rawToProperty(raw).property.should.deepEqual(property);
 			});
 		});
 	});

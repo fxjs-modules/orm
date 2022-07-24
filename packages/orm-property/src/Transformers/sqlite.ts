@@ -2,7 +2,7 @@ import { IPropTransformer, IProperty, PropertyType, __StringType } from "../Prop
 import { filterPropertyDefaultValue } from "../Utils"
 
 // item in list from `PRAGMA table_info(??)`
-interface ColumnInfo__SQLite {
+interface ColumnInfoSQLite {
     cid: number
     dflt_value: string
     name: string
@@ -32,7 +32,7 @@ export interface PropertySQLite extends IProperty {
     after?: string
 }
 
-type ITransformers = IPropTransformer<ColumnInfo__SQLite>;
+type ITransformers = IPropTransformer<ColumnInfoSQLite>;
 
 export const rawToProperty: ITransformers['rawToProperty'] = function (
     dCol, ctx
@@ -196,7 +196,7 @@ export const toStorageType: ITransformers['toStorageType'] = function (
 	} else if (property.hasOwnProperty("defaultValue") && property.defaultValue !== undefined) {
 		let defaultValue = filterPropertyDefaultValue(property, ctx)
 
-        defaultValue = ctx?.escapeVal?.(defaultValue);
+        defaultValue = ctx.escapeVal(defaultValue);
 		
         /**
          * @description

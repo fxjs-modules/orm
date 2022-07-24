@@ -4,7 +4,7 @@ import { COLUMN_NUMER_TYPE_IDX, filterPropertyDefaultValue } from "../Utils"
 export type ColumnType_MySQL = PropertyType
 
 // item in list from `SHOW COLUMNS FROM ??`
-interface ColumnInfo__MySQL {
+interface ColumnInfoMySQL {
     Field: string
     Type: Class_Buffer | __StringType<
         'smallint'
@@ -52,12 +52,12 @@ const columnSizes = {
 	}
 };
 
-export const rawToProperty: IPropTransformer<ColumnInfo__MySQL>['rawToProperty'] = function (
+export const rawToProperty: IPropTransformer<ColumnInfoMySQL>['rawToProperty'] = function (
 	colInfo, ctx
 ) {
     const property = <IProperty>{};
     colInfo = { ...colInfo };
-    buffer2ColumnsMeta(colInfo);
+    filterRawColumns(colInfo);
 
     let Type = colInfo.Type + ''
     if (Type.indexOf(" ") > 0) {
@@ -164,17 +164,16 @@ export const rawToProperty: IPropTransformer<ColumnInfo__MySQL>['rawToProperty']
     }
 };
 
-export const toStorageType: IPropTransformer<ColumnInfo__MySQL>['toStorageType'] = function (
+export const toStorageType: IPropTransformer<ColumnInfoMySQL>['toStorageType'] = function (
     inputProperty, ctx
 ) {
     const property = { ...inputProperty }
 
-    const result: ReturnType<IPropTransformer<ColumnInfo__MySQL>['toStorageType']> = {
+    const result: ReturnType<IPropTransformer<ColumnInfoMySQL>['toStorageType']> = {
         isCustom: false,
         property,
         typeValue: '',
     }
-
 
 	if (property.type == 'number' && property.rational === false) {
 		property.type = 'integer';
@@ -223,7 +222,7 @@ export const toStorageType: IPropTransformer<ColumnInfo__MySQL>['toStorageType']
 			}
 			break;
 		case "enum":
-			result.typeValue = "ENUM (" + property.values.map((val: any) => ctx?.escapeVal?.(val)) + ")";
+			result.typeValue = "ENUM (" + property.values.map((val: any) => ctx.escapeVal(val)) + ")";
 			break;
 		case "point":
 			result.typeValue = "POINT";
@@ -255,13 +254,13 @@ export const toStorageType: IPropTransformer<ColumnInfo__MySQL>['toStorageType']
         result.typeValue += ` DEFAULT ${
             property.type === 'date' && (['CURRENT_TIMESTAMP'].includes(defaultValue))
             ? defaultValue
-            : ctx?.escapeVal?.(defaultValue)}`;
+            : ctx.escapeVal(defaultValue)}`;
 	}
 
     return result;
 }
 
-export const buffer2ColumnsMeta = function (col: ColumnInfo__MySQL) {
+export const filterRawColumns: IPropTransformer<ColumnInfoMySQL>['filterRawColumns'] = function (col) {
 	col.Type = col.Type ? col.Type.toString() : '';
 	col.Size = col.Size ? col.Size.toString() : '';
 	col.Extra = col.Extra ? col.Extra.toString() : '';
@@ -269,5 +268,5 @@ export const buffer2ColumnsMeta = function (col: ColumnInfo__MySQL) {
 	col.Null = col.Null ? col.Null.toString() : '';
 	col.Default = col.Default ? col.Default.toString() : '';
 
-    return col as any;
+    return col as ColumnInfoMySQL;
 }
