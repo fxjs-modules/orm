@@ -7,9 +7,9 @@
     <meta name="description" content="最好用的 FibJS ORM 框架">
     <link rel="stylesheet" href="/orm/assets/style.2853df4f.css">
     <link rel="modulepreload" href="/orm/assets/plugin-vue_export-helper.356b96c4.js">
-    <link rel="modulepreload" href="/orm/assets/Home.995fdb91.js">
-    <link rel="modulepreload" href="/orm/assets/clis_orm.md.032d3f15.lean.js">
-    <link rel="modulepreload" href="/orm/assets/app.4e37bee8.js">
+    <link rel="modulepreload" href="/orm/assets/Home.dbfce1c4.js">
+    <link rel="modulepreload" href="/orm/assets/clis_orm.md.e826424b.lean.js">
+    <link rel="modulepreload" href="/orm/assets/app.e8282325.js">
     
     <meta name="twitter:title" content="ORM CLI | FxJS ORM">
   <meta property="og:title" content="ORM CLI | FxJS ORM">
@@ -47,8 +47,8 @@ module<span class="token punctuation">.</span><span class="token function-variab
     <span class="token punctuation">}</span><span class="token punctuation">;</span>
 <span class="token punctuation">}</span><span class="token punctuation">;</span>
 </code></pre></div><p>假设该文件路径为 <code>/path_to/model-define.js</code>, 则 dumpModel 会完成如下工作:</p><ul><li>从数据库中读取信息, 包括表结构, 字段类型, 字段名称等等, 生成 <code>/path_to/model-define-dump.json</code> 文件, 包含表结构信息.</li><li>生成一个 <code>/path_to/properties-for-t-[user].patch</code> 文件, 表示 <code>dataStoreProperties</code> 和 <code>userDefinedProperties</code> 的差异</li></ul><p>在执行完 dumpModel 后 这些信息会被保存到 <code>&lt;modelDefine&gt;.js</code> 同目录下的 <code>&lt;modelDefine&gt;-dump.json</code> 文件中.</p><p><strong>选项</strong></p><ul><li><code>--sync</code>: 是否将用户定义的 model 同步到数据库表结构中.</li><li><code>--no-alphabet</code>: 禁用在 patch 时将每个 property 定义按字母顺序排序.</li></ul></div></div><footer class="page-footer" data-v-8fcebc32 data-v-5c96fb00><div class="edit" data-v-5c96fb00><div class="edit-link" data-v-5c96fb00 data-v-55695e90><a class="link" href="https://github.com/fxjs-modules/orm/edit/master/docs/clis/orm.md" target="_blank" rel="noopener noreferrer" data-v-55695e90>在 Github 上编辑此页 <svg class="icon outbound icon" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewbox="0 0 100 100" width="15" height="15" data-v-55695e90><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path><polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></div></div><div class="updated" data-v-5c96fb00><p class="last-updated" data-v-5c96fb00 data-v-30c3cbb4><span class="prefix" data-v-30c3cbb4>最近更新:</span><span class="datetime" data-v-30c3cbb4></span></p></div></footer><!----><!--[--><!--]--></div></main></div><!----><!--]--></div>
-    <script>__VP_HASH_MAP__ = JSON.parse("{\"clis_orm.md\":\"032d3f15\",\"index.md\":\"e60ca317\",\"orm-packages_db-driver.md\":\"719d85da\",\"orm-packages_index.md\":\"336ae45a\",\"orm-packages_knex.md\":\"b5423bd2\",\"orm-packages_orm-core.md\":\"e3e7cf3c\",\"orm-packages_sql-ddl-sync.md\":\"6312bc6f\",\"orm-packages_sql-query.md\":\"e525d178\",\"orm_connect-db.md\":\"4b6ca72b\",\"orm_getting-started.md\":\"e7820567\",\"orm_index.md\":\"37fccd8f\",\"rfcs_0000-style.md\":\"0283d808\"}")</script>
-    <script type="module" async src="/orm/assets/app.4e37bee8.js"></script>
+    <script>__VP_HASH_MAP__ = JSON.parse("{\"clis_orm.md\":\"e826424b\",\"index.md\":\"777bc1ff\",\"orm-packages_db-driver.md\":\"39c194da\",\"orm-packages_index.md\":\"e58b5964\",\"orm-packages_knex.md\":\"11e6a859\",\"orm-packages_orm-core.md\":\"bead31ce\",\"orm-packages_sql-ddl-sync.md\":\"de85a463\",\"orm-packages_sql-query.md\":\"afe8e97e\",\"orm_adapters.md\":\"9a0cd09e\",\"orm_connect-db.md\":\"3735215a\",\"orm_getting-started.md\":\"8018ec49\",\"orm_index.md\":\"5e1002ac\",\"orm_property.md\":\"5230bac1\",\"orm_virtual-view.md\":\"27c7455f\",\"rfcs_0000-style.md\":\"00944043\"}")</script>
+    <script type="module" async src="/orm/assets/app.e8282325.js"></script>
     
   </body>
 </html>
