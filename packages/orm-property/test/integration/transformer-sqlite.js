@@ -52,6 +52,8 @@ describe("transformer('sqlite').toStorageType", function () {
 
 	it("should detect default values", function () {
 		Transformer.toStorageType({ mapsTo: 'abc', type: "number", defaultValue: 3 }, ctx).typeValue.should.match(/DEFAULT 3/);
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number", defaultValue: 3 }, {...ctx, userOptions: { useDefaultValue: true }}).typeValue.should.match(/DEFAULT 3/);
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number", defaultValue: 3 }, {...ctx, userOptions: { useDefaultValue: false }}).typeValue.should.not.match(/DEFAULT 3/);
 	});
 
 	it("should detect serial", function () {

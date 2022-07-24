@@ -197,6 +197,8 @@ export const toStorageType: ITransformers['toStorageType'] = function (
 		let defaultValue = filterPropertyDefaultValue(property, ctx)
 
         defaultValue = ctx.escapeVal(defaultValue);
+
+        const { useDefaultValue = true } = ctx.userOptions || {};
 		
         /**
          * @description
@@ -206,7 +208,7 @@ export const toStorageType: ITransformers['toStorageType'] = function (
          * @see https://stackoverflow.com/questions/2614483/how-to-create-a-datetime-column-with-default-value-in-sqlite3
          * @see https://stackoverflow.com/questions/25911191/altering-a-sqlite-table-to-add-a-timestamp-column-with-default-value
          */
-        if (defaultValue)
+        if (defaultValue && useDefaultValue)
 		    result.typeValue += ` DEFAULT ${defaultValue} `;
 	}
 
