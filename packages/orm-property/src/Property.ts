@@ -22,6 +22,11 @@ export interface IProperty {
     big?: boolean
     values?: any[] // values for enum type
 
+    /**
+     * @description for some db backends, comment is the description of the column
+     */
+    comment?: string
+
     [ext_k: string]: any
 }
 

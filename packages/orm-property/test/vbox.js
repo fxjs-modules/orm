@@ -1,6 +1,13 @@
 const vm = require('vm')
 
-const vbox = new vm.SandBox({}, name => require(name))
+const vbox = new vm.SandBox({}, name => {
+    try {
+        return require(name)
+    } catch (e) {
+        console.error(`require error for ${name}`)
+        console.error(e)
+    }
+})
 
 const entry = process.env.ENTRY
 

@@ -3,7 +3,14 @@ import { COLUMN_NUMER_TYPE_IDX, filterPropertyDefaultValue } from "../Utils"
 
 export type ColumnType_MySQL = PropertyType
 
-// item in list from `SHOW COLUMNS FROM ??`
+/**
+ * result from:
+ * 1. SHOW COLUMN FROM ??;
+ * 1. SHOW FULL COLUMN FROM ??;
+ * 
+ * there're extra fields in the result of sql 2: Collation, Comment, Privileges
+ * 
+ */
 export interface ColumnInfoMySQL {
     Field: string
     Type: Class_Buffer | __StringType<
@@ -33,11 +40,85 @@ export interface ColumnInfoMySQL {
      * @example `NO`
      */
     Null: __StringType<'NO' | 'YES'>
+    /**
+     * @deprecated
+     */
     SubType?: string[]
     /**
      * @example null
      */
     Default?: any
+
+    /**
+     * @example `utf8mb4_unicode_ci`
+     */
+    Collation?: string
+
+    /**
+     * @example `select,insert,update,references`
+     * type IPrivileges = "select" | "insert" | "update" | "references";
+     */
+    Privileges?: string
+
+    Comment?: string
+}
+
+
+export interface ColumnInfoMySQL {
+    Field: string;
+    Type: Class_Buffer | __StringType<'smallint' | 'integer' | 'bigint' | 'int' | 'float' | 'double' | 'tinyint' | 'datetime' | 'date' | 'longblob' | 'blob' | 'varchar'>;
+    Size: number | string;
+    /**
+     * extra description such as `AUTO_INCREMENT`
+     */
+    Extra: string;
+    /**
+     * @example `PRI`
+     */
+    Key: __StringType<'PRI' | 'MUL'>;
+    /**
+     * @example `NO`
+     */
+    Null: __StringType<'NO' | 'YES'>;
+    SubType?: string[];
+    /**
+     * @example null
+     */
+    Default?: any;
+}
+
+type DB_INTEGER = number;
+type DB_UNSIGNED_INT = DB_INTEGER;
+type DB_BIGINT = number | bigint;
+type DB_UNSIGNED_BIGINT = DB_BIGINT;
+type DB_TEXT = string;
+type DB_VARCHAR<T extends number = 255> = string;
+
+// result from: SELECT * FROM information_schema.columns WHERE table_name = ? AND table_schema = ?;
+// this type from: show columns from information_schema.columns;
+export interface SchemaColumnInfoMySQL {
+    TABLE_CATALOG: DB_VARCHAR<64>
+    TABLE_SCHEMA: DB_VARCHAR<64>
+    TABLE_NAME: DB_VARCHAR<64>
+    COLUMN_NAME: DB_VARCHAR<64>
+    ORDINAL_POSITION: DB_UNSIGNED_INT
+    COLUMN_DEFAULT: DB_TEXT
+    IS_NULLABLE: DB_VARCHAR<3> | 'NO' | 'YES'
+    DATA_TYPE: DB_TEXT
+    CHARACTER_MAXIMUM_LENGTH: DB_BIGINT
+    CHARACTER_OCTET_LENGTH: DB_BIGINT
+    NUMERIC_PRECISION: DB_UNSIGNED_BIGINT
+    NUMERIC_SCALE: DB_UNSIGNED_BIGINT
+    DATETIME_PRECISION: DB_UNSIGNED_INT
+    CHARACTER_SET_NAME: DB_VARCHAR
+    COLLATION_NAME: DB_TEXT
+    COLUMN_TYPE: DB_TEXT
+    COLUMN_KEY: '' | 'PRI' | 'UNI' | 'MUL'
+    EXTRA: DB_VARCHAR<256>
+    PRIVILEGES: DB_VARCHAR<154>
+    COLUMN_COMMENT: DB_TEXT
+    GENERATION_EXPRESSION: DB_TEXT
+    SRS_ID: DB_UNSIGNED_INT
 }
 
 const columnSizes = {
@@ -52,9 +133,7 @@ const columnSizes = {
 	}
 };
 
-export const rawToProperty: IPropTransformer<ColumnInfoMySQL>['rawToProperty'] = function (
-	colInfo, ctx
-) {
+function colInfoToProperty(colInfo: ColumnInfoMySQL) {
     const property = <IProperty>{};
     colInfo = { ...colInfo };
     filterRawColumns(colInfo);
@@ -158,9 +237,22 @@ export const rawToProperty: IPropTransformer<ColumnInfoMySQL>['rawToProperty'] =
 
     property.mapsTo = colInfo.Field;
 
+    if (colInfo.Comment)
+        property.comment = colInfo.Comment;
+
+    return property
+}
+
+function schemaColInfoToProperty(colInfo: SchemaColumnInfoMySQL) {
+    throw new Error('Not implemented');
+}
+
+export const rawToProperty: IPropTransformer<ColumnInfoMySQL>['rawToProperty'] = function (
+	colInfo, ctx
+) {
     return {
         raw: colInfo,
-        property
+        property: colInfoToProperty(colInfo)
     }
 };
 
@@ -257,16 +349,31 @@ export const toStorageType: IPropTransformer<ColumnInfoMySQL>['toStorageType'] =
             : ctx.escapeVal(defaultValue)}`;
 	}
 
+    if (property.comment) {
+        result.typeValue += ` COMMENT ${ctx.escapeVal(property.comment)}`;
+    }
+
     return result;
 }
 
-export const filterRawColumns: IPropTransformer<ColumnInfoMySQL>['filterRawColumns'] = function (col) {
-	col.Type = col.Type ? col.Type.toString() : '';
-	col.Size = col.Size ? col.Size.toString() : '';
-	col.Extra = col.Extra ? col.Extra.toString() : '';
-	col.Key = col.Key ? col.Key.toString() : '';
-	col.Null = col.Null ? col.Null.toString() : '';
-	col.Default = col.Default ? col.Default.toString() : '';
+function isSimpleColumnInfo(input: ColumnInfoMySQL | SchemaColumnInfoMySQL): input is ColumnInfoMySQL {
+    return input.hasOwnProperty('Type');
+}
 
-    return col as ColumnInfoMySQL;
+export const filterRawColumns: IPropTransformer<ColumnInfoMySQL>['filterRawColumns'] = function (col) {
+    if (isSimpleColumnInfo(col)) {
+        col.Type = col.Type ? col.Type.toString() : '';
+        col.Size = col.Size ? col.Size.toString() : '';
+        col.Extra = col.Extra ? col.Extra.toString() : '';
+        col.Key = col.Key ? col.Key.toString() : '';
+        col.Null = col.Null ? col.Null.toString() : '';
+        col.Default = col.Default ? col.Default.toString() : '';
+        col.Collation = col.Collation ? col.Collation.toString() : '';
+        col.Privileges = col.Privileges ? col.Privileges.toString() : '';
+        col.Comment = col.Comment ? col.Comment.toString() : '';
+    
+        return col as ColumnInfoMySQL;
+    }
+
+    return col;
 }

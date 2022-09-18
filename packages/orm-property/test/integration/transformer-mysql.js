@@ -81,6 +81,10 @@ describe("transformer('mysql').toStorageType", function () {
 			column.should.match(/AUTO_INCREMENT/);
 		})
 	});
+
+	it("should detect comment", function () {
+		Transformer.toStorageType({ mapsTo: 'abc', type: "number", comment: 'test comment' }, ctx).typeValue.should.match(/COMMENT 'test comment'/);
+	});
 });
 
 describe("transformer('mysql').rawToProperty", function () {
@@ -122,6 +126,15 @@ describe("transformer('mysql').rawToProperty", function () {
 				[
 					{ "Field": "sex", "Type": "enum('male','female')", "Null": "YES", "Key": "", "Default": "", "Extra": "", "Size": "" },
 					{ defaultValue: '', type: 'enum', values: [ 'male', 'female' ], mapsTo: 'sex' }
+				]
+			]
+		},
+		{
+			title: 'comment',
+			groups: [
+				[
+					{ "Field": "name", "Type": "varchar(255)", "Null": "YES", "Key": "", "Default": "", "Extra": "", "Comment": "test comment name", "Size": "" },
+					{ defaultValue: "", type: "text", size: 255, mapsTo: "name", comment: "test comment name" }
 				]
 			]
 		}
