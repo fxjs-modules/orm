@@ -190,7 +190,9 @@ export class Driver<CONN_TYPE extends Driver.IConnTypeEnum = Driver.IConnTypeEnu
      * @description switch to another database, pointless for some databases such as sqlite
      * @param targetDb 
      */
-    switchDb (targetDb: string): void {};
+    switchDb (targetDb: string): void {
+        this.currentDb = targetDb;
+    };
 
 
     /**

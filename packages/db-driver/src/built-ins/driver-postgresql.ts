@@ -16,6 +16,7 @@ export default class PostgreSQLDriver extends SQLDriver<Class_DbConnection> impl
 
     switchDb (targetDb: string) {
         this.execute(`\\c ${targetDb};`);
+        this.currentDb = targetDb;
     }
     
     open (): Class_DbConnection { return super.open() }

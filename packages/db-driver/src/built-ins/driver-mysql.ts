@@ -16,6 +16,7 @@ export default class MySQLDriver extends SQLDriver<Class_MySQL> implements FxDbD
 
     switchDb (targetDb: string) {
         this.execute(`use \`${targetDb}\``);
+        this.currentDb = targetDb;
     }
     
     open (): Class_MySQL { return super.open() }
