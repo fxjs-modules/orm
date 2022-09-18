@@ -2,6 +2,7 @@
 
 import url = require('url')
 import util = require('util')
+import tty  = require("tty");
 import net = require('net')
 import uuid = require('uuid')
 import ParseQSDotKey = require('parse-querystring-dotkey')
@@ -177,3 +178,18 @@ export function mountPoolToDriver<CONN_TYPE = any> (
 export function arraify<T = any> (item: T | T[]): T[] {
 	return Array.isArray(item) ? item : [item]
 }
+
+export function logDebugSQL (dbtype: string, sql: string) {
+	let fmt: string;
+
+	if (tty.isatty(process.stdout.fd)) {
+		fmt = "\033[32;1m(orm/%s) \033[34m%s\033[0m\n";
+		sql = sql.replace(/`(.+?)`/g, function (m) { return "\033[31m" + m + "\033[34m"; });
+	} else {
+		fmt = "[SQL/%s] %s\n";
+	}
+
+	process.stdout.write(
+		util.format(fmt, dbtype, sql) as any
+	);
+};

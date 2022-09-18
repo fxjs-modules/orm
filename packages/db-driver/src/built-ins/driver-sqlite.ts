@@ -5,6 +5,7 @@ import db = require('db')
 import { FxDbDriverNS } from '../Typo';
 import { FxOrmCoreCallbackNS } from '@fxjs/orm-core';
 import { SQLDriver } from "./base.class";
+import { logDebugSQL } from '../utils';
 
 export default class SQLiteDriver extends SQLDriver<Class_SQLite> implements FxDbDriverNS.SQLDriver {
     constructor (conn: FxDbDriverNS.ConnectionInputArgs | string) {
@@ -27,6 +28,9 @@ export default class SQLiteDriver extends SQLDriver<Class_SQLite> implements FxD
     getConnection (): Class_SQLite { return db.openSQLite(this.uri) }
 
     execute<T = any> (sql: string): T {
+        if (this.extend_config.debug_sql) {
+            logDebugSQL('sqlite', sql);
+        }
         if (this.isPool)
             return this.pool(conn => conn.execute(sql)) as any;
 

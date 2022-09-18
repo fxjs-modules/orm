@@ -257,6 +257,12 @@ export class Driver<CONN_TYPE extends Driver.IConnTypeEnum = Driver.IConnTypeEnu
 }
 
 export class SQLDriver<CONN_TYPE extends Driver.IConnTypeEnum> extends Driver<CONN_TYPE> implements FxDbDriverNS.SQLDriver {
+    constructor (opts: FxDbDriverNS.ConnectionInputArgs | string) {
+        super(opts)
+		const options = Utils.parseConnectionString(opts)
+
+		this.extend_config.debug_sql = Utils.castQueryStringToBoolean(options.query.debug_sql)
+    }
     currentDb: FxDbDriverNS.SQLDriver['currentDb'] = null;
 
 	/**

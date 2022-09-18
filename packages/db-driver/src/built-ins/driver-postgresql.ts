@@ -5,6 +5,7 @@ import db = require('db')
 import { FxDbDriverNS } from '../Typo';
 import { FxOrmCoreCallbackNS } from '@fxjs/orm-core';
 import { SQLDriver } from "./base.class";
+import { logDebugSQL } from '../utils';
 
 export default class PostgreSQLDriver extends SQLDriver<Class_DbConnection> implements FxDbDriverNS.SQLDriver {
     constructor (conn: FxDbDriverNS.ConnectionInputArgs | string) {
@@ -30,6 +31,9 @@ export default class PostgreSQLDriver extends SQLDriver<Class_DbConnection> impl
     getConnection (): Class_DbConnection { return db.openPSQL(this.uri) }
 
     execute<T = any> (sql: string): T {
+        if (this.extend_config.debug_sql) {
+            logDebugSQL('postgresql', sql);
+        }
         if (this.isPool)
             return this.pool(conn => conn.execute(sql)) as any;
 
