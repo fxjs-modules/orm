@@ -9,7 +9,7 @@ import util = require("util");
 
 import { Database } from "../DB/mysql";
 import shared = require("./_shared");
-import DDL = require("../DDL/SQL");
+import DDL = require("./_ddl-sql");
 import { FxSqlQuery, Query } from "@fxjs/sql-query";
 import Sync = require("@fxjs/sql-ddl-sync");
 import utils = require("./_utils");

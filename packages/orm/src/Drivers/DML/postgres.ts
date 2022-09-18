@@ -8,7 +8,7 @@ import type { FxOrmCommon } from "../../Typo/_common";
 import util = require("util");
 
 import shared = require("./_shared");
-import DDL = require("../DDL/SQL");
+import DDL = require("./_ddl-sql");
 import Sync = require("@fxjs/sql-ddl-sync");
 import { FxSqlQuery, Query }	from "@fxjs/sql-query";
 import utils = require("./_utils");

@@ -2,7 +2,7 @@ import util = require('util')
 
 import { Database } from "../DB/sqlite3";
 import shared = require("./_shared");
-import DDL = require("../DDL/SQL");
+import DDL = require("./_ddl-sql");
 import Sync = require("@fxjs/sql-ddl-sync");
 import utils = require("./_utils");
 import * as Utilities from '../../Utilities';
