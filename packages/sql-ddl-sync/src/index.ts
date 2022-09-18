@@ -5,7 +5,7 @@ import { FxOrmSqlDDLSync__DbIndex } from "./Typo/DbIndex";
 import { FxOrmSqlDDLSync__Dialect } from "./Typo/Dialect";
 import { FxOrmSqlDDLSync__Driver } from "./Typo/Driver";
 import { FxOrmSqlDDLSync } from "./Typo/_common";
-import { getSqlQueryDialect, logJson, getCollectionMapsTo_PropertyNameDict, filterPropertyDefaultValue, filterSyncStrategy, filterSuppressColumnDrop, psqlGetEnumTypeName, psqlRepairEnumTypes, parseCollectionIndexes } from './Utils';
+import { getSqlQueryDialect, logJson, getCollectionMapsTo_PropertyNameDict, filterPropertyDefaultValue, filterSyncStrategy, filterSuppressColumnDrop, psqlRepairEnumTypes, parseCollectionIndexes } from './Utils';
 import { FxOrmCoreCallbackNS } from '@fxjs/orm-core';
 
 import "./Dialects";
@@ -162,7 +162,7 @@ export class Sync<T extends IDbDriver.ISQLConn = IDbDriver.ISQLConn> {
 		if (collectionIdx >= 0)
 			this.collections.splice(collectionIdx, 1)
 
-		let index_defs = parseCollectionIndexes(collection_name, properties);
+		let index_defs = parseCollectionIndexes(collection_name, properties, this.dbdriver.type);
 		if (typeof this.Dialect.convertIndexes === 'function') {
 			index_defs = this.Dialect.convertIndexes(collection_name, index_defs);
 		}

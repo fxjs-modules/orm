@@ -179,7 +179,8 @@ export function psqlRepairEnumTypes (
  */
 export function parseCollectionIndexes (
     collection: FxOrmSqlDDLSync__Collection.Collection['name'],
-    properties: FxOrmSqlDDLSync__Collection.Collection['properties']
+    properties: FxOrmSqlDDLSync__Collection.Collection['properties'],
+    driver_type: string
 ): FxOrmSqlDDLSync__DbIndex.CollectionDbIndexInfo[] {
     const indexes: FxOrmSqlDDLSync__DbIndex.CollectionDbIndexInfo[] = [];
     let found: boolean,
@@ -235,7 +236,7 @@ export function parseCollectionIndexes (
                 if (mixed_arr_index[i] === true) {
                     indexes.push({
                         collection,
-                        name: getIndexName(collection, prop, this.dbdriver.type),
+                        name: getIndexName(collection, prop, driver_type),
                         unique: false,
                         columns: [ k ]
                     });

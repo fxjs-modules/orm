@@ -34,5 +34,5 @@ export declare function psqlRepairEnumTypes(columns: Record<string, IProperty> |
  *
  * @param collection collection relation to find its indexes
  */
-export declare function parseCollectionIndexes(collection: FxOrmSqlDDLSync__Collection.Collection['name'], properties: FxOrmSqlDDLSync__Collection.Collection['properties']): FxOrmSqlDDLSync__DbIndex.CollectionDbIndexInfo[];
+export declare function parseCollectionIndexes(collection: FxOrmSqlDDLSync__Collection.Collection['name'], properties: FxOrmSqlDDLSync__Collection.Collection['properties'], driver_type: string): FxOrmSqlDDLSync__DbIndex.CollectionDbIndexInfo[];
 export {};
