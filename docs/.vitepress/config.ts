@@ -66,6 +66,7 @@ function getOrmSidebar() {
         { text: '开始连接', link: '/orm/getting-started', children: [
             { text: 'Property', link: '/orm/property' },
             { text: '虚拟视图', link: '/orm/virtual-view' },
+            { text: 'ORM 插件', link: '/orm/plugins' },
         ] },
         { text: 'Packages', link: '/orm-packages/', children: [
             { text: 'orm-core', link: '/orm-packages/orm-core' },
