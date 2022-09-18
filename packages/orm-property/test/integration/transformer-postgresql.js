@@ -44,6 +44,10 @@ describe("transformer('postgresql').toStorageType", function () {
 		Transformer.toStorageType({ mapsTo: 'abc', type: "binary" }, ctx).typeValue.should.equal("BYTEA");
 	});
 
+	it("should detect point", function () {
+		Transformer.toStorageType({ mapsTo: 'abc', type: "point" }, ctx).typeValue.should.equal("POINT");
+	});
+
 	it("should detect custom types", function () {
 		Transformer.toStorageType({ mapsTo: 'abc', type: "json" }, ctx).typeValue.should.equal("JSON");
 	});
@@ -220,6 +224,63 @@ describe("transformer('postgresql').rawToProperty", function () {
 					},
 					{ type: 'enum', values: [ 'in', 'out' ], mapsTo: 'action' },
 					{ userOptions: { enumValues: [ 'in', 'out' ] } }
+				]
+			]
+		},
+		{
+			title: 'point',
+			groups: [
+				[
+					{
+						"table_catalog": "fxjs-orm-test",
+						"table_schema": "public",
+						"table_name": "person",
+						"column_name": "location",
+						"ordinal_position": 2,
+						"column_default": null,
+						"is_nullable": "YES",
+						"data_type": "point",
+						"character_maximum_length": null,
+						"character_octet_length": null,
+						"numeric_precision": null,
+						"numeric_precision_radix": null,
+						"numeric_scale": null,
+						"datetime_precision": null,
+						"interval_type": null,
+						"interval_precision": null,
+						"character_set_catalog": null,
+						"character_set_schema": null,
+						"character_set_name": null,
+						"collation_catalog": null,
+						"collation_schema": null,
+						"collation_name": null,
+						"domain_catalog": null,
+						"domain_schema": null,
+						"domain_name": null,
+						"udt_catalog": "fxjs-orm-test",
+						"udt_schema": "pg_catalog",
+						"udt_name": "point",
+						"scope_catalog": null,
+						"scope_schema": null,
+						"scope_name": null,
+						"maximum_cardinality": null,
+						"dtd_identifier": "2",
+						"is_self_referencing": "NO",
+						"is_identity": "NO",
+						"identity_generation": null,
+						"identity_start": null,
+						"identity_increment": null,
+						"identity_maximum": null,
+						"identity_minimum": null,
+						"identity_cycle": "NO",
+						"is_generated": "NEVER",
+						"generation_expression": null,
+						"is_updatable": "YES"
+					},
+					{
+						"type": "point",
+						"mapsTo": "location",
+					}
 				]
 			]
 		}

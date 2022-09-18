@@ -162,6 +162,9 @@ export const rawToProperty: IPropTransformer<ColumnInfoPostgreSQL>['rawToPropert
                 property.values = ctx?.userOptions?.enumValues || [];
                 break;
             }
+        case "POINT":
+            property.type = "point";
+            break;
         default:
             throw new Error("Unknown column type '" + dCol.data_type + "'");
     }
