@@ -1,5 +1,6 @@
-import type { FxOrmSqlDDLSync__Column, FxOrmSqlDDLSync__Driver } from "@fxjs/sql-ddl-sync";
+import type { FxOrmSqlDDLSync__Driver } from "@fxjs/sql-ddl-sync";
 import type { FxSqlQuery } from '@fxjs/sql-query';
+import type { IProperty } from "@fxjs/orm-property";
 export declare namespace FxOrmProperty {
     /**
      * @description key linked association type
@@ -22,7 +23,7 @@ export declare namespace FxOrmProperty {
             (prop?: FxOrmProperty.NormalizedProperty, helper?: FxSqlQuery.Class_Query): any;
         };
     }
-    type DataStoreProperty = FxOrmSqlDDLSync__Column.Property;
+    type DataStoreProperty = IProperty;
     /**
      * @description useful when pass property's option(such as type, big, ...etc) internally, useless for exposed api.
      *

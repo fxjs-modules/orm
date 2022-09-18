@@ -64,7 +64,10 @@ export namespace FxOrmDMLDriver {
             (): FxSqlQuery.Class_Query
         }
         
-        readonly ddlDialect: FxOrmSqlDDLSync__Dialect.Dialect<IDbDriver.ISQLConn>
+        /**
+         * @internal
+         */
+        readonly ddlSync: FxOrmSqlDDLSync__Dialect.Dialect<IDbDriver.ISQLConn>
 
         /* shared :start */
         doSync <T = any>(opts?: FxOrmDMLShared.SyncOptions): this

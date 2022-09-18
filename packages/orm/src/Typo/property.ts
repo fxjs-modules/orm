@@ -1,11 +1,12 @@
 import type {
-    FxOrmSqlDDLSync__Column,
     FxOrmSqlDDLSync__Driver
 } from "@fxjs/sql-ddl-sync";
 
 import type {
     FxSqlQuery,
 } from '@fxjs/sql-query';
+
+import type { IProperty } from "@fxjs/orm-property";
 
 export namespace FxOrmProperty {
     /**
@@ -31,7 +32,7 @@ export namespace FxOrmProperty {
         }
     }
     
-    export type DataStoreProperty = FxOrmSqlDDLSync__Column.Property;
+    export type DataStoreProperty = IProperty;
     /**
      * @description useful when pass property's option(such as type, big, ...etc) internally, useless for exposed api.
      * 

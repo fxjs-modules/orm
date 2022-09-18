@@ -37,6 +37,7 @@
 		"@fxjs/db-driver": "^0.2.3",
 		"@fxjs/knex": "^0.3.2",
 		"@fxjs/orm-core": "^0.2.1",
+		"@fxjs/orm-property": "^0.1.2",
 		"@fxjs/sql-ddl-sync": "^0.8.8",
 		"@fxjs/sql-query": "^0.8.3",
 		"@types/knex": "^0.16.1",
