@@ -10,7 +10,7 @@ const testDefinitions = [
 			id: { type: "serial", key: true, serial: true, mapsTo: 'userID' },
 			username: { type: "text", reuqired: true },
 			password: { type: "text", reuqired: true },
-			created_at: { type: "datetime", defaultValue: 'CURRENT_TIMESTAMP' },
+			created_at: { type: "datetime", defaultValue: Date.now },
 		}
 	],
 	[
@@ -21,7 +21,7 @@ const testDefinitions = [
 			phone: { type: "text", size: 32 },
 			birthday: { type: "date", time: true, defaultValue: new Date('1970-01-01 00:00:00') },
 			photo: { type: "binary" },
-			created_at: { type: "datetime", defaultValue: 'CURRENT_TIMESTAMP' },
+			created_at: { type: "datetime", defaultValue: Date.now },
 		}
 	],
 	[
@@ -29,7 +29,7 @@ const testDefinitions = [
 			id: { type: "serial", key: true, serial: true },
 			name: { type: "text", reuqired: true },
 			description: { type: "text", reuqired: true },
-			created_at: { type: "datetime", defaultValue: 'CURRENT_TIMESTAMP' },
+			created_at: { type: "datetime", defaultValue: Date.now },
 		}
 	],
 	[
@@ -38,7 +38,7 @@ const testDefinitions = [
 			type: { type: "text", reuqired: true, index: [ "subject_idx_type_position" ] },
 			position: { type: "text", reuqired: true, index: [ "subject_idx_type_position" ] },
 			description: { type: "text", reuqired: true, index: [ "subject_idx_description" ] },
-			created_at: { type: "datetime", defaultValue: 'CURRENT_TIMESTAMP' },
+			created_at: { type: "datetime", defaultValue: Date.now },
 		}
 	]
 ];
@@ -125,8 +125,12 @@ describe(`db: Sync`, function () {
 							table,
 							'created_at'
 						).created_at
-
-					assert.equal(created_at.defaultValue, 'CURRENT_TIMESTAMP')
+					
+					if (common.dbdriver.type === 'psql') {
+						assert.equal(created_at.defaultValue, 'now()')
+					} else {
+						assert.equal(created_at.defaultValue, 'CURRENT_TIMESTAMP')
+					}
 				});
 			});
 		});
@@ -192,7 +196,7 @@ describe(`db: Sync`, function () {
 					)
 				});
 
-				if (common.dialect === 'sqlite') {
+				if (common.dbdriver.type === 'sqlite') {
 					it(`${table}'s column 'updated_at' have no default value`, () => {
 						const props = sync.Dialect.getCollectionPropertiesSync(
 							sync.dbdriver,

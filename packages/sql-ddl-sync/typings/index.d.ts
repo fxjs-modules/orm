@@ -52,12 +52,7 @@ export declare class Sync<T extends IDbDriver.ISQLConn = IDbDriver.ISQLConn> {
      *      - 'hard': modify existed columns in db
      */
     syncCollection(_collection: string | FxOrmSqlDDLSync__Collection.Collection, opts?: FxOrmSqlDDLSync.SyncCollectionOptions): void;
-    /**
-     *
-     * @param collection collection relation to find its indexes
-     */
-    getCollectionIndexes(collection: FxOrmSqlDDLSync__Collection.Collection): FxOrmSqlDDLSync__DbIndex.DbIndexInfo[];
-    syncIndexes(collection_name: string, indexes: FxOrmSqlDDLSync__DbIndex.DbIndexInfo[]): void;
+    syncIndexes(collection_name: string, index_defs: FxOrmSqlDDLSync__DbIndex.CollectionDbIndexInfo[]): void;
     /**
      * @description
      *  sync all collections to db (if not existing), with initializing ones' properties.

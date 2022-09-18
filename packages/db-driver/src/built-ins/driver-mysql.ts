@@ -31,6 +31,10 @@ export default class MySQLDriver extends SQLDriver<Class_MySQL> implements FxDbD
 
     getConnection (): Class_MySQL { return db.openMySQL(this.uri) }
 
+    dbExists (dbname: string): boolean {
+        return this.execute(`SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '${dbname}'`).length > 0;
+    }
+
     execute<T = any> (sql: string): T {
         if (this.extend_config.debug_sql) {
             logDebugSQL('mysql', sql);

@@ -116,7 +116,7 @@ export const getCollectionColumnsSync: IDialect['getCollectionColumnsSync'] = fu
 ) {
 	return dbdriver.execute<Record<string, Class_Buffer>[]>(
 		getSqlQueryDialect('mysql').escape(
-			"SHOW COLUMNS FROM ??", [name]
+			"SHOW FULL COLUMNS FROM ??", [name]
 		)
 	).map(row => Transformer.filterRawColumns(row as any)) as any
 }
@@ -312,7 +312,7 @@ export const getCollectionIndexesSync: IDialect['getCollectionIndexesSync'] = fu
 				"FROM information_schema.statistics ",
 				"WHERE table_schema = ? AND table_name = ?",
 			].join(''),
-			[dbdriver.config.database, name]
+			[dbdriver.currentDb, name]
 		)
 	)
 
@@ -382,8 +382,8 @@ export const toRawType: IDialect['toRawType'] = function (
 
 function convertIndexRows(
 	rows: FxOrmSqlDDLSync__Driver.DbIndexInfo_MySQL[]
-): FxOrmSqlDDLSync__DbIndex.DbIndexInfoHash {
-	const indexes = <FxOrmSqlDDLSync__DbIndex.DbIndexInfoHash>{};
+): Record<string, FxOrmSqlDDLSync__DbIndex.DbIndexInfo> {
+	const indexes = <Record<string, FxOrmSqlDDLSync__DbIndex.DbIndexInfo>>{};
 
 	for (let i = 0; i < rows.length; i++) {
 		const index_name = getObjectPropertyCaseInsensitive(rows[i], "index_name");

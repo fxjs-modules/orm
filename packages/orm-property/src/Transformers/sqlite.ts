@@ -1,4 +1,4 @@
-import { IPropTransformer, IProperty, PropertyType, __StringType } from "../Property"
+import { IPropTransformer, IProperty, __StringType } from "../Property"
 import { filterPropertyDefaultValue } from "../Utils"
 
 // item in list from `PRAGMA table_info(??)`
@@ -193,12 +193,12 @@ export const toStorageType: ITransformers['toStorageType'] = function (
 			result.typeValue = ctx.customTypes?.[property.type].datastoreType(property, ctx)
 		}
 	} else if (property.hasOwnProperty("defaultValue") && property.defaultValue !== undefined) {
-		let defaultValue = filterPropertyDefaultValue(property, ctx)
-
-        defaultValue = ctx.escapeVal(defaultValue);
+		let defaultValue = property.type === 'date' && property.defaultValue === Date.now
+            ? ctx.escapeVal('CURRENT_TIMESTAMP')
+            : ctx.escapeVal(filterPropertyDefaultValue(property, ctx));
 
         const { useDefaultValue = true } = ctx.userOptions || {};
-		
+        
         /**
          * @description
          * 	sqlite doens't support alter column's datetime default value,
@@ -208,7 +208,7 @@ export const toStorageType: ITransformers['toStorageType'] = function (
          * @see https://stackoverflow.com/questions/25911191/altering-a-sqlite-table-to-add-a-timestamp-column-with-default-value
          */
         if (defaultValue && useDefaultValue)
-		    result.typeValue += ` DEFAULT ${defaultValue} `;
+            result.typeValue += ` DEFAULT ${defaultValue} `;
 	}
 
     return result;

@@ -1,13 +1,12 @@
 import coroutine = require('coroutine');
-import { IDbDriver } from "@fxjs/db-driver";
 import FxORMCore = require("@fxjs/orm-core");
 import { ExtractColumnInfo, transformer } from "@fxjs/orm-property";
 
 import SQL = require("../SQL");
-import { FxOrmSqlDDLSync__Column } from "../Typo/Column";
 import { FxOrmSqlDDLSync__Dialect } from "../Typo/Dialect";
 import { FxOrmSqlDDLSync__Driver } from "../Typo/Driver";
 import { getSqlQueryDialect, arraify, filterPropertyDefaultValue } from '../Utils';
+import { FxOrmSqlDDLSync__DbIndex } from '../Typo/DbIndex';
 
 const Transformer = transformer('postgresql')
 
@@ -205,8 +204,8 @@ export const hasCollectionColumnsSync: IDialect['hasCollectionColumnsSync'] = fu
 	const columnSet = new Set(arraify(column))
 	const res = dbdriver.execute<{ column_name: string }[]>(
 		getSqlQueryDialect('psql').escape(
-			"select column_name from information_schema.columns where table_name = '?' and column_name in (?);",
-			[name, [...columnSet].map(col => `'${col}'`).join(', ')]
+			`select column_name from information_schema.columns where table_name = ? and column_name in (${[...columnSet].map(col => `'${col}'`).join(', ')});`,
+			[name]
 		)
 	)
 	const resSet = new Set(res.map(({ column_name }) => column_name))
@@ -262,15 +261,15 @@ export const renameCollectionColumn: IDialect['renameCollectionColumn'] = functi
 
 export const modifyCollectionColumnSync: IDialect['modifyCollectionColumnSync'] = function (dbdriver, name, column): any {
 	let p        = column.indexOf(" ");
-	const col_name = column.substr(0, p);
+	const col_name = column.slice(0, p);
 	let col_type: string;
 
-	column = column.substr(p + 1);
+	column = column.slice(p + 1);
 
 	p = column.indexOf(" ");
 	if (p > 0) {
-		col_type = column.substr(0, p);
-		column = column.substr(p + 1);
+		col_type = column.slice(0, p);
+		column = column.slice(p + 1);
 	} else {
 		col_type = column;
 		column = '';
@@ -278,24 +277,38 @@ export const modifyCollectionColumnSync: IDialect['modifyCollectionColumnSync'] 
 
 	var res;
 
-	res = dbdriver.execute(`ALTER TABLE ${name} ALTER ${col_name} TYPE ${col_type}`);
+	res = dbdriver.execute(
+		getSqlQueryDialect('psql').escape(
+			`ALTER TABLE ?? ALTER ${col_name} TYPE ${col_type}`,
+			[name, col_name]
+		)
+	);
 
 	if (column) {
 		if (column.match(/NOT NULL/)) {
-			res = dbdriver.execute("ALTER TABLE " + name +
-				                " ALTER " + col_name +
-				                " SET NOT NULL");
+			res = dbdriver.execute(
+				getSqlQueryDialect('psql').escape(
+					`ALTER TABLE ?? ALTER ${col_name} SET NOT NULL`,
+					[name]
+				)
+			);
 		} else {
-			res = dbdriver.execute("ALTER TABLE " + name +
-				                " ALTER " + col_name +
-				                " DROP NOT NULL");
+			res = dbdriver.execute(
+				getSqlQueryDialect('psql').escape(
+					`ALTER TABLE ?? ALTER ${col_name} DROP NOT NULL`,
+					[name]
+				)
+			);
 		}
 
 		let m: any[];
 		if (m = column.match(/DEFAULT (.+)$/)) {
-			res = dbdriver.execute("ALTER TABLE " + name +
-				                " ALTER " + col_name +
-				                " SET DEFAULT " + m[1]);
+			res = dbdriver.execute(
+				getSqlQueryDialect('psql').escape(
+					`ALTER TABLE ?? ALTER ${col_name} SET DEFAULT ${m[1]}`,
+					[name]
+				)
+			);
 		}
 	}
 
@@ -334,12 +347,12 @@ export const getCollectionIndexesSync: IDialect['getCollectionIndexesSync'] = fu
 	         "FROM pg_class t, pg_class i, pg_index ix, pg_attribute a " +
 	         "WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid " +
 	         "AND a.attrelid = t.oid AND a.attnum = ANY(ix.indkey) " +
-	         "AND t.relkind = 'r' AND t.relname = ?",
-	         [ name ]
+	         "AND t.relkind = 'r' AND (t.relname = ? OR i.relname::text like ?)",
+	         [ name, `${name}_%` ]
 		)
 	);
 
-	return convertIndexRows(rows)
+	return convertIndexRows(name, rows)
 };
 
 export const getCollectionIndexes: IDialect['getCollectionIndexes'] = function (
@@ -384,7 +397,7 @@ export const removeIndex: IDialect['removeIndex'] = function (
 
 export const convertIndexes: IDialect['convertIndexes'] = function (collection, indexes) {
 	for (let i = 0; i < indexes.length; i++) {
-		indexes[i].name = collection.name + "_" + indexes[i].name;
+		indexes[i].name = collection + "_" + indexes[i].name;
 	}
 
 	return indexes;
@@ -398,22 +411,29 @@ export const toRawType: IDialect['toRawType'] = function (property, ctx) {
 	});
 };
 
-function convertIndexRows(rows: FxOrmSqlDDLSync__Driver.DbIndexInfo_PostgreSQL[]) {
-	var indexes: Record<string, any> = {};
+function convertIndexRows(
+	collection: string,
+	rows: FxOrmSqlDDLSync__Driver.DbIndexInfo_PostgreSQL[]
+) {
+	const indexes: Record<string, FxOrmSqlDDLSync__DbIndex.CollectionDbIndexInfo> = {};
 
-	for (var i = 0; i < rows.length; i++) {
-		if (rows[i].indisprimary) {
+	for (let i = 0; i < rows.length; i++) {
+		if (rows[i].indisprimary === '1') {
 			continue;
 		}
 
-		if (!indexes.hasOwnProperty(rows[i].relname)) {
-			indexes[rows[i].relname] = {
+		const idx_name = rows[i].relname;
+
+		if (!indexes.hasOwnProperty(idx_name)) {
+			indexes[idx_name] = {
+				collection,
+				name: idx_name,
 				columns : [],
-				unique  : rows[i].indisunique
+				unique  : rows[i].indisunique === '1',
 			};
 		}
 
-		indexes[rows[i].relname].columns.push(rows[i].attname);
+		indexes[idx_name].columns.push(rows[i].attname);
 	}
 
 	return indexes;

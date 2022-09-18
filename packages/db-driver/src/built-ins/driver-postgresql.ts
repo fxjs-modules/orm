@@ -14,8 +14,16 @@ export default class PostgreSQLDriver extends SQLDriver<Class_DbConnection> impl
         this.connection = null
     }
 
+    /**
+     * @description unsafe for parallel execution, make sure call it in serial
+     * @param targetDb 
+     */
     switchDb (targetDb: string) {
-        this.execute(`\\c ${targetDb};`);
+        // // will throw out error now, postgresql does not support run commmand as sql
+        // this.execute(`\\c ${targetDb};`);
+
+        this.config.database = targetDb;
+        this.reopen();
         this.currentDb = targetDb;
     }
     
@@ -30,6 +38,10 @@ export default class PostgreSQLDriver extends SQLDriver<Class_DbConnection> impl
     rollback (): void { return this.connection.rollback() }
 
     getConnection (): Class_DbConnection { return db.openPSQL(this.uri) }
+
+    dbExists (dbname: string): boolean {
+        return this.execute(`SELECT datname FROM pg_database WHERE datname = '${dbname}'`).length > 0;
+    }
 
     execute<T = any> (sql: string): T {
         if (this.extend_config.debug_sql) {

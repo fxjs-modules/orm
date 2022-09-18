@@ -8,4 +8,4 @@ export declare function parseConnectionString(input: any): FxDbDriverNS.DBConnec
 export declare function parsePoolConfig(input: boolean | FxDbDriverNS.ConnectionPoolOptions | any): FxDbDriverNS.ConnectionPoolOptions;
 export declare function mountPoolToDriver<CONN_TYPE = any>(driver: any, poolSetting?: any): void;
 export declare function arraify<T = any>(item: T | T[]): T[];
-export declare function logDebugSQL(dbtype: string, sql: string): void;
+export declare function logDebugSQL(dbtype: string, sql: string, is_sync?: boolean): void;

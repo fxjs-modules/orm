@@ -37,10 +37,10 @@ export namespace FxOrmSqlDDLSync__Dialect{
             (driver: ITypedDriver<ConnType>, collection: string): Record<string, IProperty>
         }
         getCollectionIndexes: {
-            (driver: ITypedDriver<ConnType>, name: string, cb: FxOrmCoreCallbackNS.ExecutionCallback<FxOrmSqlDDLSync__DbIndex.DbIndexInfoHash>): void
+            (driver: ITypedDriver<ConnType>, collection: string, cb: FxOrmCoreCallbackNS.ExecutionCallback<Record<string, FxOrmSqlDDLSync__DbIndex.DbIndexInfo>>): void
         }
         getCollectionIndexesSync: {
-            (driver: ITypedDriver<ConnType>, name: string): FxOrmSqlDDLSync__DbIndex.DbIndexInfoHash
+            (driver: ITypedDriver<ConnType>, collection: string): Record<string, FxOrmSqlDDLSync__DbIndex.DbIndexInfo>
         }
         addIndex: {
             (driver: ITypedDriver<ConnType>, name: string, unique: boolean, collection: FxOrmSqlDDLSync.TableName, columns: string[], cb: FxOrmCoreCallbackNS.ExecutionCallback<any>): void
@@ -81,9 +81,10 @@ export namespace FxOrmSqlDDLSync__Dialect{
             (type: string): string
         }
 
-        convertIndexes?: {
-            (rows: FxOrmSqlDDLSync__Collection.Collection, db_idxes: FxOrmSqlDDLSync__DbIndex.DbIndexInfo[]): FxOrmSqlDDLSync__DbIndex.DbIndexInfo[]
-        }
+        convertIndexes?: <T extends FxOrmSqlDDLSync__DbIndex.DbIndexInfo>(
+            collection: FxOrmSqlDDLSync__Collection.Collection['name'],
+            db_idxes: T[]
+        ) => (typeof db_idxes)
 
         [extra: string]: any
     }

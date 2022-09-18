@@ -36,7 +36,7 @@ function testOnUseSync (use_force_sync = Math.random(0, 1) > 0.5) {
 		before(common.dropTable())
 
 		describe("Syncing", function () {
-			it("shouldn has no `id` before sync", function (done) {
+			it("should has no `id` before sync", function (done) {
 				Dialect.hasCollection(
 					common.dbdriver,
 					common.table,
@@ -97,7 +97,7 @@ function testOnUseSync (use_force_sync = Math.random(0, 1) > 0.5) {
 			});
 		});
 
-		if (common.dialect != "sqlite") {
+		if (common.dbdriver.type != "sqlite") {
 			describe("Dropping a column", function () {
 				before(common.dropColumn('born'));
 
@@ -157,7 +157,7 @@ function testOnUseSync (use_force_sync = Math.random(0, 1) > 0.5) {
 			describe("Adding a column", function () {
 				before(common.addColumn('unknown_col'));
 
-				it(`${use_force_sync ? 'should' : 'shouldn\'t'} drop column on first call`, function (done) {
+				it(`${use_force_sync ? 'should' : `shouldn't`} drop column on first call`, function (done) {
 					sync[use_force_sync ? 'forceSync' : 'sync'](function (err, info) {
 						should.not.exist(err);
 						should.exist(info);

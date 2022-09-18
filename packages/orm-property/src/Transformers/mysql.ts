@@ -342,7 +342,10 @@ export const toStorageType: IPropTransformer<ColumnInfoMySQL>['toStorageType'] =
 			result.typeValue = ctx.customTypes[property.type].datastoreType(property, ctx)
 		}
 	} else if (property.hasOwnProperty("defaultValue") && property.defaultValue !== undefined) {
-		const defaultValue = filterPropertyDefaultValue(property, ctx)
+        const defaultValue = property.type === 'date' && property.defaultValue === Date.now
+            ? 'CURRENT_TIMESTAMP'
+            : filterPropertyDefaultValue(property, ctx);
+
         result.typeValue += ` DEFAULT ${
             property.type === 'date' && (['CURRENT_TIMESTAMP'].includes(defaultValue))
             ? defaultValue

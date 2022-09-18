@@ -91,7 +91,7 @@ function testOnUseSync (use_force_sync = Math.random(0, 1) > 0.5) {
 			});
 		});
 
-		if (common.dialect != "sqlite") {
+		if (common.dbdriver.type != "sqlite") {
 			describe("Dropping a column", function () {
 				before(common.dropColumn('born'));
 

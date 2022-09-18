@@ -13,5 +13,6 @@ export default class MySQLDriver extends SQLDriver<Class_MySQL> implements FxDbD
     trans<T = any>(cb: FxOrmCoreCallbackNS.ExecutionCallback<T>): boolean;
     rollback(): void;
     getConnection(): Class_MySQL;
+    dbExists(dbname: string): boolean;
     execute<T = any>(sql: string): T;
 }

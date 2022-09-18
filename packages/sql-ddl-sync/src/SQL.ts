@@ -35,7 +35,9 @@ export function CHECK_TABLE_HAS_COLUMN (
 	const eid = getSqlQueryDialect(db_type).escapeId;
 	const evalue = getSqlQueryDialect(db_type).escapeVal;
 	const sql = [
-		`SHOW COLUMNS FROM ${eid(options.name)} LIKE ${evalue(options.column)}`
+		db_type === 'mysql'
+		? `SHOW FULL COLUMNS FROM ${eid(options.name)} LIKE ${evalue(options.column)}`
+		: `SHOW COLUMNS FROM ${eid(options.name)} LIKE ${evalue(options.column)}`
 	].filter(x => x).join('')
 
 	return sql;

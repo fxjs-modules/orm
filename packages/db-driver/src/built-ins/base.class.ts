@@ -270,6 +270,11 @@ export class SQLDriver<CONN_TYPE extends Driver.IConnTypeEnum> extends Driver<CO
 	/**
 	 * @override
 	 */
+     dbExists(dbname: string): boolean { return false };
+
+	/**
+	 * @override
+	 */
 	begin (): void {}
 
 	/**

@@ -131,10 +131,6 @@ sync 实例中的自定义 types.
 - `opts.columns`: (optional) 要同步的列, 若没有指定, 则同步数据库中的所有列.
 - `opts.strategy`: (optional) 默认为 `'soft'`, 参考[字段同步策略](#字段同步策略)
 
-### `Sync::getCollectionIndexes(collection: string)`
-
-查询数据库中 `collection` 表的索引.
-
 ### `Sync::syncIndexes(collection: string, indexes: object[])`
 
 同步 indexes 索引信息到 `collection` 表中.

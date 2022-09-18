@@ -90,6 +90,11 @@ export declare namespace FxDbDriver__Driver_SQLShared {
 export declare namespace FxDbDriverNS {
     interface SQLDriver extends DriverExtendTransaction {
         currentDb: string;
+        /**
+         *
+         * @param dbname dbname, expected to be escaped
+         */
+        dbExists(dbname: string): boolean;
         execute: {
             <T = any>(sql: string): T;
         };

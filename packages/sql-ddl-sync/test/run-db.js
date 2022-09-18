@@ -21,18 +21,26 @@ if (!uri.protocol) {
 }
 
 common.dbdriver = DBDriver.create(process.env.URI);
-common.dialect = common.dbdriver.type;
-runTest();
 
-process.exit(0);
+describe('sql-dll-sync - db', () => {
+	before((done) => {
+		common.dropDatabase()(
+			() => {
+				common.createDatabase()(done)
+			}
+		)
+	});
 
-function runTest () {
+	// before(common.createDatabase());
+	// after(common.dropDatabase());
+	
 	require('./integration/db.callback')
 	require('./integration/db')
 
 	require('./integration/db.sync')
+})
 
-	test.run(console.DEBUG)
+test.run(console.DEBUG)
+common.dbdriver.close();
 
-	common.dbdriver.close()
-}
+process.exit(0);

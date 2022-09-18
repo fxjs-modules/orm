@@ -27,6 +27,11 @@ export default class SQLiteDriver extends SQLDriver<Class_SQLite> implements FxD
 
     getConnection (): Class_SQLite { return db.openSQLite(this.uri) }
 
+    dbExists(dbname: string): boolean {
+        // return this.execute(`SELECT name FROM sqlite_master WHERE type='table' AND name='${dbname}'`).length > 0;
+        return true;
+    }
+
     execute<T = any> (sql: string): T {
         if (this.extend_config.debug_sql) {
             logDebugSQL('sqlite', sql);

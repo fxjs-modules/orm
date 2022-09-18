@@ -250,7 +250,7 @@ export const toStorageType: IPropTransformer<ColumnInfoPostgreSQL>['toStorageTyp
             result.typeValue = ctx.customTypes?.[property.type].datastoreType(property, ctx)
         }
     } else if (property.hasOwnProperty("defaultValue") && property.defaultValue !== undefined) {
-        if (property.type == 'date' && property.defaultValue === Date.now){
+        if (property.type === 'date' && property.defaultValue === Date.now){
             result.typeValue += " DEFAULT now()";
         } else {
             const defaultValue = filterPropertyDefaultValue(property, ctx)

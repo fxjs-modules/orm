@@ -1,10 +1,13 @@
 export declare namespace FxOrmSqlDDLSync__DbIndex {
     interface DbIndexInfo {
         name?: string;
-        columns: string[];
+        columns: (string | {
+            string: number;
+            column: string;
+        })[];
         unique?: boolean;
     }
-    interface DbIndexInfoHash {
-        [idx_name: string]: DbIndexInfo;
+    interface CollectionDbIndexInfo extends Required<DbIndexInfo> {
+        collection: string;
     }
 }

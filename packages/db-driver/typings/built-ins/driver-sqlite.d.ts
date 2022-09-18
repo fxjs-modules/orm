@@ -12,5 +12,6 @@ export default class SQLiteDriver extends SQLDriver<Class_SQLite> implements FxD
     trans<T = any>(cb: FxOrmCoreCallbackNS.ExecutionCallback<T>): boolean;
     rollback(): void;
     getConnection(): Class_SQLite;
+    dbExists(dbname: string): boolean;
     execute<T = any>(sql: string): T;
 }

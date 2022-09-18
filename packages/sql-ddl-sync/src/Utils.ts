@@ -24,6 +24,7 @@ export function logJson (group: string, detail: any) {
 }
 
 import sqlQueryDialects = require('@fxjs/sql-query/lib/Dialects');
+import { FxOrmSqlDDLSync__DbIndex } from './Typo/DbIndex';
 type ISqlQueryDialects = typeof sqlQueryDialects;
 
 export function addSqlQueryDialect (type: string, Dialect: any) {
@@ -31,7 +32,10 @@ export function addSqlQueryDialect (type: string, Dialect: any) {
 }
 
 export function getAllSqlQueryDialects (type: string) {
-    return sqlQueryDialects
+    return {
+        ...sqlQueryDialects,
+        psql: sqlQueryDialects['postgresql']
+    }
 }
 
 export function getSqlQueryDialect (type: FxDbDriverNS.DriverType | 'postgresql'): ISqlQueryDialects[keyof ISqlQueryDialects] {
@@ -148,4 +152,115 @@ export function psqlRepairEnumTypes (
 
         dbdriver.execute(`CREATE TYPE ${type} AS ENUM (${values})`);
     });
+}
+
+/**
+ * @description compute system's index name by dialect type
+ * 
+ * @param collection collection to indexed
+ * @param prop column's property
+ */
+ function getIndexName (
+	collection: string,
+	prop: IProperty,
+	dialect_type: string
+) {
+	const post = prop.unique ? 'unique' : 'index';
+
+	if (dialect_type == 'sqlite') {
+		return collection + '_' + prop.name + '_' + post;
+	} else {
+		return prop.name + '_' + post;
+	}
+}
+/**
+ * 
+ * @param collection collection relation to find its indexes
+ */
+export function parseCollectionIndexes (
+    collection: FxOrmSqlDDLSync__Collection.Collection['name'],
+    properties: FxOrmSqlDDLSync__Collection.Collection['properties']
+): FxOrmSqlDDLSync__DbIndex.CollectionDbIndexInfo[] {
+    const indexes: FxOrmSqlDDLSync__DbIndex.CollectionDbIndexInfo[] = [];
+    let found: boolean,
+        prop: IProperty;
+
+    for (let k in properties) {
+        prop = properties[k];
+
+        if (prop.unique) {
+            let mixed_arr_unique: (string | true)[] = prop.unique as string[]
+            if (!Array.isArray(prop.unique)) {
+                mixed_arr_unique = [ prop.unique ];
+            }
+
+            for (let i = 0; i < mixed_arr_unique.length; i++) {
+                if (mixed_arr_unique[i] === true) {
+                    indexes.push({
+                        collection,
+                        name    : getIndexName(collection, prop, this.dbdriver.type),
+                        unique  : true,
+                        columns : [ k ]
+                    });
+                } else {
+                    found = false;
+
+                    for (let j = 0; j < indexes.length; j++) {
+                        if (indexes[j].name == mixed_arr_unique[i]) {
+                            found = true;
+                            indexes[j].columns.push(k);
+                            break;
+                        }
+                    }
+
+                    if (!found) {
+                        indexes.push({
+                            collection,
+                            name    : mixed_arr_unique[i] as string,
+                            unique  : true,
+                            columns : [ k ]
+                        });
+                    }
+                }
+            }
+        }
+        
+        if (prop.index) {
+            let mixed_arr_index: (string | true)[] = prop.index as string[]
+            if (!Array.isArray(prop.index)) {
+                mixed_arr_index = [ prop.index ];
+            }
+
+            for (let i = 0; i < mixed_arr_index.length; i++) {
+                if (mixed_arr_index[i] === true) {
+                    indexes.push({
+                        collection,
+                        name: getIndexName(collection, prop, this.dbdriver.type),
+                        unique: false,
+                        columns: [ k ]
+                    });
+                } else {
+                    found = false;
+
+                    for (let j = 0; j < indexes.length; j++) {
+                        if (indexes[j].name == mixed_arr_index[i]) {
+                            found = true;
+                            indexes[j].columns.push(k);
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        indexes.push({
+                            collection,
+                            name: mixed_arr_index[i] as string,
+                            columns: [ k ],
+                            unique: false,
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    return indexes;
 }

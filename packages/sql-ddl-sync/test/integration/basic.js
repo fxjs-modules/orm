@@ -88,7 +88,6 @@ describe("sql-ddl-sync", function () {
         'findCollection',
         'defineType',
         'createCollection',
-        'getCollectionIndexes',
         'syncCollection',
         'syncIndexes',
         'needDefinitionToColumn',

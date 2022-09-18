@@ -131,6 +131,15 @@ export function parseConnectionString (input: any): FxDbDriverNS.DBConnectionCon
         'pathname',
     ])
 
+    Object.defineProperty(input, 'database', {
+        set(v) {
+            this.pathname = '/' + v
+        },
+        get() {
+            return unPrefix(this.pathname, '/')
+        },
+    });
+
     input.slashes = !!input.slashes
     input.port = forceInteger(input.port, null)
 
@@ -179,7 +188,7 @@ export function arraify<T = any> (item: T | T[]): T[] {
 	return Array.isArray(item) ? item : [item]
 }
 
-export function logDebugSQL (dbtype: string, sql: string) {
+export function logDebugSQL (dbtype: string, sql: string, is_sync = true) {
 	let fmt: string;
 
 	if (tty.isatty(process.stdout.fd)) {
@@ -189,7 +198,11 @@ export function logDebugSQL (dbtype: string, sql: string) {
 		fmt = "[SQL/%s] %s\n";
 	}
 
-	process.stdout.write(
-		util.format(fmt, dbtype, sql) as any
-	);
+    const text = util.format(fmt, dbtype, sql);
+
+    if (is_sync) {
+        console.log(text)
+    } else {
+        process.stdout.write(text as any);
+    }
 };

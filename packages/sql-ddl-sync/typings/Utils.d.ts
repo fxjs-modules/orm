@@ -6,9 +6,16 @@ import type { FxOrmSqlDDLSync } from "./Typo/_common";
 import type { FxOrmSqlDDLSync__Collection } from "./Typo/Collection";
 export declare function logJson(group: string, detail: any): string;
 import sqlQueryDialects = require('@fxjs/sql-query/lib/Dialects');
+import { FxOrmSqlDDLSync__DbIndex } from './Typo/DbIndex';
 declare type ISqlQueryDialects = typeof sqlQueryDialects;
 export declare function addSqlQueryDialect(type: string, Dialect: any): void;
-export declare function getAllSqlQueryDialects(type: string): typeof sqlQueryDialects;
+export declare function getAllSqlQueryDialects(type: string): {
+    psql: import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.Dialect<import(".").FxOrmSqlDDLSync__Dialect.DialectType>;
+    mysql: import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.Dialect<import(".").FxOrmSqlDDLSync__Dialect.DialectType>;
+    postgresql: import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.Dialect<import(".").FxOrmSqlDDLSync__Dialect.DialectType>;
+    sqlite: import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.Dialect<import(".").FxOrmSqlDDLSync__Dialect.DialectType>;
+    mssql: import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.Dialect<import(".").FxOrmSqlDDLSync__Dialect.DialectType>;
+};
 export declare function getSqlQueryDialect(type: FxDbDriverNS.DriverType | 'postgresql'): ISqlQueryDialects[keyof ISqlQueryDialects];
 export declare function arraify<T = any>(item: T | T[]): T[];
 export declare function getCollectionMapsTo_PropertyNameDict(collection: FxOrmSqlDDLSync__Collection.Collection): {
@@ -23,4 +30,9 @@ export declare function filterSyncStrategy(strategy: FxOrmSqlDDLSync.SyncCollect
 export declare function filterSuppressColumnDrop(suppressColumnDrop: boolean, db_type: FxDbDriverNS.DriverType): boolean;
 export declare function psqlGetEnumTypeName(collection_name: string, column_name: string): string;
 export declare function psqlRepairEnumTypes(columns: Record<string, IProperty> | IProperty[], collection_name: string, dbdriver: IDbDriver.ITypedDriver<Class_DbConnection>): void;
+/**
+ *
+ * @param collection collection relation to find its indexes
+ */
+export declare function parseCollectionIndexes(collection: FxOrmSqlDDLSync__Collection.Collection['name'], properties: FxOrmSqlDDLSync__Collection.Collection['properties']): FxOrmSqlDDLSync__DbIndex.CollectionDbIndexInfo[];
 export {};
