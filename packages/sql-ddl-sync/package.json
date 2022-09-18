@@ -30,7 +30,7 @@
 		"test": "fibjs test",
 		"ci": "npm run build && npm run test",
 		"ci-mysql": "npm run build && TEST_MYSQL=true npm run test",
-		"ci-psql": "npm run build && TEST_PSQL=true npm run test",
+		"ci-postgres": "npm run build && TEST_PSQL=true npm run test",
 		"prepublishOnly": "npm run ci"
 	},
 	"files": [

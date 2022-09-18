@@ -9,7 +9,7 @@ import { getSqlQueryDialect, logJson, getCollectionMapsTo_PropertyNameDict, filt
 import { FxOrmCoreCallbackNS } from '@fxjs/orm-core';
 
 import "./Dialects";
-import { Transformers, IProperty, transformer }  from '@fxjs/orm-property';
+import { IProperty, transformer }  from '@fxjs/orm-property';
 import { IDbDriver } from "@fxjs/db-driver";
 
 const noOp = () => {};
@@ -28,6 +28,38 @@ export function dialect (name: FxOrmSqlDDLSync__Dialect.DialectType | 'psql') {
 		default:
 			throw new Error(`no dialect with name '${name}'`)
 		}
+}
+
+function updateColumnsComment<T extends IDbDriver.ISQLConn = IDbDriver.ISQLConn>(
+	collection: FxOrmSqlDDLSync__Collection.Collection,
+	dbdriver: IDbDriver.ITypedDriver<T>,
+	remote_properties: FxOrmSqlDDLSync__Collection.Collection['properties'],
+) {
+	// TODO: support mysql also
+	if (dbdriver.type !== 'psql') return ;
+
+	const dialect = getSqlQueryDialect(dbdriver.type);
+
+	for (let k in collection.properties) {
+		const prop = collection.properties[k];
+		if (!prop.comment) continue ;
+
+		const remote_prop = remote_properties[k];
+		const mapsTo = prop.mapsTo || k;
+		if (!mapsTo) {
+			this.debug(`[__syncColumnsComment] No mapsTo for property '${k}' in collection '${collection.name}'`);
+			continue ;
+		}
+
+		if (remote_prop.comment === prop.comment) continue ;
+
+		dbdriver.execute(
+			dialect.escape(
+				`comment on column ??.?? is ?`,
+				[ collection.name, mapsTo, prop.comment ]
+			)
+		);
+	}
 }
 
 /**
@@ -230,6 +262,7 @@ export class Sync<T extends IDbDriver.ISQLConn = IDbDriver.ISQLConn> {
 		);
 
 		this.syncIndexes(collection.name, collection.index_defs);
+		updateColumnsComment(collection, this.dbdriver, this.Dialect.getCollectionPropertiesSync(this.dbdriver, collection.name));
 
 		return result_1;
 	}
@@ -343,6 +376,7 @@ export class Sync<T extends IDbDriver.ISQLConn = IDbDriver.ISQLConn> {
 		}
 
 		this.syncIndexes(collection.name, collection.index_defs);
+		updateColumnsComment(collection, this.dbdriver, columns);
 	}
 
 	syncIndexes (
@@ -498,4 +532,3 @@ export class Sync<T extends IDbDriver.ISQLConn = IDbDriver.ISQLConn> {
 export type { FxOrmSqlDDLSync } from "./Typo/_common";
 export type { FxOrmSqlDDLSync__Driver } from "./Typo/Driver";
 export type { FxOrmSqlDDLSync__Dialect } from "./Typo/Dialect";
-export type { FxOrmSqlDDLSync__Column } from "./Typo/Column";

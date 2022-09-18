@@ -37,7 +37,36 @@ export const getCollectionPropertiesSync: IDialect['getCollectionPropertiesSync'
 	const cols: ExtractColumnInfo<typeof Transformer>[] = getCollectionColumnsSync(dbdriver, collection);
 
 	type IProperty = ReturnType<typeof Transformer.rawToProperty>['property'];
-	let columns = <Record<string, IProperty>>{};
+	const columns = <Record<string, IProperty>>{};
+
+	type Result = {
+		table_schema: string
+		table_name: string
+		column_name: string
+		description: string
+	};
+
+	const columnsComment = (
+		dbdriver.execute<Result[]>(
+			getSqlQueryDialect('psql').escape(
+`select c.table_schema, c.table_name, c.column_name, pgd.description
+from pg_catalog.pg_statio_all_tables as st
+inner join pg_catalog.pg_description pgd on (
+	pgd.objoid = st.relid
+)
+inner join information_schema.columns c on (
+	pgd.objsubid   = c.ordinal_position and
+	c.table_schema = st.schemaname and
+	c.table_name   = st.relname and
+	c.table_name   = ?
+);
+				`.trim(), [collection]
+			)
+		).reduce((accu, cur, idx) => {
+			accu[cur.column_name] = cur;
+			return accu;
+		}, {} as Record<string, Result>)
+	);
 
 	coroutine.parallel(cols, (col: typeof cols[number]) => {
 		const property = Transformer.rawToProperty(col, {
@@ -45,12 +74,11 @@ export const getCollectionPropertiesSync: IDialect['getCollectionPropertiesSync'
 			userOptions: { enumValues: [] },
 		}).property;
 		if (property.type == "enum") {
-			const col_name = collection + "_enum_" + col.column_name;
-
 			const rows = dbdriver.execute<{ enum_values: string }[]>(
 				getSqlQueryDialect('psql').escape(
 `SELECT t.typname, string_agg(e.enumlabel, '|' ORDER BY e.enumsortorder) AS enum_values 
-FROM pg_catalog.pg_type t JOIN pg_catalog.pg_enum e ON t.oid = e.enumtypid WHERE t.typname = ? GROUP BY 1`, [ col_name ]
+FROM pg_catalog.pg_type t JOIN pg_catalog.pg_enum e ON t.oid = e.enumtypid WHERE t.typname = ? GROUP BY 1`,
+					[ collection + "_enum_" + col.column_name ]
 				)
 			);
 
@@ -58,6 +86,8 @@ FROM pg_catalog.pg_type t JOIN pg_catalog.pg_enum e ON t.oid = e.enumtypid WHERE
 				property.values = rows[0].enum_values.split("|");
 			}
 		}
+
+		property.comment = columnsComment[col.column_name]?.description || '';
 
 		columns[col.column_name] = property;
 	})

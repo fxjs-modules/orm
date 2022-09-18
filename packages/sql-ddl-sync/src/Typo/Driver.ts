@@ -2,7 +2,6 @@ import { IDbDriver } from "@fxjs/db-driver";
 import { FxOrmCoreCallbackNS } from "@fxjs/orm-core";
 import { IProperty } from "@fxjs/orm-property";
 
-import { FxOrmSqlDDLSync__Column } from "./Column";
 import { FxOrmSqlDDLSync__Dialect } from "./Dialect";
 import { FxOrmSqlDDLSync__DbIndex } from "./DbIndex";
 

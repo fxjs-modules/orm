@@ -17,6 +17,9 @@ export declare namespace FxOrmSqlDDLSync {
     }
     interface SyncCollectionOptions {
         columns?: Record<string, IProperty>;
+        /**
+         * @deprecated
+         */
         strategy?: 'soft' | 'hard' | 'mixed';
         /**
          * @default true

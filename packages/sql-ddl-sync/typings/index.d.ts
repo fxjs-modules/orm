@@ -83,4 +83,3 @@ export declare class Sync<T extends IDbDriver.ISQLConn = IDbDriver.ISQLConn> {
 export type { FxOrmSqlDDLSync } from "./Typo/_common";
 export type { FxOrmSqlDDLSync__Driver } from "./Typo/Driver";
 export type { FxOrmSqlDDLSync__Dialect } from "./Typo/Dialect";
-export type { FxOrmSqlDDLSync__Column } from "./Typo/Column";

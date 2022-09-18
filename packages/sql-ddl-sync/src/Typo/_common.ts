@@ -1,12 +1,10 @@
 import { IDbDriver } from "@fxjs/db-driver";
-import { FxOrmCoreCallbackNS } from "@fxjs/orm-core";
 
 import type { IProperty } from '@fxjs/orm-property';
 import type { ColumnInfoSQLite } from '@fxjs/orm-property/lib/transformers/sqlite';
 import type { ColumnInfoMySQL } from '@fxjs/orm-property/lib/transformers/mysql';
 import type { ColumnInfoPostgreSQL } from '@fxjs/orm-property/lib/transformers/postgresql';
 
-import { FxOrmSqlDDLSync__Column } from "./Column";
 import { FxOrmSqlDDLSync__Dialect } from "./Dialect";
 
 export namespace FxOrmSqlDDLSync {
@@ -27,6 +25,9 @@ export namespace FxOrmSqlDDLSync {
     }
     export interface SyncCollectionOptions {
         columns?: Record<string, IProperty>,
+        /**
+         * @deprecated
+         */
         strategy?: 'soft' | 'hard' | 'mixed'
         /**
          * @default true
