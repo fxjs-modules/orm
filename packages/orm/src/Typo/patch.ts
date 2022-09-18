@@ -1,5 +1,3 @@
-import { FxOrmDMLDriver } from "./DMLDriver";
-
 export namespace FxOrmPatch {
     export interface PatchedSyncfiedModelOrInstance {
         /**
@@ -34,12 +32,6 @@ export namespace FxOrmPatch {
 
         /* findByXxx: Function; */
         [associationFunc: string]: Function;
-    }
-
-    export type PatchedDMLDriver = FxOrmDMLDriver.DMLDriver;
-
-    export interface PatchedORMInstance {
-        driver: FxOrmPatch.PatchedDMLDriver;
     }
 
     export interface PatchedSyncfiedInstantce extends FxOrmPatch.PatchedSyncfiedInstanceWithDbWriteOperation, FxOrmPatch.PatchedSyncfiedInstanceWithAssociations {

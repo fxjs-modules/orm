@@ -79,6 +79,8 @@ function t() {
     run('./integration/date-type.js');
 
     run('./integration/orm-helpers.js');
+    
+    run('./integration/plugin.js');
 
     test.run(console.DEBUG);
 }

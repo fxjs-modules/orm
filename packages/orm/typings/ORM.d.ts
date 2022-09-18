@@ -11,13 +11,13 @@ import type { FxOrmDMLDriver } from "./Typo/DMLDriver";
 import type { FxOrmCoreCallbackNS } from "@fxjs/orm-core";
 import type { FxOrmModel } from "./Typo/model";
 import type { FxOrmSettings } from "./Typo/settings";
-export import Helpers = require("./Helpers");
+import * as Helpers from "./Helpers";
 /**
  * @deprecated
  */
-export import validators = require("./Validators");
-export import Settings = require("./Settings");
-export import singleton = require("./Singleton");
+import * as validators from "./Validators";
+import * as Settings from "./Settings";
+import * as singleton from "./Singleton";
 export declare const Text: SqlQuery.FxSqlQuery.TypedQueryObjectWrapper<"text", any>;
 export declare const between: SqlQuery.FxSqlQueryComparatorFunction.between;
 export declare const not_between: SqlQuery.FxSqlQueryComparatorFunction.not_between;
@@ -32,7 +32,7 @@ export declare const lte: SqlQuery.FxSqlQueryComparatorFunction.lte;
 export declare const not_in: SqlQuery.FxSqlQueryComparatorFunction.not_in;
 export declare const enforce: FibjsEnforce.ExportModule;
 export declare const settings: FxOrmSettings.SettingInstance;
-export import Property = require("./Property");
+export * as Property from "./Property";
 export declare function use(connection: FxOrmDb.Database, proto: string, opts: FxOrmNS.IUseOptions, cb: (err: Error, db?: FxOrmNS.ORM) => void): any;
 export declare function connectSync(opts?: string | FxDbDriverNS.DBConnectionConfig): FxOrmNS.ORMLike;
 export declare function connect<T extends IDbDriver.ISQLConn = any>(uri?: string | FxDbDriverNS.DBConnectionConfig, cb?: FxOrmCoreCallbackNS.ExecutionCallback<IDbDriver<T>>): FxOrmNS.ORMLike;
@@ -69,4 +69,5 @@ export declare class ORM extends events.EventEmitter implements FxOrmNS.ORM {
 }
 export declare type ORMInstance = FxOrmNS.ORM;
 export declare const ErrorCodes: FxOrmError.PredefineErrorCodes;
-export { addAdapter };
+export { addAdapter, Helpers, validators, Settings, singleton, };
+export declare function definePlugin<TOpts extends object>(definition: FxOrmNS.PluginConstructFn<TOpts>): FxOrmNS.PluginConstructFn<TOpts, FxOrmNS.ORM>;

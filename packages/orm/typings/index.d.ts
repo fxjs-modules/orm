@@ -1,2 +1,1 @@
-import ORM = require('./ORM');
-export = ORM;
+export * from './ORM';

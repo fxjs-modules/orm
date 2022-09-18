@@ -105,11 +105,7 @@ export declare namespace FxOrmNS {
     interface PluginOptions {
         [key: string]: any;
     }
-    interface PluginConstructor {
-        new (orm?: ORM, opts?: PluginOptions): Plugin;
-        prototype: Plugin;
-    }
-    type PluginConstructCallback<T1 = ORM, T2 = PluginOptions> = (orm: T1, opts: T2) => Plugin;
+    type PluginConstructFn<T2 = PluginOptions, T1 extends ORM = ORM> = (orm: T1, opts: T2) => Plugin;
     interface Plugin {
         beforeDefine?: {
             (name?: string, properties?: Record<string, ModelPropertyDefinition>, opts?: FxOrmModel.ModelOptions): void;
@@ -145,14 +141,16 @@ export declare namespace FxOrmNS {
         prototype: ORM;
     }
     interface ORMLike extends Class_EventEmitter {
-        use: Function;
+        use: {
+            (plugin: PluginConstructFn, options?: PluginOptions): ThisType<ORMLike>;
+        };
         define: Function;
         sync: Function;
         load: Function;
         driver?: FxOrmDMLDriver.DMLDriver;
         [k: string]: any;
     }
-    interface ORM extends ORMLike, FxOrmSynchronous.SynchronizedORMInstance, FxOrmPatch.PatchedORMInstance {
+    interface ORM extends ORMLike, FxOrmSynchronous.SynchronizedORMInstance {
         validators: FxOrmValidators.ValidatorModules;
         enforce: FibjsEnforce.ExportModule;
         settings: FxOrmSettings.SettingInstance;
@@ -165,9 +163,6 @@ export declare namespace FxOrmNS {
         plugins: Plugin[];
         customTypes: {
             [key: string]: FxOrmProperty.CustomPropertyType;
-        };
-        use: {
-            (plugin: PluginConstructCallback, options?: PluginOptions): ORM;
         };
         define(name: string, properties: Record<string, ModelPropertyDefinition>, opts?: FxOrmModel.ModelOptions): FxOrmModel.Model;
         defineType(name: string, type: FxOrmProperty.CustomPropertyType): this;

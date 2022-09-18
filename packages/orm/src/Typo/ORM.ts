@@ -161,11 +161,11 @@ export namespace FxOrmNS {
     export interface PluginOptions {
         [key: string]: any
     }
-    export interface PluginConstructor {
-        new (orm?: ORM, opts?: PluginOptions): Plugin
-        prototype: Plugin
-    }
-    export type PluginConstructCallback<T1 = ORM, T2 = PluginOptions> = (orm: T1, opts: T2) => Plugin
+    // export interface PluginConstructor {
+    //     new (orm?: ORM, opts?: PluginOptions): Plugin
+    //     prototype: Plugin
+    // }
+    export type PluginConstructFn<T2 = PluginOptions, T1 extends ORM = ORM> = (orm: T1, opts: T2) => Plugin
     export interface Plugin {
         beforeDefine?: {
             (name?: string, properties?: Record<string, ModelPropertyDefinition>, opts?: FxOrmModel.ModelOptions): void
@@ -212,7 +212,9 @@ export namespace FxOrmNS {
     }
 
     export interface ORMLike extends Class_EventEmitter {
-        use: Function
+        use: {
+            (plugin: PluginConstructFn, options?: PluginOptions): ThisType<ORMLike>;
+        }
         define: Function
         sync: Function
         load: Function
@@ -222,7 +224,7 @@ export namespace FxOrmNS {
         [k: string]: any
     }
 
-    export interface ORM extends ORMLike, FxOrmSynchronous.SynchronizedORMInstance, FxOrmPatch.PatchedORMInstance {
+    export interface ORM extends ORMLike, FxOrmSynchronous.SynchronizedORMInstance {
         validators: FxOrmValidators.ValidatorModules;
         enforce: FibjsEnforce.ExportModule;
         settings: FxOrmSettings.SettingInstance;
@@ -232,10 +234,6 @@ export namespace FxOrmNS {
         models: { [key: string]: FxOrmModel.Model };
         plugins: Plugin[];
         customTypes: { [key: string]: FxOrmProperty.CustomPropertyType };
-
-        use: {
-            (plugin: /* PluginConstructor |  */PluginConstructCallback, options?: PluginOptions): ORM;
-        }
 
         define(name: string, properties: Record<string, ModelPropertyDefinition>, opts?: FxOrmModel.ModelOptions): FxOrmModel.Model;
         defineType(name: string, type: FxOrmProperty.CustomPropertyType): this;

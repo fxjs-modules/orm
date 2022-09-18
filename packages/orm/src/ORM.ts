@@ -11,6 +11,7 @@ import { Model }      from "./Model";
 import { addAdapter, getAdapter } from "./Adapters";
 import ORMError       = require("./Error");
 import Utilities      = require("./Utilities");
+import Enforces = require("@fibjs/enforce");
 
 import type { FxOrmNS } from "./Typo/ORM";
 import type { FxOrmDb } from "./Typo/Db";
@@ -22,17 +23,14 @@ import type { FxOrmModel } from "./Typo/model";
 import type { FxOrmProperty } from "./Typo/property";
 import type { FxOrmSettings } from "./Typo/settings";
 
-
-export import Helpers      = require("./Helpers");
-
-import Enforces   	  = require("@fibjs/enforce");
+import * as Helpers from "./Helpers";
 /**
  * @deprecated
  */
-export import validators 	  = require("./Validators");
+import * as validators from "./Validators";
 
-export import Settings       = require("./Settings");
-export import singleton      = require("./Singleton");
+import * as Settings from "./Settings";
+import * as singleton from "./Singleton";
 
 // @deprecated : start
 export const Text = SqlQuery.Text;
@@ -55,7 +53,7 @@ export const enforce = Enforces;
 const SettingsInstance = Settings.Container(Settings.defaults());
 export const settings = SettingsInstance;
 
-export import Property   = require("./Property");
+export * as Property   from "./Property";
 
 export function use(
 	connection: FxOrmDb.Database,
@@ -437,4 +435,14 @@ export class ORM extends events.EventEmitter implements FxOrmNS.ORM {
 export type ORMInstance = FxOrmNS.ORM
 
 export const ErrorCodes = ORMError.codes;
-export { addAdapter };
+export {
+	addAdapter,
+	Helpers,
+	validators,
+	Settings,
+	singleton,
+};
+
+export function definePlugin<TOpts extends object>(definition: FxOrmNS.PluginConstructFn<TOpts>) {
+	return definition;
+}

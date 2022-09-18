@@ -423,10 +423,10 @@ export function convertPropToJoinKeyProp (
 }
 
 export function getRealPath (path_str: string, stack_index?: number) {
-	var path = require("path"); // for now, load here (only when needed)
-	var cwd = process.cwd();
-	var err = new Error();
-	var tmp = err.stack.split(/\r?\n/)[typeof stack_index !== "undefined" ? stack_index : 3], m;
+	const path = require("path"); // for now, load here (only when needed)
+	let cwd = process.cwd();
+	const err = new Error();
+	let tmp = err.stack.split(/\r?\n/)[typeof stack_index !== "undefined" ? stack_index : 3], m;
 
 	if ((m = tmp.match(/^\s*at\s+(.+):\d+:\d+$/)) !== null) {
 		cwd = path.dirname(m[1]);
@@ -435,7 +435,7 @@ export function getRealPath (path_str: string, stack_index?: number) {
 	} else if ((m = tmp.match(/^\s*at\s+.+\s+\((.+):\d+:\d+\)$/)) !== null) {
 		cwd = path.dirname(m[1]);
 	}
-	var pathIsAbsolute = path.isAbsolute || require('path-is-absolute');
+	const pathIsAbsolute = path.isAbsolute || require('path-is-absolute');
 	if (!pathIsAbsolute(path_str)) {
 		path_str = path.join(cwd, path_str);
 	}
