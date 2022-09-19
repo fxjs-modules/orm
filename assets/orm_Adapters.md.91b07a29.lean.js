@@ -1,1 +1,0 @@
-import{_ as n,y as a,x as s,X as t}from"./plugin-vue_export-helper.b4fda088.js";const m='{"title":"Adapters","description":"","frontmatter":{},"headers":[],"relativePath":"orm/Adapters.md","lastUpdated":1663579266067}',e={},p=t("",5),o=[p];function c(r,i,d,l,u,_){return s(),a("div",null,o)}var f=n(e,[["render",c]]);export{m as __pageData,f as default};
