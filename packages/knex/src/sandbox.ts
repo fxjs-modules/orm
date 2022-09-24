@@ -30,7 +30,8 @@ export default class Box extends vm.SandBox {
             'util': require('util'),
             'events': require('events'),
             'assert': require('assert'),
-            'crypto': require('crypto')
+            'crypto': require('crypto'),
+            'timers': require('timers'),
         }, __require, __global)
 
         patchMods.call(this);

@@ -24,10 +24,9 @@
 	],
 	"devDependencies": {
 		"@fibjs/types": "^0.34.1",
-		"@types/knex": "^0.16.1",
 		"fib-pool": "^1.6.0",
 		"fib-typify": "^0.8.3",
-		"knex": "^0.19.5",
+		"knex": "^2.3.0",
 		"rimraf": "^3.0.2"
 	},
 	"publishConfig": {
