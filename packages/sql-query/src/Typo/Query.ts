@@ -37,6 +37,7 @@ export namespace FxSqlQuery {
 	export declare class Class_Query {
 		constructor (_opts?: string | FxSqlQuery.QueryOptions);
 
+		/* @internal */
 		readonly knex: FxSqlQueryDialect.Dialect['knex']
 		readonly Dialect: FxSqlQueryDialect.Dialect
 

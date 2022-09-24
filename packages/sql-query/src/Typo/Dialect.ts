@@ -38,6 +38,7 @@ export namespace FxSqlQueryDialect {
 
 		limitAsTop: boolean
 
+		/* @internal */
 		readonly knex: import('@fxjs/knex').Knex
 
 		// only postgresql has it

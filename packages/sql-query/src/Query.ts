@@ -44,6 +44,8 @@ function mountDialect (
 }
 export class Query implements FxSqlQuery.Class_Query {
 	readonly Dialect: FxSqlQueryDialect.Dialect
+	
+	/* @internal */
 	readonly knex: FxSqlQuery.Class_Query['knex'];
 
 	private opts: FxSqlQuery.QueryOptions
