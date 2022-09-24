@@ -19,6 +19,7 @@
 	"author": "richardo2016 <richardo2016@gmail.com>",
 	"license": "ISC",
 	"files": [
+		"deps",
 		"lib",
 		"typings"
 	],

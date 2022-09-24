@@ -1,5 +1,5 @@
-import { PendingOperation } from '../../node_modules/tarn/dist/PendingOperation';
-import { Resource } from '../../node_modules/tarn/dist/Resource';
+import { PendingOperation } from './PendingOperation';
+import { Resource } from './Resource';
 import { EventEmitter } from 'events';
 export interface PoolOptions<T> {
     create: CallbackOrPromise<T>;
@@ -53,7 +53,7 @@ export declare class Pool<T> {
      * Reaping cycle.
      */
     check(): void;
-    destroy(): Promise<import("../../node_modules/tarn/dist/PromiseInspection").PromiseInspection<unknown> | import("../../node_modules/tarn/dist/PromiseInspection").PromiseInspection<void>>;
+    destroy(): Promise<import("./PromiseInspection").PromiseInspection<unknown> | import("./PromiseInspection").PromiseInspection<void>>;
     on(eventName: 'acquireRequest', handler: (eventId: number) => void): void;
     on(eventName: 'acquireSuccess', handler: (eventId: number, resource: T) => void): void;
     on(eventName: 'acquireFail', handler: (eventId: number, err: Error) => void): void;

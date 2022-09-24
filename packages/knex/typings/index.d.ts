@@ -8,8 +8,7 @@
 
 /// <reference types="@fibjs/types" />
 
-// import tarn = require('tarn');
-import tarn = require('./tarn/tarn');
+import tarn = require('../deps/tarn/dist/tarn');
 import events = require('events');
 import stream = require('stream');
 import ResultTypes = require('./result');
