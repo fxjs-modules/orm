@@ -545,7 +545,7 @@ function filterJoinOperator (
 
 function buildObjectTypeSelectItem (
 	this: FxSqlQueryChainBuilder.ChainBuilder__Select,
-	knexSqlBuilder: Knex.QueryBuilder,
+	knexSqlBuilder: import('@fxjs/knex').Knex.QueryBuilder,
 	sql_select_obj: FxSqlQuerySql.SqlSelectFieldItemDescriptor,
 	single_query: boolean,
 	sql_from_item: FxSqlQuerySql.QueryFromDescriptor,

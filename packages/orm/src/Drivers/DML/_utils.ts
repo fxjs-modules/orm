@@ -82,7 +82,7 @@ export function getKnexInstance (
 
 export function buildMergeToKnex (
 	this: FxOrmDMLDriver.DMLDriver,
-	knex: import ("@fxjs/knex"),
+	knex: import ("@fxjs/knex").Knex,
 	merges: FxOrmDMLDriver.DMLDriver_FindOptions['merge'],
 	conditions: FxSqlQuerySubQuery.SubQueryConditions
 ) {

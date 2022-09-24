@@ -8,7 +8,7 @@ import { FxSqlQueryChainBuilder } from './Typo/Query-ChainBuilder';
 import { FxSqlQueryComparator } from './Typo/Comparators';
 
 export function build (
-	knexQueryBuilder: import('@fxjs/knex').QueryBuilder,
+	knexQueryBuilder: import('@fxjs/knex').Knex.QueryBuilder,
 	Dialect: FxSqlQueryDialect.Dialect,
 	whereList: FxSqlQuerySubQuery.SubQueryBuildDescriptor[],
 	opts: FxSqlQueryChainBuilder.ChainBuilderOptions
@@ -61,7 +61,7 @@ type SelectedWhereOperator =
 	| 'andWhereNotBetween'
 
 function buildOrGroup(
-	knexQueryBuilder: import('@fxjs/knex').QueryBuilder,
+	knexQueryBuilder: import('@fxjs/knex').Knex.QueryBuilder,
 	Dialect: FxSqlQueryDialect.Dialect,
 	where: FxSqlQuerySubQuery.SubQueryBuildDescriptor,
 	opts: FxSqlQueryChainBuilder.ChainBuilderOptions,
@@ -295,7 +295,7 @@ function selectWhereOperatorByCtx (
 }
 
 function buildExistsSqlFragments (
-	knexQueryBuilder: import('@fxjs/knex').QueryBuilder,
+	knexQueryBuilder: import('@fxjs/knex').Knex.QueryBuilder,
 	Dialect: FxSqlQueryDialect.Dialect,
 	where: FxSqlQuerySubQuery.SubQueryBuildDescriptor,
 	opts: FxSqlQueryChainBuilder.ChainBuilderOptions

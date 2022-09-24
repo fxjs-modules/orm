@@ -10,11 +10,11 @@ import { FxOrmSqlDDLSync__DbIndex } from './Typo/DbIndex';
 declare type ISqlQueryDialects = typeof sqlQueryDialects;
 export declare function addSqlQueryDialect(type: string, Dialect: any): void;
 export declare function getAllSqlQueryDialects(type: string): {
-    psql: import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.Dialect<import(".").FxOrmSqlDDLSync__Dialect.DialectType>;
-    mysql: import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.Dialect<import(".").FxOrmSqlDDLSync__Dialect.DialectType>;
-    postgresql: import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.Dialect<import(".").FxOrmSqlDDLSync__Dialect.DialectType>;
-    sqlite: import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.Dialect<import(".").FxOrmSqlDDLSync__Dialect.DialectType>;
-    mssql: import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.Dialect<import(".").FxOrmSqlDDLSync__Dialect.DialectType>;
+    psql: import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.Dialect<import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.DialectType>;
+    mysql: import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.Dialect<import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.DialectType>;
+    postgresql: import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.Dialect<import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.DialectType>;
+    sqlite: import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.Dialect<import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.DialectType>;
+    mssql: import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.Dialect<import("@fxjs/sql-query/lib/Typo/Dialect").FxSqlQueryDialect.DialectType>;
 };
 export declare function getSqlQueryDialect(type: FxDbDriverNS.DriverType | 'postgresql'): ISqlQueryDialects[keyof ISqlQueryDialects];
 export declare function arraify<T = any>(item: T | T[]): T[];

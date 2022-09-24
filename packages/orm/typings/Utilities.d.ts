@@ -91,7 +91,7 @@ export declare function getRealPath(path_str: string, stack_index?: number): str
  * @param properties
  */
 export declare function transformPropertyNames(dataIn: FxOrmInstance.InstanceDataPayload, properties: Record<string, FxOrmProperty.NormalizedProperty> | FxOrmModel.ModelPropertyDefinition): FxOrmInstance.InstanceDataPayload;
-export declare function transformOrderPropertyNames(order: FxOrmQuery.ChainFindOptions['order'], properties: Record<string, FxOrmProperty.NormalizedProperty>): FxSqlQuery.OrderNormalizedResult[];
+export declare function transformOrderPropertyNames(order: FxOrmQuery.ChainFindOptions['order'], properties: Record<string, FxOrmProperty.NormalizedProperty>): (FxSqlQuery.OrderSqlStyleTuple | FxSqlQuery.OrderNormalizedTuple)[];
 export declare function renameDatastoreFieldsToPropertyNames(data: FxOrmInstance.InstanceDataPayload, fieldToPropertyMap: FxOrmProperty.FieldToPropertyMapType): FxOrmInstance.InstanceDataPayload;
 export declare function camelCaseHasMany(text: string): string;
 export declare function ucfirst(text: string): string;

@@ -4,7 +4,7 @@ import { FxSqlQueryChainBuilder } from './Typo/Query-ChainBuilder';
 import { FxSqlQuerySql } from './Typo/Sql';
 
 export function build (
-	knexQueryBuilder: import("@fxjs/knex").QueryBuilder,
+	knexQueryBuilder: import("@fxjs/knex").Knex.QueryBuilder,
 	Dialect: FxSqlQueryDialect.Dialect,
 	set: FxSqlQuerySql.DataToSet,
 	opts: FxSqlQueryChainBuilder.ChainBuilderOptions

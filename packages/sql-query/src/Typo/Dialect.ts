@@ -38,7 +38,7 @@ export namespace FxSqlQueryDialect {
 
 		limitAsTop: boolean
 
-		readonly knex: import('@fxjs/knex')
+		readonly knex: import('@fxjs/knex').Knex
 
 		// only postgresql has it
 		defaultValuesStmt?: T extends 'postgresql' ? string : never

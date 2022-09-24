@@ -31,7 +31,7 @@
 		"cross-env": "^5.2.0",
 		"fib-pool": "^1.6.0",
 		"fib-rollup": "^0.4.0",
-		"fib-typify": "^0.8.3",
+		"fib-typify": "^0.10.0",
 		"rimraf": "^3.0.2",
 		"rollup-plugin-commonjs": "^9.2.0"
 	},
