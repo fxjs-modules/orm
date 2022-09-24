@@ -38,7 +38,6 @@ export declare namespace FxOrmDMLDriver {
         customTypes: {
             [key: string]: FxOrmProperty.CustomPropertyType;
         };
-        /* @internal */
         knex: typeof Knex;
         readonly query: FxSqlQuery.Class_Query;
         /**
