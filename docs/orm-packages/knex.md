@@ -8,7 +8,7 @@
 
 [knex.js] 是 node.js 生态中热门的 sql generator 库. 可以通过语义化的 API 生成 sql 语句.
 
-`@fxjs/knex` 是对 [knex.js] 的移植. 基于 fibjs 的沙盒机制, 我们将 [knex.js] 0.19.5 的能力引入到了 fibjs 中.
+`@fxjs/knex` 是对 [knex.js] 的移植. 基于 fibjs 的沙盒机制, 我们将 [knex.js] 2.3.0 的能力引入到了 fibjs 中.
 
 ## Sample
 
