@@ -24,6 +24,10 @@ module.exports = [
         _dirname: 'orm-property',
     },
     {
+        name: 'orm-instance',
+        _dirname: 'orm-instance',
+    },
+    {
         name: 'orm',
         _dirname: 'orm',
     },
