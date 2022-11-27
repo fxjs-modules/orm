@@ -19,5 +19,11 @@
         "typeRoots": [
             "typings/index.d.ts"
         ]
-    }
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "src/**/*.js"
+    ]
 }
