@@ -169,7 +169,7 @@ export declare namespace FxOrmNS {
         use: {
             (plugin: PluginConstructFn, options?: PluginOptions): ThisType<ORMLike>;
         };
-        define: <T extends Record<string, ComplexModelPropertyDefinition>, U extends FxOrmModel.ModelDefineOptions<FxOrmModel.GetPropertiesType<T>>>(name: string, properties: T, opts?: U) => FxOrmModel.Model<FxOrmModel.GetPropertiesType<T>, U['methods']>;
+        define: <T extends Record<string, ComplexModelPropertyDefinition>, U extends FxOrmModel.ModelDefineOptions<FxOrmModel.GetPropertiesType<T>>>(name: string, properties: T, opts?: U) => FxOrmModel.Model<FxOrmModel.GetPropertiesType<T>, Exclude<U['methods'], void>>;
         sync(callback: FxOrmCommon.VoidCallback): this;
         syncSync(): void;
         load(file: string, callback: FxOrmCommon.VoidCallback): any;

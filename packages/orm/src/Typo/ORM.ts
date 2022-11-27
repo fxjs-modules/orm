@@ -242,7 +242,7 @@ export namespace FxOrmNS {
             name: string,
             properties: T,
             opts?: U
-        ) => FxOrmModel.Model<FxOrmModel.GetPropertiesType<T>, U['methods']>;
+        ) => FxOrmModel.Model<FxOrmModel.GetPropertiesType<T>, Exclude<U['methods'], void>>;
         sync(callback: FxOrmCommon.VoidCallback): this;
         syncSync(): void;
         load(file: string, callback: FxOrmCommon.VoidCallback): any;
