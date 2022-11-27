@@ -23,22 +23,6 @@ export namespace FxOrmModel {
 
     export type OrderListOrLimitOffer = number | string | string[]
 
-    // /** @description used for internal type inference */
-    // type __Instance<
-    //     PropertyTypes extends Record<string, FxOrmInstance.FieldRuntimeType>,
-    //     Methods extends Record<string, Function> = Record<string, Function>,
-    // > = FxOrmInstance.Instance & PropertyTypes & Methods;
-
-    // /** @description used for internal type inference */
-    // export type __Model<
-    //     PropertyTypes extends Record<string, FxOrmInstance.FieldRuntimeType>
-    // > = Model & {
-    //     (): __Instance<PropertyTypes>;
-    //     new(): __Instance<PropertyTypes>;
-    //     (...data: ModelInstanceConstructorOptions): __Instance<PropertyTypes>;
-    //     new(...data: ModelInstanceConstructorOptions): __Instance<PropertyTypes>;
-    // }
-
     export interface Model <
         PropertyTypes extends Record<string, FxOrmInstance.FieldRuntimeType> = Record<string, FxOrmInstance.FieldRuntimeType>,
         Methods extends Record<string, (...args: any) => any> = Record<string, (...args: any) => any>,
