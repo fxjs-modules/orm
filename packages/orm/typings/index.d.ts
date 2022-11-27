@@ -1,19 +1,20 @@
 /// <reference types="@fibjs/enforce" />
 import { FxDbDriverNS, IDbDriver } from "@fxjs/db-driver";
 import SqlQuery = require("@fxjs/sql-query");
+import { FxOrmCoreCallbackNS } from "@fxjs/orm-core";
+import { FxOrmDb } from "./Typo/Db";
+import { FxOrmNS } from "./Typo/ORM";
+import { FxOrmError } from "./Typo/Error";
 import * as Settings from "./Settings";
 import { addAdapter } from "./Adapters";
 import * as validators from "./Validators";
 import * as Helpers from "./Helpers";
 import * as singleton from "./Singleton";
-import { FxOrmDb } from "./Typo/Db";
-import { FxOrmNS } from "./Typo/ORM";
-import { FxOrmError } from "./Typo/Error";
-import { FxOrmCoreCallbackNS } from "@fxjs/orm-core";
-export { ORM } from './ORM';
+import { ORM } from './ORM';
 export * as Property from "./Property";
-export declare function connectSync(opts?: string | FxDbDriverNS.DBConnectionConfig): FxOrmNS.ORMLike;
-export declare function connect<T extends IDbDriver.ISQLConn = any>(uri?: string | FxDbDriverNS.DBConnectionConfig, cb?: FxOrmCoreCallbackNS.ExecutionCallback<IDbDriver<T>>): FxOrmNS.ORMLike;
+export declare function connectSync(opts?: string | FxDbDriverNS.DBConnectionConfig): ORM;
+export declare function connect<T extends IDbDriver.ISQLConn = any>(uri?: string | FxDbDriverNS.DBConnectionConfig, cb?: FxOrmCoreCallbackNS.ExecutionCallback<IDbDriver<T>>): ORM;
+export { ORM } from './ORM';
 /**
  * @description just re-export from @fibjs/enforce for convenience, you can also use `orm.enforce` for orm instances
  */
@@ -23,6 +24,7 @@ export declare function use(connection: FxOrmDb.Database, proto: string, opts: F
 export { addAdapter, Helpers, validators, Settings, singleton, };
 export declare const ErrorCodes: FxOrmError.PredefineErrorCodes;
 export declare function definePlugin<TOpts extends object>(definition: FxOrmNS.PluginConstructFn<TOpts>): FxOrmNS.PluginConstructFn<TOpts, FxOrmNS.ORM>;
+export declare function defineModel<T = any>(definition: (db: FxOrmNS.ORM) => T): typeof definition;
 export type { FxOrmNS } from './Typo/ORM';
 export type { FxOrmModel } from './Typo/model';
 export type { FxOrmInstance } from './Typo/instance';

@@ -143,15 +143,9 @@ export namespace FxOrmNS {
         autoFetch?: boolean
     }
 
-    export interface InstanceAutoFetchOptions extends ModelAutoFetchOptions {
-    }
-
-    export interface ModelExtendOptions {
-
-    }
-    export interface InstanceExtendOptions extends ModelExtendOptions {
-
-    }
+    export interface InstanceAutoFetchOptions extends ModelAutoFetchOptions {}
+    export interface ModelExtendOptions {}
+    export interface InstanceExtendOptions extends ModelExtendOptions {}
     /* instance/model computation/transform about :end */
 
     /**
@@ -216,6 +210,27 @@ export namespace FxOrmNS {
         prototype: ORM
     }
 
+    /**
+     * @description leave here for augmention on consumer of this package,
+     * 
+     * all models declared here would be considered as memebers of `orm.models`, e.g.
+     * 
+     * ```ts
+     * const User = orm.define('user', { ... });
+     * 
+     * declare module '@fxjs/orm' {
+     *    export namespace FxOrmNS {
+     *      export GlobalModels {
+     *         users: typeof User
+     *      }
+     *    }
+     * }
+     * ```
+     */
+    export interface GlobalModels {
+        [key: string]: FxOrmModel.Model
+    }
+
     export interface ORMLike extends Class_EventEmitter {
         use: {
             (plugin: PluginConstructFn, options?: PluginOptions): ThisType<ORMLike>;
@@ -233,6 +248,7 @@ export namespace FxOrmNS {
         load(file: string, callback: FxOrmCommon.VoidCallback): any;
 
         driver?: FxOrmDMLDriver.DMLDriver
+        models: GlobalModels;
 
         [k: string]: any
     }
@@ -248,7 +264,6 @@ export namespace FxOrmNS {
          */
         tools: FxSqlQueryComparator.ComparatorHash;
         comparators: FxSqlQueryComparator.ComparatorHash;
-        models: { [key: string]: FxOrmModel.Model };
         plugins: Plugin[];
         customTypes: { [key: string]: FxOrmProperty.CustomPropertyType };
 

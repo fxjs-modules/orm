@@ -69,8 +69,10 @@ export declare namespace FxOrmNS {
     interface ExtensibleError extends Error {
         [extensibleProperty: string]: any;
     }
+    /** @deprecated */
     interface TransformFibOrmModel2InstanceOptions extends FxOrmModel.ModelDefineOptions {
     }
+    /** @deprecated */
     type FibORM = ORM;
     interface FibORMIConnectionOptions extends FxDbDriverNS.ConnectionInputArgs {
         timezone: string;
@@ -143,6 +145,26 @@ export declare namespace FxOrmNS {
         new (driver_name: string, driver: FxOrmDMLDriver.DMLDriver, settings: FxOrmSettings.SettingInstance): ORM;
         prototype: ORM;
     }
+    /**
+     * @description leave here for augmention on consumer of this package,
+     *
+     * all models declared here would be considered as memebers of `orm.models`, e.g.
+     *
+     * ```ts
+     * const User = orm.define('user', { ... });
+     *
+     * declare module '@fxjs/orm' {
+     *    export namespace FxOrmNS {
+     *      export GlobalModels {
+     *         users: typeof User
+     *      }
+     *    }
+     * }
+     * ```
+     */
+    interface GlobalModels {
+        [key: string]: FxOrmModel.Model;
+    }
     interface ORMLike extends Class_EventEmitter {
         use: {
             (plugin: PluginConstructFn, options?: PluginOptions): ThisType<ORMLike>;
@@ -152,6 +174,7 @@ export declare namespace FxOrmNS {
         syncSync(): void;
         load(file: string, callback: FxOrmCommon.VoidCallback): any;
         driver?: FxOrmDMLDriver.DMLDriver;
+        models: GlobalModels;
         [k: string]: any;
     }
     interface ORM extends ORMLike, FxOrmSynchronous.SynchronizedORMInstance {
@@ -165,9 +188,6 @@ export declare namespace FxOrmNS {
          */
         tools: FxSqlQueryComparator.ComparatorHash;
         comparators: FxSqlQueryComparator.ComparatorHash;
-        models: {
-            [key: string]: FxOrmModel.Model;
-        };
         plugins: Plugin[];
         customTypes: {
             [key: string]: FxOrmProperty.CustomPropertyType;

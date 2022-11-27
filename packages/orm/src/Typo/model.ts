@@ -340,15 +340,12 @@ export namespace FxOrmModel {
         | Date | DateConstructor
         | Object | ObjectConstructor
 
-    export type EnumTypeValues = any[]
-    
     export type ComplexModelPropertyDefinition = 
         ModelPropertyDefinition
         | (PrimitiveConstructor & {
             name: string
         })
-        | EnumTypeValues
-        // | string // ?
+        | [...(string | number)[]]
 
     
     export type GetPrimitiveFromConstructor<T extends PrimitiveConstructor = PrimitiveConstructor> =
@@ -361,15 +358,18 @@ export namespace FxOrmModel {
     type PropertyTypeEnum = import('@fxjs/orm-property/lib/Property').PropertyType;
     type GetPrimitiveFromOrmPropertyType<T extends PropertyTypeEnum = PropertyTypeEnum> =
         T extends 'text' ? string : 
+        T extends 'enum' ? any[] : 
         T extends 'integer' | 'number' | 'serial' ? number :
         T extends 'boolean' ? boolean :
         T extends 'date' ? number | Date :
         T extends 'binary' | 'object' | 'point' | 'enum' ? any : never
 
     export type GetPropertiesTypeFromDefinition<T extends ComplexModelPropertyDefinition> = 
-        T extends ModelPropertyDefinition ? GetPrimitiveFromOrmPropertyType<T['type'] & PropertyTypeEnum> :
-        T extends FxOrmModel.PrimitiveConstructor ? FxOrmModel.GetPrimitiveFromConstructor<T> :
-        T extends EnumTypeValues ? T[number] : unknown
+        T extends ModelPropertyDefinition ? 
+            T['type'] extends 'enum' ? T['values'][number] :
+            GetPrimitiveFromOrmPropertyType<T['type'] & PropertyTypeEnum> :
+        T extends [...infer S] ? S[number] : 
+        T extends FxOrmModel.PrimitiveConstructor ? FxOrmModel.GetPrimitiveFromConstructor<T> : unknown
 
     export type GetPropertiesType<T extends Record<string, ComplexModelPropertyDefinition>> = {
         [K in keyof T]: FxOrmModel.GetPropertiesTypeFromDefinition<T[K]>

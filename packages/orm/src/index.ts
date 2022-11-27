@@ -4,6 +4,11 @@ import { FxDbDriverNS, IDbDriver } from "@fxjs/db-driver";
 import SqlQuery = require("@fxjs/sql-query");
 import Enforces = require("@fibjs/enforce");
 
+import { FxOrmCoreCallbackNS } from "@fxjs/orm-core";
+import { FxOrmDb } from "./Typo/Db";
+import { FxOrmNS } from "./Typo/ORM";
+import { FxOrmError } from "./Typo/Error";
+
 import * as Utilities from "./Utilities";
 import * as Settings from "./Settings";
 import { addAdapter, getAdapter } from "./Adapters";
@@ -13,20 +18,13 @@ import * as Helpers from "./Helpers";
 import * as singleton from "./Singleton";
 import { ORM } from './ORM';
 
-import { FxOrmDb } from "./Typo/Db";
-import { FxOrmNS } from "./Typo/ORM";
-import { FxOrmError } from "./Typo/Error";
-import { FxOrmCoreCallbackNS } from "@fxjs/orm-core";
-
-export { ORM } from './ORM';
-
 export * as Property from "./Property";
 
 function isOrmLikeErrorEmitter(parsedDBDriver: IDbDriver | FxOrmNS.ORMLike): parsedDBDriver is FxOrmNS.ORMLike {
 	return !parsedDBDriver.hasOwnProperty('host') && parsedDBDriver instanceof events.EventEmitter
 }
 
-export function connectSync(opts?: string | FxDbDriverNS.DBConnectionConfig): FxOrmNS.ORMLike {
+export function connectSync(opts?: string | FxDbDriverNS.DBConnectionConfig): ORM {
 	Helpers.selectArgs(arguments, function (type, arg) {
 		switch (type) {
 			default:
@@ -51,11 +49,11 @@ export function connectSync(opts?: string | FxDbDriverNS.DBConnectionConfig): Fx
 		if (errWaitor.err)
 			throw errWaitor.err;
 
-		return dbdriver;
+		return dbdriver as ORM;
 	}
 
 	let adapterName = dbdriver.config.protocol.replace(/:$/, '');
-	let orm: FxOrmNS.ORM;
+	let orm: ORM;
 
 	const syncResult = Utilities.catchBlocking(() => {
 		const DMLDriver = getAdapter(adapterName);
@@ -85,8 +83,7 @@ export function connectSync(opts?: string | FxDbDriverNS.DBConnectionConfig): Fx
 export function connect<T extends IDbDriver.ISQLConn = any>(
 	uri?: string | FxDbDriverNS.DBConnectionConfig,
 	cb?: FxOrmCoreCallbackNS.ExecutionCallback<IDbDriver<T>>
-): FxOrmNS.ORMLike {
-
+): ORM {
 	let args = Array.prototype.slice.apply(arguments);
 	Helpers.selectArgs(args, function (type, arg) {
 		switch (type) {
@@ -97,11 +94,11 @@ export function connect<T extends IDbDriver.ISQLConn = any>(
 	});
 	args = args.filter((x: any) => x !== cb);
 
-	const syncResponse = Utilities.catchBlocking<FxOrmNS.ORMLike>(connectSync, args);
+	const syncResponse = Utilities.catchBlocking<ORM>(connectSync, args);
 
-	let orm: FxOrmNS.ORMLike = null;
+	let orm: ORM = null;
 	if (syncResponse.error)
-		orm = Utilities.ORM_Error(syncResponse.error, cb);
+		orm = Utilities.ORM_Error(syncResponse.error, cb) as ORM;
 	else
 		orm = syncResponse.result;
 
@@ -117,6 +114,8 @@ export function connect<T extends IDbDriver.ISQLConn = any>(
 
 	return orm;
 };
+
+export { ORM } from './ORM';
 
 /**
  * @description just re-export from @fibjs/enforce for convenience, you can also use `orm.enforce` for orm instances
@@ -162,6 +161,10 @@ export {
 export const ErrorCodes = ORMError.codes;
 
 export function definePlugin<TOpts extends object>(definition: FxOrmNS.PluginConstructFn<TOpts>) {
+	return definition;
+}
+
+export function defineModel<T = any>(definition: (db: FxOrmNS.ORM) => T): typeof definition {
 	return definition;
 }
 
