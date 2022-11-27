@@ -1101,3 +1101,7 @@ export function coercePositiveInt<T extends number | undefined | null = undefine
 
 	return Math.abs(num);
 }
+
+export function getUUID () {
+	return uuid.snowflake().hex()
+}

@@ -37,7 +37,7 @@ import type {
 const AvailableHooks: (keyof FxOrmModel.Hooks)[] = [
 	"beforeCreate", "afterCreate",
 	"beforeSave", "afterSave",
-	"beforeValidation",
+	"beforeValidation", "afterValidation",
 	"beforeRemove", "afterRemove",
 	"afterLoad",
 	"afterAutoFetch"

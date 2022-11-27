@@ -74,6 +74,8 @@ export declare namespace FxOrmInstance {
             [key: string]: FxOrmAssociation.InstanceAssociationItemInformation;
         };
         extrachanges: string[];
+        /** @internal */
+        __validationData: Record<string, FxOrmError.ExtendedError[]>;
     }
     type __AddThisToMethods<TMethods extends Record<string, (...args: any) => any>> = TMethods extends void ? {} : {
         [P in keyof TMethods]: (...args: Parameters<TMethods[P]>) => ReturnType<TMethods[P]>;

@@ -13,6 +13,7 @@ import { FxOrmValidators } from "./Validators";
 import { FxOrmHook } from "./hook";
 import { FxOrmNS } from "./ORM";
 import type { FxSqlQuerySubQuery, FxSqlQuerySql } from '@fxjs/sql-query';
+import { FxOrmError } from "./Error";
 export declare namespace FxOrmModel {
     export type ModelInstanceConstructorOptions = (string | number | FxOrmInstance.InstanceDataPayload)[];
     export type OrderListOrLimitOffer = number | string | string[];
@@ -193,6 +194,7 @@ export declare namespace FxOrmModel {
     }
     export interface Hooks {
         beforeValidation?: FxOrmCommon.Arraible<FxOrmHook.HookActionCallback>;
+        afterValidation?: FxOrmCommon.Arraible<FxOrmHook.HookResultCallback>;
         beforeCreate?: FxOrmCommon.Arraible<FxOrmHook.HookActionCallback>;
         afterCreate?: FxOrmCommon.Arraible<FxOrmHook.HookResultCallback>;
         beforeSave?: FxOrmCommon.Arraible<FxOrmHook.HookActionCallback>;
@@ -208,6 +210,12 @@ export declare namespace FxOrmModel {
     export interface ModelHooks {
         beforeValidation?: {
             (func: FxOrmHook.HookActionCallback, opts?: ModelHookPatchOptions): any;
+        };
+        afterValidation?: {
+            (func: FxOrmHook.HookResultCallback<FxOrmInstance.Instance, {
+                errors: FxOrmError.ExtendedError;
+                setErrors: (errors: FxOrmError.ExtendedError | FxOrmError.ExtendedError[]) => void;
+            }>, opts?: ModelHookPatchOptions): void;
         };
         beforeCreate?: {
             (func: FxOrmHook.HookActionCallback, opts?: ModelHookPatchOptions): any;
@@ -246,7 +254,7 @@ export declare namespace FxOrmModel {
         name: string;
     }) | [...(string | number)[]] | (PropertyTypeEnum | string);
     export type GetPrimitiveFromConstructor<T extends PrimitiveConstructor = PrimitiveConstructor> = T extends String | StringConstructor ? string : T extends Number | NumberConstructor ? number : T extends Boolean | BooleanConstructor ? boolean : T extends Date | DateConstructor ? number | Date : T extends Object | ObjectConstructor | Class_Buffer ? any : never;
-    type PropertyTypeEnum = import('@fxjs/orm-property/lib/Property').PropertyType;
+    type PropertyTypeEnum = import('@fxjs/orm-property').IProperty['PropertyType'];
     type GetPrimitiveFromOrmPropertyType<T extends PropertyTypeEnum = PropertyTypeEnum> = T extends 'text' ? string : T extends 'enum' ? any[] : T extends 'integer' | 'number' | 'serial' ? number : T extends 'boolean' ? boolean : T extends 'date' ? number | Date : T extends 'binary' | 'object' | 'point' | 'enum' ? any : never;
     /**
      * @description use for augumenting model's properties type

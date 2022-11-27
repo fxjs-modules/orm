@@ -42,6 +42,7 @@ export const Instance = function (
 	instRtd.associations = {};
 	instRtd.events	= util.extend({}, instRtd.events);
 	instRtd.originalKeyValues = {};
+	instRtd.__validationData = instRtd.__validationData || {};
 
 	const eventor = new EventEmitter();
 
@@ -134,18 +135,32 @@ export const Instance = function (
 	};
 
 	const throwErrorIfExistsOnSave = function (errors: FxOrmError.ExtendedError | FxOrmError.ExtendedError[], forceList = false) {
-		if (!Array.isArray(errors)) {
-			if (!errors) return ;
+		const origErrorIsList = Array.isArray(errors);
+		
+		const validationId = Utilities.getUUID();
+		instRtd.__validationData[validationId] = Utilities.arraify(errors).filter(Boolean);
 
-			errors = !forceList ? errors : [errors];
-			saveError(errors)
-			throw errors;
+		const setErrors = (errors: FxOrmError.ExtendedError | FxOrmError.ExtendedError[]) => {
+			instRtd.__validationData[validationId] = Utilities.arraify(errors).filter(Boolean);
+		};
+
+		Hook.trigger(instance, instRtd.hooks.afterValidation, {
+			errors: instRtd.__validationData[validationId].slice(0),
+			setErrors
+		});
+
+		const tmp = Utilities.arraify(instRtd.__validationData[validationId]);
+		delete instRtd.__validationData[validationId];
+
+		const firstErr = Utilities.firstEl(tmp);
+		if (!firstErr) return ;
+
+		if (origErrorIsList) {
+			saveError(tmp);
+			throw tmp;
 		} else {
-			if (!errors.length) return ;
-
-			errors = returnAllErrors ? errors : errors[0];
-			saveError(errors)
-			throw errors;
+			saveError(firstErr);
+			throw firstErr;
 		}
 	}
 

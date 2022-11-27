@@ -17,6 +17,7 @@ import type {
     FxSqlQuerySubQuery,
     FxSqlQuerySql,
 } from '@fxjs/sql-query';
+import { FxOrmError } from "./Error"
 
 export namespace FxOrmModel {
     export type ModelInstanceConstructorOptions = (string | number | FxOrmInstance.InstanceDataPayload)[]
@@ -261,6 +262,7 @@ export namespace FxOrmModel {
 
     export interface Hooks {
         beforeValidation?: FxOrmCommon.Arraible<FxOrmHook.HookActionCallback>;
+        afterValidation?: FxOrmCommon.Arraible<FxOrmHook.HookResultCallback>
         beforeCreate?: FxOrmCommon.Arraible<FxOrmHook.HookActionCallback>;
         afterCreate?: FxOrmCommon.Arraible<FxOrmHook.HookResultCallback>;
         beforeSave?: FxOrmCommon.Arraible<FxOrmHook.HookActionCallback>;
@@ -278,6 +280,12 @@ export namespace FxOrmModel {
     export interface ModelHooks {
         beforeValidation?: {
             (func: FxOrmHook.HookActionCallback, opts?: ModelHookPatchOptions): any
+        };
+        afterValidation?: {
+            (func: FxOrmHook.HookResultCallback<FxOrmInstance.Instance, {
+                errors: FxOrmError.ExtendedError,
+                setErrors: (errors: FxOrmError.ExtendedError | FxOrmError.ExtendedError[]) => void
+            }>, opts?: ModelHookPatchOptions): void
         };
         beforeCreate?: {
             (func: FxOrmHook.HookActionCallback, opts?: ModelHookPatchOptions): any
@@ -337,7 +345,7 @@ export namespace FxOrmModel {
         T extends Date | DateConstructor ? number | Date :
         T extends Object | ObjectConstructor | Class_Buffer ? any : never
 
-    type PropertyTypeEnum = import('@fxjs/orm-property/lib/Property').PropertyType;
+    type PropertyTypeEnum = import('@fxjs/orm-property').IProperty['PropertyType'];
     type GetPrimitiveFromOrmPropertyType<T extends PropertyTypeEnum = PropertyTypeEnum> =
         T extends 'text' ? string : 
         T extends 'enum' ? any[] : 

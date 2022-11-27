@@ -479,4 +479,110 @@ describe("Validations", function () {
         });
     });
 
+    describe("allow ignore validation error", function () {
+        before(setup(true, true));
+
+        it("allow ignore all errors", function () {
+            var john = new Person({
+                height: 4
+            });
+
+            var hookTriggered = false;
+            Person.afterValidation(function ({ errors, setErrors }) {
+                hookTriggered = true;
+                
+                assert.ok(Array.isArray(errors));
+                assert.equal(errors.length, 3);
+
+                assert.deepEqual(errors[0], _.extend(new Error('required'), {
+                    property: 'name',
+                    value: null,
+                    msg: 'required',
+                    type: 'validation'
+                }));
+
+                assert.deepEqual(errors[1], _.extend(new Error('undefined'), {
+                    property: 'name',
+                    value: null,
+                    msg: 'undefined',
+                    type: 'validation'
+                }));
+
+                assert.deepEqual(errors[2], _.extend(new Error('out-of-range-number'), {
+                    property: 'height',
+                    value: 4,
+                    msg: 'out-of-range-number',
+                    type: 'validation'
+                }));
+
+                assert.equal(john.id, null);
+
+                if (!this.isPersisted()) {
+                    setErrors([]);
+                }
+            });
+            
+            var errMsg;
+            try {
+                john.saveSync();
+            } catch (error) {
+                assert.exist(error);
+                errMsg = error.message;
+            }
+
+            assert.isTrue(hookTriggered);
+            // try to save invalid data to database, expect error occured
+            assert.equal(errMsg, 'NOT NULL constraint failed: person.name');
+        });
+
+        it("allow part errors", function () {
+            var john = new Person({
+                height: 4
+            });
+
+            var hookTriggered = false;
+            Person.afterValidation(function ({ errors, setErrors }) {
+                hookTriggered = true;
+                
+                assert.ok(Array.isArray(errors));
+                assert.equal(errors.length, 3);
+
+                assert.deepEqual(errors[1], _.extend(new Error('undefined'), {
+                    property: 'name',
+                    value: null,
+                    msg: 'undefined',
+                    type: 'validation'
+                }));
+
+                assert.deepEqual(errors[2], _.extend(new Error('out-of-range-number'), {
+                    property: 'height',
+                    value: 4,
+                    msg: 'out-of-range-number',
+                    type: 'validation'
+                }));
+
+                assert.equal(john.id, null);
+
+                setErrors([errors[0]]);
+            });
+            
+            var errs;
+            try {
+                john.saveSync();
+            } catch (err) {
+                errs = err;
+            }
+
+            assert.isTrue(hookTriggered);
+            assert.ok(Array.isArray(errs));
+            assert.equal(errs.length, 1);
+            // leave first error
+            assert.deepEqual(errs[0], _.extend(new Error('required'), {
+                property: 'name',
+                value: null,
+                msg: 'required',
+                type: 'validation'
+            }));
+        });
+    });
 });
