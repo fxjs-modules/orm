@@ -157,8 +157,7 @@ export namespace FxOrmAssociation {
         [k: string]: any
     }
 
-    export interface InstanceAssociatedInstance extends FxOrmInstance.Instance {
-    }
+    export type InstanceAssociatedInstance = FxOrmInstance.Instance;
 
     export interface InstanceAssociationItem_ExtendTos extends InstanceAssociationItem {
         table: string;

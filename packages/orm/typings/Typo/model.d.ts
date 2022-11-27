@@ -15,14 +15,12 @@ import { FxOrmNS } from "./ORM";
 import type { FxSqlQuerySubQuery, FxSqlQuerySql } from '@fxjs/sql-query';
 export declare namespace FxOrmModel {
     export type ModelInstanceConstructorOptions = (string | number | FxOrmInstance.InstanceDataPayload)[];
-    interface ModelInstanceConstructor {
-        (): FxOrmInstance.Instance;
-        new (): FxOrmInstance.Instance;
-        (...data: ModelInstanceConstructorOptions): FxOrmInstance.Instance;
-        new (...data: ModelInstanceConstructorOptions): FxOrmInstance.Instance;
-    }
     export type OrderListOrLimitOffer = number | string | string[];
-    export interface Model extends ModelInstanceConstructor, ModelHooks, FxOrmSynchronous.SynchronizedModel {
+    export interface Model<PropertyTypes extends Record<string, FxOrmInstance.FieldRuntimeType> = Record<string, FxOrmInstance.FieldRuntimeType>, Methods extends Record<string, (...args: any) => any> = Record<string, (...args: any) => any>> extends ModelHooks, FxOrmSynchronous.SynchronizedModel {
+        (): FxOrmInstance.Instance<PropertyTypes, Methods>;
+        new (): FxOrmInstance.Instance<PropertyTypes, Methods>;
+        (...data: ModelInstanceConstructorOptions): FxOrmInstance.Instance<PropertyTypes, Methods>;
+        new (...data: ModelInstanceConstructorOptions): FxOrmInstance.Instance<PropertyTypes, Methods>;
         name: string;
         properties: Record<string, FxOrmProperty.NormalizedProperty>;
         settings: FxOrmSettings.SettingInstance;
@@ -136,6 +134,7 @@ export declare namespace FxOrmModel {
         FxOrmModel.ModelFindByDescriptorItem['options'],
         FxOrmCommon.ExecutionCallback<T>
     ];
+    /** @deprecated */
     export type ModelConstructor = new (opts: ModelConstructorOptions) => Model;
     export interface ModelFindByDescriptorItem {
         association_name: string;
@@ -168,7 +167,7 @@ export declare namespace FxOrmModel {
         validations: FxOrmValidators.IValidatorHash;
         ievents: FxOrmInstance.InstanceConstructorOptions['events'];
     }
-    export interface ModelDefineOptions {
+    export interface ModelDefineOptions<TProperties extends Record<string, FxOrmInstance.FieldRuntimeType> = Record<string, FxOrmInstance.FieldRuntimeType>> {
         /**
          * pririoty: table > collection
          */
@@ -186,7 +185,7 @@ export declare namespace FxOrmModel {
         hooks?: ModelConstructorOptions['hooks'];
         validations?: ModelConstructorOptions['validations'];
         methods?: {
-            [name: string]: Function;
+            [P: string]: (this: FxOrmInstance.Instance<TProperties>, ...args: any) => any;
         };
         identityCache?: ModelConstructorOptions['identityCache'];
         cascadeRemove?: ModelConstructorOptions['cascadeRemove'];
@@ -194,7 +193,6 @@ export declare namespace FxOrmModel {
         useSelfSettings?: boolean;
         [extensibleProperty: string]: any;
     }
-    export type ModelOptions = ModelDefineOptions;
     export interface Hooks {
         beforeValidation?: FxOrmCommon.Arraible<FxOrmHook.HookActionCallback>;
         beforeCreate?: FxOrmCommon.Arraible<FxOrmHook.HookActionCallback>;
@@ -245,14 +243,19 @@ export declare namespace FxOrmModel {
         enumerable?: boolean;
         lazyload?: boolean;
     }
-    export type OrigDetailedModelProperty = FxOrmProperty.NormalizedProperty;
-    export type OrigDetailedModelPropertyHash = Record<string, FxOrmProperty.NormalizedProperty>;
-    export type PrimitiveConstructor = String | Boolean | Number | Date | Object | Class_Buffer;
+    export type PrimitiveConstructor = String | StringConstructor | Boolean | BooleanConstructor | Number | NumberConstructor | Date | DateConstructor | Object | ObjectConstructor;
     export type EnumTypeValues = any[];
-    export type PropTypeStrPropertyDefinition = string;
     export type ComplexModelPropertyDefinition = ModelPropertyDefinition | (PrimitiveConstructor & {
         name: string;
-    }) | EnumTypeValues | PropTypeStrPropertyDefinition;
+    }) | EnumTypeValues;
+    export type GetPrimitiveFromConstructor<T extends PrimitiveConstructor = PrimitiveConstructor> = T extends String | StringConstructor ? string : T extends Number | NumberConstructor ? number : T extends Boolean | BooleanConstructor ? boolean : T extends Date | DateConstructor ? number | Date : T extends Object | ObjectConstructor | Class_Buffer ? any : never;
+    type PropertyTypeEnum = import('@fxjs/orm-property/lib/Property').PropertyType;
+    type GetPrimitiveFromOrmPropertyType<T extends PropertyTypeEnum = PropertyTypeEnum> = T extends 'text' ? string : T extends 'integer' | 'number' | 'serial' ? number : T extends 'boolean' ? boolean : T extends 'date' ? number | Date : T extends 'binary' | 'object' | 'point' | 'enum' ? any : never;
+    export type GetPropertiesTypeFromDefinition<T extends ComplexModelPropertyDefinition> = T extends ModelPropertyDefinition ? GetPrimitiveFromOrmPropertyType<T['type'] & PropertyTypeEnum> : T extends FxOrmModel.PrimitiveConstructor ? FxOrmModel.GetPrimitiveFromConstructor<T> : T extends EnumTypeValues ? T[number] : unknown;
+    export type GetPropertiesType<T extends Record<string, ComplexModelPropertyDefinition>> = {
+        [K in keyof T]: FxOrmModel.GetPropertiesTypeFromDefinition<T[K]>;
+    };
+    /** @deprecated */
     export interface DetailedPropertyDefinitionHash {
         [key: string]: ModelPropertyDefinition;
     }

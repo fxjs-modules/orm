@@ -45,26 +45,33 @@ export namespace FxOrmNS {
     export type FibOrmFixedExtendModel = FxOrmModel.Model
 
     export type ModelPropertyDefinition = FxOrmModel.ModelPropertyDefinition
-    export type OrigDetailedModelProperty = FxOrmModel.OrigDetailedModelProperty
-    export type OrigDetailedModelPropertyHash = FxOrmModel.OrigDetailedModelPropertyHash
+
+    /** @deprecated */
+    export type OrigDetailedModelProperty = FxOrmProperty.NormalizedProperty
+
+    /** @deprecated */
+    export type OrigDetailedModelPropertyHash = Record<string, FxOrmProperty.NormalizedProperty>
+    /** @deprecated */
     export type OrigModelPropertyDefinition = FxOrmModel.ComplexModelPropertyDefinition
 
-    /**
-     * @deprecated
-     */
+    /** @deprecated */
     export type ModelPropertyDefinitionHash = {
         [key: string]: ComplexModelPropertyDefinition
     }
-    export type ModelOptions = FxOrmModel.ModelOptions
+
+    /** @deprecated */
+    export type ModelOptions = FxOrmModel.ModelDefineOptions
+    /** @deprecated */
     export type OrigHooks = FxOrmModel.Hooks
     
     export type ComplexModelPropertyDefinition = FxOrmModel.ComplexModelPropertyDefinition
-    export type FibOrmFixedModelOptions = FxOrmModel.ModelOptions
+    /** @deprecated */
+    export type FibOrmFixedModelOptions = FxOrmModel.ModelDefineOptions
+    
     export type PatchedSyncfiedModelOrInstance = FxOrmPatch.PatchedSyncfiedModelOrInstance
     export type PatchedSyncfiedInstanceWithDbWriteOperation = FxOrmPatch.PatchedSyncfiedInstanceWithDbWriteOperation
     export type PatchedSyncfiedInstanceWithAssociations = FxOrmPatch.PatchedSyncfiedInstanceWithAssociations
 
-    // export type SettingsContainerGenerator = FxOrmSettings.SettingsContainerGenerator
     export type SettingInstance = FxOrmSettings.SettingInstance
 
     export type ModelOptions__Find = FxOrmModel.ModelOptions__Find
@@ -99,8 +106,10 @@ export namespace FxOrmNS {
         [extensibleProperty: string]: any
     }
 
-    export interface TransformFibOrmModel2InstanceOptions extends FxOrmModel.ModelOptions {}
+    /** @deprecated */
+    export interface TransformFibOrmModel2InstanceOptions extends FxOrmModel.ModelDefineOptions {}
 
+    /** @deprecated */
     export type FibORM = ORM
 
     export interface FibORMIConnectionOptions extends FxDbDriverNS.ConnectionInputArgs {
@@ -163,7 +172,7 @@ export namespace FxOrmNS {
     export type PluginConstructFn<T2 = PluginOptions, T1 extends ORM = ORM> = (orm: T1, opts: T2) => Plugin
     export interface Plugin {
         beforeDefine?: {
-            (name?: string, properties?: Record<string, ModelPropertyDefinition>, opts?: FxOrmModel.ModelOptions): void
+            (name?: string, properties?: Record<string, ComplexModelPropertyDefinition>, opts?: FxOrmModel.ModelDefineOptions): void
         }
         define?: {
             (model?: FxOrmModel.Model, orm?: ORM): void
@@ -201,6 +210,7 @@ export namespace FxOrmNS {
         }
     }
 
+    /** @deprecated */
     export interface ORMConstructor {
         new (driver_name: string, driver: FxOrmDMLDriver.DMLDriver, settings: FxOrmSettings.SettingInstance): ORM
         prototype: ORM
@@ -210,9 +220,17 @@ export namespace FxOrmNS {
         use: {
             (plugin: PluginConstructFn, options?: PluginOptions): ThisType<ORMLike>;
         }
-        define: Function
-        sync: Function
-        load: Function
+        define: <
+            T extends Record<string, ComplexModelPropertyDefinition>,
+            U extends FxOrmModel.ModelDefineOptions<FxOrmModel.GetPropertiesType<T>>
+        >(
+            name: string,
+            properties: T,
+            opts?: U
+        ) => FxOrmModel.Model<FxOrmModel.GetPropertiesType<T>, U['methods']>;
+        sync(callback: FxOrmCommon.VoidCallback): this;
+        syncSync(): void;
+        load(file: string, callback: FxOrmCommon.VoidCallback): any;
 
         driver?: FxOrmDMLDriver.DMLDriver
 
@@ -234,7 +252,6 @@ export namespace FxOrmNS {
         plugins: Plugin[];
         customTypes: { [key: string]: FxOrmProperty.CustomPropertyType };
 
-        define(name: string, properties: Record<string, ModelPropertyDefinition>, opts?: FxOrmModel.ModelOptions): FxOrmModel.Model;
         defineType(name: string, type: FxOrmProperty.CustomPropertyType): this;
         
         load(file: string, callback: FxOrmCommon.VoidCallback): any;
@@ -243,8 +260,6 @@ export namespace FxOrmNS {
         close(callback: FxOrmCommon.VoidCallback): this;
         sync(callback: FxOrmCommon.VoidCallback): this;
         drop(callback: FxOrmCommon.VoidCallback): this;
-
-        syncSync(): void;
 
         begin: FxDbDriverNS.SQLDriver['begin'];
         commit: FxDbDriverNS.SQLDriver['commit'];

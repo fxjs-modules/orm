@@ -107,9 +107,10 @@ export class ORM extends events.EventEmitter implements FxOrmNS.ORM {
 		name, properties, opts
 	]: Parameters<FxOrmNS.ORM['define']>) {
 		properties = properties || {};
-		opts       = opts || <FxOrmModel.ModelOptions>{};
+		opts       = opts || <FxOrmModel.ModelDefineOptions>{};
 	
 		for (let i = 0; i < this.plugins.length; i++) {
+			// TODO: only pass normalized properties to beforeDefine
 			if (typeof this.plugins[i].beforeDefine === "function") {
 				this.plugins[i].beforeDefine(name, properties, opts);
 			}
@@ -148,7 +149,7 @@ export class ORM extends events.EventEmitter implements FxOrmNS.ORM {
 			}
 		}
 	
-		return this.models[name];
+		return this.models[name] as any;
 	};
 
 	defineType (...[name, opts]: Parameters<FxOrmNS.ORM['defineType']>) {

@@ -21,19 +21,23 @@ export declare namespace FxOrmNS {
     type Hooks = FxOrmModel.Hooks;
     type FibOrmFixedExtendModel = FxOrmModel.Model;
     type ModelPropertyDefinition = FxOrmModel.ModelPropertyDefinition;
-    type OrigDetailedModelProperty = FxOrmModel.OrigDetailedModelProperty;
-    type OrigDetailedModelPropertyHash = FxOrmModel.OrigDetailedModelPropertyHash;
+    /** @deprecated */
+    type OrigDetailedModelProperty = FxOrmProperty.NormalizedProperty;
+    /** @deprecated */
+    type OrigDetailedModelPropertyHash = Record<string, FxOrmProperty.NormalizedProperty>;
+    /** @deprecated */
     type OrigModelPropertyDefinition = FxOrmModel.ComplexModelPropertyDefinition;
-    /**
-     * @deprecated
-     */
+    /** @deprecated */
     type ModelPropertyDefinitionHash = {
         [key: string]: ComplexModelPropertyDefinition;
     };
-    type ModelOptions = FxOrmModel.ModelOptions;
+    /** @deprecated */
+    type ModelOptions = FxOrmModel.ModelDefineOptions;
+    /** @deprecated */
     type OrigHooks = FxOrmModel.Hooks;
     type ComplexModelPropertyDefinition = FxOrmModel.ComplexModelPropertyDefinition;
-    type FibOrmFixedModelOptions = FxOrmModel.ModelOptions;
+    /** @deprecated */
+    type FibOrmFixedModelOptions = FxOrmModel.ModelDefineOptions;
     type PatchedSyncfiedModelOrInstance = FxOrmPatch.PatchedSyncfiedModelOrInstance;
     type PatchedSyncfiedInstanceWithDbWriteOperation = FxOrmPatch.PatchedSyncfiedInstanceWithDbWriteOperation;
     type PatchedSyncfiedInstanceWithAssociations = FxOrmPatch.PatchedSyncfiedInstanceWithAssociations;
@@ -65,7 +69,7 @@ export declare namespace FxOrmNS {
     interface ExtensibleError extends Error {
         [extensibleProperty: string]: any;
     }
-    interface TransformFibOrmModel2InstanceOptions extends FxOrmModel.ModelOptions {
+    interface TransformFibOrmModel2InstanceOptions extends FxOrmModel.ModelDefineOptions {
     }
     type FibORM = ORM;
     interface FibORMIConnectionOptions extends FxDbDriverNS.ConnectionInputArgs {
@@ -106,7 +110,7 @@ export declare namespace FxOrmNS {
     type PluginConstructFn<T2 = PluginOptions, T1 extends ORM = ORM> = (orm: T1, opts: T2) => Plugin;
     interface Plugin {
         beforeDefine?: {
-            (name?: string, properties?: Record<string, ModelPropertyDefinition>, opts?: FxOrmModel.ModelOptions): void;
+            (name?: string, properties?: Record<string, ComplexModelPropertyDefinition>, opts?: FxOrmModel.ModelDefineOptions): void;
         };
         define?: {
             (model?: FxOrmModel.Model, orm?: ORM): void;
@@ -134,6 +138,7 @@ export declare namespace FxOrmNS {
             }): void;
         };
     }
+    /** @deprecated */
     interface ORMConstructor {
         new (driver_name: string, driver: FxOrmDMLDriver.DMLDriver, settings: FxOrmSettings.SettingInstance): ORM;
         prototype: ORM;
@@ -142,9 +147,10 @@ export declare namespace FxOrmNS {
         use: {
             (plugin: PluginConstructFn, options?: PluginOptions): ThisType<ORMLike>;
         };
-        define: Function;
-        sync: Function;
-        load: Function;
+        define: <T extends Record<string, ComplexModelPropertyDefinition>, U extends FxOrmModel.ModelDefineOptions<FxOrmModel.GetPropertiesType<T>>>(name: string, properties: T, opts?: U) => FxOrmModel.Model<FxOrmModel.GetPropertiesType<T>, U['methods']>;
+        sync(callback: FxOrmCommon.VoidCallback): this;
+        syncSync(): void;
+        load(file: string, callback: FxOrmCommon.VoidCallback): any;
         driver?: FxOrmDMLDriver.DMLDriver;
         [k: string]: any;
     }
@@ -166,14 +172,12 @@ export declare namespace FxOrmNS {
         customTypes: {
             [key: string]: FxOrmProperty.CustomPropertyType;
         };
-        define(name: string, properties: Record<string, ModelPropertyDefinition>, opts?: FxOrmModel.ModelOptions): FxOrmModel.Model;
         defineType(name: string, type: FxOrmProperty.CustomPropertyType): this;
         load(file: string, callback: FxOrmCommon.VoidCallback): any;
         ping(callback: FxOrmCommon.VoidCallback): this;
         close(callback: FxOrmCommon.VoidCallback): this;
         sync(callback: FxOrmCommon.VoidCallback): this;
         drop(callback: FxOrmCommon.VoidCallback): this;
-        syncSync(): void;
         begin: FxDbDriverNS.SQLDriver['begin'];
         commit: FxDbDriverNS.SQLDriver['commit'];
         rollback: FxDbDriverNS.SQLDriver['rollback'];

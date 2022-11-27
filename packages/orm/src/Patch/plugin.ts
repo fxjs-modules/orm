@@ -10,7 +10,7 @@ export default function (
 	function beforeDefine (
         name: string,
         properties: Record<string, FxOrmModel.ModelPropertyDefinition>,
-        opts: FxOrmNS.ModelOptions
+        opts: FxOrmModel.ModelDefineOptions
     ) {
         opts.hooks = opts.hooks || {};
     }

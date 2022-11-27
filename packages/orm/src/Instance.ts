@@ -787,7 +787,7 @@ export const Instance = function (
 	});
 
 	Utilities.addHiddenPropertyToInstance(instance, "__instRtd", instRtd);
-	/* just for compat */
+	/* just for compat, use __instRtd plz */
 	Utilities.addHiddenPropertyToInstance(instance, "__opts", instRtd);
 	Utilities.addHiddenPropertyToInstance(instance, "model", function (this: typeof instance) {
 		return Model;

@@ -8,10 +8,10 @@ import type { FxOrmValidators } from "./Validators";
 import type { FxOrmCommon } from "./_common";
 import type { FxOrmError } from "./Error";
 export declare namespace FxOrmInstance {
-    interface InstanceDataPayload {
+    export interface InstanceDataPayload {
         [key: string]: any;
     }
-    interface CreateOptions {
+    export interface CreateOptions {
         autoFetch?: boolean;
         autoFetchLimit?: number;
         cascadeRemove?: boolean;
@@ -22,10 +22,10 @@ export declare namespace FxOrmInstance {
         extra?: InstanceConstructorOptions['extra'];
         extra_info?: InstanceConstructorOptions['extra_info'];
     }
-    interface SaveOptions {
+    export interface SaveOptions {
         saveAssociations?: boolean;
     }
-    interface InstanceConstructorOptions {
+    export interface InstanceConstructorOptions {
         table: string;
         keys?: FxOrmModel.ModelConstructorOptions['keys'];
         originalKeyValues?: InstanceDataPayload;
@@ -69,15 +69,18 @@ export declare namespace FxOrmInstance {
             [k: string]: FxOrmCommon.GenericCallback<any>;
         };
     }
-    interface InnerInstanceRuntimeData extends InstanceConstructorOptions {
+    export interface InnerInstanceRuntimeData extends InstanceConstructorOptions {
         associations?: {
             [key: string]: FxOrmAssociation.InstanceAssociationItemInformation;
         };
         extrachanges: string[];
     }
-    type InstanceConstructor = new (model: FxOrmModel.Model, opts: InstanceConstructorOptions) => FxOrmInstance.Instance;
-    type InstanceEventType = 'ready' | 'save' | 'beforeRemove' | 'remove';
-    interface Instance {
+    type __AddThisToMethods<TMethods extends Record<string, (...args: any) => any>> = TMethods extends void ? {} : {
+        [P in keyof TMethods]: (...args: Parameters<TMethods[P]>) => ReturnType<TMethods[P]>;
+    };
+    export type InstanceConstructor = new (model: FxOrmModel.Model, opts: InstanceConstructorOptions) => FxOrmInstance.Instance;
+    export type InstanceEventType = 'ready' | 'save' | 'beforeRemove' | 'remove';
+    export type Instance<TProperties extends Record<string, FieldRuntimeType> = Record<string, FieldRuntimeType>, Methods extends Record<string, (...args: any) => any> = any> = {
         on(event: InstanceEventType | string, callback: FxOrmCommon.GenericCallback<any>): Instance;
         $on: Class_EventEmitter['on'];
         $off: Class_EventEmitter['off'];
@@ -126,6 +129,8 @@ export declare namespace FxOrmInstance {
          */
         model(): FxOrmModel.Model;
         /**
+         * @internal
+         *
          * @warn only valid in corresponding hook
          */
         readonly $hookRef: {
@@ -142,11 +147,9 @@ export declare namespace FxOrmInstance {
                 useChannel: FxOrmHook.HookChannel;
             };
         };
-        /**
-         * other patched synchronous version method
-         * - lazyLoad: getXXXSync, setXXXSync, removeXXXSync
-         * - association: [addAccessor]Sync, [getAccessor]Sync, [hasAccessor]Sync, [setAccessor]Sync, [removeAccessor]Sync
-         */
-        [extraProperty: string]: any;
-    }
+    } & TProperties & __AddThisToMethods<Methods> & {
+        [key: string]: any;
+    };
+    export type FieldRuntimeType = number | string | boolean | Date | object;
+    export {};
 }

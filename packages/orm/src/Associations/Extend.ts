@@ -100,7 +100,7 @@ export function prepare (
 		    newProperties[k] = assoc_field[k];
 		}
 
-		const modelOpts: FxOrmModel.ModelOptions = util.extend(
+		const modelOpts: FxOrmModel.ModelDefineOptions = util.extend(
 			util.pick(assoc_options, 'identityCache', 'autoSave', 'cascadeRemove', 'hooks', 'methods', 'validations'),
 			{
 				id        : Object.keys(assoc_field),

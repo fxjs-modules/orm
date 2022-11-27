@@ -85,12 +85,20 @@ export namespace FxOrmInstance {
         }
         extrachanges: string[]
     }
+    
+    type __AddThisToMethods<TMethods extends Record<string, (...args: any) => any>> = TMethods extends void ? {} : {
+        [P in keyof TMethods]: (...args: Parameters<TMethods[P]>) => ReturnType<TMethods[P]>
+    }
 
     export type InstanceConstructor = new (model: FxOrmModel.Model, opts: InstanceConstructorOptions) => FxOrmInstance.Instance
 
     export type InstanceEventType = 
         'ready' | 'save' | 'beforeRemove' | 'remove'
-    export interface Instance {
+
+    export type Instance<
+        TProperties extends Record<string, FieldRuntimeType> = Record<string, FieldRuntimeType>,
+        Methods extends Record<string, (...args: any) => any> = any
+    > = {
         on(event: InstanceEventType | string, callback: FxOrmCommon.GenericCallback<any>): Instance;
         $on: Class_EventEmitter['on']
         $off: Class_EventEmitter['off']
@@ -148,6 +156,8 @@ export namespace FxOrmInstance {
         model(): FxOrmModel.Model;
 
         /**
+         * @internal
+         * 
          * @warn only valid in corresponding hook
          */
         readonly $hookRef: {
@@ -172,7 +182,9 @@ export namespace FxOrmInstance {
          * - lazyLoad: getXXXSync, setXXXSync, removeXXXSync
          * - association: [addAccessor]Sync, [getAccessor]Sync, [hasAccessor]Sync, [setAccessor]Sync, [removeAccessor]Sync
          */
-
-        [extraProperty: string]: any;
+    } & TProperties & __AddThisToMethods<Methods> & {
+        [key: string]: any
     }
+
+    export type FieldRuntimeType = number | string | boolean | Date | object;
 }

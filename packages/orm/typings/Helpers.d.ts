@@ -21,9 +21,9 @@ export declare function getExtendsToAssociationItemFromModel(ext_name: string, _
 export declare function getAssociationItemFromModel(reltype: string, extend_name: string, _model: FxOrmModel.Model): FxOrmAssociation.InstanceAssociationItem;
 export declare function tryGetAssociationItemFromModel(extend_name: string, _model: FxOrmModel.Model): FxOrmAssociation.InstanceAssociationItem;
 export declare function prependHook(hooks: FxOrmModel.Hooks, hookName: FxOrmModel.keyofHooks, preLogic: FxOrmHook.HookActionCallback | FxOrmHook.HookResultCallback): void;
-export declare function preReplaceHook(m: FxOrmModel.Model, opts: FxOrmModel.ModelOptions, hookName: FxOrmModel.keyofHooks, cb: (this: FxOrmInstance.Instance, inst: FxOrmInstance.Instance) => void): void;
+export declare function preReplaceHook(m: FxOrmModel.Model, opts: FxOrmModel.ModelDefineOptions, hookName: FxOrmModel.keyofHooks, cb: (this: FxOrmInstance.Instance, inst: FxOrmInstance.Instance) => void): void;
 export declare const hookTrigger: FxOrmHook.HookTrigger<any, any>;
-export declare const hookWait: FxOrmHook.HookWait<FxOrmInstance.Instance, any>;
+export declare const hookWait: FxOrmHook.HookWait<FxOrmInstance.Instance<Record<string, FxOrmInstance.FieldRuntimeType>, any>, any>;
 export declare function selectArgs(args: ArrayLike<any>, callback: {
     (arg_type: "string" | "number" | "bigint" | "boolean" | "symbol" | "undefined" | "object" | "function", arg: any, idx: number): void;
 }): void;

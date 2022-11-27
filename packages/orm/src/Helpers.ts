@@ -209,7 +209,7 @@ export function prependHook (hooks: FxOrmModel.Hooks, hookName: FxOrmModel.keyof
 	}
 }
 
-export function preReplaceHook (m: FxOrmModel.Model, opts: FxOrmModel.ModelOptions, hookName: FxOrmModel.keyofHooks, cb: (this: FxOrmInstance.Instance, inst: FxOrmInstance.Instance) => void): void {
+export function preReplaceHook (m: FxOrmModel.Model, opts: FxOrmModel.ModelDefineOptions, hookName: FxOrmModel.keyofHooks, cb: (this: FxOrmInstance.Instance, inst: FxOrmInstance.Instance) => void): void {
     var _oldHook: FxOrmHook.HookActionCallback | FxOrmHook.HookResultCallback;
     if (opts !== undefined && opts.hooks)
         _oldHook = opts.hooks[hookName] as typeof _oldHook;

@@ -127,8 +127,7 @@ export declare namespace FxOrmAssociation {
         mapsTo?: FxOrmModel.ModelPropertyDefinition['mapsTo'];
         [k: string]: any;
     }
-    interface InstanceAssociatedInstance extends FxOrmInstance.Instance {
-    }
+    type InstanceAssociatedInstance = FxOrmInstance.Instance;
     interface InstanceAssociationItem_ExtendTos extends InstanceAssociationItem {
         table: string;
         reverse?: string;
