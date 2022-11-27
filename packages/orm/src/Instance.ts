@@ -68,6 +68,9 @@ export const Instance = function (
 			return !!saveOptions.saveAssociations;
 		}
 	};
+
+	const returnAllErrors = Model.settings.get("instance.returnAllErrors");
+
 	const handleValidationsSync = function (): FxOrmError.ExtendedError | FxOrmError.ExtendedError[] {
 		let required: boolean,
 			alwaysValidate: boolean;
@@ -80,7 +83,6 @@ export const Instance = function (
 				return ;
 			}
 
-			const returnAllErrors = Model.settings.get("instance.returnAllErrors");
 			const checks = new enforce.Enforce({ returnAllErrors });
 
 			for (let k in instRtd.validations) {
@@ -131,6 +133,22 @@ export const Instance = function (
 		return instance;
 	};
 
+	const throwErrorIfExistsOnSave = function (errors: FxOrmError.ExtendedError | FxOrmError.ExtendedError[], forceList = false) {
+		if (!Array.isArray(errors)) {
+			if (!errors) return ;
+
+			errors = !forceList ? errors : [errors];
+			saveError(errors)
+			throw errors;
+		} else {
+			if (!errors.length) return ;
+
+			errors = returnAllErrors ? errors : errors[0];
+			saveError(errors)
+			throw errors;
+		}
+	}
+
 	const saveInstanceSync = function (
 		saveOptions: FxOrmInstance.SaveOptions,
 	) {
@@ -143,12 +161,7 @@ export const Instance = function (
 
 		instance_saving = true;
 
-		// TODO: maybe error list
-		const err = handleValidationsSync();
-		if (err) {
-			saveError(err);
-			throw err;
-		}
+		throwErrorIfExistsOnSave(handleValidationsSync(), returnAllErrors);
 		
 		if (instRtd.isNew) {
 			Utilities.attachOnceTypedHookRefToInstance(instance, 'create', {});

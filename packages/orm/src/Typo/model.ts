@@ -358,7 +358,7 @@ export namespace FxOrmModel {
         T extends string ? (T extends PropertyTypeEnum ? GetPrimitiveFromOrmPropertyType<PropertyTypeEnum> : string) :
         T extends [...infer S] ? S[number] :
         T extends ModelPropertyDefinition ? 
-            T['type'] extends 'enum' ? T['values'][number] :
+            T['type'] extends 'enum' ? Exclude<T['values'], void>[number] :
             T['type'] extends PropertyTypeEnum ? GetPrimitiveFromOrmPropertyType<T['type'] & PropertyTypeEnum> : 
             GlobalCustomModelType[T['type']] extends void ? unknown : GlobalCustomModelType[T['type']]:
         T extends FxOrmModel.PrimitiveConstructor ? FxOrmModel.GetPrimitiveFromConstructor<T>

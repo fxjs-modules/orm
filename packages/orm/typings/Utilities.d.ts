@@ -148,6 +148,7 @@ export declare function reusableChannelGenerator(): () => FxOrmHook.HookChannelR
 export declare const createHookHelper: (hooks: Record<string, any>, hook: keyof FxOrmModel.Hooks | keyof FxOrmAssociation.InstanceAssociationItem['hooks'], { initialHooks }?: Record<string, any>) => (cb: FxOrmHook.HookActionCallback | FxOrmHook.HookResultCallback, opts?: FxOrmModel.ModelHookPatchOptions) => any;
 export declare function attachOnceTypedHookRefToInstance(instance: FxOrmInstance.Instance, type: 'save' | 'create' | 'remove', typedHookRef: Record<string, any>): void;
 export declare function arraify<T = any>(item: T | T[]): T[];
+export declare function firstEl<T = any>(item: T | T[]): T;
 export declare function isKeyProperty(prop: FxOrmProperty.NormalizedProperty): boolean;
 export declare function isKeyPrimaryProperty(prop: FxOrmProperty.NormalizedProperty): boolean;
 export declare function coercePositiveInt<T extends number | undefined | null = undefined>(value: any, fallbackValue?: T): number | T;
