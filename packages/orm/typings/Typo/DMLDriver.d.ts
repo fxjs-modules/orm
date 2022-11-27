@@ -40,9 +40,7 @@ export declare namespace FxOrmDMLDriver {
         };
         knex: typeof Knex;
         readonly query: FxSqlQuery.Class_Query;
-        /**
-         * @deprecated
-         */
+        /** @internal */
         getQuery: {
             (): FxSqlQuery.Class_Query;
         };

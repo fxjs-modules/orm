@@ -42,31 +42,10 @@ export namespace FxOrmNS {
     
     export type Instance = FxOrmInstance.Instance
     export type Hooks = FxOrmModel.Hooks
-    export type FibOrmFixedExtendModel = FxOrmModel.Model
 
-    export type ModelPropertyDefinition = FxOrmModel.ModelPropertyDefinition
-
-    /** @deprecated */
-    export type OrigDetailedModelProperty = FxOrmProperty.NormalizedProperty
-
-    /** @deprecated */
-    export type OrigDetailedModelPropertyHash = Record<string, FxOrmProperty.NormalizedProperty>
-    /** @deprecated */
-    export type OrigModelPropertyDefinition = FxOrmModel.ComplexModelPropertyDefinition
-
-    /** @deprecated */
-    export type ModelPropertyDefinitionHash = {
-        [key: string]: ComplexModelPropertyDefinition
-    }
-
-    /** @deprecated */
     export type ModelOptions = FxOrmModel.ModelDefineOptions
-    /** @deprecated */
-    export type OrigHooks = FxOrmModel.Hooks
     
     export type ComplexModelPropertyDefinition = FxOrmModel.ComplexModelPropertyDefinition
-    /** @deprecated */
-    export type FibOrmFixedModelOptions = FxOrmModel.ModelDefineOptions
     
     export type PatchedSyncfiedModelOrInstance = FxOrmPatch.PatchedSyncfiedModelOrInstance
     export type PatchedSyncfiedInstanceWithDbWriteOperation = FxOrmPatch.PatchedSyncfiedInstanceWithDbWriteOperation
@@ -105,12 +84,6 @@ export namespace FxOrmNS {
     export interface ExtensibleError extends Error {
         [extensibleProperty: string]: any
     }
-
-    /** @deprecated */
-    export interface TransformFibOrmModel2InstanceOptions extends FxOrmModel.ModelDefineOptions {}
-
-    /** @deprecated */
-    export type FibORM = ORM
 
     export interface FibORMIConnectionOptions extends FxDbDriverNS.ConnectionInputArgs {
         timezone: string;
@@ -187,7 +160,7 @@ export namespace FxOrmNS {
                 opts?: {
                     association_name?: string,
                     ext_model?: Model,
-                    assoc_props?: Record<string, ModelPropertyDefinition>,
+                    assoc_props?: Record<string, FxOrmModel.ModelPropertyDefinition>,
                     assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_HasMany
                 }
             ): void
@@ -197,17 +170,11 @@ export namespace FxOrmNS {
                 model?: FxOrmModel.Model,
                 opts?: {
                     association_name?: string,
-                    properties?: FxOrmModel.DetailedPropertyDefinitionHash,
+                    properties?: Record<string, FxOrmModel.ModelPropertyDefinition>,
                     assoc_options?: FxOrmAssociation.AssociationDefinitionOptions_ExtendsTo
                 }
             ): void
         }
-    }
-
-    /** @deprecated */
-    export interface ORMConstructor {
-        new (driver_name: string, driver: FxOrmDMLDriver.DMLDriver, settings: FxOrmSettings.SettingInstance): ORM
-        prototype: ORM
     }
 
     /**
@@ -259,10 +226,6 @@ export namespace FxOrmNS {
         settings: FxOrmSettings.SettingInstance;
         driver_name: string;
         driver: FxOrmDMLDriver.DMLDriver;
-        /**
-         * @deprecated use orm.comparators directly
-         */
-        tools: FxSqlQueryComparator.ComparatorHash;
         comparators: FxSqlQueryComparator.ComparatorHash;
         plugins: Plugin[];
         customTypes: { [key: string]: FxOrmProperty.CustomPropertyType };

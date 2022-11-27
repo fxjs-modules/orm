@@ -65,8 +65,8 @@ export namespace FxOrmAssociation {
         reverseHooks?: AssociationDefinitionOptions_HasMany['hooks']
         // is association property a primary key
         key?: boolean
-        mergeId?: string | FxOrmModel.DetailedPropertyDefinitionHash
-        mergeAssocId?: string | FxOrmModel.DetailedPropertyDefinitionHash
+        mergeId?: string | Record<string, FxOrmModel.ModelPropertyDefinition>
+        mergeAssocId?: string | Record<string, FxOrmModel.ModelPropertyDefinition>
         reverseAssociation?: string
 
         hooks?: InstanceAssociationItem['hooks'] & {
@@ -75,7 +75,7 @@ export namespace FxOrmAssociation {
              */
             beforeAdd?: FxOrmHook.HookActionCallback
             afterAdd?: FxOrmHook.HookResultCallback
-            // @deprecated
+            /** @deprecated */
             beforeSave?: {
                 (next?: Function): void;
                 (extra: any, next?: Function): void;
@@ -206,9 +206,6 @@ export namespace FxOrmAssociation {
         value?: InstanceAssociatedInstance
         data?: InstanceAssociationItem
     }
-
-    // @deprecated
-    export type ModelAssociationMethod__ComputationPayload__Merge = FxOrmQuery.ChainFindMergeInfo
 
     export interface ModelAssociationMethod__Options {
         // only valid for hasMany assoc

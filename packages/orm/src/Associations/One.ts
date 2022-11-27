@@ -24,7 +24,7 @@ export function prepare (
 		extend_associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[],
 	},
 	opts: {
-		db: FxOrmNS.FibORM
+		db: FxOrmNS.ORM
 	}
 ) {
 	const { one_associations } = assocs;

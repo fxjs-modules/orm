@@ -3,7 +3,6 @@ import type { FxOrmModel } from "./model";
 import type { FxOrmProperty } from "./property";
 import type { FxOrmCommon } from "./_common";
 import type { FxOrmInstance } from "./instance";
-import type { FxOrmQuery } from "./query";
 export declare namespace FxOrmAssociation {
     type AssociationType = 'extendsTo' | 'hasOne' | 'hasMany';
     /**
@@ -55,8 +54,8 @@ export declare namespace FxOrmAssociation {
         reverse?: string;
         reverseHooks?: AssociationDefinitionOptions_HasMany['hooks'];
         key?: boolean;
-        mergeId?: string | FxOrmModel.DetailedPropertyDefinitionHash;
-        mergeAssocId?: string | FxOrmModel.DetailedPropertyDefinitionHash;
+        mergeId?: string | Record<string, FxOrmModel.ModelPropertyDefinition>;
+        mergeAssocId?: string | Record<string, FxOrmModel.ModelPropertyDefinition>;
         reverseAssociation?: string;
         hooks?: InstanceAssociationItem['hooks'] & {
             /**
@@ -64,6 +63,7 @@ export declare namespace FxOrmAssociation {
              */
             beforeAdd?: FxOrmHook.HookActionCallback;
             afterAdd?: FxOrmHook.HookResultCallback;
+            /** @deprecated */
             beforeSave?: {
                 (next?: Function): void;
                 (extra: any, next?: Function): void;
@@ -161,7 +161,6 @@ export declare namespace FxOrmAssociation {
         value?: InstanceAssociatedInstance;
         data?: InstanceAssociationItem;
     }
-    type ModelAssociationMethod__ComputationPayload__Merge = FxOrmQuery.ChainFindMergeInfo;
     interface ModelAssociationMethod__Options {
         join_where?: FxOrmModel.ModelFindByDescriptorItem['join_where'];
         extra?: FxOrmModel.ModelOptions__Find['extra'];

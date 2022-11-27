@@ -37,7 +37,7 @@ export function prepare(
 		extend_associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[],
 	},
 	opts: {
-		db: FxOrmNS.FibORM,
+		db: FxOrmNS.ORM,
 	}
 ) {
 	const { many_associations } = assocs;
@@ -50,7 +50,7 @@ export function prepare(
 			mergeAssocId: Record<string, FxOrmProperty.NormalizedProperty>;
 
 		let OtherModel: FxOrmModel.Model = Model;
-		let props: Record<string, FxOrmProperty.NormalizedProperty> | FxOrmModel.DetailedPropertyDefinitionHash = null;
+		let props: Record<string, FxOrmProperty.NormalizedProperty> | Record<string, FxOrmModel.ModelPropertyDefinition> = null;
 		let assoc_options: FxOrmAssociation.AssociationDefinitionOptions_HasMany = {};
 
 		for (let i = 0; i < arguments.length; i++) {

@@ -95,8 +95,6 @@ export namespace FxSqlQuerySql {
 		// having sub query statement
 		having?: string
 	}
-	// @deprecated, use `SqlSelectFieldItemDescriptor` instead
-	export type SqlSelectFieldsDescriptor = SqlSelectFieldItemDescriptor
 
 	export interface SqlSelectFieldsGenerator {
 		(dialect: FxSqlQueryDialect.Dialect): string

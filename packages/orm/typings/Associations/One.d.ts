@@ -8,7 +8,7 @@ export declare function prepare(Model: FxOrmModel.Model, assocs: {
     many_associations: FxOrmAssociation.InstanceAssociationItem_HasMany[];
     extend_associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[];
 }, opts: {
-    db: FxOrmNS.FibORM;
+    db: FxOrmNS.ORM;
 }): void;
 export declare function extend(Model: FxOrmModel.Model, Instance: FxOrmInstance.Instance, Driver: FxOrmDMLDriver.DMLDriver, associations: FxOrmAssociation.InstanceAssociationItem_HasOne[], cfg: {
     assoc_opts: any;

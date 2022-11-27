@@ -188,9 +188,6 @@ export namespace FxOrmModel {
         FxOrmCommon.ExecutionCallback<T>
     ]
 
-    /** @deprecated */
-    export type ModelConstructor = new (opts: ModelConstructorOptions) => Model
-
     export interface ModelFindByDescriptorItem {
         // association name
         association_name: string,
@@ -369,11 +366,6 @@ export namespace FxOrmModel {
 
     export type GetPropertiesType<T extends Record<string, ComplexModelPropertyDefinition>> = {
         [K in keyof T]: FxOrmModel.GetPropertiesTypeFromDefinition<T[K]>
-    }
-
-    /** @deprecated */
-    export interface DetailedPropertyDefinitionHash {
-        [key: string]: ModelPropertyDefinition
     }
 
     export interface ModelOptions__Find {

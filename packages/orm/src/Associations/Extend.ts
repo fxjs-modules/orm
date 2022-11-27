@@ -34,7 +34,7 @@ export function prepare (
 		extend_associations: FxOrmAssociation.InstanceAssociationItem_ExtendTos[],
 	},
 	opts: {
-		db: FxOrmNS.FibORM
+		db: FxOrmNS.ORM
 	}
 ) {
 	const { extend_associations } = assocs;
@@ -42,7 +42,7 @@ export function prepare (
 
 	Model.extendsTo = function (
 		name: string,
-		properties: FxOrmModel.DetailedPropertyDefinitionHash,
+		properties: Record<string, FxOrmModel.ModelPropertyDefinition>,
 		assoc_options: FxOrmAssociation.AssociationDefinitionOptions_ExtendsTo
 	) {
 		assoc_options = assoc_options || {};
@@ -88,7 +88,7 @@ export function prepare (
 		Utilities.fillSyncVersionAccessorForAssociation(association);
 		Utilities.addHookPatchHelperForAssociation(association);
 		
-		const newProperties: FxOrmModel.DetailedPropertyDefinitionHash = _cloneDeep(properties);
+		const newProperties = _cloneDeep(properties) as Record<string, FxOrmModel.ModelPropertyDefinition>;
 		const assoc_field = association.field as Record<string, FxOrmProperty.NormalizedProperty>
 
 		for (let k in assoc_field) {

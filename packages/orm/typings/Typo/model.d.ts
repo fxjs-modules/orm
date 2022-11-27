@@ -134,8 +134,6 @@ export declare namespace FxOrmModel {
         FxOrmModel.ModelFindByDescriptorItem['options'],
         FxOrmCommon.ExecutionCallback<T>
     ];
-    /** @deprecated */
-    export type ModelConstructor = new (opts: ModelConstructorOptions) => Model;
     export interface ModelFindByDescriptorItem {
         association_name: string;
         conditions?: ModelQueryConditions__Find;
@@ -246,18 +244,20 @@ export declare namespace FxOrmModel {
     export type PrimitiveConstructor = String | StringConstructor | Boolean | BooleanConstructor | Number | NumberConstructor | Date | DateConstructor | Object | ObjectConstructor;
     export type ComplexModelPropertyDefinition = ModelPropertyDefinition | (PrimitiveConstructor & {
         name: string;
-    }) | [...(string | number)[]];
+    }) | [...(string | number)[]] | (PropertyTypeEnum | string);
     export type GetPrimitiveFromConstructor<T extends PrimitiveConstructor = PrimitiveConstructor> = T extends String | StringConstructor ? string : T extends Number | NumberConstructor ? number : T extends Boolean | BooleanConstructor ? boolean : T extends Date | DateConstructor ? number | Date : T extends Object | ObjectConstructor | Class_Buffer ? any : never;
     type PropertyTypeEnum = import('@fxjs/orm-property/lib/Property').PropertyType;
     type GetPrimitiveFromOrmPropertyType<T extends PropertyTypeEnum = PropertyTypeEnum> = T extends 'text' ? string : T extends 'enum' ? any[] : T extends 'integer' | 'number' | 'serial' ? number : T extends 'boolean' ? boolean : T extends 'date' ? number | Date : T extends 'binary' | 'object' | 'point' | 'enum' ? any : never;
-    export type GetPropertiesTypeFromDefinition<T extends ComplexModelPropertyDefinition> = T extends ModelPropertyDefinition ? T['type'] extends 'enum' ? T['values'][number] : GetPrimitiveFromOrmPropertyType<T['type'] & PropertyTypeEnum> : T extends [...infer S] ? S[number] : T extends FxOrmModel.PrimitiveConstructor ? FxOrmModel.GetPrimitiveFromConstructor<T> : unknown;
+    /**
+     * @description use for augumenting model's properties type
+     */
+    export interface GlobalCustomModelType {
+        [k: string]: void;
+    }
+    export type GetPropertiesTypeFromDefinition<T extends ComplexModelPropertyDefinition> = T extends string ? (T extends PropertyTypeEnum ? GetPrimitiveFromOrmPropertyType<PropertyTypeEnum> : string) : T extends [...infer S] ? S[number] : T extends ModelPropertyDefinition ? T['type'] extends 'enum' ? T['values'][number] : T['type'] extends PropertyTypeEnum ? GetPrimitiveFromOrmPropertyType<T['type'] & PropertyTypeEnum> : GlobalCustomModelType[T['type']] extends void ? unknown : GlobalCustomModelType[T['type']] : T extends FxOrmModel.PrimitiveConstructor ? FxOrmModel.GetPrimitiveFromConstructor<T> : unknown;
     export type GetPropertiesType<T extends Record<string, ComplexModelPropertyDefinition>> = {
         [K in keyof T]: FxOrmModel.GetPropertiesTypeFromDefinition<T[K]>;
     };
-    /** @deprecated */
-    export interface DetailedPropertyDefinitionHash {
-        [key: string]: ModelPropertyDefinition;
-    }
     export interface ModelOptions__Find {
         chainfind_linktable?: string;
         only?: string[];

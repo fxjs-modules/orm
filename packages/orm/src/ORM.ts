@@ -29,7 +29,6 @@ export class ORM extends events.EventEmitter implements FxOrmNS.ORM {
 	settings: FxOrmNS.ORM['settings'];
 	driver_name: FxOrmNS.ORM['driver_name'];
 	driver: FxOrmNS.ORM['driver'];
-	tools: FxOrmNS.ORM['tools'];
 	comparators: FxOrmNS.ORM['comparators'];
 	models: FxOrmNS.ORM['models'];
 	plugins: FxOrmNS.ORM['plugins'];
@@ -48,7 +47,6 @@ export class ORM extends events.EventEmitter implements FxOrmNS.ORM {
 		this.driver_name = driver_name;
 		this.driver      = driver;
 		this.driver.uid  = uuid.node().hex();
-		this.tools       = {...SqlQuery.comparators};
 		this.comparators       = {...SqlQuery.comparators};
 		this.models      = {};
 		this.plugins     = [];

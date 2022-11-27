@@ -49,13 +49,6 @@ export namespace FxOrmProperty {
         lazyname?: string
     }
 
-    /**
-     * @deprecated use Record<string, NormalizedProperty> instead
-     */
-    export interface NormalizedPropertyHash {
-        [key: string]: NormalizedProperty
-    }
-
     export interface FieldToPropertyMapType {
         [f_name: string]: NormalizedProperty
     }

@@ -120,7 +120,7 @@ export declare namespace FxOrmQuery {
     }
     type KeyOfIAggregated = keyof IAggregated;
     type AggregationFuncTuple = FxOrmDb.AGGREGATION_METHOD_TUPLE__COMMON;
-    interface SqlSelectFieldsDescriptor extends FxSqlQuerySql.SqlSelectFieldsDescriptor {
+    interface SqlSelectFieldsDescriptor extends FxSqlQuerySql.SqlSelectFieldItemDescriptor {
         args?: string | string[];
     }
     interface AggregateConstructorOptions {
