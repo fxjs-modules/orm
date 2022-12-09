@@ -268,6 +268,92 @@ describe('select - sqlite', () => {
     )
   })
 
+  describe('select as', () => {
+    var querySelect
+    var subquery
+
+    beforeEach(() => {
+      querySelect = common.Select({ dialect: 'sqlite' });
+      subquery = querySelect.knex.table('table1')
+        .select(
+          'name',
+          querySelect.knex.raw('sum(value) as ?', ['total']),
+          // querySelect.knex.sum('value').as('total')
+        )
+        .as('totals')
+        .groupBy('name');
+    })
+
+    it('by knex instance', () => {
+      var knex = querySelect.knex;
+
+      assert.equal(
+        knex
+          .from({
+            'table1': 'table1',
+            'totals': knex.raw(subquery).wrap('(', ')')
+          })
+          .select(...[
+            'name',
+            knex.raw('sum(value) as ?', ['sum(value)']),
+            knex.raw('sum(value) / totals.total as ?', ['value of total']),
+          ])
+          .whereBetween('year', [2000, 2001])
+          .where('table1.name', '=', knex.ref('totals.name'))
+          .groupBy('name')
+          .toQuery(),
+        // 'select name, sum(value) as "sum(value)", sum(value) / totals.total as "value of total" from table1, (select name, sum(value) as total from table1 group by name) as totals where table1.name = totals.name and year between 2000 and 2001 group by name;'
+        "select `name`, sum(value) as 'sum(value)', sum(value) / totals.total as 'value of total' from `table1` as `table1`, (select `name`, sum(value) as 'total' from `table1` group by `name`) as `totals` where `year` between 2000 and 2001 and `table1`.`name` = `totals`.`name` group by `name`"
+      )
+    });
+
+    it(`by query.Select()`, () => {
+      var knex = querySelect.knex;
+
+      assert.equal(
+        querySelect
+          .from(['table1', 'table1'])
+          .select([
+            'name',
+            { sql: 'sum(value)', as: 'sum(value)'},
+            { sql: 'sum(value) / totals.total', as: 'value of total' }
+          ])
+          .from([subquery, 'totals'])
+          .where({
+            year: common.Query.comparators.between(2000, 2001),
+            'table1.name': knex.ref('totals.name')
+          })
+          .groupBy('name')
+          .build(),
+        // 'select name, sum(value) as "sum(value)", sum(value) / totals.total as "value of total" from table1, (select name, sum(value) as total from table1 group by name) as totals where table1.name = totals.name and year between 2000 and 2001 group by name;'
+        "select `table1`.`name`, sum(value) as `sum(value)`, sum(value) / totals.total as `value of total` from `table1` as `table1`, (select `name`, sum(value) as 'total' from `table1` group by `name`) as `totals` where `year` between 2000 and 2001 and `table1`.`name` = `totals`.`name` group by `name`"
+      )
+    });
+
+    it('by query.Select() 2', () => {
+      var knex = querySelect.knex;
+
+      assert.equal(
+        querySelect
+          .from(['table1', 'table1'])
+          .select([
+            'name',
+            { func_name: 'sum', column_name: 'value', as: 'sum(value)' },
+            { sql: 'sum(value) / totals.total', as: 'value of total' }
+          ])
+          .from([subquery, 'totals'])
+          .where({
+            year: common.Query.comparators.between(2000, 2001),
+            'table1.name': knex.ref('totals.name')
+          })
+          .groupBy('name')
+          .build(),
+        // 'select name, sum(value) as "sum(value)", sum(value) / totals.total as "value of total" from table1, (select name, sum(value) as total from table1 group by name) as totals where table1.name = totals.name and year between 2000 and 2001 group by name;'
+        "select `table1`.`name`, sum(`table1`.`value`) as `sum(value)`, sum(value) / totals.total as `value of total` from `table1` as `table1`, (select `name`, sum(value) as 'total' from `table1` group by `name`) as `totals` where `year` between 2000 and 2001 and `table1`.`name` = `totals`.`name` group by `name`"
+      )
+    });
+  })
+
   it('from: error assertion', () => {
     const { errMsg } = common.runProcAndCatch(() => {
       common.Select()

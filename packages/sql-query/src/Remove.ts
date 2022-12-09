@@ -1,7 +1,7 @@
 import util = require('util');
 
 import Where = require("./Where");
-import { get_table_alias } from './Helpers'
+import { ChainBuilderBase, get_table_alias } from './Helpers'
 
 import { FxSqlQuery } from './Typo/Query';
 import { FxSqlQueryChainBuilder } from './Typo/Query-ChainBuilder';
@@ -9,13 +9,15 @@ import { FxSqlQuerySql } from './Typo/Sql';
 import { FxSqlQueryDialect } from './Typo/Dialect';
 import { FxSqlQuerySubQuery } from './Typo/SubQuery';
 
-export class RemoveQuery implements FxSqlQueryChainBuilder.ChainBuilder__Remove {
+export class RemoveQuery extends ChainBuilderBase implements FxSqlQueryChainBuilder.ChainBuilder__Remove {
 	private sql: FxSqlQuerySql.SqlQueryChainDescriptor = {
 		where : [],
 		order : []
 	};
 
-	constructor(private Dialect: FxSqlQueryDialect.Dialect, private opts: FxSqlQueryChainBuilder.ChainBuilderOptions) {}
+	constructor(Dialect: FxSqlQueryDialect.Dialect, private opts: FxSqlQueryChainBuilder.ChainBuilderOptions) {
+		super(Dialect);
+	}
 
 	from (table: string) {
 		this.sql.table = table;

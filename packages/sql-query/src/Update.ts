@@ -6,13 +6,16 @@ import { FxSqlQuery } from "./Typo/Query";
 import { FxSqlQueryDialect } from "./Typo/Dialect";
 import { FxSqlQuerySubQuery } from "./Typo/SubQuery";
 import { FxSqlQueryChainBuilder } from "./Typo/Query-ChainBuilder";
+import { ChainBuilderBase } from "./Helpers";
 
-export class UpdateQuery implements FxSqlQueryChainBuilder.ChainBuilder__Update {
+export class UpdateQuery extends ChainBuilderBase implements FxSqlQueryChainBuilder.ChainBuilder__Update {
 	private sql: FxSqlQuerySql.SqlQueryChainDescriptor = {
 		where : []
 	};
 
-	constructor(private Dialect: FxSqlQueryDialect.Dialect, private opts: FxSqlQuery.QueryOptions) {}
+	constructor(Dialect: FxSqlQueryDialect.Dialect, private opts: FxSqlQuery.QueryOptions) {
+		super(Dialect)
+	}
 
 	into(table: string) {
 		this.sql.table = table;

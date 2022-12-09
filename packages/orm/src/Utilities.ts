@@ -580,7 +580,7 @@ export function combineMergeInfoToArray (
 }
 
 export function parseTableInputForSelect (ta_str: string) {
-	const [pure_table, alias = pure_table] = QueryHelpers.parseTableInputStr(ta_str)
+	const [pure_table, alias = typeof pure_table === 'string' ? pure_table : ''] = QueryHelpers.parseTableInputStr(ta_str)
 
 	return {
 		pure_table,

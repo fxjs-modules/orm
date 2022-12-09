@@ -1,3 +1,4 @@
+import { ChainBuilderBase } from "./Helpers";
 import { FxSqlQueryDialect } from "./Typo/Dialect";
 import { FxSqlQueryColumns } from "./Typo/Field";
 import { FxSqlQuery } from "./Typo/Query";
@@ -9,11 +10,13 @@ import { FxSqlQueryChainBuilder } from "./Typo/Query-ChainBuilder";
  * @returns {{table: table, field: field, fields: fields, build: build}}
  * @constructor
  */
-export class CreateQuery implements FxSqlQueryChainBuilder.ChainBuilder__Create {
+export class CreateQuery extends ChainBuilderBase implements FxSqlQueryChainBuilder.ChainBuilder__Create {
 	tableName: string = null;
 	structure: FxSqlQueryColumns.FieldItemTypeMap = {};
 
-	constructor (private Dialect: FxSqlQueryDialect.Dialect) {}
+	constructor (Dialect: FxSqlQueryDialect.Dialect) {
+		super(Dialect);
+	}
 
 	/**
 	 * Set the table name

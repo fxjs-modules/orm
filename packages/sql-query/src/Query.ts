@@ -30,14 +30,16 @@ function mountDialect (
 		configurable: false
 	})
 
+	const knexInst = FKnex({ client: this.Dialect.type, useNullAsDefault: true });
+
 	Object.defineProperty(this.Dialect, 'knex', {
-		value: FKnex({ client: this.Dialect.type, useNullAsDefault: true }),
+		value: knexInst,
 		writable: false,
 		configurable: false
 	})
 
 	Object.defineProperty(this, 'knex', {
-		value: this.Dialect.knex,
+		value: knexInst,
 		writable: false,
 		configurable: false
 	})

@@ -12,6 +12,7 @@ export namespace FxSqlQueryChainBuilder {
 	export interface ChainBuilderOptions extends FxSqlQuery.QueryOptions {}
 
 	export interface ChainBuilder {
+		readonly knex: FxSqlQuery.Class_Query['knex']
 		build(): string
 	}
 

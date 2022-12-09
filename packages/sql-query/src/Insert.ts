@@ -1,12 +1,14 @@
-import { escapeValForKnex } from "./Helpers";
+import { ChainBuilderBase, escapeValForKnex } from "./Helpers";
 import { FxSqlQueryDialect } from "./Typo/Dialect";
 import { FxSqlQuerySql } from "./Typo/Sql";
 import { FxSqlQueryChainBuilder } from "./Typo/Query-ChainBuilder";
 
-export class InsertQuery implements FxSqlQueryChainBuilder.ChainBuilder__Insert {
+export class InsertQuery extends ChainBuilderBase implements FxSqlQueryChainBuilder.ChainBuilder__Insert {
 	private sql: FxSqlQuerySql.SqlQueryChainDescriptor = {};
 
-	constructor(private Dialect: FxSqlQueryDialect.Dialect, private opts: FxSqlQueryChainBuilder.ChainBuilderOptions) {}
+	constructor(Dialect: FxSqlQueryDialect.Dialect, private opts: FxSqlQueryChainBuilder.ChainBuilderOptions) {
+		super(Dialect);
+	}
 
 	into (table: string) {
 		this.sql.table = table;

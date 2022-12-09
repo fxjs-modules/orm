@@ -278,7 +278,6 @@ describe('select - mysql', () => {
         .from('table2 as custom_t2', ['id2a', 'id2b'], 'table1', ['id1a', 'id1b'])
         .from('table2 as custom_t3', 'id3', 'custom_t1', 'id2').select('id3')
         .build(),
-      // 'SELECT `custom_t1`.`id1`, `custom_t1`.`id2`, `custom_t1`.`name`, `custom_t3`.`id3` FROM ( `table1` `custom_t1` JOIN `table2` `custom_t2` ON `custom_t2`.`id2a` = `custom_t1`.`id1a` AND `custom_t2`.`id2b` = `custom_t1`.`id1b` ) JOIN `table2` `custom_t3` ON `custom_t3`.`id3` = `custom_t1`.`id2`'
       'select `custom_t1`.`id1`, `custom_t1`.`id2`, `custom_t1`.`name`, `custom_t3`.`id3` from `table1` as `custom_t1` inner join `table2` as `custom_t2` on `custom_t2`.`id2a` = `custom_t1`.`id1a` and `custom_t2`.`id2b` = `custom_t1`.`id1b` inner join `table2` as `custom_t3` on `custom_t3`.`id3` = `custom_t1`.`id2`'
     )
 

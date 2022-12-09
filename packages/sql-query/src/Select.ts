@@ -11,11 +11,13 @@ import { FxSqlQuery } from "./Typo/Query";
 import { FxSqlQueryHelpler } from './Typo/Helper';
 import { FxSqlQuerySubQuery } from "./Typo/SubQuery"
 
-export class SelectQuery implements FxSqlQueryChainBuilder.ChainBuilder__Select {
+
+export class SelectQuery extends Helpers.ChainBuilderBase implements FxSqlQueryChainBuilder.ChainBuilder__Select {
 	Dialect: FxSqlQueryDialect.Dialect
 
 	private sql: FxSqlQuerySql.SqlQueryChainDescriptor = {
 		from         : [],
+		fromQuery	 : [],
 		where        : [],
 		order        : [],
 		group_by     : null,
@@ -64,7 +66,7 @@ export class SelectQuery implements FxSqlQueryChainBuilder.ChainBuilder__Select 
 	};
 
 	constructor(Dialect: FxSqlQueryDialect.Dialect, private opts: FxSqlQuery.QueryOptions) {
-		this.Dialect = Dialect;
+		super(Dialect);
 	}
 
 	select (fields?: any) {
@@ -150,10 +152,15 @@ export class SelectQuery implements FxSqlQueryChainBuilder.ChainBuilder__Select 
 			return this;
 		}
 
-		let alias: string;
-
 		const args = Array.prototype.slice.call(arguments);
 		const last = args[args.length - 1];
+
+		if (args.length == 1) { // another table
+			this.sql.from.push(from);
+			return this;
+		} 
+
+		let alias: string;
 
 		if (typeof last == 'object' && !Array.isArray(last)) {
 			from_opts = args.pop()
@@ -163,9 +170,11 @@ export class SelectQuery implements FxSqlQueryChainBuilder.ChainBuilder__Select 
 		if (args.length == 3) {
 			alias = Helpers.pickAliasFromFromDescriptor(this.sql.from[this.sql.from.length - 1]);
 			to_id = to_table;
-		} else { // expect args.length === 4
+		} else if (args.length === 4) { // expect args.length === 4
 			const [to_table_name, to_table_alias] = Helpers.parseTableInputStr(to_table)
 			alias = to_table_alias || get_table_alias(this.sql, to_table_name);
+		} else {
+			throw new Error('[SQL-QUERY] invalid arguments for .from()');
 		}
 
 		from.joins = [];
@@ -381,20 +390,21 @@ export class SelectQuery implements FxSqlQueryChainBuilder.ChainBuilder__Select 
 
 			const single_query = sql_from.length == 1 && !this.sql.where_exists;
 
-			for (let i = 0, first_table = false; i < sql_from.length; i++) {
-				const sql_from_item = sql_from[i];
+			if (single_query) {
+				sqlBuilder.from(sql_from[0].table);
+			} else {
+				const fromAliasDict: Record<string, FxSqlQuerySql.QueryFromDescriptor['table']> = {};
+				for (let i = 0; i < sql_from.length; i++) {
+					const sql_from_item = sql_from[i];
+					
+					const fallbackAlias = typeof sql_from_item.table == "string" ? sql_from_item.table : `t${i + 1}`;
+					const alias = Helpers.pickAliasFromFromDescriptor(sql_from_item) || fallbackAlias;
 
-				if (single_query) {
-					sqlBuilder.from(sql_from_item.table);
-				} else {
-					if (!first_table)
-						sqlBuilder.from(`${sql_from_item.table} as ${Helpers.pickAliasFromFromDescriptor(sql_from_item)}`);
-					else {
+					if (sql_from_item.joins?.length) { // from describe joins
 						const join_obj: {[k: string]: string} = {};
-						const table_str = Helpers.pickAliasFromFromDescriptor(sql_from_item) || sql_from_item.table;
 
 						sql_from_item.joins.forEach(join_item => {
-							join_obj[`${table_str}.${join_item[0]}`] = `${join_item[1]}.${join_item[2]}`
+							join_obj[`${alias}.${join_item[0]}`] = `${join_item[1]}.${join_item[2]}`
 						});
 
 						const joinOperator = filterJoinOperator(sql_from_item.opts)
@@ -402,14 +412,15 @@ export class SelectQuery implements FxSqlQueryChainBuilder.ChainBuilder__Select 
 						sqlBuilder[joinOperator](
 							`${sql_from_item.table} as ${Helpers.pickAliasFromFromDescriptor(sql_from_item)}`, join_obj
 						)
+					} else {
+						fromAliasDict[alias] = 
+							// from: select subquery as table
+							Helpers.maybeKnexRawOrQueryBuilder(sql_from_item.table) ? this.knex.raw(sql_from_item.table).wrap('(', ')')
+							: sql_from_item.table;
 					}
-
 				}
 
-				first_table = true;
-
-				if (i > 0) {
-				}
+				sqlBuilder.from(fromAliasDict as any);
 			}
 		}
 

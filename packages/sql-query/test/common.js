@@ -45,6 +45,11 @@ common.Remove = function (qOpts) {
 	return q.remove();
 };
 
+/**
+ * 
+ * @param {import('../lib/Typo/Dialect').FxSqlQueryDialect.DialectType} dialect 
+ * @returns {import('../lib/Typo/Dialect').FxSqlQueryDialect.Dialect}
+ */
 common.getDialect = function (dialect) {
 	return require('../lib/Dialects/' + dialect);
 };
