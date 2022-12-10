@@ -74,7 +74,7 @@ export declare function wrapFieldObject(params: {
  */
 export declare function formatAssociatedField(model: FxOrmModel.Model, name: string, required: boolean, reversed: boolean): Record<string, FxOrmProperty.NormalizedProperty>;
 /** @internal */
-export declare function extractHasManyExtraConditions(association: FxOrmAssociation.InstanceAssociationItem_HasMany, conditions: FxOrmModel.ModelFindByDescriptorItem['conditions'], extra_where?: FxOrmModel.ModelFindByDescriptorItem['conditions']): FxOrmModel.ModelQueryConditions__Find;
+export declare function extractHasManyExtraConditions(association: FxOrmAssociation.InstanceAssociationItem_HasMany, conditions: FxOrmModel.ModelFindByDescriptorItem['conditions'], extra_where?: FxOrmModel.ModelFindByDescriptorItem['conditions']): FxOrmQuery.QueryConditions__Find;
 /**
  * @description top conditions means that conditions which matches query's top select.
  */

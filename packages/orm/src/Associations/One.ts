@@ -121,7 +121,7 @@ export function prepare (
 		const findByAccessorChainOrRunSync = function (is_sync: boolean = false) {
 			return function () {
 				var cb: FxOrmModel.ModelMethodCallback__Find = null,
-					conditions: FxOrmModel.ModelQueryConditions__Find = null,
+					conditions: FxOrmQuery.QueryConditions__Find = null,
 					options: FxOrmAssociation.ModelAssociationMethod__FindOptions = {};
 
 				Helpers.selectArgs(arguments, (arg_type, arg) => {
@@ -257,7 +257,7 @@ function extendInstance(
 			let reverseHostInstances: FxOrmAssociation.InstanceAssociatedInstance[] = null;
 
 			if (Utilities.hasValues(Instance, Model.id)) {
-				const query_conds: FxOrmModel.ModelQueryConditions__Find = Utilities.getConditions(
+				const query_conds: FxOrmQuery.QueryConditions__Find = Utilities.getConditions(
 					Model,
 					Object.keys(association.field),
 					Instance

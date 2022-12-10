@@ -51,6 +51,7 @@ export namespace FxOrmQuery {
         QueryCondition_not_in
 
     export type QueryConditions = FxSqlQuerySubQuery.SubQueryConditions
+    export type QueryConditionsItem = FxSqlQuerySql.SqlFragmentStr | FxOrmQuery.QueryConditions__Find
     /* query conditions :end */
 
     export type OrderNormalizedTuple = FxSqlQuery.OrderNormalizedTuple
@@ -61,6 +62,10 @@ export namespace FxOrmQuery {
     export type OrderRawInput = string | OrderSeqRawTuple
     export type OrderNormalizedTupleWithoutTable = [string, "Z" | "A"]
     export type OrderNormalizedTupleMixin = (OrderNormalizedTupleWithoutTable|FxSqlQuery.OrderNormalizedResult)[]
+
+    export interface QueryConditions__Find extends FxSqlQuerySubQuery.SubQueryConditions {
+        [property: string]: any
+    }
     
     export interface ChainFindMergeInfo {
         from: {
@@ -72,7 +77,7 @@ export namespace FxOrmQuery {
             field: string[]
         }
         select: FxSqlQueryColumns.SelectInputArgType[]
-        where: [string, FxOrmModel.ModelQueryConditions__Find]
+        where: [string, QueryConditions__Find]
         table: string
     }
 
@@ -182,9 +187,9 @@ export namespace FxOrmQuery {
         remove(callback?: FxOrmCommon.ExecutionCallback<FxOrmQuery.RemoveResult>): this;
         removeSync(): FxOrmQuery.RemoveResult;
 
-        find<T = FxOrmInstance.Instance<HP, HM>[]>(...conditions: (FxOrmModel.ModelQueryConditionsItem | FxOrmCommon.ExecutionCallback<T>)[]): this;
+        find<T = FxOrmInstance.Instance<HP, HM>[]>(...conditions: (FxOrmQuery.QueryConditionsItem | FxOrmCommon.ExecutionCallback<T>)[]): this;
         findSync: {
-            <T = FxOrmInstance.Instance<HP, HM>[]>(...conditions: (FxOrmModel.ModelQueryConditionsItem | FxOrmCommon.ExecutionCallback<T>)[]): T
+            <T = FxOrmInstance.Instance<HP, HM>[]>(...conditions: (FxOrmQuery.QueryConditionsItem | FxOrmCommon.ExecutionCallback<T>)[]): T
         }
         all: this['find']
         allSync: this['findSync']
@@ -231,10 +236,10 @@ export namespace FxOrmQuery {
 
 
     export interface ChainFindOptions {
-        keys: FxOrmModel.ModelConstructorOptions['keys']
-        table: FxOrmModel.ModelConstructorOptions['table']
-        generateSqlSelect?: FxOrmModel.ModelConstructorOptions['generateSqlSelect'];
-        driver: FxOrmModel.ModelConstructorOptions['driver']
+        keys: string[]
+        table: string
+        generateSqlSelect?: FxOrmDMLDriver.DMLDriver_FindOptions['generateSqlSelect']
+        driver: FxOrmDMLDriver.DMLDriver
         
         conditions: QueryConditions
         /**

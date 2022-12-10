@@ -49,6 +49,7 @@ export declare namespace FxOrmQuery {
     };
     type QueryConditionAtomicType = QueryCondition_eq | QueryCondition_ne | QueryCondition_gt | QueryCondition_gte | QueryCondition_lt | QueryCondition_lte | QueryCondition_like | QueryCondition_not_like | QueryCondition_between | QueryCondition_not_between | QueryCondition_in | QueryCondition_not_in;
     type QueryConditions = FxSqlQuerySubQuery.SubQueryConditions;
+    type QueryConditionsItem = FxSqlQuerySql.SqlFragmentStr | FxOrmQuery.QueryConditions__Find;
     type OrderNormalizedTuple = FxSqlQuery.OrderNormalizedTuple;
     type OrderSqlStyleTuple = FxSqlQuery.OrderSqlStyleTuple;
     type OrderNormalizedResult = FxSqlQuery.OrderNormalizedResult;
@@ -56,6 +57,9 @@ export declare namespace FxOrmQuery {
     type OrderRawInput = string | OrderSeqRawTuple;
     type OrderNormalizedTupleWithoutTable = [string, "Z" | "A"];
     type OrderNormalizedTupleMixin = (OrderNormalizedTupleWithoutTable | FxSqlQuery.OrderNormalizedResult)[];
+    interface QueryConditions__Find extends FxSqlQuerySubQuery.SubQueryConditions {
+        [property: string]: any;
+    }
     interface ChainFindMergeInfo {
         from: {
             table: string;
@@ -66,7 +70,7 @@ export declare namespace FxOrmQuery {
             field: string[];
         };
         select: FxSqlQueryColumns.SelectInputArgType[];
-        where: [string, FxOrmModel.ModelQueryConditions__Find];
+        where: [string, QueryConditions__Find];
         table: string;
     }
     interface ChainWhereExistsInfo {
@@ -150,9 +154,9 @@ export declare namespace FxOrmQuery {
         countSync(): number;
         remove(callback?: FxOrmCommon.ExecutionCallback<FxOrmQuery.RemoveResult>): this;
         removeSync(): FxOrmQuery.RemoveResult;
-        find<T = FxOrmInstance.Instance<HP, HM>[]>(...conditions: (FxOrmModel.ModelQueryConditionsItem | FxOrmCommon.ExecutionCallback<T>)[]): this;
+        find<T = FxOrmInstance.Instance<HP, HM>[]>(...conditions: (FxOrmQuery.QueryConditionsItem | FxOrmCommon.ExecutionCallback<T>)[]): this;
         findSync: {
-            <T = FxOrmInstance.Instance<HP, HM>[]>(...conditions: (FxOrmModel.ModelQueryConditionsItem | FxOrmCommon.ExecutionCallback<T>)[]): T;
+            <T = FxOrmInstance.Instance<HP, HM>[]>(...conditions: (FxOrmQuery.QueryConditionsItem | FxOrmCommon.ExecutionCallback<T>)[]): T;
         };
         all: this['find'];
         allSync: this['findSync'];
@@ -185,10 +189,10 @@ export declare namespace FxOrmQuery {
         save(cb: IChainInstanceCallbackFn): IChainInstance;
     }
     interface ChainFindOptions {
-        keys: FxOrmModel.ModelConstructorOptions['keys'];
-        table: FxOrmModel.ModelConstructorOptions['table'];
-        generateSqlSelect?: FxOrmModel.ModelConstructorOptions['generateSqlSelect'];
-        driver: FxOrmModel.ModelConstructorOptions['driver'];
+        keys: string[];
+        table: string;
+        generateSqlSelect?: FxOrmDMLDriver.DMLDriver_FindOptions['generateSqlSelect'];
+        driver: FxOrmDMLDriver.DMLDriver;
         conditions: QueryConditions;
         /**
          * @notice virtual properties included here

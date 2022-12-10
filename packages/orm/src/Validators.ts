@@ -78,7 +78,7 @@ export function unique (
 		var chain: FxOrmQuery.IChainFind = ctx.model.find();
 
 		var chainQuery = function (prop: string, value: any) {
-			var query: string | FxOrmModel.ModelQueryConditions__Find = null;
+			var query: string | FxOrmQuery.QueryConditions__Find = null;
 
 			if (opts.ignoreCase === true && ctx.model.properties[prop] && ctx.model.properties[prop].type === 'text') {
 				query = util.format('LOWER(%s.%s) LIKE LOWER(?)',

@@ -1057,7 +1057,7 @@ function soloFindByChainOrRunSync <T = any>(
 
 export function listFindByChainOrRunSync (
 	model: FxOrmModel.Model,
-	self_conditions: FxOrmModel.ModelQueryConditions__Find,
+	self_conditions: FxOrmQuery.QueryConditions__Find,
 	by_list: FxOrmModel.ModelFindByDescriptorItem[],
 	self_options: FxOrmModel.ModelOptions__Find,
 	opts: FxOrmCommon.SyncCallbackInputArags
