@@ -200,6 +200,11 @@ describe('where-postgresql', () => {
       common.Select({ dialect: 'postgresql' }).from('table1').where({ col: "a'" }).build(),
       `select * from "table1" where "col" = 'a'''`
     )
+
+    assert.equal(
+      common.Select({ dialect: 'postgresql' }).from('table1').where({ col: common.Query.comparators.eq('col2', { asIdentifier: true }) }).build(),
+      `select * from "table1" where "col" = "col2"`
+    )
   })
 })
 

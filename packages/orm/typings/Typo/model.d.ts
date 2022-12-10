@@ -187,7 +187,7 @@ export declare namespace FxOrmModel {
         sqlSelectTableFrom?: __ItOrItsArray<{
             subQuery: FxSqlQuerySql.SqlTableInputType;
             topSelect?: FxSqlQuerySql.SqlSelectFieldsType[];
-            topWheres?: Parameters<FxSqlQueryChainBuilder.ChainBuilder__Select['where']>[0] & object;
+            topWheres?: string | Parameters<FxSqlQueryChainBuilder.ChainBuilder__Select['where']>[0] & object;
         }>;
         generateSqlSelect?: ModelConstructorOptions<TProperties>['generateSqlSelect'];
         collection?: ModelConstructorOptions<TProperties>['table'];

@@ -52,63 +52,79 @@ function useRunner (options) {
             age: Number,
             male: Boolean
         }, {
-            /**
-             * TODO: support raw query condition from another endpoint
-             * @param {*} ctx 
-             * @param {*} querySelect 
-             * @returns 
-             */
-            // tableFromQueries: [
-            //     {
-            //         alias: 'same_ages',
-            //         subQuery: knex.table('person').select(
-            //             'age',
-            //             knex.raw('id, count(age) as ?', ['same_age_count']),
-            //         )
-            //         .groupBy('id').toQuery(),
-            //         topSelect: ['same_age_count']
-            //     }
-            // ],
-            generateSqlSelect: function(ctx, querySelect) {
-                const subquery = this.knex.table('person');
-
-                switch (this.sqlDriver.type) {
-                    case 'mysql':
-                    case 'psql': {
-                        // for mysql, specify all non-grouped fields to avoid conflict with
-                        // `ONLY_FULL_GROUP_BY` mode, similar reason for postgres
-                        subquery.select(
-                            'age as _age', // alias to avoid conflict with `age` column
+            ...options.mode === 'rawQuery:rawSQL' ? {
+                sqlSelectTableFrom: db.driver.sqlDriver.type === 'sqlite' ? {
+                    subQuery: "(select `age` as `_age`, count(*) as `same_age_count` from `person` group by `age`) as same_ages",
+                    topSelect: ['same_age_count', '_age'],
+                    topWheres: { '__sql': [ ['`person`.`age` = `same_ages`.`_age`'] ] }
+                } : db.driver.sqlDriver.type === 'mysql' ? {
+                    subQuery: "(select `age` as `_age`, count(*) as `same_age_count` from `person` group by `age`) as `same_ages`",
+                    topSelect: ['same_age_count', '_age'],
+                    topWheres: { '__sql': [ ['`person`.`age` = `same_ages`.`_age`'] ] }
+                } : db.driver.sqlDriver.type === 'psql' ? {
+                    subQuery: `(select "age" as "_age", count(*) as "same_age_count" from "person" group by "age") as "same_ages"`,
+                    topSelect: ['same_age_count', '_age'],
+                    topWheres: { '__sql': [ ['"person"."age" = "same_ages"."_age"'] ] }
+                } : {
+                    subQuery: `Unknown SQL driver type: ${db.driver.sqlDriver.type}`,
+                    topSelect: ['same_age_count', '_age'],
+                    topWheres: { 'person.age': `Unknown SQL driver type: ${db.driver.sqlDriver.type}` }
+                },
+            } : options.mode === 'rawQuery:knex' ? {
+                sqlSelectTableFrom: {
+                    subQuery: [
+                        knex.table('person').select(
+                            'age as _age',
                             knex.raw('count(*) as ??', ['same_age_count']),
-                        ).groupBy(['_age'])
-                        break;
-                    }
-                    case 'sqlite': {
-                        // for sqlite, it's free in some degree, but still need to specify
-                        subquery.select(
-                            'id as _id',
-                            'age as _age', // alias to avoid conflict with `age` column
-                            knex.raw('count(*) as ??', ['same_age_count']),
-                        ).groupBy('age')
-                        break;
-                    }
-                }
-
-                querySelect
-                    .from(`person as person`)
-                    .select(ctx.selectFields) // select all model defined fields, but `same_age_count` due to it's virtual
-                    .from([subquery, 'same_ages'])
-                    .select(['same_age_count', '_age'])
-                    .where({
+                        ).groupBy('age'),
+                        'same_ages'
+                    ],
+                    topSelect: ['same_age_count', '_age'],
+                    topWheres: {
                         'person.age': knex.ref('same_ages._age')
-                    });
-                
-                if (this.sqlDriver.type === 'sqlite') {
-                    // pointless here, just for SQL test
-                    querySelect.groupBy('person.id')
-                }
+                    }
+                },
+            } : {
+                generateSqlSelect: function(ctx, querySelect) {
+                    const subquery = this.knex.table('person');
 
-                return querySelect;
+                    switch (this.sqlDriver.type) {
+                        case 'mysql':
+                        case 'psql': {
+                            // for mysql, specify all non-grouped fields to avoid conflict with
+                            // `ONLY_FULL_GROUP_BY` mode, similar reason for postgres
+                            subquery.select(
+                                'age as _age', // alias to avoid conflict with `age` column
+                                knex.raw('count(*) as ??', ['same_age_count']),
+                            ).groupBy(['_age'])
+                            break;
+                        }
+                        case 'sqlite': {
+                            // for sqlite, it's free in some degree, but still need to specify
+                            subquery.select(
+                                'id as _id',
+                                'age as _age', // alias to avoid conflict with `age` column
+                                knex.raw('count(*) as ??', ['same_age_count']),
+                            ).groupBy('age')
+                            break;
+                        }
+                    }
+                    querySelect
+                        .from(`person as person`)
+                        .select(ctx.selectFields) // select all model defined fields, but `same_age_count` due to it's virtual
+                        .from([subquery, 'same_ages'])
+                        .select(['same_age_count', '_age'])
+                        .where({
+                            'person.age': knex.ref('same_ages._age')
+                        });
+
+                    if (this.sqlDriver.type === 'sqlite') {
+                        // pointless here, just for SQL test
+                        querySelect.groupBy('person.id')
+                    }
+
+                    return querySelect;
+                }
             }
         });
 

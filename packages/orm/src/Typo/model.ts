@@ -259,7 +259,7 @@ export namespace FxOrmModel {
             subQuery: FxSqlQuerySql.SqlTableInputType
             topSelect?: FxSqlQuerySql.SqlSelectFieldsType[]
             // topSelect?: (string | FxSqlQuerySql.SqlSelectFieldItemDescriptor)[]
-            topWheres?: Parameters<FxSqlQueryChainBuilder.ChainBuilder__Select['where']>[0] & object
+            topWheres?: string | Parameters<FxSqlQueryChainBuilder.ChainBuilder__Select['where']>[0] & object
         }>
         generateSqlSelect?: ModelConstructorOptions<TProperties>['generateSqlSelect']
 

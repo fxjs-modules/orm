@@ -200,13 +200,15 @@ function buildOrGroup(
 						case "not_in" : transformed_result_op = "NOT IN"; break;
 					}
 
-					if (!isInStyleOperator(op, non_conj_where_conditem_value)) {
-						innerOperator = innerOperator || selectWhereOperatorByCtx(nextPrefixedOpWord).nextOperator
-						knexQueryBuilder[innerOperator].call(knexQueryBuilder, normalizedKey, transformed_result_op, Helpers.escapeValForKnex(non_conj_where_conditem_value.val, Dialect, opts))
-					} else {
-						innerOperator = innerOperator || selectWhereOperatorByCtx(nextPrefixedOpWord).nextOperator
-						knexQueryBuilder[innerOperator].call(knexQueryBuilder, normalizedKey, transformed_result_op, Helpers.escapeValForKnex(non_conj_where_conditem_value.val, Dialect, opts))
+					let val = non_conj_where_conditem_value.val
+					innerOperator = innerOperator || selectWhereOperatorByCtx(nextPrefixedOpWord).nextOperator
+					if (
+						!isInStyleOperator(op, non_conj_where_conditem_value)
+						&& val !== null
+						&& non_conj_where_conditem_value.asIdentifier) {
+						val = Dialect.knex.ref(val);
 					}
+					knexQueryBuilder[innerOperator].call(knexQueryBuilder, normalizedKey, transformed_result_op, Helpers.escapeValForKnex(val, Dialect, opts))
 
 					break;
 			}

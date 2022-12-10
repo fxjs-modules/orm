@@ -57,7 +57,7 @@ export namespace FxSqlQueryComparator {
 		// value
 		val?: T
 		// WIP: if use value as identifier
-		// asIdentifier?: boolean
+		asIdentifier?: boolean
 		// expression regular
 		expr?: QueryComparatorExprType
 		// from field
@@ -117,36 +117,40 @@ export namespace FxSqlQueryComparator {
 
 export namespace FxSqlQueryComparatorFunction {
 	export interface between {
-		(a: string, b: string): FxSqlQueryComparator.QueryComparatorObject
+		(a: string, b: string, options?: __Options): FxSqlQueryComparator.QueryComparatorObject
 	}
 	export interface not_between {
-		(a: string, b: string): FxSqlQueryComparator.QueryComparatorObject
+		(a: string, b: string, options?: __Options): FxSqlQueryComparator.QueryComparatorObject
 	}
 	export interface like {
-		(expr: FxSqlQueryComparator.QueryComparatorExprType): FxSqlQueryComparator.QueryComparatorObject
+		(expr: FxSqlQueryComparator.QueryComparatorExprType, options?: __Options): FxSqlQueryComparator.QueryComparatorObject
 	}
 	export interface not_like {
-		(expr: FxSqlQueryComparator.QueryComparatorExprType): FxSqlQueryComparator.QueryComparatorObject
+		(expr: FxSqlQueryComparator.QueryComparatorExprType, options?: __Options): FxSqlQueryComparator.QueryComparatorObject
 	}
 	export interface eq {
-		(v: any): FxSqlQueryComparator.QueryComparatorObject
+		(v: any, options?: __Options): FxSqlQueryComparator.QueryComparatorObject
 	}
 	export interface ne {
-		(v: any): FxSqlQueryComparator.QueryComparatorObject
+		(v: any, options?: __Options): FxSqlQueryComparator.QueryComparatorObject
 	}
 	export interface gt {
-		(v: any): FxSqlQueryComparator.QueryComparatorObject
+		(v: any, options?: __Options): FxSqlQueryComparator.QueryComparatorObject
 	}
 	export interface gte {
-		(v: any): FxSqlQueryComparator.QueryComparatorObject
+		(v: any, options?: __Options): FxSqlQueryComparator.QueryComparatorObject
 	}
 	export interface lt {
-		(v: any): FxSqlQueryComparator.QueryComparatorObject
+		(v: any, options?: __Options): FxSqlQueryComparator.QueryComparatorObject
 	}
 	export interface lte {
-		(v: any): FxSqlQueryComparator.QueryComparatorObject
+		(v: any, options?: __Options): FxSqlQueryComparator.QueryComparatorObject
 	}
 	export interface not_in {
-		(v: any): FxSqlQueryComparator.QueryComparatorObject
+		(v: any, options?: __Options): FxSqlQueryComparator.QueryComparatorObject
+	}
+
+	export type __Options = {
+		asIdentifier?: boolean
 	}
 }

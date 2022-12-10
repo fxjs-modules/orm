@@ -1183,7 +1183,7 @@ export function __wrapTableSourceAsGneratingSqlSelect (
 					return typeof select === 'function' ? select(dialect) : select
 				})
 				.filter(Boolean),
-			topWheres: tfq.topWheres,
+			topWheres: (typeof tfq.topWheres === 'string' ? { __sql: [[tfq.topWheres]] } : tfq.topWheres) as Exclude<typeof tfq.topWheres, string>,
 		}
 	});
 

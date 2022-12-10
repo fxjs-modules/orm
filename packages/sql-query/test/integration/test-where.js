@@ -230,6 +230,16 @@ function shared (queryOptions) {
     // "SELECT * FROM `table1` WHERE LOWER(`stuff`) LIKE 'peaches' AND `number` == NULL"
     "select * from `table1` where LOWER(`stuff`) LIKE 'peaches' AND `number` == NULL"
   )
+  
+  assert.equal(
+    common.Select(queryOptions).from('table1').where({ col: common.Query.comparators.eq('col2', { asIdentifier: true }) }).build(),
+    "select * from `table1` where `col` = `col2`"
+  )
+  
+  assert.equal(
+    common.Select(queryOptions).from('table1').where({ 't1.col1': common.Query.comparators.eq('t2.col2', { asIdentifier: true }) }).build(),
+    "select * from `table1` where `t1`.`col1` = `t2`.`col2`"
+  )
 }
 
 function shared_repeat_build (queryOptions) {
