@@ -347,7 +347,6 @@ export const Model = function (
 					tableConditions,
 					{
 						limit: 1,
-						// TODO: add test about it
 						topConditions,
 						selectVirtualFields: vFields,
 						generateSqlSelect: m_opts.generateSqlSelect,

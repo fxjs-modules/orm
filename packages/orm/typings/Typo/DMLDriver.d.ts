@@ -123,7 +123,6 @@ export declare namespace FxOrmDMLDriver {
     export type ChainWhereExistsInfoPayload = FxOrmQuery.ChainWhereExistsInfo[];
     /** @internal */
     type __DMLDriver_FindSqlQueryModifierCtx = {
-        $knex: import('@fxjs/knex').Knex;
         table: string;
         fromTuple: FxSqlQuerySql.SqlTableTuple;
         selectFields: FxSqlQueryColumns.SelectInputArgType[];
@@ -135,7 +134,6 @@ export declare namespace FxOrmDMLDriver {
         order?: FxOrmQuery.OrderNormalizedResult[];
         merge?: FxOrmQuery.ChainFindMergeInfo[];
         exists?: ChainWhereExistsInfoPayload;
-        /** @experimental */
         topConditions?: FxSqlQuerySubQuery.SubQueryConditions;
         /** @experimental */
         selectVirtualFields?: string[];

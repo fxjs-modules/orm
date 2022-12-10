@@ -1,7 +1,19 @@
 var helper = require('../support/spec_helper');
 var ORM = require('../../');
 
-describe("Model.findSync() - with sub queries", function () {
+describe("Model - custom select with `generateSqlSelect`", function () {
+    useRunner({ mode: 'function' })
+});
+
+describe("Model - custom select with `sqlSelectTableFrom` - by knex", function () {
+    useRunner({ mode: 'rawQuery:knex' })
+});
+
+describe("Model - custom select with `sqlSelectTableFrom` - wrapped subquery", function () {
+    useRunner({ mode: 'rawQuery:rawSQL' })
+});
+
+function useRunner (options) {
     /** @type {import('../../').ORM} */
     var db = null;
     var Person = null;
@@ -23,6 +35,7 @@ describe("Model.findSync() - with sub queries", function () {
 
     var setup = function () {
         const knex = db.driver.knex;
+
         Person = db.define("person", {
             name: String,
             surname: String,
@@ -83,7 +96,7 @@ describe("Model.findSync() - with sub queries", function () {
 
                 querySelect
                     .from(`person as person`)
-					.select(ctx.selectFields) // select all model defined fields, but `same_age_count` due to it's virtual
+                    .select(ctx.selectFields) // select all model defined fields, but `same_age_count` due to it's virtual
                     .from([subquery, 'same_ages'])
                     .select(['same_age_count', '_age'])
                     .where({
@@ -169,7 +182,7 @@ describe("Model.findSync() - with sub queries", function () {
 
         it("virtual property also work on getSync", function () {
             var person = Person.getSync(1);
-    
+
             assertPerson(person);
             assert.equal(person.age, 18);
             assert.equal(person.same_age_count, 3);
@@ -406,4 +419,4 @@ describe("Model.findSync() - with sub queries", function () {
             assert.equal(people[0].surname, "Doe");
         });
     });
-});
+}

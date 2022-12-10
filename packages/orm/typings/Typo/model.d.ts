@@ -11,7 +11,7 @@ import { FxOrmQuery } from "./query";
 import { FxOrmValidators } from "./Validators";
 import { FxOrmHook } from "./hook";
 import { FxOrmNS } from "./ORM";
-import type { FxSqlQuerySubQuery } from '@fxjs/sql-query';
+import type { FxSqlQuerySubQuery, FxSqlQuerySql, FxSqlQueryChainBuilder } from '@fxjs/sql-query';
 import { FxOrmError } from "./Error";
 export declare namespace FxOrmModel {
     export type ModelInstanceConstructorOptions = (string | number | FxOrmInstance.InstanceDataPayload)[];
@@ -168,11 +168,28 @@ export declare namespace FxOrmModel {
         validations: FxOrmValidators.IValidatorHash;
         ievents: FxOrmInstance.InstanceConstructorOptions['events'];
     }
+    type __ItOrItsArray<T> = T | T[];
     export interface ModelDefineOptions<TProperties extends Record<string, FxOrmInstance.FieldRuntimeType> = Record<string, FxOrmInstance.FieldRuntimeType>> {
         /**
          * pririoty: table > collection
          */
         table?: ModelConstructorOptions<TProperties>['table'];
+        /**
+         * @description use to specify the query source on DMLDriver's `find` excution,
+         *
+         * if enable this, then:
+         * - `table` will be ignored on generate SQL select
+         * - all put-like operations will be disabled for this model
+         * - `generateSqlSelect` would be ignored
+         *
+         * @warning if use this option, you must ensure the `selectTableSource` is a valid
+         */
+        sqlSelectTableFrom?: __ItOrItsArray<{
+            subQuery: FxSqlQuerySql.SqlTableInputType;
+            topSelect?: FxSqlQuerySql.SqlSelectFieldsType[];
+            topWheres?: Parameters<FxSqlQueryChainBuilder.ChainBuilder__Select['where']>[0] & object;
+        }>;
+        generateSqlSelect?: ModelConstructorOptions<TProperties>['generateSqlSelect'];
         collection?: ModelConstructorOptions<TProperties>['table'];
         tableComment?: ModelConstructorOptions<TProperties>['tableComment'];
         /**

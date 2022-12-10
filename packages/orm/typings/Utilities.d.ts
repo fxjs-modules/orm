@@ -1,6 +1,6 @@
 /// <reference types="@fibjs/types" />
 import FxORMCore = require('@fxjs/orm-core');
-import { FxSqlQuery, FxSqlQuerySubQuery, FxSqlQuerySql } from '@fxjs/sql-query';
+import { FxSqlQuery, FxSqlQuerySubQuery, FxSqlQuerySql, FxSqlQueryDialect } from '@fxjs/sql-query';
 import type { FxOrmInstance } from './Typo/instance';
 import type { FxOrmModel } from './Typo/model';
 import type { FxOrmQuery } from './Typo/query';
@@ -108,7 +108,7 @@ export declare function ucfirst(text: string): string;
 export declare function formatNameFor(key: 'assoc:hasMany' | 'assoc:hasOne' | 'findBy:common' | 'findBy:hasOne' | 'assoc:extendsTo' | 'findBy:extendsTo' | 'field:lazyload' | 'syncify:assoc', name: string): string;
 export declare function combineMergeInfoToArray(merges: FxOrmQuery.ChainFindOptions['merge']): FxOrmQuery.ChainFindMergeInfo[];
 export declare function parseTableInputForSelect(ta_str: string): {
-    pure_table: string | FxSqlQuerySql.SqlFromTableInput;
+    pure_table: string | FxSqlQuerySql.SqlFromTableInput | `(${string})`;
     alias: string;
     from_tuple: FxSqlQuerySql.SqlTableTuple;
 };
@@ -165,3 +165,4 @@ export declare function isKeyPrimaryProperty(prop: FxOrmProperty.NormalizedPrope
 export declare function coercePositiveInt<T extends number | undefined | null = undefined>(value: any, fallbackValue?: T): number | T;
 export declare function getUUID(): string;
 export declare const DEFAULT_GENERATE_SQL_QUERY_SELECT: FxOrmDMLDriver.DMLDriver_FindOptions['generateSqlSelect'];
+export declare function __wrapTableSourceAsGneratingSqlSelect(_sqlSelectTableFrom: FxOrmModel.ModelDefineOptions['sqlSelectTableFrom'], knex: import('@fxjs/knex').Knex, dialect: FxSqlQueryDialect.Dialect): FxOrmModel.ModelDefineOptions['generateSqlSelect'];

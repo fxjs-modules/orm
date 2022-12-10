@@ -12,6 +12,7 @@ import {
 	FxSqlQuerySubQuery,
 	FxSqlQueryComparator,
 	FxSqlQuerySql,
+	FxSqlQueryDialect,
 } from '@fxjs/sql-query';
 import { selectArgs } from './Helpers';
 
@@ -1167,4 +1168,40 @@ export const DEFAULT_GENERATE_SQL_QUERY_SELECT: FxOrmDMLDriver.DMLDriver_FindOpt
 	return this.query.select()
 		.from(ctx.fromTuple)
 		.select(ctx.selectFields)
+}
+
+export function __wrapTableSourceAsGneratingSqlSelect (
+	_sqlSelectTableFrom: FxOrmModel.ModelDefineOptions['sqlSelectTableFrom'],
+	knex: import('@fxjs/knex').Knex,
+	dialect: FxSqlQueryDialect.Dialect
+): FxOrmModel.ModelDefineOptions['generateSqlSelect'] {
+	const sqlSelectTableFrom = arraify(_sqlSelectTableFrom).filter(x => !!x && typeof x === 'object').map((tfq) => {
+		return {
+			subQuery: tfq.subQuery,
+			topSelect: arraify(tfq.topSelect)
+				.map(select => {
+					return typeof select === 'function' ? select(dialect) : select
+				})
+				.filter(Boolean),
+			topWheres: tfq.topWheres,
+		}
+	});
+
+	return function (ctx) {
+        const qSelect = this.query.select()
+          .from([ctx.table, ctx.table]) // specify the alias as table name itself
+          .select(ctx.selectFields)
+
+        sqlSelectTableFrom.forEach((tfq) => {
+          qSelect.from(tfq.subQuery);
+
+          if (tfq.topSelect.length) qSelect.select(tfq.topSelect);
+
+		  if (tfq.topWheres) {
+			qSelect.where(tfq.topWheres)
+		  };
+        });
+
+        return qSelect;
+	}
 }

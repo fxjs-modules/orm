@@ -22,7 +22,7 @@ export namespace FxSqlQuerySql {
 	export type SqlAssignmentTuple = [FxSqlQuerySql.SqlFragmentStr, [...SqlAssignmentValues]?]
 
 	export type SqlFromTableInput = import('@fxjs/knex').Knex.Raw | import('@fxjs/knex').Knex.QueryBuilder
-	export type SqlTableTuple = [table: string | SqlFromTableInput, alis: string]
+	export type SqlTableTuple = [table: string | `(${string})`| SqlFromTableInput, alis: string]
 	export type SqlTableInputType = string | SqlFromTableInput | SqlTableTuple
 
 	export type WhereObj = {
@@ -176,13 +176,6 @@ export namespace FxSqlQuerySql {
 
 	export interface SqlQueryChainDescriptor {
 		from?: QueryFromDescriptor[]
-		// fromQuery?: {
-		// 	[alias: string]: any
-		// }
-		fromQuery?: {
-			query: any
-			alias?: string
-		}[]
 		table?: string
 		// values to set in UPDATE like command
 		set?: DataToSet

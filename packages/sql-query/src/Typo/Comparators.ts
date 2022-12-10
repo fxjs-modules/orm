@@ -53,11 +53,11 @@ export namespace FxSqlQueryComparator {
 
 	export type QueryComparatorExprType = string
 	export type QueryComparatorObject<T = any> = {
-		sql_comparator: {
-			(): ComparatorNames
-		}
+		sql_comparator (): ComparatorNames
 		// value
 		val?: T
+		// WIP: if use value as identifier
+		// asIdentifier?: boolean
 		// expression regular
 		expr?: QueryComparatorExprType
 		// from field

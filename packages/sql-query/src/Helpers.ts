@@ -97,7 +97,8 @@ export function get_table_alias (
 // }
 
 export function parseTableInputStr (
-	table_name: FxSqlQuerySql.SqlTableInputType
+	table_name: FxSqlQuerySql.SqlTableInputType,
+	dialect?: FxSqlQueryDialect.DialectType,
 ): FxSqlQuerySql.SqlTableTuple {
 	if (!table_name)
 		throw new Error(`[parseTableInputStr] invalid input table_name!`)
@@ -107,8 +108,12 @@ export function parseTableInputStr (
 	if (typeof table_name === 'string') {
 		table_name = table_name.trim()
 
-		if (table_name.indexOf(' as ') > 0) {
-			ta_tuple = table_name.split(' as ').slice(0, 2) as FxSqlQuerySql.SqlTableTuple
+		let idx = table_name.lastIndexOf(' as ');
+		if (idx > 0) {
+			ta_tuple = [
+				table_name.slice(0, idx).trim(),
+				table_name.slice(idx + 4).trim()
+			] as FxSqlQuerySql.SqlTableTuple
 		} else {
 			ta_tuple = table_name.split(' ').slice(0, 2) as FxSqlQuerySql.SqlTableTuple
 		}
@@ -116,6 +121,18 @@ export function parseTableInputStr (
 		ta_tuple = [table_name, ''] as FxSqlQuerySql.SqlTableTuple
 	} else {
 		ta_tuple = table_name.slice(0, 2) as FxSqlQuerySql.SqlTableTuple
+	}
+
+	// TODO: add test about it
+	switch (dialect) {
+		case 'postgresql':			
+			ta_tuple[1] = ta_tuple[1]?.replace(/^"|"$/g, '')
+			break;
+		case 'mysql':			
+			ta_tuple[1] = ta_tuple[1]?.replace(/^`|`$/g, '')
+			break;
+		case 'sqlite':
+			break;
 	}
 
 	return ta_tuple
@@ -238,6 +255,10 @@ export function maybeKnexRaw(input: any): input is import('@fxjs/knex').Knex.Raw
 
 export function maybeKnexRawOrQueryBuilder(input: any): input is import('@fxjs/knex').Knex.QueryBuilder | import('@fxjs/knex').Knex.Raw {
 	return typeof input?.toQuery === "function";
+}
+
+export function isWrapperdSubQuerySelect (sql: string) {
+	return typeof sql === 'string' && /^\(\s*SELECT\s.*\)$/i.test(sql)
 }
 
 export class ChainBuilderBase implements FxSqlQueryChainBuilder.ChainBuilder {

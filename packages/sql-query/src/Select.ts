@@ -11,13 +11,11 @@ import { FxSqlQuery } from "./Typo/Query";
 import { FxSqlQueryHelpler } from './Typo/Helper';
 import { FxSqlQuerySubQuery } from "./Typo/SubQuery"
 
-
 export class SelectQuery extends Helpers.ChainBuilderBase implements FxSqlQueryChainBuilder.ChainBuilder__Select {
 	Dialect: FxSqlQueryDialect.Dialect
 
 	private sql: FxSqlQuerySql.SqlQueryChainDescriptor = {
 		from         : [],
-		fromQuery	 : [],
 		where        : [],
 		order        : [],
 		group_by     : null,
@@ -140,7 +138,7 @@ export class SelectQuery extends Helpers.ChainBuilderBase implements FxSqlQueryC
 		to_id?: FxSqlQueryHelpler.Arraiable<string>,
 		from_opts?: FxSqlQuerySql.QueryFromDescriptorOpts
 	): this {
-		const [table_name, table_alias] = Helpers.parseTableInputStr(table)
+		const [table_name, table_alias] = Helpers.parseTableInputStr(table, this.Dialect.type)
 
 		const from: FxSqlQuerySql.QueryFromDescriptor = {
 			table: table_name,
@@ -416,6 +414,7 @@ export class SelectQuery extends Helpers.ChainBuilderBase implements FxSqlQueryC
 						fromAliasDict[alias] = 
 							// from: select subquery as table
 							Helpers.maybeKnexRawOrQueryBuilder(sql_from_item.table) ? this.knex.raw(sql_from_item.table).wrap('(', ')')
+							: Helpers.isWrapperdSubQuerySelect(sql_from_item.table.trim()) ? this.knex.raw(sql_from_item.table.trim()).queryContext({})
 							: sql_from_item.table;
 					}
 				}

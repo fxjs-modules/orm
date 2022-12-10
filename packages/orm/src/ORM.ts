@@ -115,16 +115,18 @@ export class ORM extends events.EventEmitter implements FxOrmNS.ORM {
 		}
 	
 		const m_settings = opts.useSelfSettings ? Settings.Container(this.settings.get('*')) : this.settings;
-	
+
 		this.models[name] = new Model({
-			name		   : name,
-			db             : this,
-			settings       : m_settings,
-			driver_name    : this.driver_name,
-			driver         : this.driver,
-			table          : opts.table || opts.collection || ((m_settings.get("model.namePrefix") || "") + name),
-			tableComment   : opts.tableComment || '',
-			generateSqlSelect: opts.generateSqlSelect,
+			name		   	: name,
+			db             	: this,
+			settings       	: m_settings,
+			driver_name    	: this.driver_name,
+			driver         	: this.driver,
+			table          	: opts.table || opts.collection || ((m_settings.get("model.namePrefix") || "") + name),
+			tableComment   	: opts.tableComment || '',
+			generateSqlSelect: opts.sqlSelectTableFrom ? Utilities.__wrapTableSourceAsGneratingSqlSelect(
+				opts.sqlSelectTableFrom, this.driver.knex, this.driver.query.Dialect
+			) : opts.generateSqlSelect,
 			// not standard Record<string, FxOrmProperty.NormalizedProperty> here, but we should pass it firstly
 			properties     	: properties as Record<string, FxOrmProperty.NormalizedProperty>,
 			__for_extension	: opts.__for_extension || false,
@@ -148,7 +150,7 @@ export class ORM extends events.EventEmitter implements FxOrmNS.ORM {
 				this.plugins[i].define(this.models[name], this);
 			}
 		}
-	
+
 		return this.models[name] as any;
 	};
 

@@ -214,6 +214,12 @@ function buildOrGroup(
 		}
 
 		if (isUnderscoreSqlInput(k, non_conj_where_conditem_value)) {
+			if (
+				!Array.isArray(non_conj_where_conditem_value)
+				|| (non_conj_where_conditem_value[0] && non_conj_where_conditem_value[0].length < 1)
+			) {
+				throw new Error(`invalid value for ${k}, expected its 2 dimension array like __sql: [ ['expr with ? or ??', ['value', 'id']], ['SQL'], ... ]`)
+			}
 			for (let i = 0; i < non_conj_where_conditem_value.length; i++) {
 				knexQueryBuilder.whereRaw(
 					normalizeSqlConditions(Dialect, non_conj_where_conditem_value[i])
