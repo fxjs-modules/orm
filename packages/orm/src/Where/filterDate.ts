@@ -33,7 +33,9 @@ const ALL_FILTER_KEYS: (
 // value  | FxSqlQueryComparator.ComparatorNameType
 export function filterDate(
 	conds: FxOrmInstance.InstanceDataPayload,
-	m: Pick<FxOrmModel.Model, 'allProperties'>
+	m: {
+		properties: FxOrmModel.Model['allProperties']
+	}
 ) {
 	if (typeof conds !== 'object') {
         return ;
@@ -43,7 +45,7 @@ export function filterDate(
 		if (isModelConjunctionsKey(k))
 			Array.isArray(conds[k]) && conds[k].forEach((item: any) => filterDate(item, m));
 		else {
-			let p = m.allProperties[k];
+			let p = m.properties[k];
 			if (p && p.type === 'date') {
 				let v: any = conds[k];
 

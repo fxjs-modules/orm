@@ -1,3 +1,5 @@
+import util = require('util');
+
 import type {
 	FxSqlQueryChainBuilder,
 	FxSqlQuerySubQuery
@@ -5,14 +7,17 @@ import type {
 
 import type { FxOrmDMLDriver } from "../../Typo/DMLDriver";
 
-import { parseTableInputForSelect } from "../../Utilities";
-
 export function buildBaseConditionsToQuery (
 	this: FxOrmDMLDriver.DMLDriver,
 	q: FxSqlQueryChainBuilder.ChainBuilder__Select,
 	base_table: string,
-	base_conditions: FxSqlQuerySubQuery.SubQueryConditions,
+	base_conditions?: FxSqlQuerySubQuery.SubQueryConditions,
+	top_conditions?: FxSqlQuerySubQuery.SubQueryConditions,
 ) {
+	if (top_conditions && Object.keys(top_conditions).length) {
+		q = q.where(null, top_conditions);
+	}
+
 	if (base_conditions && Object.keys(base_conditions).length) {
 		q = q.where(base_table, base_conditions);
 	}

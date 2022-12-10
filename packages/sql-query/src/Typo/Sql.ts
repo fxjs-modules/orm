@@ -22,7 +22,7 @@ export namespace FxSqlQuerySql {
 	export type SqlAssignmentTuple = [FxSqlQuerySql.SqlFragmentStr, [...SqlAssignmentValues]?]
 
 	export type SqlFromTableInput = import('@fxjs/knex').Knex.Raw | import('@fxjs/knex').Knex.QueryBuilder
-	export type SqlTableTuple = [string | SqlFromTableInput, string]
+	export type SqlTableTuple = [table: string | SqlFromTableInput, alis: string]
 	export type SqlTableInputType = string | SqlFromTableInput | SqlTableTuple
 
 	export type WhereObj = {

@@ -25,6 +25,11 @@ export declare namespace FxOrmProperty {
     }
     type DataStoreProperty = IProperty & {
         type: PropertyType | keyof GlobalCustomModelType;
+        /**
+         * @description virtual property is not stored in database,
+         * but maybe presented in query result
+         */
+        virtual?: boolean;
     };
     type PropertyType = 'text' | 'integer' | 'number' | 'serial' | 'boolean' | 'date' | 'binary' | 'object' | 'enum' | 'point';
     /**

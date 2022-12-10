@@ -6,4 +6,6 @@ import { FxOrmModel } from '../Typo/model';
  *
  * @param conds
  */
-export declare function filterDate(conds: FxOrmInstance.InstanceDataPayload, m: Pick<FxOrmModel.Model, 'allProperties'>): void;
+export declare function filterDate(conds: FxOrmInstance.InstanceDataPayload, m: {
+    properties: FxOrmModel.Model['allProperties'];
+}): void;

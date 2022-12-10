@@ -25,6 +25,7 @@ import { FxOrmNS } from './Typo/ORM';
 import { FxOrmError } from './Typo/Error';
 import { FxOrmHook } from './Typo/hook';
 import { filterDate } from './Where/filterDate';
+import { FxOrmDMLDriver } from './Typo/DMLDriver';
 
 /**
  * Order should be a String (with the property name assumed ascending)
@@ -104,7 +105,7 @@ export function standardizeOrder (
 
 export function addTableToStandardedOrder (
 	order: FxOrmQuery.OrderNormalizedTupleMixin,
-	table_alias: string
+	table_alias: string | FxSqlQuerySql.SqlFromTableInput
 ): FxOrmQuery.ChainFindOptions['order'] {
 	const new_order: FxOrmQuery.ChainFindOptions['order'] = []
 	for (let i = 0, item: typeof order[any]; i < order.length; i++) {
@@ -416,6 +417,21 @@ export function extractHasManyExtraConditions (
 	return extra_where
 }
 
+/**
+ * @description top conditions means that conditions which matches query's top select.
+ */
+export function extractSelectTopConditions (
+	conditions: FxOrmModel.ModelOptions__Find['conditions'],
+	topFields: string[],
+) {
+	const topConditions = util.pick(conditions, topFields);
+	
+	return {
+		topConditions,
+		tableConditions: util.omit(conditions, topFields)
+	}
+}
+
 // If the parent associations key is `serial`, the join tables
 // key should be changed to `integer`.
 export function convertPropToJoinKeyProp (
@@ -498,7 +514,8 @@ export function transformPropertyNames (
 };
 
 export function transformOrderPropertyNames (
-	order: FxOrmQuery.ChainFindOptions['order'], properties: Record<string, FxOrmProperty.NormalizedProperty>
+	order: FxOrmQuery.ChainFindOptions['order'],
+	properties: Record<string, FxOrmProperty.NormalizedProperty>
 ) {
 	if (!order) return order;
 
@@ -589,14 +606,8 @@ export function parseTableInputForSelect (ta_str: string) {
 	}
 }
 
-export const parseTableInputStr = QueryHelpers.parseTableInputStr;
-
-// export function tableAlias (table: string, alias: string = table, same_suffix: string = '') {
-// 	return `${table} as ${alias}${same_suffix ? ` ${same_suffix}` : ''}`
-// }
-
-export function tableAlias (table: string, alias: string = table) {
-	return `${table} as ${alias}`
+export function tableAlias (table: string, alias: string = table, same_suffix: string = '') {
+	return `${table} ${alias}${same_suffix ? ` ${same_suffix}` : ''}`
 }
 
 export function tableAliasCalculatorInOneQuery () {
@@ -723,9 +734,15 @@ export function parallelQueryIfPossible<T = any, RESP = any> (
  */
 export function filterWhereConditionsInput (
 	conditions: FxSqlQuerySubQuery.SubQueryConditions,
-	host: { allProperties: Record<string, FxOrmProperty.NormalizedProperty> }
+	host: {
+		properties: Record<string, FxOrmProperty.NormalizedProperty>
+	} | FxOrmModel.Model
 ): FxSqlQuerySubQuery.SubQueryConditions {
-	filterDate(conditions, host);
+	if (host.properties) {
+		filterDate(conditions, { properties: host.properties });
+	} else {
+		filterDate(conditions, { properties: (host as FxOrmModel.Model).allProperties });
+	}
 
 	return conditions;
 }
@@ -745,6 +762,23 @@ export function addUnwritableProperty (
 			writable: false
 		}
 	)
+}
+
+export function addHiddenReadonlyProperty (
+	obj: any,
+	property: string,
+	getter: () => any,
+	propertyConfiguration: PropertyDescriptor = {}
+) {
+	Object.defineProperty(
+		obj,
+		property,
+		{
+			get: getter,
+			...propertyConfiguration,
+			enumerable: false
+		}
+	);
 }
 
 export function addHiddenUnwritableMethodToInstance (
@@ -1126,4 +1160,11 @@ export function coercePositiveInt<T extends number | undefined | null = undefine
 
 export function getUUID () {
 	return uuid.snowflake().hex()
+}
+
+export const DEFAULT_GENERATE_SQL_QUERY_SELECT: FxOrmDMLDriver.DMLDriver_FindOptions['generateSqlSelect']
+= function (ctx) {
+	return this.query.select()
+		.from(ctx.fromTuple)
+		.select(ctx.selectFields)
 }

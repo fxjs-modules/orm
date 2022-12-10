@@ -139,10 +139,17 @@ Driver.prototype.execSimpleQuery = function (
 
 Driver.prototype.find = function (
 	this: FxOrmDMLDriver.DMLDriver_PostgreSQL,
-	fields, table, conditions, opts, cb: FxOrmCommon.GenericCallback<any>
+	selectFields, table, conditions, opts, cb: FxOrmCommon.GenericCallback<any>
 ) {
 	const { from_tuple, pure_table, alias } = Utilities.parseTableInputForSelect(table);
-	const q = this.query.select().from(from_tuple).select(fields);
+	const ctx = {
+		table,
+		fromTuple: from_tuple,
+		selectFields,
+		selectVirtualFields: opts.selectVirtualFields || []
+	};
+	let q = this.query.select();
+	q = typeof opts?.generateSqlSelect === 'function' ? opts?.generateSqlSelect.call(this, ctx, q) || q : Utilities.DEFAULT_GENERATE_SQL_QUERY_SELECT.call(this, ctx, q);
 
 	if (opts.offset) {
 		q.offset(opts.offset);
@@ -156,7 +163,7 @@ Driver.prototype.find = function (
 		}
 	}
 	
-	utils.buildBaseConditionsToQuery.apply(this, [q, pure_table, conditions]);
+	utils.buildBaseConditionsToQuery.apply(this, [q, pure_table, conditions, opts.topConditions]);
 	utils.buildOrderToQuery.apply(this, [q, opts.order]);
 	utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
 	utils.buildExistsToQuery.apply(this, [q, alias, opts.exists]);

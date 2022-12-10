@@ -187,8 +187,12 @@ export declare namespace FxOrmQuery {
     interface ChainFindOptions {
         keys: FxOrmModel.ModelConstructorOptions['keys'];
         table: FxOrmModel.ModelConstructorOptions['table'];
+        generateSqlSelect?: FxOrmModel.ModelConstructorOptions['generateSqlSelect'];
         driver: FxOrmModel.ModelConstructorOptions['driver'];
         conditions: QueryConditions;
+        /**
+         * @notice virtual properties included here
+         */
         properties: Record<string, FxOrmProperty.NormalizedProperty>;
         keyProperties: FxOrmProperty.NormalizedProperty[];
         order: (FxOrmQuery.OrderNormalizedTuple | FxOrmQuery.OrderSqlStyleTuple)[];

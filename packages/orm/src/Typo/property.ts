@@ -34,6 +34,11 @@ export namespace FxOrmProperty {
     export type DataStoreProperty = IProperty & {
         // restrain it, not expanded to `string`
         type: PropertyType | keyof GlobalCustomModelType
+        /**
+         * @description virtual property is not stored in database,
+         * but maybe presented in query result
+         */
+        virtual?: boolean
     };
     
     // type PropertyType = import('@fxjs/orm-property/lib/Property').PropertyType;

@@ -3,7 +3,6 @@
 
 import { FxDbDriverNS, IDbDriver } from "@fxjs/db-driver"
 import type { FxOrmSqlDDLSync__Dialect } from "@fxjs/sql-ddl-sync"
-import * as Knex from "@fxjs/knex"
 import type { FxOrmAssociation } from "./assoc"
 import type { FxOrmDb } from "./Db"
 import type { FxOrmModel } from "./model"
@@ -17,6 +16,7 @@ import type {
     FxSqlQuerySubQuery,
     FxSqlQuerySql,
     FxSqlQueryColumns,
+    FxSqlQueryChainBuilder,
 } from '@fxjs/sql-query';
 
 export namespace FxOrmDMLDriver {
@@ -55,7 +55,7 @@ export namespace FxOrmDMLDriver {
         customTypes: {[key: string]: FxOrmProperty.CustomPropertyType}
 
         /* @internal */
-        knex: typeof Knex
+        knex: import('@fxjs/knex').Knex
 
         readonly query: FxSqlQuery.Class_Query
         /** @internal */
@@ -108,7 +108,7 @@ export namespace FxOrmDMLDriver {
         }
 
         find: {
-            <T=FxOrmDMLDriver.QueryDataPayload[]>(fields: FxSqlQueryColumns.SelectInputArgType[], table: string, conditions: FxSqlQuerySubQuery.SubQueryConditions, opts: DMLDriver_FindOptions, cb?: FxOrmCommon.GenericCallback<T>): T
+            <T=FxOrmDMLDriver.QueryDataPayload[]>(selectFields: FxSqlQueryColumns.SelectInputArgType[], table: string, conditions: FxSqlQuerySubQuery.SubQueryConditions, opts: DMLDriver_FindOptions, cb?: FxOrmCommon.GenericCallback<T>): T
         }
         count: {
             /**
@@ -155,12 +155,30 @@ export namespace FxOrmDMLDriver {
     // type ChainWhereExistsInfoPayload = {[key: string]: FxOrmQuery.ChainWhereExistsInfo} | FxOrmQuery.ChainWhereExistsInfo[]
     export type ChainWhereExistsInfoPayload = FxOrmQuery.ChainWhereExistsInfo[]
     
+    /** @internal */
+    type __DMLDriver_FindSqlQueryModifierCtx = {
+        $knex: import('@fxjs/knex').Knex
+        table: string
+        fromTuple: FxSqlQuerySql.SqlTableTuple
+        selectFields: FxSqlQueryColumns.SelectInputArgType[]
+        selectVirtualFields: Exclude<DMLDriver_FindOptions['selectVirtualFields'], void>
+    };
     export interface DMLDriver_FindOptions {
         offset?: number
         limit?: number
         order?: FxOrmQuery.OrderNormalizedResult[]
         merge?: FxOrmQuery.ChainFindMergeInfo[]
         exists?: ChainWhereExistsInfoPayload
+        /** @experimental */
+        topConditions?: FxSqlQuerySubQuery.SubQueryConditions
+        /** @experimental */
+        selectVirtualFields?: string[]
+        /** @experimental */
+        generateSqlSelect?: (
+            this: DMLDriver,
+            ctx: __DMLDriver_FindSqlQueryModifierCtx,
+            chainSelect: FxSqlQueryChainBuilder.ChainBuilder__Select
+        ) => typeof chainSelect | void
     }
     export interface DMLDriver_CountOptions {
         merge?: DMLDriver_FindOptions['merge']

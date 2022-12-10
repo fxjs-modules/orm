@@ -267,6 +267,8 @@ describe("Model.findSync()", function () {
     });
 
     describe("with identityCache disabled", function () {
+        before(setup);
+
         it("should not return singletons", function () {
             var people = Person.findSync({
                 name: "Jasmine"
@@ -295,6 +297,8 @@ describe("Model.findSync()", function () {
     });
 
     describe("when using Model.all()", function () {
+        before(setup);
+
         it("should work exactly the same", function () {
             var people = Person.allSync({
                 surname: "Doe"
@@ -308,6 +312,8 @@ describe("Model.findSync()", function () {
     });
 
     describe("when using Model.where()", function () {
+        before(setup);
+
         it("should work exactly the same", function () {
             var people = Person.whereSync({
                 surname: "Doe"

@@ -45,6 +45,7 @@ function t() {
     run('./integration/model-create.js');
     run('./integration/model-create.callback.js');
     run('./integration/model-exists.js');
+    run('./integration/model-find-with-subquries.js');
     run('./integration/model-find-chain.js');
     run('./integration/model-find-chain.callback.js');
     run('./integration/model-find-mapsto.js');

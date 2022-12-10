@@ -89,9 +89,9 @@ export const Instance = function (
 			for (let k in instRtd.validations) {
 				required = false;
 
-				if (Model.allProperties[k]) {
-					required = Model.allProperties[k].required;
-					alwaysValidate = Model.allProperties[k].alwaysValidate;
+				if (Model.__propertiesByName[k]) {
+					required = Model.__propertiesByName[k].required;
+					alwaysValidate = Model.__propertiesByName[k].alwaysValidate;
 				} else {
 					for (let i = 0; i < instRtd.one_associations.length; i++) {
 						/* non-normalized `field` maybe string now */
@@ -246,6 +246,7 @@ export const Instance = function (
 		saveOptions: FxOrmInstance.SaveOptions,
 		data: FxOrmInstance.InstanceDataPayload,
 	) {
+		data = util.omit(data, Object.keys(Model.virtualProperties));
 		data = Utilities.transformPropertyNames(data, Model.allProperties);
 
 		const info = instRtd.driver.insert(instRtd.table, data, instRtd.keyProperties);
@@ -314,6 +315,7 @@ export const Instance = function (
 			const prop = instRtd.keyProperties[i];
 			conditions[prop.mapsTo] = instRtd.originalKeyValues[prop.name];
 		}
+		changes = util.omit(changes, Object.keys(Model.virtualProperties));
 		changes = Utilities.transformPropertyNames(changes, Model.allProperties);
 
 		Utilities.filterWhereConditionsInput(conditions, instance.model());
@@ -502,7 +504,7 @@ export const Instance = function (
 		});
 	};
 	const setInstanceProperty = function (key: string, value: any) {
-		const prop = Model.allProperties[key] || getNormalizedExtraDataAtPropertyTime()[key];
+		const prop = Model.__propertiesByName[key] || getNormalizedExtraDataAtPropertyTime()[key];
 
 		if (prop) {
 			if ('valueToProperty' in instRtd.driver) {
@@ -525,7 +527,7 @@ export const Instance = function (
 		}
 
 		var propName = path.shift();
-		var prop = Model.allProperties[propName] || getNormalizedExtraDataAtPropertyTime()[propName];
+		var prop = Model.__propertiesByName[propName] || getNormalizedExtraDataAtPropertyTime()[propName];
 		var currKey: string, currObj: any;
 
 		if (!prop) {
@@ -551,7 +553,7 @@ export const Instance = function (
 
 	var addInstanceProperty = function (key: string) {
 		var defaultValue = null;
-		var prop = Model.allProperties[key];
+		var prop = Model.__propertiesByName[key];
 
 		// This code was first added, and then commented out in a later commit.
 		// Its presence doesn't affect tests, so I'm just gonna log if it ever gets called.
@@ -617,7 +619,7 @@ export const Instance = function (
 		});
 	};
 
-	for (let k in Model.allProperties) {
+	for (let k of Object.keys(Model.__propertiesByName)) {
 		addInstanceProperty(k);
 	}
 	for (let k in instRtd.extra) {

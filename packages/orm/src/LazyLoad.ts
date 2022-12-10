@@ -16,12 +16,12 @@ export function extend (
 ) {
 	for (let k in properties) {
 		if (properties[k].lazyload === true) {
-			addLazyLoadProperty(properties[k].lazyname || k, Instance, Model, k);
+			addLazyLoadAccesstor(properties[k].lazyname || k, Instance, Model, k);
 		}
 	}
 };
 
-function addLazyLoadProperty(
+function addLazyLoadAccesstor(
 	name: string,
 	Instance: FxOrmInstance.Instance,
 	Model: FxOrmModel.Model,

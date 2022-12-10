@@ -299,6 +299,8 @@ describe("Model.find() - callback", function() {
   });
 
   describe("with identityCache disabled", function () {
+    before(setup);
+
     it("should not return singletons", function (done) {
       Person.find({ name: "Jasmine" }, { identityCache: false }, function (err, people) {
         assert.notExist(err);
@@ -323,6 +325,8 @@ describe("Model.find() - callback", function() {
   });
 
   describe("when using Model.all()", function () {
+    before(setup);
+
     it("should work exactly the same", function (done) {
       Person.all({ surname: "Doe" }, "-age", 1, function (err, people) {
         assert.notExist(err);
@@ -337,6 +341,8 @@ describe("Model.find() - callback", function() {
   });
 
   describe("when using Model.where()", function () {
+    before(setup);
+
     it("should work exactly the same", function (done) {
       Person.where({ surname: "Doe" }, "-age", 1, function (err, people) {
         assert.notExist(err);

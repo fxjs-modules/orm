@@ -1,5 +1,6 @@
+/// <reference types="@fibjs/types" />
 import FxORMCore = require('@fxjs/orm-core');
-import { Helpers as QueryHelpers, FxSqlQuery, FxSqlQuerySubQuery, FxSqlQuerySql } from '@fxjs/sql-query';
+import { FxSqlQuery, FxSqlQuerySubQuery, FxSqlQuerySql } from '@fxjs/sql-query';
 import type { FxOrmInstance } from './Typo/instance';
 import type { FxOrmModel } from './Typo/model';
 import type { FxOrmQuery } from './Typo/query';
@@ -9,8 +10,9 @@ import { FxOrmCommon } from './Typo/_common';
 import { FxOrmNS } from './Typo/ORM';
 import { FxOrmError } from './Typo/Error';
 import { FxOrmHook } from './Typo/hook';
+import { FxOrmDMLDriver } from './Typo/DMLDriver';
 export declare function standardizeOrder(order: FxOrmModel.ModelOptions__Find['order']): FxOrmQuery.OrderNormalizedTupleMixin;
-export declare function addTableToStandardedOrder(order: FxOrmQuery.OrderNormalizedTupleMixin, table_alias: string): FxOrmQuery.ChainFindOptions['order'];
+export declare function addTableToStandardedOrder(order: FxOrmQuery.OrderNormalizedTupleMixin, table_alias: string | FxSqlQuerySql.SqlFromTableInput): FxOrmQuery.ChainFindOptions['order'];
 /**
  * @description filtered out FxOrmInstance.Instance in mixed FxSqlQuerySubQuery.SubQueryConditions | { [k: string]: FxOrmInstance.Instance }
  */
@@ -73,6 +75,13 @@ export declare function wrapFieldObject(params: {
 export declare function formatAssociatedField(model: FxOrmModel.Model, name: string, required: boolean, reversed: boolean): Record<string, FxOrmProperty.NormalizedProperty>;
 /** @internal */
 export declare function extractHasManyExtraConditions(association: FxOrmAssociation.InstanceAssociationItem_HasMany, conditions: FxOrmModel.ModelFindByDescriptorItem['conditions'], extra_where?: FxOrmModel.ModelFindByDescriptorItem['conditions']): FxOrmModel.ModelQueryConditions__Find;
+/**
+ * @description top conditions means that conditions which matches query's top select.
+ */
+export declare function extractSelectTopConditions(conditions: FxOrmModel.ModelOptions__Find['conditions'], topFields: string[]): {
+    topConditions: FIBJS.GeneralObject;
+    tableConditions: FIBJS.GeneralObject;
+};
 export declare function convertPropToJoinKeyProp(props: Record<string, FxOrmProperty.NormalizedProperty>, opts: {
     required: boolean;
     makeKey: boolean;
@@ -103,8 +112,7 @@ export declare function parseTableInputForSelect(ta_str: string): {
     alias: string;
     from_tuple: FxSqlQuerySql.SqlTableTuple;
 };
-export declare const parseTableInputStr: typeof QueryHelpers.parseTableInputStr;
-export declare function tableAlias(table: string, alias?: string): string;
+export declare function tableAlias(table: string, alias?: string, same_suffix?: string): string;
 export declare function tableAliasCalculatorInOneQuery(): (tableName: string, get_only?: boolean) => number;
 export declare function ORM_Error(err: Error, cb?: FxOrmCommon.VoidCallback): FxOrmNS.ORMLike;
 export declare function queryParamCast(val: any): any;
@@ -125,9 +133,10 @@ export declare function parallelQueryIfPossible<T = any, RESP = any>(can_paralle
  * @param host
  */
 export declare function filterWhereConditionsInput(conditions: FxSqlQuerySubQuery.SubQueryConditions, host: {
-    allProperties: Record<string, FxOrmProperty.NormalizedProperty>;
-}): FxSqlQuerySubQuery.SubQueryConditions;
+    properties: Record<string, FxOrmProperty.NormalizedProperty>;
+} | FxOrmModel.Model): FxSqlQuerySubQuery.SubQueryConditions;
 export declare function addUnwritableProperty(obj: any, property: string, value: any, propertyConfiguration?: PropertyDescriptor): void;
+export declare function addHiddenReadonlyProperty(obj: any, property: string, getter: () => any, propertyConfiguration?: PropertyDescriptor): void;
 export declare function addHiddenUnwritableMethodToInstance(instance: FxOrmInstance.Instance, method_name: 'save' | 'saveSync' | string, fn: Function, propertyConfiguration?: PropertyDescriptor): void;
 export declare function addHiddenPropertyToInstance(instance: FxOrmInstance.Instance, property_name: string, value: any, propertyConfiguration?: PropertyDescriptor): void;
 export declare function addHiddenReadonlyPropertyToInstance(instance: FxOrmInstance.Instance, property_name: string, getter: () => any, propertyConfiguration?: PropertyDescriptor): void;
@@ -155,3 +164,4 @@ export declare function isKeyProperty(prop: FxOrmProperty.NormalizedProperty): b
 export declare function isKeyPrimaryProperty(prop: FxOrmProperty.NormalizedProperty): boolean;
 export declare function coercePositiveInt<T extends number | undefined | null = undefined>(value: any, fallbackValue?: T): number | T;
 export declare function getUUID(): string;
+export declare const DEFAULT_GENERATE_SQL_QUERY_SELECT: FxOrmDMLDriver.DMLDriver_FindOptions['generateSqlSelect'];

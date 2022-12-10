@@ -46,7 +46,7 @@ export function pickProperties<T extends FxOrmModel.Model = FxOrmModel.Model>(
     m: T,
     picker: ((p: FxOrmProperty.NormalizedProperty, k: string, m: T) => boolean)
 ) {
-    return Object.entries(m.allProperties).reduce((accu, [k, prop]) => {
+    return Object.entries(m.__propertiesByName).reduce((accu, [k, prop]) => {
         if (picker(prop, k, m)) {
             accu[k] = prop
         };

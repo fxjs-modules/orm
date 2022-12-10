@@ -47,7 +47,8 @@ export namespace FxOrmModel {
         keys: string[];
 
         allProperties: Record<string, FxOrmProperty.NormalizedProperty>
-
+        virtualProperties: Record<string, FxOrmProperty.NormalizedProperty>
+        
         /* property operation :start */
         addProperty(
             propIn: FxOrmProperty.NormalizedProperty,
@@ -56,6 +57,9 @@ export namespace FxOrmModel {
                 klass?: FxOrmProperty.KlassType
             } | false
         ): FxOrmProperty.NormalizedProperty
+
+        /** @internal */
+        readonly __propertiesByName: Record<string, FxOrmProperty.NormalizedProperty>
         /* property operation :end */
 
         sync(callback?: FxOrmCommon.GenericCallback<FxOrmSqlDDLSync.SyncResult>): Model;
@@ -210,7 +214,9 @@ export namespace FxOrmModel {
         driver: FxOrmDMLDriver.DMLDriver
         table: string
         tableComment: string
+        generateSqlSelect?: FxOrmDMLDriver.DMLDriver_FindOptions['generateSqlSelect']
         properties: Record<keyof TProperties, FxOrmProperty.NormalizedProperty>
+        /** @internal */
         __for_extension: boolean
         indexes: string[]
         
@@ -235,9 +241,8 @@ export namespace FxOrmModel {
          * pririoty: table > collection
          */
         table?: ModelConstructorOptions<TProperties>['table']
-        tableComment?: ModelConstructorOptions<TProperties>['tableComment']
         collection?: ModelConstructorOptions<TProperties>['table']
-
+        tableComment?: ModelConstructorOptions<TProperties>['tableComment']
         /**
          * @dirty would be deprecated
          */

@@ -52,7 +52,7 @@ export namespace FxSqlQueryChainBuilder {
 		where: (...whereConditions: (FxSqlQuerySubQuery.SubQueryBuildDescriptor['wheres'] | FxSqlQuerySubQuery.WhereExistsTuple_Flatten[0])[]) => this
 		whereExists: (
 			table: string,
-			table_link: string,
+			table_link: string | FxSqlQuerySql.SqlFromTableInput,
 			link: FxSqlQuerySql.WhereExistsLinkTuple,
 			cond: FxSqlQuerySubQuery.SubQueryBuildDescriptor['wheres']
 		) => this

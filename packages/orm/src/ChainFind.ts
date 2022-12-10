@@ -16,18 +16,6 @@ import type {
 	FxSqlQuerySubQuery
 } from '@fxjs/sql-query';
 
-const prepareConditions = function (opts: FxOrmQuery.ChainFindOptions) {
-	return Utilities.transformPropertyNames(
-		opts.conditions, opts.properties
-	);
-};
-
-const prepareOrder = function (opts: FxOrmQuery.ChainFindOptions) {
-	return Utilities.transformOrderPropertyNames(
-		opts.order, opts.properties
-	);
-};
-
 const MODEL_FUNCS = [
 	"hasOne", "hasMany",
 	"drop", "sync", "get", "clear", "create",
@@ -36,19 +24,24 @@ const MODEL_FUNCS = [
 
 const ChainFind = function (
 	this: void,
-	Model: FxOrmModel.Model, opts: FxOrmQuery.ChainFindOptions
+	Model: FxOrmModel.Model,
+	opts: FxOrmQuery.ChainFindOptions
 ) {
 	const merges = opts.merge = Utilities.combineMergeInfoToArray( opts.merge );
 
 	const chainRunSync = function (): FxOrmInstance.Instance[] {
-		const conditions: FxSqlQuerySubQuery.SubQueryConditions = Utilities.transformPropertyNames(opts.conditions, opts.properties);
-		Utilities.filterWhereConditionsInput(conditions, { allProperties: Model.allProperties });
+		let conditions: FxSqlQuerySubQuery.SubQueryConditions = util.omit(opts.conditions, Model.virtualProperties);
+
+		conditions = Utilities.transformPropertyNames(conditions, opts.properties);
+		Utilities.filterWhereConditionsInput(conditions, { properties: Model.allProperties });
 
 		const order = Utilities.transformOrderPropertyNames(opts.order, opts.properties);
 
 		let foundItems: FxOrmInstance.InstanceDataPayload[];
 
-		foundItems = opts.driver.find(opts.only, opts.table, conditions, {
+		const vFields = Object.keys(Model.virtualProperties);
+		const { tableConditions, topConditions } = Utilities.extractSelectTopConditions(conditions, vFields);
+		foundItems = opts.driver.find(opts.only, opts.table, tableConditions, {
 			limit  : Utilities.coercePositiveInt(opts.limit, undefined),
 			order  : order,
 			merge  : merges,
@@ -58,12 +51,16 @@ const ChainFind = function (
 				const mergeProps = maybeAssoc?.props || null;
 
 				if (mergeProps) {
+					existCond.conditions = util.omit(existCond.conditions, vFields);
 					existCond.conditions = Utilities.transformPropertyNames(existCond.conditions, mergeProps);
-					Utilities.filterWhereConditionsInput(existCond.conditions, { allProperties: mergeProps });
+					Utilities.filterWhereConditionsInput(existCond.conditions, { properties: mergeProps });
 				}
 
 				return existCond;
-			})
+			}),
+			topConditions,
+			selectVirtualFields: vFields,
+			generateSqlSelect: opts.generateSqlSelect,
 		});
 		
 		if (foundItems.length === 0) {
@@ -262,9 +259,12 @@ const ChainFind = function (
 		},
 		
 		countSync: function () {
-			const data: FxOrmQuery.CountResult[] = opts.driver.count(opts.table, prepareConditions(opts), {
-				merge  : merges
-			});
+			const data: FxOrmQuery.CountResult[] = opts.driver.count(
+				opts.table,
+				Utilities.transformPropertyNames(opts.conditions, opts.properties),
+				{
+					merge  : merges
+				});
 
 			if (data.length === 0)
 				return 0;
@@ -284,13 +284,19 @@ const ChainFind = function (
 		removeSync: function () {
 			const keys = opts.keyProperties.map((x: FxOrmProperty.NormalizedProperty) => x.mapsTo);
 			
-			const data = opts.driver.find(keys, opts.table, prepareConditions(opts), {
-				limit  : opts.limit,
-				order  : prepareOrder(opts),
-				merge  : merges,
-				offset : opts.offset,
-				exists : opts.exists
-			});
+			const data = opts.driver.find(
+				keys,
+				opts.table,
+				Utilities.transformPropertyNames(opts.conditions, opts.properties),
+				{
+					limit  : opts.limit,
+					order  : Utilities.transformOrderPropertyNames(
+						opts.order, opts.properties
+					),
+					merge  : merges,
+					offset : opts.offset,
+					exists : opts.exists,
+				});
 
 			if (data.length === 0) {
 				return null;
