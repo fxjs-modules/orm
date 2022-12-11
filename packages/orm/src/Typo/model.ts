@@ -219,6 +219,15 @@ export namespace FxOrmModel {
         properties: Record<keyof TProperties, FxOrmProperty.NormalizedProperty>
         /** @internal */
         __for_extension: boolean
+        /**
+         * @description if enabled, this model will be a virtual model,
+         * all Properties will be coerced to virtual property
+         */
+        virtualView: {
+            disabled?: boolean
+            subQuery: `(${string})`
+        }
+
         indexes: string[]
         
         identityCache: boolean
@@ -262,6 +271,8 @@ export namespace FxOrmModel {
             topWheres?: string | Parameters<FxSqlQueryChainBuilder.ChainBuilder__Select['where']>[0] & object
         }>
         generateSqlSelect?: ModelConstructorOptions<TProperties>['generateSqlSelect']
+        virtualView?: false | string | FxSqlQuerySql.SqlFromTableInput
+            | ModelConstructorOptions<TProperties>['virtualView']
 
         collection?: ModelConstructorOptions<TProperties>['table']
         tableComment?: ModelConstructorOptions<TProperties>['tableComment']

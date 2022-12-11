@@ -383,13 +383,18 @@ export class SelectQuery extends Helpers.ChainBuilderBase implements FxSqlQueryC
 		}
 
 		if (sql_from.length > 0) {
-			if (sql_from.length > 2) {
-			}
-
 			const single_query = sql_from.length == 1 && !this.sql.where_exists;
-
 			if (single_query) {
-				sqlBuilder.from(sql_from[0].table);
+				const isSubQuery = Helpers.isWrapperdSubQuerySelect(sql_from[0].table)
+				const isKnexQuery = Helpers.maybeKnexRawOrQueryBuilder(sql_from[0].table)
+				const table = Helpers.convertSqlFromTable(sql_from[0], this.knex, isSubQuery);
+
+				if (!isSubQuery && !isKnexQuery) {
+					sqlBuilder.from(table);
+				} else {
+					const alias = Helpers.pickAliasFromFromDescriptor(sql_from[0]);
+					sqlBuilder.from(alias ? { [alias]: table } as any : table);
+				}
 			} else {
 				const fromAliasDict: Record<string, FxSqlQuerySql.QueryFromDescriptor['table']> = {};
 				for (let i = 0; i < sql_from.length; i++) {
@@ -411,11 +416,7 @@ export class SelectQuery extends Helpers.ChainBuilderBase implements FxSqlQueryC
 							`${sql_from_item.table} as ${Helpers.pickAliasFromFromDescriptor(sql_from_item)}`, join_obj
 						)
 					} else {
-						fromAliasDict[alias] = 
-							// from: select subquery as table
-							Helpers.maybeKnexRawOrQueryBuilder(sql_from_item.table) ? this.knex.raw(sql_from_item.table).wrap('(', ')')
-							: Helpers.isWrapperdSubQuerySelect(sql_from_item.table.trim()) ? this.knex.raw(sql_from_item.table.trim()).queryContext({})
-							: sql_from_item.table;
+						fromAliasDict[alias] = Helpers.convertSqlFromTable(sql_from_item, this.knex);
 					}
 				}
 

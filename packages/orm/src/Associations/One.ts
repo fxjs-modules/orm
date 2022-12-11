@@ -31,6 +31,8 @@ export function prepare (
 	const { db } = opts;
 
 	Model.hasOne = function (assoc_name, ext_model, assoc_options) {
+		Utilities.disAllowOpForVModel(Model, 'model.hasOne');
+
 		if (arguments[1] && !arguments[1].table) {
 			assoc_options = arguments[1] as FxOrmAssociation.AssociationDefinitionOptions_HasOne
 			ext_model = arguments[1] = null as FxOrmModel.Model
@@ -39,6 +41,14 @@ export function prepare (
 		ext_model = ext_model || Model;
 		assoc_name = assoc_name || ext_model.table;
 		assoc_options = {...assoc_options};
+
+		if (!assoc_name) {
+			throw new Error(`[hasOne] association's name is required!`)
+		} else if (typeof assoc_name !== 'string') {
+			throw new Error(`[hasOne] association's name must be string!`)
+		}
+
+		Utilities.disAllowOpForVModel(ext_model, 'associated by model.hasOne');
 
 		for (let i = 0; i < db.plugins.length; i++) {
 			if (typeof db.plugins[i].beforeHasOne === "function") {

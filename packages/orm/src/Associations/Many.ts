@@ -59,6 +59,8 @@ export function prepare(
 	const { db } = opts
 
 	Model.hasMany = function () {
+		Utilities.disAllowOpForVModel(Model, 'model.hasMany');
+
 		let name: string,
 			makeKey: boolean,
 			mergeId: Record<string, FxOrmProperty.NormalizedProperty>,
@@ -85,6 +87,8 @@ export function prepare(
 					break;
 			}
 		}
+
+		Utilities.disAllowOpForVModel(OtherModel, 'associated by model.hasMany');
 
 		for (let i = 0; i < db.plugins.length; i++) {
 			if (typeof db.plugins[i].beforeHasMany === "function") {

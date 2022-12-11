@@ -257,8 +257,20 @@ export function maybeKnexRawOrQueryBuilder(input: any): input is import('@fxjs/k
 	return typeof input?.toQuery === "function";
 }
 
-export function isWrapperdSubQuerySelect (sql: string) {
+export function isWrapperdSubQuerySelect (sql: any): sql is `(${string})` {
 	return typeof sql === 'string' && /^\(\s*SELECT\s.*\)$/i.test(sql)
+}
+
+/** @internal */
+export function convertSqlFromTable (
+	sql_from_item: FxSqlQuerySql.QueryFromDescriptor,
+	knex: import('@fxjs/knex').Knex,
+	isSubQuery: boolean = isWrapperdSubQuerySelect((sql_from_item.table as any)?.trim?.()),
+) {
+	// from: select subquery as table
+	return maybeKnexRawOrQueryBuilder(sql_from_item.table) ? knex.raw(sql_from_item.table).wrap('(', ')')
+		: isSubQuery ? knex.raw(sql_from_item.table.trim()).wrap('', '')
+		: sql_from_item.table;
 }
 
 export class ChainBuilderBase implements FxSqlQueryChainBuilder.ChainBuilder {

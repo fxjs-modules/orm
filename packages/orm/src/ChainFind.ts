@@ -39,7 +39,7 @@ const ChainFind = function (
 
 		let foundItems: FxOrmInstance.InstanceDataPayload[];
 
-		const vFields = Object.keys(Model.virtualProperties);
+		const vFields = Object.entries(Model.virtualProperties).map(([k, p]) => p.mapsTo || k);
 		const { tableConditions, topConditions } = Utilities.extractSelectTopConditions(conditions, vFields);
 		foundItems = opts.driver.find(opts.only, opts.table, tableConditions, {
 			limit  : Utilities.coercePositiveInt(opts.limit, undefined),
@@ -282,6 +282,8 @@ const ChainFind = function (
 
 		// TODO: add test case about `.removeSync()`
 		removeSync: function () {
+			Utilities.disAllowOpForVModel(Model, 'modelChain.remove');
+
 			const keys = opts.keyProperties.map((x: FxOrmProperty.NormalizedProperty) => x.mapsTo);
 			
 			const data = opts.driver.find(

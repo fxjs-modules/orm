@@ -32,8 +32,6 @@ describe.skip("MongoDB", function () {
 		});
 
 		it.skip("#switchDb", () => {
-			console.notice('[feat] driver.connection', driver.connection);
-			console.notice('[feat] driver', driver);
 			var name = driver.connection.getName()
 			assert.equal(name, DBNAME);
 

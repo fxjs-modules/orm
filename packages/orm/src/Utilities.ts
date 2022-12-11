@@ -27,6 +27,7 @@ import { FxOrmError } from './Typo/Error';
 import { FxOrmHook } from './Typo/hook';
 import { filterDate } from './Where/filterDate';
 import { FxOrmDMLDriver } from './Typo/DMLDriver';
+import ORMError from './Error';
 
 /**
  * Order should be a String (with the property name assumed ascending)
@@ -1170,11 +1171,88 @@ export const DEFAULT_GENERATE_SQL_QUERY_SELECT: FxOrmDMLDriver.DMLDriver_FindOpt
 		.select(ctx.selectFields)
 }
 
-export function __wrapTableSourceAsGneratingSqlSelect (
-	_sqlSelectTableFrom: FxOrmModel.ModelDefineOptions['sqlSelectTableFrom'],
+export function isVirtualViewModel (model: FxOrmModel.Model) {
+	return (
+		Object.keys(model.allProperties).length === 0
+		&& Object.keys(model.virtualProperties).length > 0
+	)
+}
+
+export function disAllowOpForVModel (model: FxOrmModel.Model, opName: string) {
+	if (isVirtualViewModel(model)) {
+		throw new ORMError(`operation '${opName}' not supported for virtual model`, 'NO_SUPPORT', { model: model.name });
+	}
+}
+
+export function normalizeVirtualViewOption (
+	virtualView: FxOrmModel.ModelDefineOptions['virtualView'],
 	knex: import('@fxjs/knex').Knex,
-	dialect: FxSqlQueryDialect.Dialect
+): FxOrmModel.ModelConstructorOptions['virtualView'] {
+	let result: FxOrmModel.ModelConstructorOptions['virtualView'] = {
+		disabled: true,
+		subQuery: '()'
+	};
+
+	if (!virtualView) {
+		return result;
+	} else if (typeof virtualView === 'string') {
+		result = {
+			disabled: false,
+			subQuery: virtualView as `(${string})`
+		}
+	} else if (QueryHelpers.maybeKnexRawOrQueryBuilder(virtualView)) {
+		result = {
+			disabled: false,
+			subQuery: knex.raw(virtualView.toQuery()).wrap('(', ')').toQuery() as `(${string})`
+		}
+	} else if (typeof virtualView === 'object') {
+		result = {
+			disabled: !!virtualView.disabled,
+			subQuery: virtualView.subQuery
+		}
+	}
+
+	if (!QueryHelpers.isWrapperdSubQuerySelect(result?.subQuery)) {
+		throw new Error(`[normalizeVirtualViewOption] invalid virtualView.subQuery: ${result?.subQuery}, it must be knex.raw(...), kenx's query build, or sub query string wrapped with ()`)
+	}
+
+	return result;
+}
+
+
+/** @internal only for plugin developers */
+export function __wrapTableSourceAsGneratingSqlSelect (
+	{
+		virtualView,
+		sqlSelectTableFrom: _sqlSelectTableFrom,
+		generateSqlSelect,
+	}: {
+		virtualView: FxOrmModel.ModelConstructorOptions['virtualView'],
+		sqlSelectTableFrom?: FxOrmModel.ModelDefineOptions['sqlSelectTableFrom']
+		generateSqlSelect?: FxOrmModel.ModelDefineOptions['generateSqlSelect'],
+	},
+	opts: {
+		dialect: FxSqlQueryDialect.Dialect,
+		modelName: string,
+		modelTable?: string,
+	}
 ): FxOrmModel.ModelDefineOptions['generateSqlSelect'] {
+	const {
+		modelName, dialect
+	} = opts;
+
+	if (!virtualView.disabled) {
+		return function(ctx, querySelect) {
+			querySelect
+				.from(`${virtualView.subQuery} as ${modelName}`)
+				.select(ctx.selectVirtualFields)
+
+			return querySelect;
+		}
+	}
+
+	if (!_sqlSelectTableFrom) return generateSqlSelect;
+
 	const sqlSelectTableFrom = arraify(_sqlSelectTableFrom).filter(x => !!x && typeof x === 'object').map((tfq) => {
 		return {
 			subQuery: tfq.subQuery,

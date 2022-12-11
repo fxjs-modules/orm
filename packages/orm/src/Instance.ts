@@ -36,7 +36,10 @@ export const Instance = function (
 	const instRtd: FxOrmInstance.InnerInstanceRuntimeData = util.extend({}, _opts);
 	instRtd.data = instRtd.data || {};
 	instRtd.extra = instRtd.extra || {};
-	instRtd.keys = (instRtd.keys || "id") as string[];
+	if (!instRtd.keys && !Utilities.isVirtualViewModel(Model)) {
+		instRtd.keys = ['id'];
+	}
+
 	instRtd.changes = (instRtd.isNew ? Object.keys(instRtd.data) : []);
 	instRtd.extrachanges = [];
 	instRtd.associations = {};
@@ -700,6 +703,8 @@ export const Instance = function (
 	}
 
 	Utilities.addHiddenUnwritableMethodToInstance(instance, "saveSync", function (this: typeof instance) {
+		Utilities.disAllowOpForVModel(Model, 'instance.save');
+
 		const args = Array.prototype.slice.apply(arguments);
 		const { saveOptions, data } = collectParamsForSave(args);
 
@@ -741,6 +746,8 @@ export const Instance = function (
 	});
 
 	Utilities.addHiddenUnwritableMethodToInstance(instance, "removeSync", function () {
+		Utilities.disAllowOpForVModel(Model, 'instance.remove');
+
 		if (instRtd.isNew)
 			return ;
 
@@ -805,6 +812,8 @@ export const Instance = function (
 	});
 
 	Utilities.addHiddenUnwritableMethodToInstance(instance, "validateSync", function () {
+		Utilities.disAllowOpForVModel(Model, 'instance.validate');
+		
 		return handleValidationsSync() || false;
 	});
 

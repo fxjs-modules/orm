@@ -165,4 +165,16 @@ export declare function isKeyPrimaryProperty(prop: FxOrmProperty.NormalizedPrope
 export declare function coercePositiveInt<T extends number | undefined | null = undefined>(value: any, fallbackValue?: T): number | T;
 export declare function getUUID(): string;
 export declare const DEFAULT_GENERATE_SQL_QUERY_SELECT: FxOrmDMLDriver.DMLDriver_FindOptions['generateSqlSelect'];
-export declare function __wrapTableSourceAsGneratingSqlSelect(_sqlSelectTableFrom: FxOrmModel.ModelDefineOptions['sqlSelectTableFrom'], knex: import('@fxjs/knex').Knex, dialect: FxSqlQueryDialect.Dialect): FxOrmModel.ModelDefineOptions['generateSqlSelect'];
+export declare function isVirtualViewModel(model: FxOrmModel.Model): boolean;
+export declare function disAllowOpForVModel(model: FxOrmModel.Model, opName: string): void;
+export declare function normalizeVirtualViewOption(virtualView: FxOrmModel.ModelDefineOptions['virtualView'], knex: import('@fxjs/knex').Knex): FxOrmModel.ModelConstructorOptions['virtualView'];
+/** @internal only for plugin developers */
+export declare function __wrapTableSourceAsGneratingSqlSelect({ virtualView, sqlSelectTableFrom: _sqlSelectTableFrom, generateSqlSelect, }: {
+    virtualView: FxOrmModel.ModelConstructorOptions['virtualView'];
+    sqlSelectTableFrom?: FxOrmModel.ModelDefineOptions['sqlSelectTableFrom'];
+    generateSqlSelect?: FxOrmModel.ModelDefineOptions['generateSqlSelect'];
+}, opts: {
+    dialect: FxSqlQueryDialect.Dialect;
+    modelName: string;
+    modelTable?: string;
+}): FxOrmModel.ModelDefineOptions['generateSqlSelect'];

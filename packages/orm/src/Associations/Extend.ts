@@ -46,6 +46,8 @@ export function prepare (
 		properties: Record<string, FxOrmModel.ModelPropertyDefinition>,
 		assoc_options: FxOrmAssociation.AssociationDefinitionOptions_ExtendsTo
 	) {
+		Utilities.disAllowOpForVModel(Model, 'model.extendsTo');
+
 		assoc_options = assoc_options || {};
 
 		for (let i = 0; i < db.plugins.length; i++) {

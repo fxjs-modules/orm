@@ -116,6 +116,19 @@ export class ORM extends events.EventEmitter implements FxOrmNS.ORM {
 	
 		const m_settings = opts.useSelfSettings ? Settings.Container(this.settings.get('*')) : this.settings;
 
+		const virtualView = Utilities.normalizeVirtualViewOption(opts.virtualView, this.driver.knex);
+
+		const generateSqlSelect = Utilities.__wrapTableSourceAsGneratingSqlSelect(
+			{
+				virtualView,
+				sqlSelectTableFrom: opts.sqlSelectTableFrom,
+				generateSqlSelect: opts.generateSqlSelect,
+			}, {
+				dialect: this.driver.query.Dialect,
+				modelName: name
+			}
+		);
+
 		this.models[name] = new Model({
 			name		   	: name,
 			db             	: this,
@@ -123,10 +136,9 @@ export class ORM extends events.EventEmitter implements FxOrmNS.ORM {
 			driver_name    	: this.driver_name,
 			driver         	: this.driver,
 			table          	: opts.table || opts.collection || ((m_settings.get("model.namePrefix") || "") + name),
-			tableComment   	: opts.tableComment || '',
-			generateSqlSelect: opts.sqlSelectTableFrom ? Utilities.__wrapTableSourceAsGneratingSqlSelect(
-				opts.sqlSelectTableFrom, this.driver.knex, this.driver.query.Dialect
-			) : opts.generateSqlSelect,
+            tableComment   	: opts.tableComment || '',
+            virtualView		: virtualView,
+			generateSqlSelect,
 			// not standard Record<string, FxOrmProperty.NormalizedProperty> here, but we should pass it firstly
 			properties     	: properties as Record<string, FxOrmProperty.NormalizedProperty>,
 			__for_extension	: opts.__for_extension || false,

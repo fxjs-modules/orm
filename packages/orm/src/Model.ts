@@ -234,10 +234,14 @@ export const Model = function (
 	), { configurable: false })
 
 	model.dropSync = function (
-		this:FxOrmModel.Model,
+		this: FxOrmModel.Model,
 	) {
 		if (typeof m_opts.driver.doDrop !== "function") {
 			throw new ORMError("Driver does not support Model.drop()", 'NO_SUPPORT', { model: m_opts.table });
+		}
+
+		if (Utilities.isVirtualViewModel(model)) {
+			return ;
 		}
 
 		return m_opts.driver.doDrop({
@@ -261,6 +265,13 @@ export const Model = function (
 	model.syncSync = function () {
 		if (typeof m_opts.driver.doSync !== "function") {
 			throw new ORMError("Driver does not support Model.sync()", 'NO_SUPPORT', { model: m_opts.table })
+		}
+
+		if (Utilities.isVirtualViewModel(model)) {
+			if (m_opts.driver.ddlSync.hasCollectionSync(m_opts.driver.sqlDriver, m_opts.table)) {
+				console.warn(`model '${model.name}' defined as virtual view model, but collection with same already exists.`)
+			}
+			return ;
 		}
 
 		m_opts.driver.doSync({
@@ -312,6 +323,10 @@ export const Model = function (
 		this: FxOrmModel.Model,
 		...args
 	) {
+		if (!keyProperties.length) {
+			Utilities.disAllowOpForVModel(model, 'model.get');
+		}
+
 		const conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
 		let prop: FxOrmProperty.NormalizedProperty;
 
@@ -337,7 +352,7 @@ export const Model = function (
 			err: FxOrmError.ExtendedError
 
 		function deferGet () {
-			const vFields = Object.keys(model.virtualProperties);
+			const vFields = Object.entries(model.virtualProperties).map(([k, p]) => p.mapsTo || k);;
 			const { tableConditions, topConditions } = Utilities.extractSelectTopConditions(conditions, vFields);
 
 			try {
@@ -642,6 +657,8 @@ export const Model = function (
 	};
 
 	model.countSync = function (conditions) {
+		Utilities.disAllowOpForVModel(model, 'model.count');
+
 		if (conditions) {
 			conditions = Utilities.checkConditions(conditions, one_associations);
 			Utilities.filterWhereConditionsInput(conditions, model);
@@ -687,6 +704,8 @@ export const Model = function (
 	}
 
 	model.aggregate = function () {
+		Utilities.disAllowOpForVModel(model, 'model.aggregate');
+
 		var conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
 		var propertyList: string[] = [];
 
@@ -716,6 +735,8 @@ export const Model = function (
 	};
 
 	model.existsSync = function (...ids) {
+		Utilities.disAllowOpForVModel(model, 'model.exists');
+
 		let conditions = <FxSqlQuerySubQuery.SubQueryConditions>{};
 
 		/**
@@ -810,6 +831,8 @@ export const Model = function (
 	}
 
 	model.createSync = function (): any {
+		Utilities.disAllowOpForVModel(model, 'model.create');
+
 		let create_single: boolean      = false;
 		let opts: FxOrmModel.ModelOptions__Create = {};
 		let itemsParams: FxOrmInstance.InstanceDataPayload[] = []
@@ -852,10 +875,14 @@ export const Model = function (
 	};
 
 	model.clearSync = function () {
+		Utilities.disAllowOpForVModel(model, 'model.clear');
+		
 		return m_opts.driver.clear(m_opts.table);
 	};
 
 	model.clear = function (cb?) {
+		Utilities.disAllowOpForVModel(model, 'model.clear');
+
 		m_opts.driver.clear(m_opts.table, function (err: Error) {
 			if (typeof cb === "function") cb(err);
 		});
@@ -901,6 +928,8 @@ export const Model = function (
 			customTypes: m_opts.db.customTypes, settings: m_opts.settings
 		});
 
+		if (!m_opts.virtualView.disabled) { prop.virtual = true;  }
+
 		if (prop.type === 'serial') {
 			prop.key = true;
 			prop.klass = prop.klass || 'primary';
@@ -930,7 +959,15 @@ export const Model = function (
 		}
 
 		if (!prop.virtual) { allProperties[prop.name] = prop; }
-		else { virtualProperties[prop.name] = prop; }
+		else {
+			virtualProperties[prop.name] = prop;
+			// TODO: should we force virtual view without keys?
+			m_opts.keys = m_opts.keys.filter(key => key !== prop.name);
+			prop.required = false;
+			prop.index = false;
+			prop.primary = false;
+			delete prop.klass;
+		}
 
 		fieldToPropertyMap[prop.mapsTo] = prop;
 
@@ -982,8 +1019,12 @@ export const Model = function (
 		}
 	}
 
+	if (Object.keys(m_opts.properties).every((k) => m_opts.properties[k].virtual === true)) {
+		m_opts.virtualView.disabled = false;
+	}
+
 	// If no keys are defined add the default one
-	if (m_opts.keys.length == 0 && !Object.values(m_opts.properties).some((p: FxOrmProperty.NormalizedProperty) => p.key === true)) {
+	if (m_opts.virtualView.disabled && m_opts.keys.length == 0 && !Object.values(m_opts.properties).some((p: FxOrmProperty.NormalizedProperty) => p.key === true)) {
 		m_opts.properties[m_opts.settings.get("properties.primary_key")] = {
 			type: 'serial', key: true, required: false, klass: 'primary'
 		} as FxOrmProperty.NormalizedProperty;
@@ -1005,7 +1046,7 @@ export const Model = function (
 	}
 
 	// if no any serial-type, keyPrimiary property
-	if (keyProperties.length == 0) {
+	if (m_opts.virtualView.disabled && keyProperties.length === 0) {
 		if (keyP) // use keyPrimary as the only keyProperties
 			keyProperties.push(keyP);
 		else
