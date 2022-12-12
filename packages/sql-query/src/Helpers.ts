@@ -86,15 +86,18 @@ export function get_table_alias (
 	return typeof table === 'string' ? table : '';
 };
 
-// export function parse_table_alias (
-// 	table: string, sql: FxSqlQuerySql.SqlQueryChainDescriptor
-// ): string {
-// 	let [_, table_alias] = parseTableInputStr(table)
-// 	if (table_alias)
-// 		return table_alias;
+// TODO: add test about it
+function unwrapIdentifier (identifier: string = '', dialect: FxSqlQueryDialect.DialectType): string {
+	switch (dialect) {
+		case 'postgresql':			
+			return identifier.replace(/^"|"$/g, '')
+		case 'sqlite':
+		case 'mysql':			
+			return identifier.replace(/^`|`$/g, '')
+	}
 
-// 	return get_table_alias(sql, table)
-// }
+	return identifier;
+}
 
 export function parseTableInputStr (
 	table_name: FxSqlQuerySql.SqlTableInputType,
@@ -123,16 +126,9 @@ export function parseTableInputStr (
 		ta_tuple = table_name.slice(0, 2) as FxSqlQuerySql.SqlTableTuple
 	}
 
-	// TODO: add test about it
-	switch (dialect) {
-		case 'postgresql':			
-			ta_tuple[1] = ta_tuple[1]?.replace(/^"|"$/g, '')
-			break;
-		case 'mysql':			
-			ta_tuple[1] = ta_tuple[1]?.replace(/^`|`$/g, '')
-			break;
-		case 'sqlite':
-			break;
+	if (dialect) {
+		if (typeof ta_tuple[0] === 'string') ta_tuple[0] = unwrapIdentifier(ta_tuple[0], dialect)
+		ta_tuple[1] = unwrapIdentifier(ta_tuple[1], dialect)
 	}
 
 	return ta_tuple

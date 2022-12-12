@@ -118,14 +118,16 @@ export class ORM extends events.EventEmitter implements FxOrmNS.ORM {
 
 		const virtualView = Utilities.normalizeVirtualViewOption(opts.virtualView, this.driver.knex);
 
+		const modelTable = opts.table || opts.collection || ((m_settings.get("model.namePrefix") || "") + name);
+
 		const generateSqlSelect = Utilities.__wrapTableSourceAsGneratingSqlSelect(
 			{
 				virtualView,
-				sqlSelectTableFrom: opts.sqlSelectTableFrom,
+				customSelect: opts.customSelect,
 				generateSqlSelect: opts.generateSqlSelect,
 			}, {
 				dialect: this.driver.query.Dialect,
-				modelName: name
+				modelTable,
 			}
 		);
 
@@ -136,8 +138,8 @@ export class ORM extends events.EventEmitter implements FxOrmNS.ORM {
 			driver_name    	: this.driver_name,
 			driver         	: this.driver,
 			table          	: opts.table || opts.collection || ((m_settings.get("model.namePrefix") || "") + name),
-            tableComment   	: opts.tableComment || '',
-            virtualView		: virtualView,
+			tableComment   	: opts.tableComment || '',
+			virtualView		: virtualView,
 			generateSqlSelect,
 			// not standard Record<string, FxOrmProperty.NormalizedProperty> here, but we should pass it firstly
 			properties     	: properties as Record<string, FxOrmProperty.NormalizedProperty>,

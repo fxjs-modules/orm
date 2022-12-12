@@ -343,7 +343,8 @@ export class SelectQuery extends Helpers.ChainBuilderBase implements FxSqlQueryC
 		for (let i = 0; i < from_len; i++) {
 			sql_from[i].alias = Helpers.pickAliasFromFromDescriptor(sql_from[i]) || Helpers.defaultTableAliasNameRule(i + 1);
 
-			tableAliasMap[`${sql_from[i].alias}`] = `${sql_from[i].table}`
+			const table = sql_from[i].table;
+			tableAliasMap[`${sql_from[i].alias}`] = Helpers.maybeKnexRawOrQueryBuilder(table) ? table.toQuery() : `${table}`
 		}
 
 		const single_query = from_len === 1;

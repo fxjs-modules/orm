@@ -112,7 +112,7 @@ export declare function parseTableInputForSelect(ta_str: string): {
     alias: string;
     from_tuple: FxSqlQuerySql.SqlTableTuple;
 };
-export declare function tableAlias(table: string, alias?: string, same_suffix?: string): string;
+export declare function tableAlias(table: string | FxSqlQuerySql.SqlFromTableInput, alias?: string, same_suffix?: string): string;
 export declare function tableAliasCalculatorInOneQuery(): (tableName: string, get_only?: boolean) => number;
 export declare function ORM_Error(err: Error, cb?: FxOrmCommon.VoidCallback): FxOrmNS.ORMLike;
 export declare function queryParamCast(val: any): any;
@@ -169,12 +169,11 @@ export declare function isVirtualViewModel(model: FxOrmModel.Model): boolean;
 export declare function disAllowOpForVModel(model: FxOrmModel.Model, opName: string): void;
 export declare function normalizeVirtualViewOption(virtualView: FxOrmModel.ModelDefineOptions['virtualView'], knex: import('@fxjs/knex').Knex): FxOrmModel.ModelConstructorOptions['virtualView'];
 /** @internal only for plugin developers */
-export declare function __wrapTableSourceAsGneratingSqlSelect({ virtualView, sqlSelectTableFrom: _sqlSelectTableFrom, generateSqlSelect, }: {
+export declare function __wrapTableSourceAsGneratingSqlSelect({ virtualView, customSelect: _customSelect, generateSqlSelect, }: {
     virtualView: FxOrmModel.ModelConstructorOptions['virtualView'];
-    sqlSelectTableFrom?: FxOrmModel.ModelDefineOptions['sqlSelectTableFrom'];
+    customSelect?: FxOrmModel.ModelDefineOptions['customSelect'];
     generateSqlSelect?: FxOrmModel.ModelDefineOptions['generateSqlSelect'];
 }, opts: {
     dialect: FxSqlQueryDialect.Dialect;
-    modelName: string;
-    modelTable?: string;
+    modelTable: string;
 }): FxOrmModel.ModelDefineOptions['generateSqlSelect'];

@@ -5,11 +5,11 @@ describe("Model - custom select with `generateSqlSelect`", function () {
     useRunner({ mode: 'function' })
 });
 
-describe("Model - custom select with `sqlSelectTableFrom` - by knex", function () {
+describe("Model - custom select with `customSelect` - by knex", function () {
     useRunner({ mode: 'rawQuery:knex' })
 });
 
-describe("Model - custom select with `sqlSelectTableFrom` - wrapped subquery", function () {
+describe("Model - custom select with `customSelect` - wrapped subquery", function () {
     useRunner({ mode: 'rawQuery:rawSQL' })
 });
 
@@ -53,36 +53,32 @@ function useRunner (options) {
             male: Boolean
         }, {
             ...options.mode === 'rawQuery:rawSQL' ? {
-                sqlSelectTableFrom: db.driver.sqlDriver.type === 'sqlite' ? {
-                    subQuery: "(select `age` as `_age`, count(*) as `same_age_count` from `person` group by `age`) as same_ages",
-                    topSelect: ['same_age_count', '_age'],
-                    topWheres: { '__sql': [ ['`person`.`age` = `same_ages`.`_age`'] ] }
-                } : db.driver.sqlDriver.type === 'mysql' ? {
-                    subQuery: "(select `age` as `_age`, count(*) as `same_age_count` from `person` group by `age`) as `same_ages`",
-                    topSelect: ['same_age_count', '_age'],
-                    topWheres: { '__sql': [ ['`person`.`age` = `same_ages`.`_age`'] ] }
+                customSelect: (db.driver.sqlDriver.type === 'sqlite' || db.driver.sqlDriver.type === 'mysql') ? {
+                    from: [
+                        'person',
+                        "(select `age` as `_age`, count(*) as `same_age_count` from `person` group by `age`) as `same_ages`"
+                    ],
+                    wheres: { 'person.age': db.comparators.eq('same_ages._age', { asIdentifier: true }) },
                 } : db.driver.sqlDriver.type === 'psql' ? {
-                    subQuery: `(select "age" as "_age", count(*) as "same_age_count" from "person" group by "age") as "same_ages"`,
-                    topSelect: ['same_age_count', '_age'],
-                    topWheres: { '__sql': [ ['"person"."age" = "same_ages"."_age"'] ] }
+                    from: [
+                        `"person" as "person"`,
+                        `(select "age" as "_age", count(*) as "same_age_count" from "person" group by "age") as "same_ages"`
+                    ],
+                    wheres: { 'person.age': db.comparators.eq('same_ages._age', { asIdentifier: true }) },
                 } : {
-                    subQuery: `Unknown SQL driver type: ${db.driver.sqlDriver.type}`,
-                    topSelect: ['same_age_count', '_age'],
-                    topWheres: { 'person.age': `Unknown SQL driver type: ${db.driver.sqlDriver.type}` }
+                    from: `Unknown SQL driver type: ${db.driver.sqlDriver.type}`,
                 },
             } : options.mode === 'rawQuery:knex' ? {
-                sqlSelectTableFrom: {
-                    subQuery: [
-                        knex.table('person').select(
+                customSelect: {
+                    from: [
+                        'person',
+                        // from subquery, which presents by knex query builder
+                        [knex.table('person').select(
                             'age as _age',
                             knex.raw('count(*) as ??', ['same_age_count']),
-                        ).groupBy('age'),
-                        'same_ages'
+                        ).groupBy('age'), 'same_ages'],
                     ],
-                    topSelect: ['same_age_count', '_age'],
-                    topWheres: {
-                        'person.age': knex.ref('same_ages._age')
-                    }
+                    wheres: { 'person.age': db.comparators.eq('same_ages._age', { asIdentifier: true }) },
                 },
             } : {
                 generateSqlSelect: function(ctx, querySelect) {

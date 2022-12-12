@@ -608,7 +608,18 @@ export function parseTableInputForSelect (ta_str: string) {
 	}
 }
 
-export function tableAlias (table: string, alias: string = table, same_suffix: string = '') {
+export function tableAlias (
+	table: string | FxSqlQuerySql.SqlFromTableInput,
+	alias: string = typeof table === 'string' ? table : '',
+	same_suffix: string = ''
+) {
+	if (QueryHelpers.maybeKnexRawOrQueryBuilder(table)) {
+		if (!alias) {
+			throw new Error(`[tableAlias] when table is knex.raw or knex.queryBuilder, alias must be provided!`)
+		}
+		return alias;
+	}
+
 	return `${table} ${alias}${same_suffix ? ` ${same_suffix}` : ''}`
 }
 
@@ -1213,55 +1224,53 @@ export function normalizeVirtualViewOption (
 	}
 
 	if (!QueryHelpers.isWrapperdSubQuerySelect(result?.subQuery)) {
-		throw new Error(`[normalizeVirtualViewOption] invalid virtualView.subQuery: ${result?.subQuery}, it must be knex.raw(...), kenx's query build, or sub query string wrapped with ()`)
+		throw new Error(`[normalizeVirtualViewOption] invalid virtualView.subQuery: ${result?.subQuery}, it must be knex.raw(...), knex's query build, or sub query string wrapped with ()`)
 	}
 
 	return result;
 }
 
-
 /** @internal only for plugin developers */
-export function __wrapTableSourceAsGneratingSqlSelect (
+export function __wrapTableSourceAsGneratingSqlSelect(
 	{
 		virtualView,
-		sqlSelectTableFrom: _sqlSelectTableFrom,
+		customSelect: _customSelect,
 		generateSqlSelect,
 	}: {
 		virtualView: FxOrmModel.ModelConstructorOptions['virtualView'],
-		sqlSelectTableFrom?: FxOrmModel.ModelDefineOptions['sqlSelectTableFrom']
+		customSelect?: FxOrmModel.ModelDefineOptions['customSelect']
 		generateSqlSelect?: FxOrmModel.ModelDefineOptions['generateSqlSelect'],
 	},
 	opts: {
 		dialect: FxSqlQueryDialect.Dialect,
-		modelName: string,
-		modelTable?: string,
+		modelTable: string,
 	}
 ): FxOrmModel.ModelDefineOptions['generateSqlSelect'] {
 	const {
-		modelName, dialect
+		modelTable, dialect
 	} = opts;
 
 	if (!virtualView.disabled) {
-		return function(ctx, querySelect) {
+		return function (ctx, querySelect) {
 			querySelect
-				.from(`${virtualView.subQuery} as ${modelName}`)
+				.from(`${virtualView.subQuery} as ${modelTable}`)
 				.select(ctx.selectVirtualFields)
 
 			return querySelect;
 		}
 	}
 
-	if (!_sqlSelectTableFrom) return generateSqlSelect;
+	if (!_customSelect) return generateSqlSelect;
 
-	const sqlSelectTableFrom = arraify(_sqlSelectTableFrom).filter(x => !!x && typeof x === 'object').map((tfq) => {
+	const customSelect = arraify(_customSelect).filter(x => !!x && typeof x === 'object').map((tfq) => {
 		return {
-			subQuery: tfq.subQuery,
-			topSelect: arraify(tfq.topSelect)
+			from: arraify(tfq.from).filter(Boolean),
+			select: arraify(tfq.select)
 				.map(select => {
 					return typeof select === 'function' ? select(dialect) : select
 				})
 				.filter(Boolean),
-			topWheres: (typeof tfq.topWheres === 'string' ? { __sql: [[tfq.topWheres]] } : tfq.topWheres) as Exclude<typeof tfq.topWheres, string>,
+			wheres: (typeof tfq.wheres === 'string' ? { __sql: [[tfq.wheres]] } : tfq.wheres) as Exclude<typeof tfq.wheres, string>,
 		}
 	});
 
@@ -1270,16 +1279,34 @@ export function __wrapTableSourceAsGneratingSqlSelect (
           .from([ctx.table, ctx.table]) // specify the alias as table name itself
           .select(ctx.selectFields)
 
-        sqlSelectTableFrom.forEach((tfq) => {
-          qSelect.from(tfq.subQuery);
+		customSelect.forEach((tfq) => {
+			if (tfq.from.length) {
+				tfq.from.forEach(fromItem => {
+					// pre convert string like `a` as `[a, a]`
+					if (typeof fromItem === 'string' && !QueryHelpers.isWrapperdSubQuerySelect(fromItem)) {
+						let [tableName = ctx.table, tableAlias] = QueryHelpers.parseTableInputStr(fromItem, this.query.Dialect.type);
+						tableAlias = tableAlias || tableName as string;
+						qSelect.from([tableName, tableAlias]);
+					} else {
+						qSelect.from(fromItem);
+					}
+				})
+			} else {
+				qSelect.from([ctx.table, ctx.table])
+			}
 
-          if (tfq.topSelect.length) qSelect.select(tfq.topSelect);
+			const select = [...new Set([
+				...ctx.selectVirtualFields,
+				...tfq.select
+			])]
 
-		  if (tfq.topWheres) {
-			qSelect.where(tfq.topWheres)
-		  };
-        });
+			if (select.length) qSelect.select(select);
 
-        return qSelect;
+			if (tfq.wheres) {
+				qSelect.where(tfq.wheres)
+			};
+		});
+
+		return qSelect;
 	}
 }

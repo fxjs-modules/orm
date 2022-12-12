@@ -183,6 +183,7 @@ export declare namespace FxOrmModel {
          */
         table?: ModelConstructorOptions<TProperties>['table'];
         /**
+         * @advanced
          * @description use to specify the query source on DMLDriver's `find` excution,
          *
          * if enable this, then:
@@ -192,10 +193,10 @@ export declare namespace FxOrmModel {
          *
          * @warning if use this option, you must ensure the `selectTableSource` is a valid
          */
-        sqlSelectTableFrom?: __ItOrItsArray<{
-            subQuery: FxSqlQuerySql.SqlTableInputType;
-            topSelect?: FxSqlQuerySql.SqlSelectFieldsType[];
-            topWheres?: string | Parameters<FxSqlQueryChainBuilder.ChainBuilder__Select['where']>[0] & object;
+        customSelect?: __ItOrItsArray<{
+            from: __ItOrItsArray<FxSqlQuerySql.SqlTableInputType>;
+            select?: FxSqlQuerySql.SqlSelectFieldsType[];
+            wheres?: string | Parameters<FxSqlQueryChainBuilder.ChainBuilder__Select['where']>[0] & object;
         }>;
         generateSqlSelect?: ModelConstructorOptions<TProperties>['generateSqlSelect'];
         virtualView?: false | string | FxSqlQuerySql.SqlFromTableInput | ModelConstructorOptions<TProperties>['virtualView'];
