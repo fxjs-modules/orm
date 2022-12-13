@@ -9,7 +9,7 @@ import Settings = require("../Settings");
 import Property = require("../Property");
 import ORMError from "../Error";
 import Utilities = require("../Utilities");
-import { ACCESSOR_KEYS, addAssociationInfoToModel } from './_utils';
+import { ACCESSOR_KEYS, addAssociationInfoToModel, getMapsToFromPropertyHash } from './_utils';
 import { listFindByChainOrRunSync } from '../Model';
 import * as Helpers from '../Helpers';
 
@@ -160,8 +160,7 @@ export function prepare(
 			return function () {
 				var cb: FxOrmModel.ModelMethodCallback__Find = null,
 					conditions: FxOrmModel.ModelQueryConditions__Find = null,
-					right_find_opts: FxOrmAssociation.ModelAssociationMethod__FindByOptions = null,
-					join_conditions = {};
+					right_find_opts: FxOrmAssociation.ModelAssociationMethod__FindByOptions = null;
 
 				for (let i = 0; i < arguments.length; i++) {
 					switch (typeof arguments[i]) {
@@ -170,7 +169,7 @@ export function prepare(
 							break;
 						case "object":
 							if (conditions === null) {
-								conditions = arguments[i];
+								conditions = { ...arguments[i] };
 							} else if (right_find_opts === null) {
 								right_find_opts = arguments[i];
 							}
@@ -183,6 +182,35 @@ export function prepare(
 				}
 
 				right_find_opts = right_find_opts || {};
+
+				const extraWhere = Utilities.extractHasManyExtraConditions(association, conditions)
+				// only set exists conditions when extraWhere is not empty
+				if (Object.keys(extraWhere).length > 0) {
+					// always set it only 1 element
+					right_find_opts.exists = [{
+						table: '',
+						link: ['', ''],
+						conditions: {}
+					}];
+
+					right_find_opts.exists.forEach(exists => {
+						exists.table = association.mergeTable;
+	
+						// TODO: how to link complex associated fields?
+						exists.link = [
+							getMapsToFromPropertyHash(association.mergeAssocId)[0],
+							association.model.keys[0]
+						]
+						
+						exists.conditions = extraWhere;
+	
+						if (!Object.keys(exists.conditions).length) {
+							throw new ORMError(`"assocConditions.exists[number].conditions" is required on ".${association.modelFindByAccessor}(conds, assocConditions)"!`, 'PARAM_MISMATCH');
+						}
+	
+						return exists;
+					})
+				}
 
 				return listFindByChainOrRunSync(Model, 
 					{},
@@ -351,7 +379,6 @@ function extendInstance(
 	): typeof Instance | FxOrmQuery.IChainFind {
 		let options = <FxOrmAssociation.ModelAssociationMethod__GetOptions>{};
 		let conditions = null as FxOrmModel.ModelOptions__Find;
-		let join_conditions = {};
 		let order = null;
 		let cb = null;
 
@@ -389,25 +416,17 @@ function extendInstance(
 			options.order = order;
 		}
 
-		if (conditions === null) {
-			conditions = {};
-		}
-		// extract extra info on conditions
-		const extraWhere = {} as typeof options.join_where;
-		// populate out conditions in extra, not belonging to either one model of associations
-		for (let k in conditions) {
-			if (association.props[k]) {
-				extraWhere[k] = conditions[k];
-				delete conditions[k];
-			}
-		}
+		if (conditions === null) conditions = {};
 
-		join_conditions = { ...options.join_where, ...extraWhere };
+		// extract extra info on conditions
+		// populate out conditions in extra, not belonging to either one model of associations
+		let extraWhere = Utilities.extractHasManyExtraConditions(association, conditions)
+		extraWhere = { ...options.join_where, ...extraWhere };
 
 		options.__merge = {
 			from: { table: association.mergeTable, field: Object.keys(association.mergeAssocId) },
 			to: { table: association.model.table, field: association.model.id.slice(0) }, // clone model id
-			where: [association.mergeTable, join_conditions],
+			where: [association.mergeTable, extraWhere],
 			table: association.model.table,
 			select: []
 		};

@@ -367,6 +367,12 @@ function extendInstance(
 					oinst.saveSync({}, { saveAssociations: false });
 
 					Instance[association.name] = oinst;
+					
+					// TODO: on pre normalize stage, record linked associated key property name on build association
+					// const idInHostSide = Object.keys(association.field)[0];
+					// const idInOtherSide = association.model.keys[0];
+					// Instance[idInHostSide] = oinst[idInOtherSide];
+
 					Utilities.populateModelIdKeysConditions(association.model, Object.keys(association.field), oinst, Instance);
 
 					Instance.$emit(`after:set:${association.name}`, oinst)

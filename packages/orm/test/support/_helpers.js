@@ -6,3 +6,17 @@ exports.lowerCaseColumn = function (column) {
   });
   return newCol;
 }
+
+exports.runProcAndCatch = function (proc) {
+	let errMsg = '';
+	let error = null;
+
+	try {
+		proc();
+	} catch (e) {
+		error = e;
+		errMsg = e.message;
+	}
+
+	return { errMsg, error }
+}

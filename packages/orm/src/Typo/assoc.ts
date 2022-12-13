@@ -200,12 +200,29 @@ export namespace FxOrmAssociation {
         __for_extension?: boolean;
     }
 
+    /**
+     * @description information collected from code like:
+     * 
+     * ```js
+     * Host.hasMany(Other, {
+     *  mergeTable: 'merge_table',
+     *  mergeId: ['host_id'], // optional,
+     *  mergeAssocId: ['other_id']
+     * })
+     * ```
+     */
     export interface InstanceAssociationItem_HasMany extends InstanceAssociationItem {
         props: Record<string, FxOrmProperty.NormalizedProperty>
         // hooks: HasManyHooks
 
         mergeTable: string
+        /**
+         * @description associated properties linked to Host on merge table
+         */
         mergeId: Record<string, FxOrmProperty.NormalizedProperty>
+        /**
+         * @description associated properties linked to Other on merge table
+         */
         mergeAssocId: Record<string, FxOrmProperty.NormalizedProperty>
 
         getAccessor: string

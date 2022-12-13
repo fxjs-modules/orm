@@ -120,8 +120,9 @@ Driver.prototype.execSimpleQuery = function (
 Driver.prototype.find = function (
 	this: FxOrmDMLDriver.DMLDriver_SQLite, fields, table, conditions, opts, cb?
 ) {
-	var q = this.query.select()
-		.from(table)
+	const { from_tuple, pure_table, alias } = Utilities.parseTableInputForSelect(table);
+	const q = this.query.select()
+		.from(from_tuple)
 		.select(fields);
 
 	if (opts.offset) {
@@ -134,9 +135,10 @@ Driver.prototype.find = function (
 		q.limit('9223372036854775807');
 	}
 
+	utils.buildBaseConditionsToQuery.apply(this, [q, pure_table, conditions]);
 	utils.buildOrderToQuery.apply(this, [q, opts.order]);
-	q = utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
-	utils.buildExistsToQuery.apply(this, [q, table, opts.exists]);
+	utils.buildMergeToQuery.apply(this, [q, opts.merge]);
+	utils.buildExistsToQuery.apply(this, [q, alias, opts.exists]);
 
 	return this.execSimpleQuery(q.build(), cb);
 };
@@ -144,12 +146,14 @@ Driver.prototype.find = function (
 Driver.prototype.count = function (
 	this: FxOrmDMLDriver.DMLDriver_SQLite, table, conditions, opts, cb?
 ) {
-	var q = this.query.select()
-		.from(table)
+	const { from_tuple, pure_table, alias } = Utilities.parseTableInputForSelect(table);
+	const q = this.query.select()
+		.from(from_tuple)
 		.count(null, 'c');
-
-	q = utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
-	utils.buildExistsToQuery.apply(this, [q, table, opts.exists]);
+	
+	utils.buildBaseConditionsToQuery.apply(this, [q, pure_table, conditions]);
+	utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
+	utils.buildExistsToQuery.apply(this, [q, alias, opts.exists]);
 
 	return this.execSimpleQuery(q.build(), cb);
 };

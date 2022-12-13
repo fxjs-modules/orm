@@ -1,5 +1,5 @@
 import FxORMCore = require('@fxjs/orm-core');
-import { FxSqlQuery, FxSqlQuerySubQuery } from '@fxjs/sql-query';
+import { Helpers as QueryHelpers, FxSqlQuery, FxSqlQuerySubQuery, FxSqlQuerySql } from '@fxjs/sql-query';
 import type { FxOrmInstance } from './Typo/instance';
 import type { FxOrmModel } from './Typo/model';
 import type { FxOrmQuery } from './Typo/query';
@@ -71,6 +71,8 @@ export declare function wrapFieldObject(params: {
  * @param reversed is model is reversed in relationship
  */
 export declare function formatAssociatedField(model: FxOrmModel.Model, name: string, required: boolean, reversed: boolean): Record<string, FxOrmProperty.NormalizedProperty>;
+/** @internal */
+export declare function extractHasManyExtraConditions(association: FxOrmAssociation.InstanceAssociationItem_HasMany, conditions: FxOrmModel.ModelFindByDescriptorItem['conditions'], join_where?: FxOrmModel.ModelFindByDescriptorItem['join_where']): FxOrmModel.ModelQueryConditions__Find;
 export declare function convertPropToJoinKeyProp(props: Record<string, FxOrmProperty.NormalizedProperty>, opts: {
     required: boolean;
     makeKey: boolean;
@@ -96,8 +98,13 @@ export declare function camelCaseHasMany(text: string): string;
 export declare function ucfirst(text: string): string;
 export declare function formatNameFor(key: 'assoc:hasMany' | 'assoc:hasOne' | 'findBy:common' | 'findBy:hasOne' | 'assoc:extendsTo' | 'findBy:extendsTo' | 'field:lazyload' | 'syncify:assoc', name: string): string;
 export declare function combineMergeInfoToArray(merges: FxOrmQuery.ChainFindOptions['merge']): FxOrmQuery.ChainFindMergeInfo[];
-export declare function parseFallbackTableAlias(ta_str: string): string;
-export declare function tableAlias(table: string, alias?: string, same_suffix?: string): string;
+export declare function parseTableInputForSelect(ta_str: string): {
+    pure_table: string;
+    alias: string;
+    from_tuple: FxSqlQuerySql.SqlTableTuple;
+};
+export declare const parseTableInputStr: typeof QueryHelpers.parseTableInputStr;
+export declare function tableAlias(table: string, alias?: string): string;
 export declare function tableAliasCalculatorInOneQuery(): (tableName: string, get_only?: boolean) => number;
 export declare function ORM_Error(err: Error, cb?: FxOrmCommon.VoidCallback): FxOrmNS.ORMLike;
 export declare function queryParamCast(val: any): any;

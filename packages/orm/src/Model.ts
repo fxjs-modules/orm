@@ -410,7 +410,7 @@ export const Model = function (
 						}
 					} else {
 						if (conditions === null) {
-							conditions = arg;
+							conditions = { ...arg };
 							Utilities.filterWhereConditionsInput(conditions, model);
 						} else {
 							if (options.hasOwnProperty("limit")) {
@@ -473,11 +473,15 @@ export const Model = function (
 			normalized_order_without_table = []
 		}
 
-		const base_table = options.chainfind_linktable || m_opts.table;
+		let base_table = m_opts.table;
+
 		let normalized_order = normalized_order_without_table
 		if (merges && merges.length) {
-			const table_alias = Utilities.parseFallbackTableAlias(base_table);
-			normalized_order = Utilities.addTableToStandardedOrder(normalized_order_without_table, table_alias);
+			base_table = options.chainfind_linktable || base_table;
+			normalized_order = Utilities.addTableToStandardedOrder(
+				normalized_order_without_table,
+				Utilities.parseTableInputForSelect(base_table).alias
+			);
 		}
 		
 		if (conditions) {
@@ -990,14 +994,14 @@ function soloFindByChainOrRunSync <T = any>(
 	if (is_sync) {
 		const modelFindBySyncAccessor = model.associations[association_name].association.modelFindBySyncAccessor
 		if (!modelFindBySyncAccessor || typeof model[modelFindBySyncAccessor] !== 'function')
-			throw `invalid association name ${association_name} provided!`
+			throw new Error(`[soloFindByChainOrRunSync] invalid association name ${association_name} provided!`)
 				
 		return model[modelFindBySyncAccessor](conditions, findby_options)
 	}
 
 	const findByAccessor = model.associations[association_name].association.modelFindByAccessor
 	if (!findByAccessor || typeof model[findByAccessor] !== 'function')
-		throw `invalid association name ${association_name} provided!`
+		throw new Error(`[soloFindByChainOrRunSync] invalid association name ${association_name} provided!`)
 
 	if (typeof cb === 'function')
 		return model[findByAccessor](conditions, findby_options, cb)
@@ -1005,7 +1009,7 @@ function soloFindByChainOrRunSync <T = any>(
 	return model[findByAccessor](conditions, findby_options)
 }
 
-export function listFindByChainOrRunSync <T = any> (
+export function listFindByChainOrRunSync (
 	model: FxOrmModel.Model,
 	self_conditions: FxOrmModel.ModelQueryConditions__Find,
 	by_list: FxOrmModel.ModelFindByDescriptorItem[],
@@ -1032,8 +1036,6 @@ export function listFindByChainOrRunSync <T = any> (
 		return `${alias_from_t}${countTable(alias_from_t, true)}`
 	}
 
-	let chainfind_linktable: string = null
-
 	by_list.forEach(by_item => {
 		const association = Helpers.tryGetAssociationItemFromModel(by_item.association_name, model);
 		if (!association)
@@ -1043,8 +1045,8 @@ export function listFindByChainOrRunSync <T = any> (
 		const isHasOne = Helpers.getOneAssociationItemFromModel(by_item.association_name, model) === association;
 		const isExtendsTo = Helpers.getExtendsToAssociationItemFromModel(by_item.association_name, model) === association;
 
-		let merge_item: FxOrmQuery.ChainFindMergeInfo = null;
-		Utilities.filterWhereConditionsInput(by_item.conditions, model);
+		const by_item_conditions = { ...by_item.conditions };
+		Utilities.filterWhereConditionsInput(by_item_conditions, model);
 
 		if (isHasMany) { // support hasmany
 			const left_info = {
@@ -1067,32 +1069,33 @@ export function listFindByChainOrRunSync <T = any> (
 				alias: getTableAlias(`rt_${association.model.table}`),
 				ids: association.model.id
 			}
-			const extra_props = (association as FxOrmAssociation.InstanceAssociationItem_HasMany).props;
+
+			const extraProps = (association as FxOrmAssociation.InstanceAssociationItem_HasMany).props;
+			const extraWhere = Utilities.extractHasManyExtraConditions(
+				association as FxOrmAssociation.InstanceAssociationItem_HasMany,
+				by_item_conditions
+			);
 
 			const join_where = { ...by_item.join_where };
 			Utilities.filterWhereConditionsInput(join_where, model);
 
-			merge_item = {
+			merges.push({
 				from: { table: Utilities.tableAlias(ljoin_info.table, ljoin_info.alias), field: ljoin_info.ids },
 				to: { table: left_info.table, field: left_info.ids },
 				where : [ ljoin_info.alias, join_where ],
 				table : left_info.alias,
-				select: (by_item.extra_select || []).filter(x => extra_props.hasOwnProperty(x))
-			};
+				select: (by_item.extra_select || []).filter(x => extraProps.hasOwnProperty(x))
+			});
 
-			merges.push(merge_item);
-
-			merge_item = {
+			merges.push({
 				from: { table: Utilities.tableAlias(right_info.table, right_info.alias), field: right_info.ids },
 				to: { table: rjoin_info.table, field: rjoin_info.ids },
-				where : [ right_info.alias, by_item.conditions ],
+				where : [ right_info.alias, by_item_conditions ],
 				table : ljoin_info.alias,
 				select: [],
-			};
+			});
 
-			merges.push(merge_item);
-
-			chainfind_linktable = Utilities.tableAlias(model.table);
+			self_options.chainfind_linktable = Utilities.tableAlias(model.table);
 		} else if (isHasOne) { // support hasone
 			const reled_ids = typeof association.field === 'string' ? [association.field] : (
 				Array.isArray(association.field) ? association.field : getMapsToFromPropertyHash(association.field)
@@ -1110,35 +1113,28 @@ export function listFindByChainOrRunSync <T = any> (
 				ids: !association.reversed ? association.model.id : reled_ids
 			}
 
-			merge_item = {
+			merges.push({
 				from: { table: Utilities.tableAlias(rel_info.table, rel_info.alias), field: rel_info.ids },
 				to: { table: Utilities.tableAlias(base_info.table, base_info.alias), field: base_info.ids },
-				where : [ rel_info.alias, by_item.conditions ],
+				where : [ rel_info.alias, by_item_conditions ],
 				table : base_info.alias,
 				select: []
-			}
+			});
 
-			merges.push(merge_item);
-
-			chainfind_linktable = Utilities.tableAlias(base_info.table, base_info.alias);
+			self_options.chainfind_linktable = Utilities.tableAlias(base_info.table, base_info.alias);
 		} else if (isExtendsTo) { // support extendsTo
-			merge_item = {
+			merges.push({
 				from  : { table: association.model.table, field: Object.keys(association.field) },
 				to    : { table: model.table, field: model.id },
-				where : [ association.model.table, by_item.conditions ],
+				where : [ association.model.table, by_item_conditions ],
 				table : model.table,
 				select: []
-			};
-
-			merges.push(merge_item);
+			});
 		}
 	});
 
 	self_options.__merge = merges;
 	self_options.extra = {};
-	
-	if (chainfind_linktable)
-		self_options.chainfind_linktable = chainfind_linktable;
 
 	if (typeof cb === "function") {
 		return model.find.call(model, self_conditions, self_options, cb);

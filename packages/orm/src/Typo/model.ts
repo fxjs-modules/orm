@@ -336,13 +336,10 @@ export namespace FxOrmModel {
         [K in keyof T]: FxOrmModel.GetPropertiesTypeFromDefinition<T[K]>
     }
 
-    export interface ModelOptions__Find {
-        chainfind_linktable?: string;
-        
+    export interface ModelOptions__Find {        
         only?: string[];
         limit?: number;
         order?: FxOrmQuery.OrderRawInput | FxOrmQuery.ChainFindOptions['order']
-        // order?: FxOrmQuery.OrderRawInput
         offset?: number;
         identityCache?: boolean
 
@@ -350,8 +347,12 @@ export namespace FxOrmModel {
         cascadeRemove?: boolean
         autoSave?: boolean
         autoFetchLimit?: number
+        /** @internal */
         __merge?: FxOrmQuery.ChainFindOptions['merge']
-        exists?: FxOrmQuery.ChainWhereExistsInfo[]
+        /** @internal */
+        chainfind_linktable?: string;
+        /** @internal */
+        exists?: [FxOrmQuery.ChainWhereExistsInfo]
 
         // useless, just for compat
         extra?: FxOrmAssociation.InstanceAssociationItem_HasMany['props']

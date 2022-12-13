@@ -141,7 +141,8 @@ Driver.prototype.find = function (
 	this: FxOrmDMLDriver.DMLDriver_PostgreSQL,
 	fields, table, conditions, opts, cb: FxOrmCommon.GenericCallback<any>
 ) {
-	let q = this.query.select().from(table).select(fields);
+	const { from_tuple, pure_table, alias } = Utilities.parseTableInputForSelect(table);
+	const q = this.query.select().from(from_tuple).select(fields);
 
 	if (opts.offset) {
 		q.offset(opts.offset);
@@ -155,9 +156,10 @@ Driver.prototype.find = function (
 		}
 	}
 	
+	utils.buildBaseConditionsToQuery.apply(this, [q, pure_table, conditions]);
 	utils.buildOrderToQuery.apply(this, [q, opts.order]);
-	q = utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
-	utils.buildExistsToQuery.apply(this, [q, table, opts.exists]);
+	utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
+	utils.buildExistsToQuery.apply(this, [q, alias, opts.exists]);
 
 	return this.execSimpleQuery(q.build(), cb);
 };
@@ -169,10 +171,12 @@ Driver.prototype.count = function (
 	opts,
 	cb
 ) {
-	let q = this.query.select().from(table).count(null, 'c');
+	const { from_tuple, pure_table, alias } = Utilities.parseTableInputForSelect(table);
+	const q = this.query.select().from(from_tuple).count(null, 'c');
 
-	q = utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
-	utils.buildExistsToQuery.apply(this, [q, table, opts.exists]);
+	utils.buildBaseConditionsToQuery.apply(this, [q, pure_table, conditions]);
+	utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
+	utils.buildExistsToQuery.apply(this, [q, alias, opts.exists]);
 
 	return this.execSimpleQuery(q.build(), cb);
 };

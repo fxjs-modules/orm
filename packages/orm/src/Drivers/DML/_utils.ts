@@ -1,37 +1,50 @@
 import type {
-	FxSqlQuery,
 	FxSqlQueryChainBuilder,
 	FxSqlQuerySubQuery
 } from "@fxjs/sql-query";
 
 import type { FxOrmDMLDriver } from "../../Typo/DMLDriver";
 
-import { parseFallbackTableAlias } from "../../Utilities";
+import { parseTableInputForSelect } from "../../Utilities";
+
+export function buildBaseConditionsToQuery (
+	this: FxOrmDMLDriver.DMLDriver,
+	q: FxSqlQueryChainBuilder.ChainBuilder__Select,
+	base_table: string,
+	base_conditions: FxSqlQuerySubQuery.SubQueryConditions,
+) {
+	if (base_conditions && Object.keys(base_conditions).length) {
+		q = q.where(base_table, base_conditions);
+	}
+
+	return q;
+}
 
 export function buildMergeToQuery (
 	this: FxOrmDMLDriver.DMLDriver,
 	q: FxSqlQueryChainBuilder.ChainBuilder__Select,
 	merges: FxOrmDMLDriver.DMLDriver_FindOptions['merge'],
-	conditions: FxSqlQuerySubQuery.SubQueryConditions
 ) {
-	if (merges && merges.length) {			
+	if (merges?.length) {			
 		merges.forEach(merge => {
 			/**
-			 * you should always pass alias as `merge.from.table` --- it's need indicate where conditions;
-			 * you dont need pass alias as `merge.to.table` --- it's dont need indicate where conditions;
+			 * you should always pass alias as `merge.from.table` --- it's need indicate where base_conditions;
+			 * you dont need pass alias as `merge.to.table` --- it's dont need indicate where base_conditions;
 			 */
 			q
 				.from(merge.from.table, merge.from.field, merge.to.table, merge.to.field)
 				.select(merge.select);
 			
+			/**
+			 * this means merge where base_conditions is not empty
+			 * 
+			 * merge.where[0] is aliased table name,
+			 * merge.where[1] is where base_conditions
+			 */
 			if (merge.where && Object.keys(merge.where[1]).length) {
-				q = q.where(merge.where[0], merge.where[1], merge.table || null, conditions);
-			} else {
-				q = q.where(merge.table || null, conditions);
-			}
+				q = q.where(merge.where[0], merge.where[1]);
+			}			
 		});
-	} else {
-		q = q.where(conditions);
 	}
 
 	return q;
@@ -40,7 +53,7 @@ export function buildMergeToQuery (
 export function buildExistsToQuery (
 	this: FxOrmDMLDriver.DMLDriver,
 	q: FxSqlQueryChainBuilder.ChainBuilder__Select,
-	table: string,
+	table_alias: string,
 	exists: FxOrmDMLDriver.DMLDriver_FindOptions['exists'],
 ) {
 	if (exists) {
@@ -48,7 +61,7 @@ export function buildExistsToQuery (
 			const exist_item = exists[k];
 			q.whereExists(
 				exist_item.table,
-				parseFallbackTableAlias(table),
+				table_alias,
 				exist_item.link,
 				exist_item.conditions
 			);

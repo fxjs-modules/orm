@@ -11,6 +11,7 @@ import {
 	FxSqlQuery,
 	FxSqlQuerySubQuery,
 	FxSqlQueryComparator,
+	FxSqlQuerySql,
 } from '@fxjs/sql-query';
 import { selectArgs } from './Helpers';
 
@@ -244,7 +245,6 @@ export function hasValues (obj: {[k: string]: any}, keys: string[]): boolean {
 export function populateModelIdKeysConditions (
 	source_model: FxOrmModel.Model,
 	associacted_fields: string[],
-	// source: FxOrmAssociation.AssociationDefinitionOptions | FxOrmInstance.Instance,
 	source: FxOrmInstance.InstanceDataPayload,
 	target: FxSqlQuerySubQuery.SubQueryConditions,
 	overwrite?: boolean
@@ -396,6 +396,25 @@ export function formatAssociatedField (
 
 	return fields;
 };
+
+/** @internal */
+export function extractHasManyExtraConditions (
+	association: FxOrmAssociation.InstanceAssociationItem_HasMany,
+	conditions: FxOrmModel.ModelFindByDescriptorItem['conditions'],
+	join_where?: FxOrmModel.ModelFindByDescriptorItem['join_where'],
+) {
+	// extract extra info on conditions
+	let extra_where = { ...join_where } as typeof join_where;
+	// populate out conditions in extra, not belonging to either one model of associations
+	for (let k in conditions) {
+		if (association.props[k]) {
+			extra_where[k] = conditions[k];
+			delete conditions[k];
+		}
+	}
+
+	return extra_where
+}
 
 // If the parent associations key is `serial`, the join tables
 // key should be changed to `integer`.
@@ -557,17 +576,27 @@ export function combineMergeInfoToArray (
 	if (!Array.isArray(merges))
 		merges = [merges]
 	
-	return merges.filter(x => x)
+	return merges.filter(Boolean)
 }
 
-export function parseFallbackTableAlias (ta_str: string) {
-	const [t, a = t] = QueryHelpers.parseTableInputStr(ta_str)
+export function parseTableInputForSelect (ta_str: string) {
+	const [pure_table, alias = pure_table] = QueryHelpers.parseTableInputStr(ta_str)
 
-	return a
+	return {
+		pure_table,
+		alias,
+		from_tuple: [pure_table, alias] as FxSqlQuerySql.SqlTableTuple
+	}
 }
 
-export function tableAlias (table: string, alias: string = table, same_suffix: string = '') {
-	return `${table} ${alias}${same_suffix ? ` ${same_suffix}` : ''}`
+export const parseTableInputStr = QueryHelpers.parseTableInputStr;
+
+// export function tableAlias (table: string, alias: string = table, same_suffix: string = '') {
+// 	return `${table} as ${alias}${same_suffix ? ` ${same_suffix}` : ''}`
+// }
+
+export function tableAlias (table: string, alias: string = table) {
+	return `${table} as ${alias}`
 }
 
 export function tableAliasCalculatorInOneQuery () {
