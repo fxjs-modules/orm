@@ -1069,7 +1069,7 @@ export function listFindByChainOrRunSync <T = any> (
 			}
 			const extra_props = (association as FxOrmAssociation.InstanceAssociationItem_HasMany).props;
 
-			const join_where = by_item.join_where || {};
+			const join_where = { ...by_item.join_where };
 			Utilities.filterWhereConditionsInput(join_where, model);
 
 			merge_item = {

@@ -366,7 +366,7 @@ function extendInstance(
 						order[0] = [association.model.table, order[0]];
 					} else {
 						if (conditions === null) {
-							conditions = arg;
+							conditions = { ...arg };
 						} else {
 							options = arg;
 						}
@@ -392,14 +392,17 @@ function extendInstance(
 		if (conditions === null) {
 			conditions = {};
 		}
-
-		if (! (join_conditions = options.join_where) ) {
-			join_conditions = {};
+		// extract extra info on conditions
+		const extraWhere = {} as typeof options.join_where;
+		// populate out conditions in extra, not belonging to either one model of associations
+		for (let k in conditions) {
+			if (association.props[k]) {
+				extraWhere[k] = conditions[k];
+				delete conditions[k];
+			}
 		}
 
-		// if (Driver.hasMany) {
-		// 	return Driver.hasMany(Model, association).get(Instance, conditions, options, createInstance, cb);
-		// }
+		join_conditions = { ...options.join_where, ...extraWhere };
 
 		options.__merge = {
 			from: { table: association.mergeTable, field: Object.keys(association.mergeAssocId) },

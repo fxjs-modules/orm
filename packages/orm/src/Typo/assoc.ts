@@ -226,7 +226,8 @@ export namespace FxOrmAssociation {
     }
 
     export interface ModelAssociationMethod__Options {
-        // only valid for hasMany assoc
+        // only valid for hasMany assoc :start
+        /** @internal */
         join_where?: FxOrmModel.ModelFindByDescriptorItem['join_where']
         extra?: FxOrmModel.ModelOptions__Find['extra']
         extra_info?: {
@@ -235,6 +236,7 @@ export namespace FxOrmAssociation {
             id_prop: string[]
             assoc_prop: string[]
         }
+        // only valid for hasMany assoc :start
     }
 
     export interface ModelAssociationMethod__FindOptions extends FxOrmModel.ModelOptions__Find, ModelAssociationMethod__Options {

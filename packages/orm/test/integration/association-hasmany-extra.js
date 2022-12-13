@@ -186,21 +186,35 @@ describe("hasMany extra properties", function () {
                 });
             });
 
-            it("could get B from A with filter to join table", function () {
+            it("implicit join_where: could get B from A with filter to join table", function () {
+                var John = Person.find(
+                    { name: "John" }, 
+                ).firstSync();
+
+                var Deco = John.getPets({
+                    since: ORM.eq(since_list[0])
+                }).firstSync();
+
+                var Mutt = John.getPets({
+                    since: ORM.eq(since_list[1])
+                }).firstSync();
+
+                John.pets = [Deco, Mutt];
+
+                assertion_people_for_get_with_join_where([John]);
+            });
+                
+            it('explicit join_where: could get B from A with filter to join table', () => {
                 var John = Person.find(
                     { name: "John" }, 
                 ).firstSync();
 
                 var Deco = John.getPets({}, {
-                    join_where: {
-                        since: ORM.eq(since_list[0])
-                    }
+                    join_where: { since: ORM.eq(since_list[0]) }
                 }).firstSync();
 
                 var Mutt = John.getPets({}, {
-                    join_where: {
-                        since: ORM.eq(since_list[1])
-                    }
+                    join_where: { since: ORM.eq(since_list[1]) }
                 }).firstSync();
 
                 John.pets = [Deco, Mutt];
@@ -208,15 +222,25 @@ describe("hasMany extra properties", function () {
                 assertion_people_for_get_with_join_where([John]);
             });
 
-            it("find item with non-exists join where condition", function () {
+            it("implicit join_where: find item with non-exists join where condition", function () {
+                var John = Person.find(
+                    { name: "John" }, 
+                ).firstSync();
+                
+                var Invalid = John.getPets({
+                    since: ORM.lt(since_list[0])
+                }).firstSync();
+                
+                assert.isNull(Invalid);
+            });
+
+            it("explicit join_where: find item with non-exists join where condition", function () {
                 var John = Person.find(
                     { name: "John" }, 
                 ).firstSync();
                 
                 var Invalid = John.getPets({}, {
-                    join_where: {
-                        since: ORM.lt(since_list[0])
-                    }
+                    join_where: { since: ORM.lt(since_list[0]) }
                 }).firstSync();
                 
                 assert.isNull(Invalid);
@@ -249,9 +273,28 @@ describe("hasMany extra properties", function () {
             });
 
             describe("could get A from B with filter to join table", function () {
-                it("only join_where", () => {
+                it("implicit join_where: only join_where", () => {
                     var Deco = Pet.find({ name: "Deco" }).firstSync();
+                    var Mutt = Pet.find({ name: "Mutt" }).firstSync();
 
+                    var JohnForDeco = Deco.getOwners(
+                        { since: ORM.eq(since_list[0]) },
+                    ).firstSync();
+                    Deco.extra = JohnForDeco.extra;
+
+                    var JohnForMutt = Mutt.getOwners(
+                        { since: ORM.eq(since_list[1]) }
+                    ).firstSync();
+                    Mutt.extra = JohnForMutt.extra;
+
+                    var John = new Person(JohnForMutt);
+                    John.pets = [Deco, Mutt];
+
+                    assertion_people_for_get_with_join_where([John]);
+                });
+                
+                it("explicit join_where: only join_where", () => {
+                    var Deco = Pet.find({ name: "Deco" }).firstSync();
                     var Mutt = Pet.find({ name: "Mutt" }).firstSync();
 
                     var JohnForDeco = Deco.getOwners(
@@ -275,8 +318,30 @@ describe("hasMany extra properties", function () {
 
                     assertion_people_for_get_with_join_where([John]);
                 });
+
+                it("implicit join_where: with limit", () => {
+                    var Deco = Pet.find({ name: "Deco" }).firstSync();
+                    var Mutt = Pet.find({ name: "Mutt" }).firstSync();
+
+                    var JohnForDeco = Deco.getOwners(
+                        { since: ORM.eq(since_list[0]) },
+                        { limit: 50 } // see generated sql by turn on `debug_sql`
+                    ).allSync()[0];
+                    Deco.extra = JohnForDeco.extra;
+
+                    var JohnForMutt = Mutt.getOwners(
+                        { since: ORM.eq(since_list[1]) },
+                        { limit: 50 } // see generated sql by turn on `debug_sql`
+                    ).allSync()[0];
+                    Mutt.extra = JohnForMutt.extra;
+
+                    var John = new Person(JohnForMutt);
+                    John.pets = [Deco, Mutt];
+
+                    assertion_people_for_get_with_join_where([John]);
+                });
                 
-                it("with limit", () => {
+                it("explicit join_where: with limit", () => {
                     var Deco = Pet.find({ name: "Deco" }).firstSync();
                     var Mutt = Pet.find({ name: "Mutt" }).firstSync();
 
@@ -284,7 +349,7 @@ describe("hasMany extra properties", function () {
                         {},
                         {
                             join_where: { since: ORM.eq(since_list[0]) },
-                            limit: 50, // see generate sql by turn on `debug_sql`
+                            limit: 50, // see generated sql by turn on `debug_sql`
                         } 
                     ).allSync()[0];
                     Deco.extra = JohnForDeco.extra;
@@ -293,7 +358,7 @@ describe("hasMany extra properties", function () {
                         {},
                         {
                             join_where: { since: ORM.eq(since_list[1]) },
-                            limit: 50, // see generate sql by turn on `debug_sql`
+                            limit: 50, // see generated sql by turn on `debug_sql`
                         } 
                     ).allSync()[0];
                     Mutt.extra = JohnForMutt.extra;
@@ -304,8 +369,35 @@ describe("hasMany extra properties", function () {
                     assertion_people_for_get_with_join_where([John]);
                 });
                 
+                it("implicit join_where: with limit/order", () => {
+                    var Deco = Pet.find({ name: "Deco" }).firstSync();
+                    var Mutt = Pet.find({ name: "Mutt" }).firstSync();
+
+                    var JohnsForDeco = Deco.getOwners(
+                        { since: ORM.eq(since_list[0]) },
+                        {
+                            limit: 50,
+                            order: [[Person.table, 'name'], 'Z'] // see generated sql by turn on `debug_sql`
+                        } 
+                    ).allSync();
+                    Deco.extra = JohnsForDeco[0].extra;
+
+                    var JohnsForMutt = Mutt.getOwners(
+                        { since: ORM.eq(since_list[1]) },
+                        {
+                            limit: 50,
+                            order: '-name' // see generated sql by turn on `debug_sql`
+                        } 
+                    ).allSync();
+                    Mutt.extra = JohnsForMutt[0].extra;
+
+                    var John = new Person(JohnsForMutt[0]);
+                    John.pets = [Deco, Mutt];
+
+                    assertion_people_for_get_with_join_where([John]);
+                });
                 
-                it("with limit/order", () => {
+                it("explicit join_where: with limit/order", () => {
                     var Deco = Pet.find({ name: "Deco" }).firstSync();
                     var Mutt = Pet.find({ name: "Mutt" }).firstSync();
 
@@ -320,7 +412,7 @@ describe("hasMany extra properties", function () {
                              * SHOULDN't specify the `Pet.table` here because it's wrong! NEVER do that
                              * as you can pass it in fact
                              */
-                            order: [[Person.table, 'name'], 'Z'] // see generate sql by turn on `debug_sql`
+                            order: [[Person.table, 'name'], 'Z'] // see generated sql by turn on `debug_sql`
                         } 
                     ).allSync();
                     Deco.extra = JohnsForDeco[0].extra;
@@ -330,7 +422,7 @@ describe("hasMany extra properties", function () {
                         {
                             join_where: { since: ORM.eq(since_list[1]) },
                             limit: 50,
-                            order: '-name' // see generate sql by turn on `debug_sql`
+                            order: '-name' // see generated sql by turn on `debug_sql`
                         } 
                     ).allSync();
                     Mutt.extra = JohnsForMutt[0].extra;
