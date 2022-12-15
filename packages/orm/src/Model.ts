@@ -421,14 +421,24 @@ export const Model = function (
 							if (options.hasOwnProperty("__merge")) {
 								merges = Utilities.combineMergeInfoToArray(options.__merge);
 								merges.forEach(merge => {
-									if (Array.isArray(merge.select) && merge.select.length) {
-									} else {
+									if (!Array.isArray(merge.select) || !merge.select.length) {
 										merge.select = [];
 
-										// compat old interface, but not recommended
 										if (options.extra && Object.keys(options.extra).length)
 											merge.select = merge.select.concat(Object.keys(options.extra))
 									}
+
+									merge.select = merge.select.map(field => {
+										if (typeof field === 'object') return field;
+
+										const propname = field;
+										const mapsTo = options.extra[field]?.mapsTo || field;
+
+										return {
+											as: propname,
+											column_name: mapsTo
+										}
+									});
 
 									merge.select = Array.from( new Set(merge.select) )
 								});

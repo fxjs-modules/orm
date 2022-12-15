@@ -29,8 +29,8 @@ export const ACCESSOR_KEYS: {[k: string]: ACCESSOR_PREFIX} = {
 	"add": "add" as 'add',
 };
 
-export function getMapsToFromProperty (property: FxOrmProperty.NormalizedProperty) {
-	return property.mapsTo || property.name
+export function getMapsToFromProperty (property: FxOrmProperty.NormalizedProperty, k: string) {
+	return property.mapsTo || k
 }
 
 export function getMapsToFromPropertyHash (hash: Record<string, FxOrmProperty.NormalizedProperty>) {

@@ -264,7 +264,7 @@ describe('select - sqlite', () => {
         .from('project p', 'id', 's', 'project_id').select('id').as('project_id').select('name', 'description')
         .groupBy('stage_id')
         .build(),
-      'select `id` as `stage_id`, `s`.`name`, `s`.`description`, COUNT(`t`.`id`) as `count_task`, `id` as `project_id`, `p`.`name`, `p`.`description` from `stage` as `s` inner join `task` as `t` on `t`.`of_stage_id` = `s`.`id` inner join `project` as `p` on `p`.`id` = `s`.`project_id` group by `stage_id`'
+      'select `s`.`id` as `stage_id`, `s`.`name`, `s`.`description`, COUNT(`t`.`id`) as `count_task`, `p`.`id` as `project_id`, `p`.`name`, `p`.`description` from `stage` as `s` inner join `task` as `t` on `t`.`of_stage_id` = `s`.`id` inner join `project` as `p` on `p`.`id` = `s`.`project_id` group by `stage_id`'
     )
   })
 

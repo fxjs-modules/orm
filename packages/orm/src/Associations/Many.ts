@@ -29,6 +29,21 @@ import type {
 
 function noOperation (...args: any[]) {};
 
+function throwErrorIfExtraPropertyNameRepeat(
+	hostModel: FxOrmModel.Model,
+	extraProps: FxOrmAssociation.InstanceAssociationItem_HasMany['props']
+) {
+	Object.entries(extraProps).forEach(([eKey]) => {
+		if (hostModel.allProperties[eKey]) {
+			throw new ORMError(
+				`disallow defining same name extra property '${eKey}' with property on model '${hostModel.name}'`,
+				'BAD_MODEL',
+				{ repeatKey: eKey }
+			)
+		}
+	});
+}
+
 export function prepare(
 	Model: FxOrmModel.Model,
 	assocs: {
@@ -94,6 +109,8 @@ export function prepare(
 				});
 			}
 		}
+		// restrain association.props[any].name not same with Model[any].name
+		throwErrorIfExtraPropertyNameRepeat(OtherModel, props);
 
 		makeKey = assoc_options.key || Settings.defaults().hasMany.key;
 
@@ -654,10 +671,11 @@ function extendInstance(
 							const data: {[k: string]: any} = {};
 
 							for (let k in add_opts) {
-								if (k in association.props && Driver.propertyToValue) {
-									data[k] = Driver.propertyToValue(add_opts[k], association.props[k]);
-								} else {
-									data[k] = add_opts[k];
+								if (association.props[k]) {
+									const mapsTo = association.props[k].mapsTo || k;
+									data[mapsTo] = Driver.propertyToValue ? 
+										Driver.propertyToValue(add_opts[k], association.props[k])
+										: add_opts[k];
 								}
 							}
 

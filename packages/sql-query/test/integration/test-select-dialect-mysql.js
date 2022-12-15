@@ -290,7 +290,7 @@ describe('select - mysql', () => {
         .groupBy('stage_id')
         .build(),
       // 'SELECT `s`.`id` AS `stage_id`, `s`.`name`, `s`.`description`, COUNT(`t`.`id`) AS `count_task`, `p`.`id` AS `project_id`, `p`.`name`, `p`.`description` FROM ( `stage` `s` JOIN `task` `t` ON `t`.`of_stage_id` = `s`.`id` ) JOIN `project` `p` ON `p`.`id` = `s`.`project_id` GROUP BY `stage_id`'
-      'select `id` as `stage_id`, `s`.`name`, `s`.`description`, COUNT(`t`.`id`) as `count_task`, `id` as `project_id`, `p`.`name`, `p`.`description` from `stage` as `s` inner join `task` as `t` on `t`.`of_stage_id` = `s`.`id` inner join `project` as `p` on `p`.`id` = `s`.`project_id` group by `stage_id`'
+      'select `s`.`id` as `stage_id`, `s`.`name`, `s`.`description`, COUNT(`t`.`id`) as `count_task`, `p`.`id` as `project_id`, `p`.`name`, `p`.`description` from `stage` as `s` inner join `task` as `t` on `t`.`of_stage_id` = `s`.`id` inner join `project` as `p` on `p`.`id` = `s`.`project_id` group by `stage_id`'
     )
   })
 

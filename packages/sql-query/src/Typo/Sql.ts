@@ -78,21 +78,47 @@ export namespace FxSqlQuerySql {
 
 	// item to describe what columns to select
 	export interface SqlSelectFieldItemDescriptor {
-		// fun name
+		/**
+		 * @description fun name
+		 */
 		func_name?: string
-		// column name
+		/**
+		 * @description column name
+		 * expect NO table prefix
+		 * 
+		 * ```
+		 * recommended: `col`
+		 * ```
+		 * 
+		 * but this allowed also
+		 * 
+		 * ```
+		 * allowed also: `table.col`
+		 * ````
+		 * 
+		 */
 		column_name?: SqlColumnType
-		// column as
+		/**
+		 * @description column as
+		 */
 		as?: FxSqlQuerySql.NormalizedSimpleSqlColumnType,
 		a?: SqlSelectFieldItemDescriptor['as'],
-		// fun_stack
+		/**
+		 * @description fun_stack
+		 */
 		func_stack?: FxSqlAggregation.SupportedAggregationFunction[]
-		// pure sql
+		/**
+		 * @description pure sql
+		 */
 		sql?: string
 
-		// GUESS: useful when this object refer to one complex descriptor?
+		/**
+		 * @description GUESS: useful when this object refer to one complex descriptor?
+		 */
 		select?: string
-		// having sub query statement
+		/**
+		 * @description having sub query statement
+		 */
 		having?: string
 	}
 

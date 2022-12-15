@@ -95,12 +95,14 @@ export class SelectQuery implements FxSqlQueryChainBuilder.ChainBuilder__Select 
 		if (Array.isArray(this.sql.from[idx].select)) {
 			const from_select_arr = this.sql.from[idx].select as FxSqlQuerySql.SqlSelectFieldItemDescriptor[]
 
-			var idx2 = from_select_arr.length - 1;
+			const idx2 = from_select_arr.length - 1;
 
-			if (typeof from_select_arr[idx2] == "string") {
-				from_select_arr[idx2] = { column_name: from_select_arr[idx2] as any };
+			if (typeof from_select_arr[idx2] === "string") {
+				from_select_arr[idx2] = {
+					column_name: from_select_arr[idx2] as string
+				};
 			}
-			from_select_arr[from_select_arr.length - 1].as = _as || null;
+			from_select_arr[idx2].as = _as || null;
 		}
 
 		return this;
@@ -330,17 +332,18 @@ export class SelectQuery implements FxSqlQueryChainBuilder.ChainBuilder__Select 
 
 		const tableAliasMap = {} as {[k: string]: string};
 
-		for (let i = 0; i < sql_from.length; i++) {
+		const from_len = sql_from.length;
+		for (let i = 0; i < from_len; i++) {
 			sql_from[i].alias = Helpers.pickAliasFromFromDescriptor(sql_from[i]) || Helpers.defaultTableAliasNameRule(i + 1);
 
 			tableAliasMap[`${sql_from[i].alias}`] = `${sql_from[i].table}`
 		}
 
-		const single_query = sql_from.length === 1;
+		const single_query = from_len === 1;
 
 		const sqlBuilder = this.Dialect.knex(tableAliasMap);
 
-		for (let i = 0; i < sql_from.length; i++) {
+		for (let i = 0; i < from_len; i++) {
 			if (!sql_from[i].select) continue;
 
 			for (let j = 0; j < sql_from[i].select.length; j++) {
@@ -352,12 +355,12 @@ export class SelectQuery implements FxSqlQueryChainBuilder.ChainBuilder__Select 
 					sqlBuilder.select(`${selectFromPrefix}${sql_select_item}`)
 					continue;
 				} else if (typeof sql_select_item == "object") {
-					const {should_continue} = buildObjectTypeSelectItem.apply(this, [
+					const { should_continue } = buildObjectTypeSelectItem.apply(this, [
 						sqlBuilder,
 						sql_select_item,
 						single_query,
 						sql_from_item,
-						having
+						{ having, from_len }
 					]);
 
 					if (should_continue)
@@ -549,7 +552,10 @@ function buildObjectTypeSelectItem (
 	sql_select_obj: FxSqlQuerySql.SqlSelectFieldItemDescriptor,
 	single_query: boolean,
 	sql_from_item: FxSqlQuerySql.QueryFromDescriptor,
-	having: string[]
+	__helper_info: {
+		having: string[],
+		from_len: number
+	}
 ): {
 	should_continue: boolean,
 	return_value: string
@@ -562,15 +568,18 @@ function buildObjectTypeSelectItem (
 	};
 
 	if (!sql_select_obj.func_name && sql_select_obj.column_name) {
+		// TODO: use better normalization for whole sql_select_obj
 		const col_name = sql_select_obj.column_name as FxSqlQuerySql.SqlFragmentStr
+		
+		const col_id = __helper_info.from_len > 1 ? `${alias}.${col_name}` : col_name;
 
 		const _as = Helpers.pickColumnAsFromSelectFieldsDescriptor(sql_select_obj)
 		if (_as) {
 			knexSqlBuilder.select(
-				this.Dialect.knex.ref( col_name ).as(_as)
+				this.Dialect.knex.ref(col_id).as(_as)
 			)
 		} else {
-			knexSqlBuilder.select(col_name);
+			knexSqlBuilder.select(col_id);
 		}
 	}
 

@@ -354,7 +354,9 @@ export namespace FxOrmModel {
         /** @internal */
         exists?: [FxOrmQuery.ChainWhereExistsInfo]
 
-        // useless, just for compat
+        /**
+         * @description extra fields on find, e.g. from hasMany extra properties
+         */
         extra?: FxOrmAssociation.InstanceAssociationItem_HasMany['props']
 
         // access dynamic findby options

@@ -557,7 +557,7 @@ export const Instance = function (
 		// Its presence doesn't affect tests, so I'm just gonna log if it ever gets called.
 		// If someone complains about noise, we know it does something, and figure it out then.
 		if (instance.hasOwnProperty(key))
-			(global as any).console.log("Overwriting instance property");
+			console.log("Overwriting instance property");
 
 		if (key in instRtd.data) {
 			defaultValue = instRtd.data[key];

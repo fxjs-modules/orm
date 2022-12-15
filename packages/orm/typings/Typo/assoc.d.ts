@@ -195,7 +195,9 @@ export declare namespace FxOrmAssociation {
     interface ModelAssociationMethod__Options {
         /** @internal */
         join_where?: FxOrmModel.ModelFindByDescriptorItem['join_where'];
+        /** @internal */
         extra?: FxOrmModel.ModelOptions__Find['extra'];
+        /** @internal */
         extra_info?: {
             table: string;
             id: FxOrmModel.Model['id'];

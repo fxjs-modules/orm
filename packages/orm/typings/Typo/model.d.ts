@@ -248,6 +248,9 @@ export declare namespace FxOrmModel {
         chainfind_linktable?: string;
         /** @internal */
         exists?: [FxOrmQuery.ChainWhereExistsInfo];
+        /**
+         * @description extra fields on find, e.g. from hasMany extra properties
+         */
         extra?: FxOrmAssociation.InstanceAssociationItem_HasMany['props'];
         [k: string]: any;
     }

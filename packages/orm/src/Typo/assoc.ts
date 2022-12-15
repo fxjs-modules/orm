@@ -246,7 +246,9 @@ export namespace FxOrmAssociation {
         // only valid for hasMany assoc :start
         /** @internal */
         join_where?: FxOrmModel.ModelFindByDescriptorItem['join_where']
+        /** @internal */
         extra?: FxOrmModel.ModelOptions__Find['extra']
+        /** @internal */
         extra_info?: {
             table: string
             id: FxOrmModel.Model['id']

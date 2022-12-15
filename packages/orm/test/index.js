@@ -82,6 +82,8 @@ function t() {
     
     run('./integration/plugin.js');
 
+    run('./fixtures/hasmany-with-same-mapsToName.js');
+
     test.run(console.DEBUG);
 }
 
