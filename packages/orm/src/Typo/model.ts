@@ -189,6 +189,7 @@ export namespace FxOrmModel {
         association_name: string,
         // findby conditions 
         conditions?: ModelQueryConditions__Find,
+        baseConditions?: FxOrmModel.ModelQueryConditions__Find
         // findby options
         options?: FxOrmAssociation.ModelAssociationMethod__FindByOptions,
 

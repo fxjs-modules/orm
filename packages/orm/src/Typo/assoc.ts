@@ -265,6 +265,7 @@ export namespace FxOrmAssociation {
     }
 
     export interface ModelAssociationMethod__FindByOptions extends FxOrmModel.ModelOptions__Findby, ModelAssociationMethod__Options {
+        hostConditions?: FxOrmModel.ModelQueryConditions__Find
     }
 
     export interface AccessorOptions_has {
