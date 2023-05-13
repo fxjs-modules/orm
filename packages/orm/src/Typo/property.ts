@@ -42,7 +42,7 @@ export namespace FxOrmProperty {
     };
     
     // type PropertyType = import('@fxjs/orm-property/lib/Property').PropertyType;
-    export type PropertyType = 'text' | 'integer' | 'number' | 'serial' | 'boolean' | 'date' | 'binary' | 'object' | 'enum' | 'point';
+    export type PropertyType = 'text' | 'integer' | 'bigint' | 'number' | 'serial' | 'boolean' | 'date' | 'binary' | 'object' | 'enum' | 'point';
     /**
      * @description used for augumenting model's properties type
      */
@@ -53,6 +53,7 @@ export namespace FxOrmProperty {
         T extends 'text' ? string : 
         T extends 'enum' ? any[] : 
         T extends 'integer' | 'number' | 'serial' ? number :
+        T extends 'bigint' ? bigint :
         T extends 'boolean' ? boolean :
         T extends 'date' ? number | Date :
         T extends 'binary' | 'object' | 'point' ? any : never

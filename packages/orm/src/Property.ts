@@ -5,7 +5,7 @@ import { FxOrmNS } from './Typo/ORM';
 import { FxOrmProperty } from './Typo/property';
 
 const KNOWN_TYPES = [
-	"text", "number", "integer", "boolean", "date", "enum", "object",
+	"text", "number", "integer", "bigint", "long", "boolean", "date", "enum", "object",
 	"binary", "point",  "serial"
 ] as const;
 
@@ -27,6 +27,9 @@ export function normalize
 				break;
 			case "Number":
 				result_prop = <FxOrmProperty.NormalizedProperty>{ type: "number" };
+				break;
+			case "BigInt":
+				result_prop = <FxOrmProperty.NormalizedProperty>{ type: "bigint" };
 				break;
 			case "Boolean":
 				result_prop = <FxOrmProperty.NormalizedProperty>{ type: "boolean" };
