@@ -59,6 +59,10 @@ describe("transformer('mysql').toStorageType", function () {
 		Transformer.toStorageType({ mapsTo: 'abc', type: "binary", big: true }, ctx).typeValue.should.equal("LONGBLOB");
 	});
 
+	it("should detect point", function () {
+		Transformer.toStorageType({ mapsTo: 'abc', type: "point" }, ctx).typeValue.should.equal("POINT");
+	});
+
 	it("should detect custom types", function () {
 		Transformer.toStorageType({ mapsTo: 'abc', type: "json" }, ctx).typeValue.should.equal("JSON");
 	});
@@ -103,8 +107,8 @@ describe("transformer('mysql').rawToProperty", function () {
 			title: 'varchar(255)',
 			groups: [
 				[
-					{ "Field": "street", "Type": "varchar(255)", "Null": "YES", "Key": "", "Default": "", "Extra": "", "Size": "" },
-					{ mapsTo: 'street', defaultValue: '', type: 'text', size: 255, }
+					{ "Field": "street", "Type": "varchar(255)", "Null": "YES", "Key": "", "Default": "", "Extra": "", "Size": "", "Comment": "" },
+					{ mapsTo: 'street', defaultValue: '', type: 'text', size: 255 }
 				]
 			] 
 		},
@@ -112,11 +116,11 @@ describe("transformer('mysql').rawToProperty", function () {
 			title: 'int',
 			groups: [
 				[
-					{ "Field": "id", "Type": "int", "Null": "NO", "Key": "PRI", "Default": "", "Extra": "auto_increment", "Size": "" },
+					{ "Field": "id", "Type": "int", "Null": "NO", "Key": "PRI", "Default": "", "Extra": "auto_increment", "Size": "", "Comment": "" },
 					{ serial: true, key: true, unsigned: true, primary: true, required: true, mapsTo: 'id', defaultValue: '', type: 'serial', size: 4 }
 				],
 				[
-					{ "Field": "age", "Type": "int", "Null": "YES", "Key": "", "Default": "18", "Extra": "", "Size": "" },
+					{ "Field": "age", "Type": "int", "Null": "YES", "Key": "", "Default": "18", "Extra": "", "Size": "", "Comment": "" },
 					{ defaultValue: '18', type: 'integer', size: 4, mapsTo: 'age' }
 				]
 			],
@@ -125,8 +129,17 @@ describe("transformer('mysql').rawToProperty", function () {
 			title: 'tinyint',
 			groups: [
 				[
-					{ "Field": "bounced", "Type": "tinyint(1)", "Null": "YES", "Key": "", "Default": "", "Extra": "", "Size": "" },
+					{ "Field": "bounced", "Type": "tinyint(1)", "Null": "YES", "Key": "", "Default": "", "Extra": "", "Size": "", "Comment": "" },
 					{ defaultValue: '', type: 'boolean', mapsTo: 'bounced' }
+				]
+			]
+		},
+		{
+			title: 'point',
+			groups: [
+				[
+					{ "Field": "point_field", "Type": "point", "Null": "YES", "Key": "", "Default": "", "Extra": "", "Size": "", "Comment": "" },
+					{ defaultValue: '', type: 'point', mapsTo: 'point_field' }
 				]
 			]
 		},
@@ -134,7 +147,7 @@ describe("transformer('mysql').rawToProperty", function () {
 			title: 'enum',
 			groups: [
 				[
-					{ "Field": "sex", "Type": "enum('male','female')", "Null": "YES", "Key": "", "Default": "", "Extra": "", "Size": "" },
+					{ "Field": "sex", "Type": "enum('male','female')", "Null": "YES", "Key": "", "Default": "", "Extra": "", "Size": "", "Comment": "" },
 					{ defaultValue: '', type: 'enum', values: [ 'male', 'female' ], mapsTo: 'sex' }
 				]
 			]
@@ -143,7 +156,7 @@ describe("transformer('mysql').rawToProperty", function () {
 			title: 'comment',
 			groups: [
 				[
-					{ "Field": "name", "Type": "varchar(255)", "Null": "YES", "Key": "", "Default": "", "Extra": "", "Comment": "test comment name", "Size": "" },
+					{ "Field": "name", "Type": "varchar(255)", "Null": "YES", "Key": "", "Default": "", "Extra": "", "Size": "", "Comment": "test comment name" },
 					{ defaultValue: "", type: "text", size: 255, mapsTo: "name", comment: "test comment name" }
 				]
 			]

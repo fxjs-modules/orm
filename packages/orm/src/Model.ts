@@ -33,6 +33,8 @@ import type {
     FxSqlQuerySubQuery,
     FxSqlQueryColumns,
 } from '@fxjs/sql-query';
+import { SpecialFieldsReason } from './Drivers/DML/constants';
+import { pickPointTypeFields } from './Drivers/DML/_dml-helpers';
 
 const AvailableHooks: (keyof FxOrmModel.Hooks)[] = [
 	"beforeCreate", "afterCreate",
@@ -319,6 +321,8 @@ export const Model = function (
 		return { options, ids }
 	}
 
+	const isMySQL = m_opts.driver.db.type === 'mysql';
+
 	model.getSync = function (
 		this: FxOrmModel.Model,
 		...args
@@ -355,6 +359,8 @@ export const Model = function (
 			const vFields = Object.entries(model.virtualProperties).map(([k, p]) => p.mapsTo || k);;
 			const { tableConditions, topConditions } = Utilities.extractSelectTopConditions(conditions, vFields);
 
+			const __pointTypeMapsTo = !isMySQL ? [] : pickPointTypeFields(m_opts.driver, allProperties);
+
 			try {
 				founditems = m_opts.driver.find(
 					model_selectable_fields,
@@ -365,7 +371,7 @@ export const Model = function (
 						topConditions,
 						selectVirtualFields: vFields,
 						generateSqlSelect: m_opts.generateSqlSelect,
-						
+						__pointTypeMapsTo,
 					}
 				);
 			} catch (ex) {

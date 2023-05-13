@@ -139,6 +139,8 @@ export declare namespace FxOrmDMLDriver {
         selectVirtualFields?: string[];
         /** @experimental */
         generateSqlSelect?: (this: DMLDriver, ctx: __DMLDriver_FindSqlQueryModifierCtx, chainSelect: FxSqlQueryChainBuilder.ChainBuilder__Select) => typeof chainSelect | void;
+        /** @experimental */
+        __pointTypeMapsTo: string[];
     }
     export interface DMLDriver_CountOptions {
         merge?: DMLDriver_FindOptions['merge'];

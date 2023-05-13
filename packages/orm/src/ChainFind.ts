@@ -15,6 +15,7 @@ import type {
 	FxSqlQuerySql,
 	FxSqlQuerySubQuery
 } from '@fxjs/sql-query';
+import { pickPointTypeFields } from './Drivers/DML/_dml-helpers';
 
 const MODEL_FUNCS = [
 	"hasOne", "hasMany",
@@ -29,6 +30,7 @@ const ChainFind = function (
 ) {
 	const merges = opts.merge = Utilities.combineMergeInfoToArray( opts.merge );
 
+	const isMySQL = opts.driver.db.type === 'mysql';
 	const chainRunSync = function (): FxOrmInstance.Instance[] {
 		let conditions: FxSqlQuerySubQuery.SubQueryConditions = util.omit(opts.conditions, Model.virtualProperties);
 
@@ -41,6 +43,9 @@ const ChainFind = function (
 
 		const vFields = Object.entries(Model.virtualProperties).map(([k, p]) => p.mapsTo || k);
 		const { tableConditions, topConditions } = Utilities.extractSelectTopConditions(conditions, vFields);
+		
+		const __pointTypeMapsTo = !isMySQL ? [] : pickPointTypeFields(opts.driver, Model.allProperties);
+
 		foundItems = opts.driver.find(opts.only, opts.table, tableConditions, {
 			limit  : Utilities.coercePositiveInt(opts.limit, undefined),
 			order  : order,
@@ -61,6 +66,7 @@ const ChainFind = function (
 			topConditions,
 			selectVirtualFields: vFields,
 			generateSqlSelect: opts.generateSqlSelect,
+			__pointTypeMapsTo
 		});
 		
 		if (foundItems.length === 0) {
@@ -298,6 +304,7 @@ const ChainFind = function (
 					merge  : merges,
 					offset : opts.offset,
 					exists : opts.exists,
+					__pointTypeMapsTo: [],
 				});
 
 			if (data.length === 0) {

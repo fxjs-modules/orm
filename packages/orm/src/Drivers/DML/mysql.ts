@@ -14,6 +14,8 @@ import { FxSqlQuery, Query } from "@fxjs/sql-query";
 import Sync = require("@fxjs/sql-ddl-sync");
 import utils = require("./_utils");
 import * as Utilities from "../../Utilities";
+import { SpecialFieldsReason } from "./constants";
+import { filterFieldsOnFind, safeParseJson } from "./_dml-helpers";
 
 export const Driver: FxOrmDMLDriver.DMLDriverConstructor_MySQL = function (
 	this: FxOrmDMLDriver.DMLDriver_MySQL,
@@ -145,6 +147,16 @@ Driver.prototype.find = function (
 	this: FxOrmDMLDriver.DMLDriver_MySQL, selectFields, table, conditions, opts, cb?
 ) {
 	const { from_tuple, pure_table, alias } = Utilities.parseTableInputForSelect(table);
+
+	const __pointTypeMapsTo = opts.__pointTypeMapsTo || [];
+
+	filterFieldsOnFind({
+		dmlDriver: this,
+		pointPropertiesMapsTo: __pointTypeMapsTo,
+	}, {
+		selectFields,
+	})
+
 	const ctx = {
 		table,
 		fromTuple: from_tuple,
@@ -169,7 +181,17 @@ Driver.prototype.find = function (
 	utils.buildMergeToQuery.apply(this, [q, opts.merge, conditions]);
 	utils.buildExistsToQuery.apply(this, [q, alias, opts.exists]);
 
-	return this.execSimpleQuery(q.build(), cb);
+	const results = this.execSimpleQuery(q.build(), cb);
+
+	if (__pointTypeMapsTo.length > 0 && Array.isArray(results)) {
+		results.forEach(item => {
+			__pointTypeMapsTo.forEach(field => {
+				item[field] = safeParseJson(item[field]);
+			});
+		})
+	}
+
+	return results;
 };
 
 Driver.prototype.count = function (

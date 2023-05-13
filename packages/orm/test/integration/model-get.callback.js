@@ -316,8 +316,16 @@ describe('Model.get() - callback', function () {
 
   describe('with a point property type', function () {
     if (common.dbType() == 'sqlite' || common.dbType() == 'mongodb') return
+    
+    const point = { x: 51.5177, y: -0.0968 };
+    function assertPoint(locPoint) {
+        assert.property(locPoint, 'x');
+        assert.equal(locPoint.x, point.x);
+        assert.property(locPoint, 'y');
+        assert.equal(locPoint.y, point.y);
+    }
 
-    it('should deserialize the point to an array', function (done) {
+    it('should deserialize the point to { x: number; y: number }', function (done) {
       db.settings.set('properties.primary_key', 'id')
 
       Person = db.define('person', {
@@ -330,13 +338,18 @@ describe('Model.get() - callback', function () {
       return helper.dropSync(Person, function () {
         Person.create({
           name: 'John Doe',
-          location: { x: 51.5177, y: -0.0968 }
+          location: { ...point }
         }, function (err, person) {
           assert.equal(err, null)
 
           assert.ok(person.location instanceof Object)
-          assert.propertyVal(person.location, 'x', 51.5177)
-          assert.propertyVal(person.location, 'y', -0.0968)
+
+          assert.isTrue(person.location instanceof Object);
+          assertPoint(person.location);
+
+          const pulledPerson = Person.getSync(person.id);
+          assertPoint(pulledPerson.location);
+
           return done()
         })
       })

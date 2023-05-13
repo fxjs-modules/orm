@@ -8,7 +8,7 @@ var ORM = require('../../');
 var coroutine = require('coroutine');
 const { lowerCaseColumn } = require("../support/_helpers");
 
-describe("Model.get()", function () {
+describe.only("Model.get()", function () {
     var db = null;
     var Person = null;
     var John;
@@ -240,7 +240,15 @@ describe("Model.get()", function () {
     describe("with a point property type", function () {
         if (common.dbType() == 'sqlite' || common.dbType() == 'mongodb') return;
 
-        it("should deserialize the point to an array", function (done) {
+        const point = { x: 51.5177, y: -0.0968 };
+        function assertPoint(locPoint) {
+            assert.property(locPoint, 'x');
+            assert.equal(locPoint.x, point.x);
+            assert.property(locPoint, 'y');
+            assert.equal(locPoint.y, point.y);
+        }
+
+        it("should deserialize the point to { x: number; y: number }", function (done) {
             db.settings.set('properties.primary_key', 'id');
 
             Person = db.define("person", {
@@ -250,22 +258,27 @@ describe("Model.get()", function () {
 
             ORM.singleton.clear();
 
-            return helper.dropSync(Person, function () {
-                Person.create({
-                    name: "John Doe",
-                    location: { x: 51.5177, y: -0.0968 }
-                }, function (err, person) {
-                    assert.equal(err, null);
+            helper.dropSync(Person, function () {
+                let err = null;
+                let person = null;
+                try {
+                    person = Person.createSync({
+                        name: "John Doe",
+                        location: { ...point }
+                    });
+                } catch (error) {
+                    err = error;
+                }
 
-                    assert.isTrue(person.location instanceof Object);
-                    
-                    assert.property(person.location, 'x');
-                    assert.equal(person.location.x, 51.5177);
-                    assert.property(person.location, 'y');
-                    assert.equal(person.location.y, -0.0968);
+                assert.equal(err, null);
 
-                    return done();
-                });
+                assert.isTrue(person.location instanceof Object);
+                assertPoint(person.location);
+
+                const pulledPerson = Person.getSync(person.id);
+                assertPoint(pulledPerson.location);
+
+                done();
             });
         });
     });

@@ -163,6 +163,7 @@ export namespace FxOrmDMLDriver {
         selectFields: FxSqlQueryColumns.SelectInputArgType[]
         selectVirtualFields: Exclude<DMLDriver_FindOptions['selectVirtualFields'], void>
     };
+
     export interface DMLDriver_FindOptions {
         offset?: number
         limit?: number
@@ -178,6 +179,8 @@ export namespace FxOrmDMLDriver {
             ctx: __DMLDriver_FindSqlQueryModifierCtx,
             chainSelect: FxSqlQueryChainBuilder.ChainBuilder__Select
         ) => typeof chainSelect | void
+        /** @experimental */
+        __pointTypeMapsTo: string[]
     }
     export interface DMLDriver_CountOptions {
         merge?: DMLDriver_FindOptions['merge']
