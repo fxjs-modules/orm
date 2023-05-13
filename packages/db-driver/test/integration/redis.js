@@ -34,9 +34,10 @@ describe("Redis", function () {
 				"aaa"
 			);
 
+			var result = driver.command("exists", "test");
 			assert.deepEqual(
 				driver.command("exists", "test"),
-				1
+				typeof result === 'bigint' ? 1n : 1
 			);
 
 			assert.deepEqual(
@@ -57,7 +58,7 @@ describe("Redis", function () {
 
 			assert.deepEqual(resuls[0].result.toString(), "OK")
 			assert.deepEqual(resuls[1].result.toString(), "aaa")
-			assert.deepEqual(resuls[2].result, 1)
+			assert.deepEqual(resuls[2].result, typeof resuls[2].result === 'bigint' ? 1n : 1)
 			assert.deepEqual(resuls[3].result.toString(), "string")
 		});
 	})

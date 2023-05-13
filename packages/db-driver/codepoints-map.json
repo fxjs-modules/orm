@@ -1,0 +1,762 @@
+[
+    {
+        "codepoint": "037",
+        "dotNetName": "IBM037",
+        "comment": "IBM EBCDIC US-Canada"
+    },
+    {
+        "codepoint": "437",
+        "dotNetName": "IBM437",
+        "comment": "OEM United States"
+    },
+    {
+        "codepoint": "500",
+        "dotNetName": "IBM500",
+        "comment": "IBM EBCDIC International"
+    },
+    {
+        "codepoint": "708",
+        "dotNetName": "ASMO-708",
+        "comment": "Arabic (ASMO 708)"
+    },
+    {
+        "codepoint": "709",
+        "dotNetName": "",
+        "comment": "Arabic (ASMO-449+, BCON V4)"
+    },
+    {
+        "codepoint": "710",
+        "dotNetName": "",
+        "comment": "Arabic - Transparent Arabic"
+    },
+    {
+        "codepoint": "720",
+        "dotNetName": "DOS-720",
+        "comment": "Arabic (Transparent ASMO); Arabic (DOS)"
+    },
+    {
+        "codepoint": "737",
+        "dotNetName": "ibm737",
+        "comment": "OEM Greek (formerly 437G); Greek (DOS)"
+    },
+    {
+        "codepoint": "775",
+        "dotNetName": "ibm775",
+        "comment": "OEM Baltic; Baltic (DOS)"
+    },
+    {
+        "codepoint": "850",
+        "dotNetName": "ibm850",
+        "comment": "OEM Multilingual Latin 1; Western European (DOS)"
+    },
+    {
+        "codepoint": "852",
+        "dotNetName": "ibm852",
+        "comment": "OEM Latin 2; Central European (DOS)"
+    },
+    {
+        "codepoint": "855",
+        "dotNetName": "IBM855",
+        "comment": "OEM Cyrillic (primarily Russian)"
+    },
+    {
+        "codepoint": "857",
+        "dotNetName": "ibm857",
+        "comment": "OEM Turkish; Turkish (DOS)"
+    },
+    {
+        "codepoint": "858",
+        "dotNetName": "IBM00858",
+        "comment": "OEM Multilingual Latin 1 + Euro symbol"
+    },
+    {
+        "codepoint": "860",
+        "dotNetName": "IBM860",
+        "comment": "OEM Portuguese; Portuguese (DOS)"
+    },
+    {
+        "codepoint": "861",
+        "dotNetName": "ibm861",
+        "comment": "OEM Icelandic; Icelandic (DOS)"
+    },
+    {
+        "codepoint": "862",
+        "dotNetName": "DOS-862",
+        "comment": "OEM Hebrew; Hebrew (DOS)"
+    },
+    {
+        "codepoint": "863",
+        "dotNetName": "IBM863",
+        "comment": "OEM French Canadian; French Canadian (DOS)"
+    },
+    {
+        "codepoint": "864",
+        "dotNetName": "IBM864",
+        "comment": "OEM Arabic; Arabic (864)"
+    },
+    {
+        "codepoint": "865",
+        "dotNetName": "IBM865",
+        "comment": "OEM Nordic; Nordic (DOS)"
+    },
+    {
+        "codepoint": "866",
+        "dotNetName": "cp866",
+        "comment": "OEM Russian; Cyrillic (DOS)"
+    },
+    {
+        "codepoint": "869",
+        "dotNetName": "ibm869",
+        "comment": "OEM Modern Greek; Greek, Modern (DOS)"
+    },
+    {
+        "codepoint": "870",
+        "dotNetName": "IBM870",
+        "comment": "IBM EBCDIC Multilingual/ROECE (Latin 2); IBM EBCDIC Multilingual Latin 2"
+    },
+    {
+        "codepoint": "874",
+        "dotNetName": "windows-874",
+        "comment": "Thai (Windows)"
+    },
+    {
+        "codepoint": "875",
+        "dotNetName": "cp875",
+        "comment": "IBM EBCDIC Greek Modern"
+    },
+    {
+        "codepoint": "932",
+        "dotNetName": "shift_jis",
+        "comment": "ANSI/OEM Japanese; Japanese (Shift-JIS)"
+    },
+    {
+        "codepoint": "936",
+        "dotNetName": "gb2312",
+        "comment": "ANSI/OEM Simplified Chinese (PRC, Singapore); Chinese Simplified (GB2312)"
+    },
+    {
+        "codepoint": "949",
+        "dotNetName": "ks_c_5601-1987",
+        "comment": "ANSI/OEM Korean (Unified Hangul Code)"
+    },
+    {
+        "codepoint": "950",
+        "dotNetName": "big5",
+        "comment": "ANSI/OEM Traditional Chinese (Taiwan; Hong Kong SAR, PRC); Chinese Traditional (Big5)"
+    },
+    {
+        "codepoint": "1026",
+        "dotNetName": "IBM1026",
+        "comment": "IBM EBCDIC Turkish (Latin 5)"
+    },
+    {
+        "codepoint": "1047",
+        "dotNetName": "IBM01047",
+        "comment": "IBM EBCDIC Latin 1/Open System"
+    },
+    {
+        "codepoint": "1140",
+        "dotNetName": "IBM01140",
+        "comment": "IBM EBCDIC US-Canada (037 + Euro symbol); IBM EBCDIC (US-Canada-Euro)"
+    },
+    {
+        "codepoint": "1141",
+        "dotNetName": "IBM01141",
+        "comment": "IBM EBCDIC Germany (20273 + Euro symbol); IBM EBCDIC (Germany-Euro)"
+    },
+    {
+        "codepoint": "1142",
+        "dotNetName": "IBM01142",
+        "comment": "IBM EBCDIC Denmark-Norway (20277 + Euro symbol); IBM EBCDIC (Denmark-Norway-Euro)"
+    },
+    {
+        "codepoint": "1143",
+        "dotNetName": "IBM01143",
+        "comment": "IBM EBCDIC Finland-Sweden (20278 + Euro symbol); IBM EBCDIC (Finland-Sweden-Euro)"
+    },
+    {
+        "codepoint": "1144",
+        "dotNetName": "IBM01144",
+        "comment": "IBM EBCDIC Italy (20280 + Euro symbol); IBM EBCDIC (Italy-Euro)"
+    },
+    {
+        "codepoint": "1145",
+        "dotNetName": "IBM01145",
+        "comment": "IBM EBCDIC Latin America-Spain (20284 + Euro symbol); IBM EBCDIC (Spain-Euro)"
+    },
+    {
+        "codepoint": "1146",
+        "dotNetName": "IBM01146",
+        "comment": "IBM EBCDIC United Kingdom (20285 + Euro symbol); IBM EBCDIC (UK-Euro)"
+    },
+    {
+        "codepoint": "1147",
+        "dotNetName": "IBM01147",
+        "comment": "IBM EBCDIC France (20297 + Euro symbol); IBM EBCDIC (France-Euro)"
+    },
+    {
+        "codepoint": "1148",
+        "dotNetName": "IBM01148",
+        "comment": "IBM EBCDIC International (500 + Euro symbol); IBM EBCDIC (International-Euro)"
+    },
+    {
+        "codepoint": "1149",
+        "dotNetName": "IBM01149",
+        "comment": "IBM EBCDIC Icelandic (20871 + Euro symbol); IBM EBCDIC (Icelandic-Euro)"
+    },
+    {
+        "codepoint": "1200",
+        "dotNetName": "utf-16",
+        "comment": "Unicode UTF-16, little endian byte order (BMP of ISO 10646); available only to managed applications"
+    },
+    {
+        "codepoint": "1201",
+        "dotNetName": "unicodeFFFE",
+        "comment": "Unicode UTF-16, big endian byte order; available only to managed applications"
+    },
+    {
+        "codepoint": "1250",
+        "dotNetName": "windows-1250",
+        "comment": "ANSI Central European; Central European (Windows)"
+    },
+    {
+        "codepoint": "1251",
+        "dotNetName": "windows-1251",
+        "comment": "ANSI Cyrillic; Cyrillic (Windows)"
+    },
+    {
+        "codepoint": "1252",
+        "dotNetName": "windows-1252",
+        "comment": "ANSI Latin 1; Western European (Windows)"
+    },
+    {
+        "codepoint": "1253",
+        "dotNetName": "windows-1253",
+        "comment": "ANSI Greek; Greek (Windows)"
+    },
+    {
+        "codepoint": "1254",
+        "dotNetName": "windows-1254",
+        "comment": "ANSI Turkish; Turkish (Windows)"
+    },
+    {
+        "codepoint": "1255",
+        "dotNetName": "windows-1255",
+        "comment": "ANSI Hebrew; Hebrew (Windows)"
+    },
+    {
+        "codepoint": "1256",
+        "dotNetName": "windows-1256",
+        "comment": "ANSI Arabic; Arabic (Windows)"
+    },
+    {
+        "codepoint": "1257",
+        "dotNetName": "windows-1257",
+        "comment": "ANSI Baltic; Baltic (Windows)"
+    },
+    {
+        "codepoint": "1258",
+        "dotNetName": "windows-1258",
+        "comment": "ANSI/OEM Vietnamese; Vietnamese (Windows)"
+    },
+    {
+        "codepoint": "1361",
+        "dotNetName": "Johab",
+        "comment": "Korean (Johab)"
+    },
+    {
+        "codepoint": "10000",
+        "dotNetName": "macintosh",
+        "comment": "MAC Roman; Western European (Mac)"
+    },
+    {
+        "codepoint": "10001",
+        "dotNetName": "x-mac-japanese",
+        "comment": "Japanese (Mac)"
+    },
+    {
+        "codepoint": "10002",
+        "dotNetName": "x-mac-chinesetrad",
+        "comment": "MAC Traditional Chinese (Big5); Chinese Traditional (Mac)"
+    },
+    {
+        "codepoint": "10003",
+        "dotNetName": "x-mac-korean",
+        "comment": "Korean (Mac)"
+    },
+    {
+        "codepoint": "10004",
+        "dotNetName": "x-mac-arabic",
+        "comment": "Arabic (Mac)"
+    },
+    {
+        "codepoint": "10005",
+        "dotNetName": "x-mac-hebrew",
+        "comment": "Hebrew (Mac)"
+    },
+    {
+        "codepoint": "10006",
+        "dotNetName": "x-mac-greek",
+        "comment": "Greek (Mac)"
+    },
+    {
+        "codepoint": "10007",
+        "dotNetName": "x-mac-cyrillic",
+        "comment": "Cyrillic (Mac)"
+    },
+    {
+        "codepoint": "10008",
+        "dotNetName": "x-mac-chinesesimp",
+        "comment": "MAC Simplified Chinese (GB 2312); Chinese Simplified (Mac)"
+    },
+    {
+        "codepoint": "10010",
+        "dotNetName": "x-mac-romanian",
+        "comment": "Romanian (Mac)"
+    },
+    {
+        "codepoint": "10017",
+        "dotNetName": "x-mac-ukrainian",
+        "comment": "Ukrainian (Mac)"
+    },
+    {
+        "codepoint": "10021",
+        "dotNetName": "x-mac-thai",
+        "comment": "Thai (Mac)"
+    },
+    {
+        "codepoint": "10029",
+        "dotNetName": "x-mac-ce",
+        "comment": "MAC Latin 2; Central European (Mac)"
+    },
+    {
+        "codepoint": "10079",
+        "dotNetName": "x-mac-icelandic",
+        "comment": "Icelandic (Mac)"
+    },
+    {
+        "codepoint": "10081",
+        "dotNetName": "x-mac-turkish",
+        "comment": "Turkish (Mac)"
+    },
+    {
+        "codepoint": "10082",
+        "dotNetName": "x-mac-croatian",
+        "comment": "Croatian (Mac)"
+    },
+    {
+        "codepoint": "12000",
+        "dotNetName": "utf-32",
+        "comment": "Unicode UTF-32, little endian byte order; available only to managed applications"
+    },
+    {
+        "codepoint": "12001",
+        "dotNetName": "utf-32BE",
+        "comment": "Unicode UTF-32, big endian byte order; available only to managed applications"
+    },
+    {
+        "codepoint": "20000",
+        "dotNetName": "x-Chinese_CNS",
+        "comment": "CNS Taiwan; Chinese Traditional (CNS)"
+    },
+    {
+        "codepoint": "20001",
+        "dotNetName": "x-cp20001",
+        "comment": "TCA Taiwan"
+    },
+    {
+        "codepoint": "20002",
+        "dotNetName": "x_Chinese-Eten",
+        "comment": "Eten Taiwan; Chinese Traditional (Eten)"
+    },
+    {
+        "codepoint": "20003",
+        "dotNetName": "x-cp20003",
+        "comment": "IBM5550 Taiwan"
+    },
+    {
+        "codepoint": "20004",
+        "dotNetName": "x-cp20004",
+        "comment": "TeleText Taiwan"
+    },
+    {
+        "codepoint": "20005",
+        "dotNetName": "x-cp20005",
+        "comment": "Wang Taiwan"
+    },
+    {
+        "codepoint": "20105",
+        "dotNetName": "x-IA5",
+        "comment": "IA5 (IRV International Alphabet No. 5, 7-bit); Western European (IA5)"
+    },
+    {
+        "codepoint": "20106",
+        "dotNetName": "x-IA5-German",
+        "comment": "IA5 German (7-bit)"
+    },
+    {
+        "codepoint": "20107",
+        "dotNetName": "x-IA5-Swedish",
+        "comment": "IA5 Swedish (7-bit)"
+    },
+    {
+        "codepoint": "20108",
+        "dotNetName": "x-IA5-Norwegian",
+        "comment": "IA5 Norwegian (7-bit)"
+    },
+    {
+        "codepoint": "20127",
+        "dotNetName": "us-ascii",
+        "comment": "US-ASCII (7-bit)"
+    },
+    {
+        "codepoint": "20261",
+        "dotNetName": "x-cp20261",
+        "comment": "T.61"
+    },
+    {
+        "codepoint": "20269",
+        "dotNetName": "x-cp20269",
+        "comment": "ISO 6937 Non-Spacing Accent"
+    },
+    {
+        "codepoint": "20273",
+        "dotNetName": "IBM273",
+        "comment": "IBM EBCDIC Germany"
+    },
+    {
+        "codepoint": "20277",
+        "dotNetName": "IBM277",
+        "comment": "IBM EBCDIC Denmark-Norway"
+    },
+    {
+        "codepoint": "20278",
+        "dotNetName": "IBM278",
+        "comment": "IBM EBCDIC Finland-Sweden"
+    },
+    {
+        "codepoint": "20280",
+        "dotNetName": "IBM280",
+        "comment": "IBM EBCDIC Italy"
+    },
+    {
+        "codepoint": "20284",
+        "dotNetName": "IBM284",
+        "comment": "IBM EBCDIC Latin America-Spain"
+    },
+    {
+        "codepoint": "20285",
+        "dotNetName": "IBM285",
+        "comment": "IBM EBCDIC United Kingdom"
+    },
+    {
+        "codepoint": "20290",
+        "dotNetName": "IBM290",
+        "comment": "IBM EBCDIC Japanese Katakana Extended"
+    },
+    {
+        "codepoint": "20297",
+        "dotNetName": "IBM297",
+        "comment": "IBM EBCDIC France"
+    },
+    {
+        "codepoint": "20420",
+        "dotNetName": "IBM420",
+        "comment": "IBM EBCDIC Arabic"
+    },
+    {
+        "codepoint": "20423",
+        "dotNetName": "IBM423",
+        "comment": "IBM EBCDIC Greek"
+    },
+    {
+        "codepoint": "20424",
+        "dotNetName": "IBM424",
+        "comment": "IBM EBCDIC Hebrew"
+    },
+    {
+        "codepoint": "20833",
+        "dotNetName": "x-EBCDIC-KoreanExtended",
+        "comment": "IBM EBCDIC Korean Extended"
+    },
+    {
+        "codepoint": "20838",
+        "dotNetName": "IBM-Thai",
+        "comment": "IBM EBCDIC Thai"
+    },
+    {
+        "codepoint": "20866",
+        "dotNetName": "koi8-r",
+        "comment": "Russian (KOI8-R); Cyrillic (KOI8-R)"
+    },
+    {
+        "codepoint": "20871",
+        "dotNetName": "IBM871",
+        "comment": "IBM EBCDIC Icelandic"
+    },
+    {
+        "codepoint": "20880",
+        "dotNetName": "IBM880",
+        "comment": "IBM EBCDIC Cyrillic Russian"
+    },
+    {
+        "codepoint": "20905",
+        "dotNetName": "IBM905",
+        "comment": "IBM EBCDIC Turkish"
+    },
+    {
+        "codepoint": "20924",
+        "dotNetName": "IBM00924",
+        "comment": "IBM EBCDIC Latin 1/Open System (1047 + Euro symbol)"
+    },
+    {
+        "codepoint": "20932",
+        "dotNetName": "EUC-JP",
+        "comment": "Japanese (JIS 0208-1990 and 0212-1990)"
+    },
+    {
+        "codepoint": "20936",
+        "dotNetName": "x-cp20936",
+        "comment": "Simplified Chinese (GB2312); Chinese Simplified (GB2312-80)"
+    },
+    {
+        "codepoint": "20949",
+        "dotNetName": "x-cp20949",
+        "comment": "Korean Wansung"
+    },
+    {
+        "codepoint": "21025",
+        "dotNetName": "cp1025",
+        "comment": "IBM EBCDIC Cyrillic Serbian-Bulgarian"
+    },
+    {
+        "codepoint": "21027",
+        "dotNetName": "",
+        "comment": "(deprecated)"
+    },
+    {
+        "codepoint": "21866",
+        "dotNetName": "koi8-u",
+        "comment": "Ukrainian (KOI8-U); Cyrillic (KOI8-U)"
+    },
+    {
+        "codepoint": "28591",
+        "dotNetName": "iso-8859-1",
+        "comment": "ISO 8859-1 Latin 1; Western European (ISO)"
+    },
+    {
+        "codepoint": "28592",
+        "dotNetName": "iso-8859-2",
+        "comment": "ISO 8859-2 Central European; Central European (ISO)"
+    },
+    {
+        "codepoint": "28593",
+        "dotNetName": "iso-8859-3",
+        "comment": "ISO 8859-3 Latin 3"
+    },
+    {
+        "codepoint": "28594",
+        "dotNetName": "iso-8859-4",
+        "comment": "ISO 8859-4 Baltic"
+    },
+    {
+        "codepoint": "28595",
+        "dotNetName": "iso-8859-5",
+        "comment": "ISO 8859-5 Cyrillic"
+    },
+    {
+        "codepoint": "28596",
+        "dotNetName": "iso-8859-6",
+        "comment": "ISO 8859-6 Arabic"
+    },
+    {
+        "codepoint": "28597",
+        "dotNetName": "iso-8859-7",
+        "comment": "ISO 8859-7 Greek"
+    },
+    {
+        "codepoint": "28598",
+        "dotNetName": "iso-8859-8",
+        "comment": "ISO 8859-8 Hebrew; Hebrew (ISO-Visual)"
+    },
+    {
+        "codepoint": "28599",
+        "dotNetName": "iso-8859-9",
+        "comment": "ISO 8859-9 Turkish"
+    },
+    {
+        "codepoint": "28603",
+        "dotNetName": "iso-8859-13",
+        "comment": "ISO 8859-13 Estonian"
+    },
+    {
+        "codepoint": "28605",
+        "dotNetName": "iso-8859-15",
+        "comment": "ISO 8859-15 Latin 9"
+    },
+    {
+        "codepoint": "29001",
+        "dotNetName": "x-Europa",
+        "comment": "Europa 3"
+    },
+    {
+        "codepoint": "38598",
+        "dotNetName": "iso-8859-8-i",
+        "comment": "ISO 8859-8 Hebrew; Hebrew (ISO-Logical)"
+    },
+    {
+        "codepoint": "50220",
+        "dotNetName": "iso-2022-jp",
+        "comment": "ISO 2022 Japanese with no halfwidth Katakana; Japanese (JIS)"
+    },
+    {
+        "codepoint": "50221",
+        "dotNetName": "csISO2022JP",
+        "comment": "ISO 2022 Japanese with halfwidth Katakana; Japanese (JIS-Allow 1 byte Kana)"
+    },
+    {
+        "codepoint": "50222",
+        "dotNetName": "iso-2022-jp",
+        "comment": "ISO 2022 Japanese JIS X 0201-1989; Japanese (JIS-Allow 1 byte Kana - SO/SI)"
+    },
+    {
+        "codepoint": "50225",
+        "dotNetName": "iso-2022-kr",
+        "comment": "ISO 2022 Korean"
+    },
+    {
+        "codepoint": "50227",
+        "dotNetName": "x-cp50227",
+        "comment": "ISO 2022 Simplified Chinese; Chinese Simplified (ISO 2022)"
+    },
+    {
+        "codepoint": "50229",
+        "dotNetName": "",
+        "comment": "ISO 2022 Traditional Chinese"
+    },
+    {
+        "codepoint": "50930",
+        "dotNetName": "",
+        "comment": "EBCDIC Japanese (Katakana) Extended"
+    },
+    {
+        "codepoint": "50931",
+        "dotNetName": "",
+        "comment": "EBCDIC US-Canada and Japanese"
+    },
+    {
+        "codepoint": "50933",
+        "dotNetName": "",
+        "comment": "EBCDIC Korean Extended and Korean"
+    },
+    {
+        "codepoint": "50935",
+        "dotNetName": "",
+        "comment": "EBCDIC Simplified Chinese Extended and Simplified Chinese"
+    },
+    {
+        "codepoint": "50936",
+        "dotNetName": "",
+        "comment": "EBCDIC Simplified Chinese"
+    },
+    {
+        "codepoint": "50937",
+        "dotNetName": "",
+        "comment": "EBCDIC US-Canada and Traditional Chinese"
+    },
+    {
+        "codepoint": "50939",
+        "dotNetName": "",
+        "comment": "EBCDIC Japanese (Latin) Extended and Japanese"
+    },
+    {
+        "codepoint": "51932",
+        "dotNetName": "euc-jp",
+        "comment": "EUC Japanese"
+    },
+    {
+        "codepoint": "51936",
+        "dotNetName": "EUC-CN",
+        "comment": "EUC Simplified Chinese; Chinese Simplified (EUC)"
+    },
+    {
+        "codepoint": "51949",
+        "dotNetName": "euc-kr",
+        "comment": "EUC Korean"
+    },
+    {
+        "codepoint": "51950",
+        "dotNetName": "",
+        "comment": "EUC Traditional Chinese"
+    },
+    {
+        "codepoint": "52936",
+        "dotNetName": "hz-gb-2312",
+        "comment": "HZ-GB2312 Simplified Chinese; Chinese Simplified (HZ)"
+    },
+    {
+        "codepoint": "54936",
+        "dotNetName": "GB18030",
+        "comment": "Windows XP and later: GB18030 Simplified Chinese (4 byte); Chinese Simplified (GB18030)"
+    },
+    {
+        "codepoint": "57002",
+        "dotNetName": "x-iscii-de",
+        "comment": "ISCII Devanagari"
+    },
+    {
+        "codepoint": "57003",
+        "dotNetName": "x-iscii-be",
+        "comment": "ISCII Bangla"
+    },
+    {
+        "codepoint": "57004",
+        "dotNetName": "x-iscii-ta",
+        "comment": "ISCII Tamil"
+    },
+    {
+        "codepoint": "57005",
+        "dotNetName": "x-iscii-te",
+        "comment": "ISCII Telugu"
+    },
+    {
+        "codepoint": "57006",
+        "dotNetName": "x-iscii-as",
+        "comment": "ISCII Assamese"
+    },
+    {
+        "codepoint": "57007",
+        "dotNetName": "x-iscii-or",
+        "comment": "ISCII Odia"
+    },
+    {
+        "codepoint": "57008",
+        "dotNetName": "x-iscii-ka",
+        "comment": "ISCII Kannada"
+    },
+    {
+        "codepoint": "57009",
+        "dotNetName": "x-iscii-ma",
+        "comment": "ISCII Malayalam"
+    },
+    {
+        "codepoint": "57010",
+        "dotNetName": "x-iscii-gu",
+        "comment": "ISCII Gujarati"
+    },
+    {
+        "codepoint": "57011",
+        "dotNetName": "x-iscii-pa",
+        "comment": "ISCII Punjabi"
+    },
+    {
+        "codepoint": "65000",
+        "dotNetName": "utf-7",
+        "comment": "Unicode (UTF-7)"
+    },
+    {
+        "codepoint": "65001",
+        "dotNetName": "utf-8",
+        "comment": "Unicode (UTF-8)"
+    }
+]

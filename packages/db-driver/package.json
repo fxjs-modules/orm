@@ -52,7 +52,8 @@
 	"homepage": "https://github.com/fxjs-modules/orm/tree/master/packages/db-driver",
 	"files": [
 		"lib",
-		"typings"
+		"typings",
+		"codepoints-map.json"
 	],
 	"publishConfig": {
 		"access": "public"
