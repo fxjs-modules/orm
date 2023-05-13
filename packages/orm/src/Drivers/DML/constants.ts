@@ -1,3 +1,3 @@
 export const enum SpecialFieldsReason {
-    MYSQL_POINT = '@@mysql-point@@'
+    MYSQL_POINT = 0
 };

@@ -8,7 +8,7 @@ var ORM = require('../../');
 var coroutine = require('coroutine');
 const { lowerCaseColumn } = require("../support/_helpers");
 
-describe.only("Model.get()", function () {
+describe("Model.get()", function () {
     var db = null;
     var Person = null;
     var John;

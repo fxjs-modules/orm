@@ -14,7 +14,6 @@ import { FxSqlQuery, Query } from "@fxjs/sql-query";
 import Sync = require("@fxjs/sql-ddl-sync");
 import utils = require("./_utils");
 import * as Utilities from "../../Utilities";
-import { SpecialFieldsReason } from "./constants";
 import { filterFieldsOnFind, safeParseJson } from "./_dml-helpers";
 
 export const Driver: FxOrmDMLDriver.DMLDriverConstructor_MySQL = function (

@@ -33,7 +33,6 @@ import type {
     FxSqlQuerySubQuery,
     FxSqlQueryColumns,
 } from '@fxjs/sql-query';
-import { SpecialFieldsReason } from './Drivers/DML/constants';
 import { pickPointTypeFields } from './Drivers/DML/_dml-helpers';
 
 const AvailableHooks: (keyof FxOrmModel.Hooks)[] = [
