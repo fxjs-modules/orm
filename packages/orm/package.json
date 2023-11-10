@@ -42,7 +42,7 @@
 		"@fxjs/sql-query": "^0.10.0",
 		"@types/knex": "^0.16.1",
 		"fib-pool": "^1.6.0",
-		"knex": "^0.19.5",
+		"knex": "^2.5.1",
 		"lodash.clonedeep": "^4.5.0",
 		"lodash.flatten": "^4.4.0",
 		"lodash.merge": "^4.6.1"
@@ -64,7 +64,7 @@
 	"peerDependencies": {
 		"@fibjs/enforce": ">= 0.1.1 < 0.2",
 		"@fxjs/knex": ">= 0.3 <= 0.3",
-		"knex": ">= 0.19.0 < 0.20"
+		"knex": ">= 2.5.0 < 2.6"
 	},
 	"private": false,
 	"files": [
