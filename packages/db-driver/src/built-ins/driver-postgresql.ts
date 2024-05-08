@@ -67,7 +67,11 @@ export default class PostgreSQLDriver extends SQLDriver<Class_DbConnection> impl
     trans<T = any> (cb: FxOrmCoreCallbackNS.ExecutionCallback<T>): boolean { return this.connection.trans(cb); }
     rollback (): void { return this.connection.rollback() }
 
-    getConnection (): Class_DbConnection { return db.openPSQL(this.uri) }
+    getConnection (): Class_DbConnection { 
+        const conn = db.openPSQL(this.uri);
+        if(this.config.query.searchPath) conn.execute(`SET search_path TO ${this.config.query.searchPath}`);
+        return conn
+    }
 
     dbExists (dbname: string): boolean {
         return this.execute(`SELECT datname FROM pg_database WHERE datname = '${dbname}'`).length > 0;
