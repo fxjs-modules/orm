@@ -210,8 +210,7 @@ export namespace FxOrmDMLDriver {
     export interface DMLDriver_PostgreSQL extends DMLDriver {
         db: FxOrmDb.DatabaseBase_PostgreSQL
         config: DMLDriver['config'] & {
-            timezone: string,
-            searchPath: string
+            timezone: string
         }
 
         aggregate_functions: (FxOrmDb.AGGREGATION_METHOD_POSTGRESQL)[]

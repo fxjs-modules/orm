@@ -165,7 +165,6 @@ export declare namespace FxOrmDMLDriver {
         db: FxOrmDb.DatabaseBase_PostgreSQL;
         config: DMLDriver['config'] & {
             timezone: string;
-            searchPath: string;
         };
         aggregate_functions: (FxOrmDb.AGGREGATION_METHOD_POSTGRESQL)[];
     }
