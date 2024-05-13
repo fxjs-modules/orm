@@ -1,4 +1,8 @@
 /// <reference types="@fibjs/types" />
+/// <reference types="@fibjs/types" />
+/// <reference types="@fibjs/types" />
+/// <reference types="@fibjs/types" />
+/// <reference types="@fibjs/types" />
 /// <reference types="fib-pool" />
 import { FxDbDriverNS } from '../Typo';
 import { FxOrmCoreCallbackNS } from '@fxjs/orm-core';
@@ -87,6 +91,9 @@ export declare class SQLDriver<CONN_TYPE extends Driver.IConnTypeEnum> extends D
      * @override
      */
     rollback(): void;
+    /**
+     * @override
+     */
     execute<T>(sql: string): T;
 }
 export {};

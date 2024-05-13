@@ -13,3 +13,4 @@ export declare function detectWindowsCodePoints(): {
     isWindows: boolean;
     codepoints: string;
 };
+export declare function filterPSQLSearchPath(input_sp?: string | string[]): string;

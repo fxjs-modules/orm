@@ -292,5 +292,8 @@ export class SQLDriver<CONN_TYPE extends Driver.IConnTypeEnum> extends Driver<CO
 	 */
 	rollback (): void {}
 
+	/**
+	 * @override
+	 */
 	execute<T> (sql: string): T { return }
 }

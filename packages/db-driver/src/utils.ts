@@ -230,3 +230,10 @@ export function detectWindowsCodePoints () {
         codepoints
     };
 }
+
+export function filterPSQLSearchPath(input_sp?: string | string[]) {
+    input_sp = Array.isArray(input_sp) ? input_sp.join(', ') : `${input_sp}`;
+    const filtered_sp = input_sp?.replace(/[^a-zA-Z0-9_"$,]/g, '');
+
+    return filtered_sp || '';
+}

@@ -1,15 +1,38 @@
 var common  = require("../common");
 var Driver = require("../..").Driver.getDriver('psql');
 
+var querystring = require('querystring');
+
 describe("PostgreSQL", function () {
 	var driver
 	var knex
 	var DBNAME = 'fxjs-db-driver-test';
 
-	var setup = function () {
+	function getDriver (opts) {
+		const { query = {} } = opts || {};
+		const ret = { driverInst: null, knexInst: null };
+
+		ret.driverInst = Driver.create([
+			`psql://postgres:@localhost:5432`,
+			query && querystring.stringify(query),
+		].filter(Boolean).join('?'));
+		ret.knexInst = common.getKnexInstance(ret.driverInst);
+
+		return ret;
+	}
+
+	var setup = function (opts) {
+		const { afterSetup } = opts || {};
+
 		return function () {
-			driver = Driver.create(`psql://postgres:@localhost:5432`);
-			knex = common.getKnexInstance(driver);
+			const result = getDriver(opts);
+
+			driver = result.driverInst;
+			knex = result.knexInst;
+
+			if (typeof afterSetup === 'function') {
+				afterSetup({ driver, knex });
+			}
 		}
 	}
 
@@ -31,7 +54,7 @@ describe("PostgreSQL", function () {
 			'psql:',
 			'pg:',
 		].forEach((protocol) => {
-			it(`alia: ${protocol}`, () => {
+			it(`alias: ${protocol}`, () => {
 				var postgresqlDriver = Driver.create(`${protocol}//postgres:@localhost:5432`);
 				assert.equal(postgresqlDriver.type, 'psql');
 				assert.equal(postgresqlDriver.uri, 'psql://postgres@localhost:5432');
@@ -108,8 +131,41 @@ describe("PostgreSQL", function () {
 				),
 				[]
 			)
-		})
-	})
+		});
+	});
+
+	describe('searchPath', () => {
+		it("default search_path", () => {
+			const { driverInst } = getDriver();
+			var result = driverInst.execute(`SHOW search_path;`);
+
+			assert.equal(result[0].search_path, '"$user", public');
+		});
+
+		it("configure search_path by connection query", () => {
+			const { driverInst } = getDriver({
+				query: {
+					search_path: 'test_sp'
+				}
+			});
+			
+			var result = driverInst.execute(`SHOW search_path;`);
+
+			assert.equal(result[0].search_path, 'test_sp');
+		});
+		
+		it("comma separated search_path list", () => {
+			const { driverInst } = getDriver({
+				query: {
+					search_path: 'test_sp, "$user", public'
+				}
+			});
+			
+			var result = driverInst.execute(`SHOW search_path;`);
+
+			assert.equal(result[0].search_path, 'test_sp, "$user", public');
+		});
+	});
 
 	describe("#useTrans", () => {
 		before(setup());
