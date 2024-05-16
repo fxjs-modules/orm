@@ -212,10 +212,11 @@ export const dropForeignKey: IDialect['dropForeignKey'] = function (
 export const getCollectionColumnsSync: IDialect['getCollectionColumnsSync'] = function (
 	dbdriver, name
 ) {
+	const schema = dbdriver.config.query?.search_path || dbdriver.config.query?.searchPath || 'public';
 	return dbdriver.execute(
 		getSqlQueryDialect('psql').escape(
-			"SELECT * FROM information_schema.columns WHERE table_name = ?;",
-			[name]
+			"SELECT * FROM information_schema.columns WHERE table_name = ? AND table_schema = ?;",
+			[name, schema]
 		)
 	)
 }
