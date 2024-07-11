@@ -43,7 +43,7 @@ export namespace FxOrmModel {
         /* @nonenum */
         uid: string;
 
-        caches: Class_LruCache;
+        caches: any;
 
         keys: string[];
 

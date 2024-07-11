@@ -27,7 +27,7 @@ export const clear: FxOrmNS.SingletonModule['clear'] = function (key?: string) {
 
 export const modelClear: FxOrmNS.SingletonModule['modelClear'] = function (model: FxOrmModel.Model, key?: string) {
 	if (key && typeof key === "string") {
-		model.caches.remove(key);
+		model.caches.delete(key);
 	} else {
 		model.caches.clear();
 	}
@@ -45,18 +45,19 @@ export const modelGet: FxOrmNS.SingletonModule['modelGet'] = function (model, ke
 	if (opts.identityCache === false)
 		return reFetchSync();
 
-	if (model.caches.has(key))
-		if (opts && opts.saveCheck && typeof model.caches.get(key).saved === "function" && !model.caches.get(key).saved())
+	var value = model.caches.get(key);
+
+	if (value !== undefined)
+	{
+		if (opts && opts.saveCheck && typeof value.saved === "function" && !value.saved())
 			// if not saved, don't return it, fetch original from db
 			return reFetchSync();
-	
-	const value = model.caches.get(key, function (_key: string) {
-		const new_value = reFetchSync();
-		model.caches.set(_key, new_value);
-
-		return new_value;
-	});
-	
+	}else
+	{
+		value = reFetchSync();
+		model.caches.set(key, value);
+	}
+		
 	const expected_expire = typeof opts.identityCache === "number" ? (opts.identityCache * 1000) : model.caches.timeout;
 	const expire_expection_delta = expected_expire - model.caches.timeout;
 
@@ -69,14 +70,14 @@ export const modelGet: FxOrmNS.SingletonModule['modelGet'] = function (model, ke
 				
 				model.caches.set(key, value);
 				if (expected_expire > Date.now()) {
-					model.caches.remove(key)
+					model.caches.delete(key)
 					break
 				}
 			}
 		});
 
 	} else if (expire_expection_delta < 0) {
-		setTimeout(() => model.caches.remove(key), expected_expire);
+		setTimeout(() => model.caches.delete(key), expected_expire);
 	}
 
 	return value;
