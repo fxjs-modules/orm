@@ -12,6 +12,7 @@ import * as Helpers from "./Helpers";
 import * as singleton from "./Singleton";
 import { ORM } from './ORM';
 export * as Property from "./Property";
+import './Patch/fib-cache';
 export declare function connectSync(opts?: string | FxDbDriverNS.DBConnectionConfig): ORM;
 export declare function connect<T extends IDbDriver.ISQLConn = any>(uri?: string | FxDbDriverNS.DBConnectionConfig, cb?: FxOrmCoreCallbackNS.ExecutionCallback<IDbDriver<T>>): ORM;
 export { ORM } from './ORM';

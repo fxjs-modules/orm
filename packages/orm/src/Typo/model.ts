@@ -43,7 +43,7 @@ export namespace FxOrmModel {
         /* @nonenum */
         uid: string;
 
-        caches: any;
+        caches: import('fib-cache').LRU;
 
         keys: string[];
 

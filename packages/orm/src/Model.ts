@@ -28,7 +28,7 @@ import { FxOrmSqlDDLSync } from '@fxjs/sql-ddl-sync';
 import { FxOrmDMLDriver } from './Typo/DMLDriver';
 import { FxOrmError } from './Typo/Error';
 import { FxOrmQuery } from './Typo/query';
-const fc = require('fib-cache');
+import fc = require('fib-cache');
 
 import type {
     FxSqlQuerySubQuery,

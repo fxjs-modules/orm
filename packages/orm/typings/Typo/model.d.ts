@@ -1,4 +1,3 @@
-/// <reference types="@fibjs/types" />
 /// <reference types="@fibjs/enforce" />
 /// <reference types="@fibjs/types" />
 import type { FxOrmSqlDDLSync } from "@fxjs/sql-ddl-sync";
@@ -28,7 +27,7 @@ export declare namespace FxOrmModel {
         table: string;
         id: string[];
         uid: string;
-        caches: Class_LruCache;
+        caches: import('fib-cache').LRU;
         keys: string[];
         allProperties: Record<string, FxOrmProperty.NormalizedProperty>;
         virtualProperties: Record<string, FxOrmProperty.NormalizedProperty>;

@@ -58,8 +58,8 @@ export const modelGet: FxOrmNS.SingletonModule['modelGet'] = function (model, ke
 		model.caches.set(key, value);
 	}
 		
-	const expected_expire = typeof opts.identityCache === "number" ? (opts.identityCache * 1000) : model.caches.timeout;
-	const expire_expection_delta = expected_expire - model.caches.timeout;
+	const expected_expire = typeof opts.identityCache === "number" ? (opts.identityCache * 1000) : model.caches.ttl;
+	const expire_expection_delta = expected_expire - model.caches.ttl;
 
 	if (expire_expection_delta > 0) {
 		coroutine.start(() => {

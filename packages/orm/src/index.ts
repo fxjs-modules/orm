@@ -20,6 +20,8 @@ import { ORM } from './ORM';
 
 export * as Property from "./Property";
 
+import './Patch/fib-cache';
+
 function isOrmLikeErrorEmitter(parsedDBDriver: IDbDriver | FxOrmNS.ORMLike): parsedDBDriver is FxOrmNS.ORMLike {
 	return !parsedDBDriver.hasOwnProperty('host') && parsedDBDriver instanceof events.EventEmitter
 }
