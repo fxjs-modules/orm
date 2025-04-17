@@ -450,7 +450,7 @@ function convertIndexRows(
 	const indexes: Record<string, FxOrmSqlDDLSync__DbIndex.CollectionDbIndexInfo> = {};
 
 	for (let i = 0; i < rows.length; i++) {
-		if (rows[i].indisprimary === '1') {
+		if (rows[i].indisprimary === '1' || rows[i].indisprimary === true) {
 			continue;
 		}
 
@@ -461,7 +461,7 @@ function convertIndexRows(
 				collection,
 				name: idx_name,
 				columns : [],
-				unique  : rows[i].indisunique === '1',
+				unique: rows[i].indisunique === '1' || rows[i].indisunique === true,
 			};
 		}
 
