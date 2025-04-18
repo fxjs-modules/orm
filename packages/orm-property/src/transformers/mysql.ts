@@ -221,6 +221,9 @@ function colInfoToProperty(colInfo: ColumnInfoMySQL) {
         case "TEXT":
             property.type = "text";
             break;
+        case "LONGTEXT":
+            property.type = "longtext";
+            break;
         case "POINT":
             property.type = "point";
             break;
@@ -278,7 +281,7 @@ export const toStorageType: IPropTransformer<ColumnInfoMySQL>['toStorageType'] =
 	switch (property.type) {
 		case "text":
 			if (property.big) {
-				result.typeValue = "TEXT";
+				result.typeValue = "LONGTEXT";
 			} else {
 				result.typeValue = "VARCHAR(" + Math.min(Math.max(parseInt(property.size as any, 10) || 255, 1), 65535) + ")";
 			}
