@@ -278,7 +278,7 @@ export const toStorageType: IPropTransformer<ColumnInfoMySQL>['toStorageType'] =
 	switch (property.type) {
 		case "text":
 			if (property.big) {
-				result.typeValue = "LONGTEXT";
+				result.typeValue = "TEXT";
 			} else {
 				result.typeValue = "VARCHAR(" + Math.min(Math.max(parseInt(property.size as any, 10) || 255, 1), 65535) + ")";
 			}
