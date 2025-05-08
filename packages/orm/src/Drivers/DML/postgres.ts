@@ -332,7 +332,7 @@ Driver.prototype.propertyToValue = function (
 		case "object":
 			if (value !== null) {
 				if (!Buffer.isBuffer(value)) 
-					value = JSON.stringify(value);
+					value = JSON.stringify(value).replace(/\\/g, '\\\\');
 			}
 			break;
 		case "date":
